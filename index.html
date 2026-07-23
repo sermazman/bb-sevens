@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sevens Pitch — Tablero Digital</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="top">
+  <div>
+    <h1>Sevens Pitch</h1>
+    <div class="sub">Tablero digital · Blood Bowl Sevens</div>
+  </div>
+  <div class="sub mono" id="statusLine">Fase de colocación</div>
+</header>
+
+<div class="app">
+
+  <div>
+    <div class="panel conn">
+      <h2><span class="conn-dot" id="connDot"></span>Conexión remota</h2>
+      <div id="connStatus" class="small-note" style="font-size:12px; color:#cfc3a8;">Sin conectar. Jugad los dos en el mismo enlace.</div>
+
+      <div id="connControls">
+        <button class="full primary" onclick="hostRoom()">🌐 Crear sala</button>
+        <div class="row" style="margin-top:6px;">
+          <input type="text" id="joinCodeInput" placeholder="CÓDIGO" maxlength="4" style="text-transform:uppercase;">
+          <button onclick="joinRoom()">Unirse</button>
+        </div>
+      </div>
+
+      <div id="roomCodeBox" style="display:none;">
+        <div class="small-note">Compartid este código con el rival:</div>
+        <div class="room-code" id="roomCodeText">----</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Equipos</h2>
+
+      <div class="team-block a">
+        <input class="team-name-input" id="teamAName" type="text" value="Equipo Rojo" style="border-color:var(--team-a)">
+        <h3>Plantilla en banquillo</h3>
+        <div class="roster-list" id="rosterA"></div>
+        <button class="full" onclick="openAddPlayer('A')">+ Añadir jugador</button>
+        <div class="row" style="margin-top:6px;">
+          <button onclick="document.getElementById('fileImportA').click()">📁 Cargar JSON</button>
+          <button onclick="exportTeam('A')">💾 Guardar JSON</button>
+        </div>
+        <input type="file" id="fileImportA" accept="application/json" style="display:none" onchange="importTeamFile('A', this)">
+      </div>
+
+      <div class="team-block b">
+        <input class="team-name-input" id="teamBName" type="text" value="Equipo Azul" style="border-color:var(--team-b)">
+        <h3>Plantilla en banquillo</h3>
+        <div class="roster-list" id="rosterB"></div>
+        <button class="full" onclick="openAddPlayer('B')">+ Añadir jugador</button>
+        <div class="row" style="margin-top:6px;">
+          <button onclick="document.getElementById('fileImportB').click()">📁 Cargar JSON</button>
+          <button onclick="exportTeam('B')">💾 Guardar JSON</button>
+        </div>
+        <input type="file" id="fileImportB" accept="application/json" style="display:none" onchange="importTeamFile('B', this)">
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <button onclick="quickFill('A')">7 rápidos Rojo</button>
+        <button onclick="quickFill('B')">7 rápidos Azul</button>
+      </div>
+      <div class="small-note">El JSON puede incluir nombre de equipo, jugadores con MA, y opcionalmente ST/AG/PA/AV/habilidades como referencia (no se usan en el cálculo, solo se guardan).</div>
+    </div>
+
+    <div class="panel">
+      <h2>Jugador seleccionado</h2>
+      <div id="selInfo" class="mono" style="font-size:13px; color:#cfc3a8;">Ninguno</div>
+      <button class="full" style="margin-top:10px;" onclick="assignBall()">🏈 Asignar balón a este jugador</button>
+      <button class="full danger" onclick="sendToBench()">Sacar del campo (al banquillo)</button>
+    </div>
+  </div>
+
+  <div>
+    <div class="scoreboard">
+      <div class="sb-team">
+        <div class="label" id="sbNameA">Rojo</div>
+        <div class="score mono" id="scoreA">0</div>
+      </div>
+      <div class="sb-mid">
+        <div class="half mono">MITAD <span id="halfNum">1</span></div>
+        <div class="turns mono">🔴 <span id="turnA">0</span>/6 &nbsp; 🔵 <span id="turnB">0</span>/6</div>
+        <div class="active-flag mono" id="activeFlag">COLOCACIÓN</div>
+      </div>
+      <div class="sb-team">
+        <div class="label" id="sbNameB">Azul</div>
+        <div class="score mono" id="scoreB">0</div>
+      </div>
+    </div>
+
+    <div class="panel setup" id="setupPanel">
+      <h2>🏈 Fase de colocación</h2>
+      <label>Equipo que patea (inicia el drive)</label>
+      <select id="kickSelect" onchange="onKickChange()">
+        <option value="A">Rojo</option>
+        <option value="B">Azul</option>
+      </select>
+      <div class="small-note" id="setupHint">Recibe: Azul</div>
+      <div class="small-note">Click en un jugador del banquillo (o en una ficha ya colocada, para reposicionarla) y luego en una casilla resaltada dentro de vuestra mitad. Máx. 1 jugador por zona lateral y por equipo.</div>
+      <button class="full primary" onclick="startDrive()" style="margin-top:10px;">▶ Iniciar Drive</button>
+    </div>
+
+    <div class="row" style="margin-bottom:10px;">
+      <button class="primary full" onclick="endTurn()">Terminar turno →</button>
+      <button class="full" onclick="resetActivations()">Reiniciar activaciones (mismo turno)</button>
+    </div>
+
+    <div class="pitch-wrap">
+      <div class="pitch" id="pitch"></div>
+    </div>
+
+    <div class="legend">
+      <span style="background:var(--turf-2)"></span>Campo central
+      <span style="background:var(--turf-wide)"></span>Zona lateral
+      <span style="background:var(--endzone-a)"></span>Zona anotación Rojo
+      <span style="background:var(--endzone-b)"></span>Zona anotación Azul
+      &nbsp;&nbsp;·&nbsp;&nbsp; Casillas doradas = movimiento o colocación permitida
+    </div>
+    <div class="small-note">Movimiento por distancia (MA), sin comprobar bloqueos/asistencias avanzadas — vosotros gestionáis habilidades, esquivas y GFI.</div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <h2>Dado de bloqueo</h2>
+      <div class="row">
+        <button onclick="rollBlock(1)">1 dado</button>
+        <button onclick="rollBlock(2)">2 dados</button>
+        <button onclick="rollBlock(3)">3 dados</button>
+      </div>
+      <div class="block-face-list" id="blockResult"></div>
+      <div class="small-note">Elegid vosotros qué resultado aplicar según quién elige (atacante/defensor).</div>
+    </div>
+
+    <div class="panel">
+      <h2>D6 genérico</h2>
+      <label>Etiqueta (opcional)</label>
+      <input type="text" id="d6label" placeholder="ej. Esquivar, Recoger, Armadura...">
+      <button class="full primary" onclick="rollD6()">Tirar D6</button>
+      <div class="die-result" id="d6out">
+        <div class="die-face">–</div>
+        <div style="font-size:12px; color:#a99b7f;">Sin tiradas aún</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Pase</h2>
+      <label>Habilidad de Pase objetivo (PA)</label>
+      <input type="number" id="paTarget" value="3" min="1" max="6">
+      <button class="full primary" onclick="rollPass()">Tirar pase</button>
+      <div class="die-result" id="passOut">
+        <div class="die-face">–</div>
+        <div style="font-size:12px; color:#a99b7f;">6 siempre acierta, 1 siempre fumble</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Historial</h2>
+      <div class="hist" id="hist"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="modal-back" id="tdModal">
+  <div class="modal">
+    <h2>¡ENSAYO!</h2>
+    <p id="tdText">Equipo anota.</p>
+    <button class="primary" onclick="confirmTD()">Reiniciar para el próximo drive</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>

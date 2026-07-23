@@ -1,0 +1,12 @@
+{
+  "teamName": "Orcos del Pantano",
+  "players": [
+    { "num": 1, "name": "Grukk Bocafiera", "position": "Lineman", "ma": 5, "st": 3, "ag": 3, "pa": 4, "av": 9, "skills": ["Grueso Cráneo"] },
+    { "num": 2, "name": "Snagga Vientre-Verde", "position": "Lineman", "ma": 5, "st": 3, "ag": 3, "pa": 4, "av": 9, "skills": [] },
+    { "num": 3, "name": "Thrag Machaca-Huesos", "position": "Blitzer", "ma": 5, "st": 3, "ag": 3, "pa": 4, "av": 9, "skills": ["Bloqueo"] },
+    { "num": 4, "name": "Uggo Diente-Roto", "position": "Blitzer", "ma": 5, "st": 3, "ag": 3, "pa": 4, "av": 9, "skills": ["Bloqueo"] },
+    { "num": 5, "name": "Krunk Ojo-Ciego", "position": "Thrower", "ma": 4, "st": 3, "ag": 3, "pa": 3, "av": 8, "skills": ["Manos Firmes"] },
+    { "num": 6, "name": "Morg Piel-Dura", "position": "Lineman", "ma": 5, "st": 3, "ag": 3, "pa": 4, "av": 9, "skills": [] },
+    { "num": 7, "name": "Zoggo Nariz-Rota", "position": "Lineman", "ma": 5, "st": 3, "ag": 3, "pa": 4, "av": 9, "skills": [] }
+  ]
+}

@@ -204,7 +204,13 @@ button.full{width:100%; margin-top:6px;}
 }
 .token.selected{outline:2px solid #fff; outline-offset:1px; z-index:5;}
 .token.activated{opacity:0.45;}
-.token.downed{opacity:0.7; transform:scale(0.8); border-style:dashed; border-color:var(--bad);}
+.token.tumbado, .token.aturdido{opacity:0.55;}
+.token-mark{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono'; font-weight:800; font-size:15px; color:var(--gold);
+  text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 0 3px #000;
+  pointer-events:none;
+}
 .token .carrier-dot{
   position:absolute; top:-3px; right:-3px; width:8px; height:8px; border-radius:50%;
   background:var(--gold); border:1px solid #100e0c;
@@ -251,13 +257,20 @@ button.full{width:100%; margin-top:6px;}
   background:linear-gradient(180deg, var(--panel-2), var(--panel));
   border:1px solid var(--bad);
   border-radius:6px;
-  padding:12px 16px;
-  min-height:44px;
-  display:flex; align-items:center; gap:14px;
+  padding:14px 16px;
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:18px;
   margin-top:14px;
 }
-.reserve-zone h2{font-size:13px; color:#ffb3a7; margin:0; white-space:nowrap;}
-.reserve-zone .small-note{color:#cfc3a8; margin:0;}
+@media (max-width: 700px){ .reserve-zone{grid-template-columns:1fr;} }
+.reserve-team h2{font-size:13px; margin:0 0 6px 0; white-space:nowrap;}
+.reserve-zone .small-note{margin:0;}
+.reserve-tags{display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 2px 0;}
+.reserve-tag{
+  background:#100e0c; border:1px solid var(--panel-line); border-radius:4px;
+  padding:3px 8px; font-size:11px; color:var(--paper); white-space:nowrap;
+}
 
 /* ---- Wide teams section ---- */
 .teams-wide{

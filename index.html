@@ -53,7 +53,7 @@
       <h2>Jugador seleccionado</h2>
       <div id="selInfo" class="mono" style="font-size:13px; color:#cfc3a8;">Ninguno</div>
       <button class="full" style="margin-top:10px;" onclick="assignBall()">🏈 Asignar balón a este jugador</button>
-      <button class="full" onclick="standUp()">🧍 Levantar (marcar de pie)</button>
+      <button class="full" id="recoveryBtn" onclick="handleRecoveryButton()" style="display:none;">🧍 Levantar (marcar de pie)</button>
       <button class="full danger" onclick="sendToBench()">Sacar del campo (al banquillo)</button>
     </div>
   </div>
@@ -91,11 +91,23 @@
       <span style="background:var(--endzone-b)"></span>Zona anotación Azul
       &nbsp;&nbsp;·&nbsp;&nbsp; Dorado = movimiento normal &nbsp;·&nbsp; Rojo = "a por ellos" (extra, con riesgo)
     </div>
-    <div class="small-note">Movimiento casilla a casilla. Al agotar el MA podéis seguir hasta 3 casillas más "a por ellos" (1D6 por casilla, os la jugáis). Click derecho para terminar la activación. Pasa el ratón sobre una ficha del campo para ver su MA restante. Al salir de una casilla marcada por un rival, salta la esquiva (1D6, aplicáis el modificador); si falla, cae y se tira armadura (2D6).</div>
+    <div class="small-note">Movimiento casilla a casilla. Al agotar el MA podéis seguir hasta 3 casillas más "a por ellos" (1D6 por casilla, os la jugáis). Click derecho para terminar la activación. Pasa el ratón sobre una ficha del campo para ver su MA restante. Al fallar una esquiva o "a por ellos": armadura (2D6) → si no rompe, TUMBADO; si rompe, tirada de heridas (2D6) y elegís Aturdido / Inconsciente / Herido.</div>
 
     <div class="reserve-zone">
-      <h2>🩹 Banquillo lesionado</h2>
-      <div class="small-note">Zona reservada para jugadores inconscientes / heridos — se activará en la Fase 3 (tabla de heridas completa).</div>
+      <div class="reserve-team">
+        <h2 style="color:var(--team-a);">🩹 Rojo — bajas</h2>
+        <div class="small-note">Inconscientes:</div>
+        <div id="koListA" class="reserve-tags"><span class="small-note">Ninguno</span></div>
+        <div class="small-note" style="margin-top:6px;">Heridos:</div>
+        <div id="injuredListA" class="reserve-tags"><span class="small-note">Ninguno</span></div>
+      </div>
+      <div class="reserve-team">
+        <h2 style="color:var(--team-b);">🩹 Azul — bajas</h2>
+        <div class="small-note">Inconscientes:</div>
+        <div id="koListB" class="reserve-tags"><span class="small-note">Ninguno</span></div>
+        <div class="small-note" style="margin-top:6px;">Heridos:</div>
+        <div id="injuredListB" class="reserve-tags"><span class="small-note">Ninguno</span></div>
+      </div>
     </div>
 
     <div class="teams-wide">
@@ -218,7 +230,45 @@
     </div>
     <div class="mono" id="armorSum" style="margin:10px 0; font-size:18px; color:var(--gold);">Suma: –</div>
     <button class="primary full" onclick="rollArmor()">Tirar 2D6</button>
-    <button class="full" style="margin-top:8px;" onclick="closeArmorModal()">Cerrar</button>
+
+    <div id="armorPassRow" style="display:none; margin-top:12px;">
+      <div class="small-note" style="margin-bottom:6px;">¿Armadura rota?</div>
+      <div class="row">
+        <button onclick="armorResult(false)">NO — sigue tumbado</button>
+        <button class="danger" onclick="armorResult(true)">SÍ — tirar heridas</button>
+      </div>
+    </div>
+
+    <div id="injuryBlock" style="display:none; margin-top:14px; border-top:1px solid var(--panel-line); padding-top:12px;">
+      <h3 style="margin-bottom:6px; color:var(--gold);">TIRADA DE HERIDAS</h3>
+      <div class="row" style="justify-content:center; gap:10px;">
+        <div class="die-face" id="injuryDie1">–</div>
+        <div class="die-face" id="injuryDie2">–</div>
+      </div>
+      <div class="mono" id="injurySum" style="margin:8px 0; color:var(--gold);">Suma: –</div>
+      <button class="primary full" onclick="rollInjury()">Tirar 2D6 Heridas</button>
+      <div class="small-note" style="margin:8px 0 4px 0;">Elegid el resultado:</div>
+      <div class="row">
+        <button onclick="chooseInjury('aturdido')">Aturdido</button>
+        <button onclick="chooseInjury('ko')">Inconsciente</button>
+        <button class="danger" onclick="chooseInjury('injured')">Herido</button>
+      </div>
+    </div>
+
+    <button class="full" style="margin-top:10px;" onclick="closeArmorModal()">Cerrar</button>
+  </div>
+</div>
+
+<div class="modal-back" id="koModal">
+  <div class="modal">
+    <h2>RECUPERACIÓN</h2>
+    <p id="koText">Comprobación de un jugador inconsciente.</p>
+    <div class="die-face" id="koDie" style="margin:0 auto 14px auto;">–</div>
+    <button class="primary full" onclick="rollKoDie()">Tirar D6</button>
+    <div class="row" style="margin-top:12px;">
+      <button onclick="resolveKo(true)">✅ Recupera</button>
+      <button class="danger" onclick="resolveKo(false)">❌ Sigue inconsciente</button>
+    </div>
   </div>
 </div>
 

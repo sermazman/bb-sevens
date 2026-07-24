@@ -79,6 +79,7 @@ function setupConnHandlers(){
 function snapshotState(){
   return {
     players, ball, phase, state, pendingTD, pendingDodge, pendingGfi, armorForPlayer, nextId,
+    koQueue, pendingKo,
     teamAName: document.getElementById('teamAName').value,
     teamBName: document.getElementById('teamBName').value,
     kickSelectValue: document.getElementById('kickSelect').value,
@@ -94,7 +95,15 @@ function snapshotState(){
     armorText: document.getElementById('armorText').textContent,
     armorDie1: document.getElementById('armorDie1').textContent,
     armorDie2: document.getElementById('armorDie2').textContent,
-    armorSum: document.getElementById('armorSum').textContent
+    armorSum: document.getElementById('armorSum').textContent,
+    armorPassRowVisible: document.getElementById('armorPassRow').style.display==='block',
+    injuryBlockVisible: document.getElementById('injuryBlock').style.display==='block',
+    injuryDie1: document.getElementById('injuryDie1').textContent,
+    injuryDie2: document.getElementById('injuryDie2').textContent,
+    injurySum: document.getElementById('injurySum').textContent,
+    koModalOpen: document.getElementById('koModal').classList.contains('show'),
+    koText: document.getElementById('koText').textContent,
+    koDieText: document.getElementById('koDie').textContent
   };
 }
 
@@ -113,6 +122,8 @@ function applyRemoteState(payload){
   pendingDodge = payload.pendingDodge;
   pendingGfi = payload.pendingGfi;
   armorForPlayer = payload.armorForPlayer;
+  koQueue = payload.koQueue || [];
+  pendingKo = payload.pendingKo;
   nextId = payload.nextId;
   document.getElementById('teamAName').value = payload.teamAName;
   document.getElementById('teamBName').value = payload.teamBName;
@@ -142,7 +153,16 @@ function applyRemoteState(payload){
   document.getElementById('armorDie1').textContent = payload.armorDie1 || '–';
   document.getElementById('armorDie2').textContent = payload.armorDie2 || '–';
   document.getElementById('armorSum').textContent = payload.armorSum || 'Suma: –';
+  document.getElementById('armorPassRow').style.display = payload.armorPassRowVisible ? 'block' : 'none';
+  document.getElementById('injuryBlock').style.display = payload.injuryBlockVisible ? 'block' : 'none';
+  document.getElementById('injuryDie1').textContent = payload.injuryDie1 || '–';
+  document.getElementById('injuryDie2').textContent = payload.injuryDie2 || '–';
+  document.getElementById('injurySum').textContent = payload.injurySum || 'Suma: –';
   document.getElementById('armorModal').classList.toggle('show', !!payload.armorModalOpen);
+
+  document.getElementById('koText').textContent = payload.koText || '';
+  document.getElementById('koDie').textContent = payload.koDieText || '–';
+  document.getElementById('koModal').classList.toggle('show', !!payload.koModalOpen);
 
   renderRosters(); renderPitch(); renderScoreboard();
   if(payload.statusMsg) updateStatus(payload.statusMsg);
@@ -162,7 +182,8 @@ function anyModalOpen(){
   return document.getElementById('tdModal').classList.contains('show') ||
          document.getElementById('dodgeModal').classList.contains('show') ||
          document.getElementById('gfiModal').classList.contains('show') ||
-         document.getElementById('armorModal').classList.contains('show');
+         document.getElementById('armorModal').classList.contains('show') ||
+         document.getElementById('koModal').classList.contains('show');
 }
 
 // ---------- Roster management ----------
@@ -171,14 +192,14 @@ function openAddPlayer(team){
   if(num === null) return;
   const name = prompt('Nombre (opcional):') || ('Jugador ' + num);
   const ma = parseFloat(prompt('Movimiento (MA):', '6')) || 6;
-  players.push({ id: nextId++, team, num, name, ma, remainingMove: ma, gfiUsed:0, downed:false, row:null, col:null, activated:false, onPitch:false });
+  players.push({ id: nextId++, team, num, name, ma, remainingMove: ma, gfiUsed:0, condition:'standing', row:null, col:null, activated:false, onPitch:false });
   renderRosters();
   broadcastState();
 }
 
 function quickFill(team){
   for(let i=1;i<=7;i++){
-    players.push({ id: nextId++, team, num:i, name:'Jugador '+i, ma:6, remainingMove:6, gfiUsed:0, downed:false, row:null, col:null, activated:false, onPitch:false });
+    players.push({ id: nextId++, team, num:i, name:'Jugador '+i, ma:6, remainingMove:6, gfiUsed:0, condition:'standing', row:null, col:null, activated:false, onPitch:false });
   }
   renderRosters();
   broadcastState();
@@ -202,7 +223,7 @@ function importTeamFile(team, inputEl){
         id: nextId++, team,
         num: pd.num ?? '?',
         name: pd.name || ('Jugador ' + (pd.num ?? '')),
-        ma, remainingMove: ma, gfiUsed:0, downed:false,
+        ma, remainingMove: ma, gfiUsed:0, condition:'standing',
         st: pd.st, ag: pd.ag, pa: pd.pa, av: pd.av,
         position: pd.position || null,
         skills: pd.skills || [],
@@ -239,18 +260,19 @@ function renderRosters(){
   ['A','B'].forEach(team=>{
     const el = document.getElementById('roster'+team);
     el.innerHTML='';
-    players.filter(p=>p.team===team).forEach(p=>{
+    players.filter(p=>p.team===team && p.condition!=='ko' && p.condition!=='injured').forEach(p=>{
       const div = document.createElement('div');
       div.className = 'roster-item' + (p.onPitch ? ' on-pitch' : '') + (placing===p.id ? ' picking':'');
       const posText = p.position || 'Sin posición';
-      const downedTag = p.downed ? `<span class="downed-tag">TUMBADO</span>` : '';
+      const condTag = p.condition==='tumbado' ? `<span class="downed-tag">TUMBADO</span>`
+                     : p.condition==='aturdido' ? `<span class="downed-tag">ATURDIDO</span>` : '';
       const skillsText = (p.skills && p.skills.length) ? p.skills.join(', ') : 'Sin habilidades';
       div.innerHTML = `
         <div class="ri-row1">
           <span class="num" style="background:${teamColorHex[team]}">${p.num}</span>
           <span class="pname">${p.name}</span>
           <span class="pos">${posText}</span>
-          ${downedTag}
+          ${condTag}
           <button class="rm-btn" title="Eliminar" onclick="removePlayer(${p.id}, event)">✕</button>
         </div>
         <div class="ri-row2 mono">MA ${p.ma ?? '-'} · ST ${p.st ?? '-'} · AG ${p.ag ?? '-'} · PA ${p.pa ?? '-'} · AV ${p.av ?? '-'}</div>
@@ -262,6 +284,19 @@ function renderRosters(){
       };
       el.appendChild(div);
     });
+  });
+  renderReserveZone();
+}
+
+function renderReserveZone(){
+  ['A','B'].forEach(team=>{
+    const koEl = document.getElementById('koList'+team);
+    const injEl = document.getElementById('injuredList'+team);
+    if(!koEl || !injEl) return;
+    const kos = players.filter(p=>p.team===team && p.condition==='ko');
+    const injs = players.filter(p=>p.team===team && p.condition==='injured');
+    koEl.innerHTML = kos.length ? kos.map(p=>`<span class="reserve-tag">#${p.num} ${p.name}</span>`).join('') : '<span class="small-note">Ninguno</span>';
+    injEl.innerHTML = injs.length ? injs.map(p=>`<span class="reserve-tag">#${p.num} ${p.name}</span>`).join('') : '<span class="small-note">Ninguno</span>';
   });
 }
 
@@ -279,7 +314,7 @@ function sendToBench(){
   if(!selected) return;
   const p = players.find(x=>x.id===selected);
   if(!p) return;
-  p.onPitch=false; p.row=null; p.col=null; p.downed=false;
+  p.onPitch=false; p.row=null; p.col=null; p.condition='standing';
   if(ball.carrierId===p.id){ ball.carrierId=null; }
   selected=null;
   renderRosters(); renderPitch(); renderSelInfo();
@@ -289,11 +324,35 @@ function sendToBench(){
 function standUp(){
   if(selected===null) return;
   const p = players.find(x=>x.id===selected);
-  if(!p) return;
-  p.downed = false;
+  if(!p || p.condition!=='tumbado') return;
+  p.condition = 'standing';
   renderPitch(); renderRosters(); renderSelInfo();
   log('🧍 ' + p.name + ' se levanta.');
   broadcastState();
+}
+
+function flipAturdido(){
+  if(selected===null) return;
+  const p = players.find(x=>x.id===selected);
+  if(!p || p.condition!=='aturdido') return;
+  if(phase!=='live' || p.team!==state.active){
+    alert('Solo puede darse la vuelta en el turno de su propio equipo.');
+    return;
+  }
+  p.condition = 'tumbado';
+  p.activated = true;
+  selected = null;
+  renderRosters(); renderPitch(); renderSelInfo();
+  log('🔄 ' + p.name + ' se da la vuelta (Aturdido → Tumbado).');
+  broadcastState();
+}
+
+function handleRecoveryButton(){
+  if(selected===null) return;
+  const p = players.find(x=>x.id===selected);
+  if(!p) return;
+  if(p.condition==='tumbado'){ standUp(); }
+  else if(p.condition==='aturdido'){ flipAturdido(); }
 }
 
 // ---------- Setup / placement (pre-turn) ----------
@@ -365,21 +424,21 @@ function occupiedBy(r,c){
 }
 
 function moveMode(p){
-  if(p.downed) return null;
+  if(p.condition!=='standing') return null;
   if((p.remainingMove ?? p.ma) >= 1) return 'normal';
   if((p.gfiUsed ?? 0) < 3) return 'gfi';
   return null;
 }
 
 function inAdjacentReach(p,r,c){
-  if(p.row===null || p.downed) return false;
+  if(p.row===null || p.condition!=='standing') return false;
   const dist = Math.max(Math.abs(p.row-r), Math.abs(p.col-c));
   if(dist!==1 || p.team!==state.active || p.activated) return false;
   return moveMode(p) !== null;
 }
 
 function isInOpponentTackleZone(r,c,team){
-  return players.some(p2 => p2.onPitch && p2.team!==team && !p2.downed &&
+  return players.some(p2 => p2.onPitch && p2.team!==team && p2.condition==='standing' &&
     Math.max(Math.abs(p2.row-r), Math.abs(p2.col-c))===1);
 }
 
@@ -413,12 +472,19 @@ function renderPitch(){
       const occ = posMap[r+'_'+c];
       if(occ){
         const t = document.createElement('div');
-        t.className = 'token' + (occ.id===selected?' selected':'') + (occ.activated?' activated':'') + (occ.downed?' downed':'');
+        const condClass = occ.condition==='tumbado' ? ' tumbado' : occ.condition==='aturdido' ? ' aturdido' : '';
+        t.className = 'token' + (occ.id===selected?' selected':'') + (occ.activated?' activated':'') + condClass;
         t.style.background = teamColorHex[occ.team];
         t.textContent = occ.num;
         t.title = occ.name + ' — MA ' + (occ.remainingMove ?? occ.ma) + '/' + occ.ma +
           ((occ.gfiUsed ?? 0) > 0 ? ' · A por ellos ' + occ.gfiUsed + '/3' : '') +
-          (occ.downed ? ' (TUMBADO)' : '');
+          (occ.condition==='tumbado' ? ' (TUMBADO)' : occ.condition==='aturdido' ? ' (ATURDIDO)' : '');
+        if(occ.condition==='tumbado' || occ.condition==='aturdido'){
+          const mark = document.createElement('div');
+          mark.className = 'token-mark';
+          mark.textContent = occ.condition==='tumbado' ? 'T' : 'A';
+          t.appendChild(mark);
+        }
         if(ball.carrierId===occ.id){
           const dot = document.createElement('div');
           dot.className='carrier-dot';
@@ -522,7 +588,7 @@ function tokenClicked(id){
     updateStatus('No es el turno de ' + teamName(p.team) + '.');
     return;
   }
-  if(p.activated && !p.downed){
+  if(p.activated && p.condition!=='tumbado' && p.condition!=='aturdido'){
     updateStatus(p.name + ' ya se ha activado este turno.');
     return;
   }
@@ -537,10 +603,37 @@ function selectPlayerLive(id){
 
 function renderSelInfo(){
   const el = document.getElementById('selInfo');
-  if(selected===null){ el.textContent='Ninguno'; return; }
+  const btn = document.getElementById('recoveryBtn');
+  if(selected===null){
+    el.innerHTML = 'Ninguno';
+    btn.style.display = 'none';
+    return;
+  }
   const p = players.find(x=>x.id===selected);
-  if(!p){ el.textContent='Ninguno'; return; }
-  el.innerHTML = `${p.name} · #${p.num} · Equipo ${teamName(p.team)} · MA restante ${p.remainingMove ?? p.ma}/${p.ma}${(p.gfiUsed??0)>0?' · A por ellos '+p.gfiUsed+'/3':''}${p.downed?' · <span style="color:var(--bad)">TUMBADO</span>':''}${ball.carrierId===p.id?' · 🏈 lleva el balón':''}`;
+  if(!p){
+    el.innerHTML = 'Ninguno';
+    btn.style.display = 'none';
+    return;
+  }
+  const condLabel = p.condition==='tumbado' ? ' · <span style="color:var(--bad)">TUMBADO</span>'
+                   : p.condition==='aturdido' ? ' · <span style="color:var(--bad)">ATURDIDO</span>' : '';
+  const skillsText = (p.skills && p.skills.length) ? p.skills.join(', ') : 'Sin habilidades';
+  el.innerHTML = `
+    <div style="font-weight:700; font-size:14px; margin-bottom:4px;">${p.name} <span style="color:#a99b7f; font-weight:400;">#${p.num} · ${teamName(p.team)}</span></div>
+    <div style="color:#a99b7f; font-size:11.5px; margin-bottom:4px;">${p.position || 'Sin posición'}</div>
+    <div class="mono" style="margin-bottom:4px;">MA ${p.ma} (restante ${p.remainingMove ?? p.ma}) · ST ${p.st ?? '-'} · AG ${p.ag ?? '-'} · PA ${p.pa ?? '-'} · AV ${p.av ?? '-'}</div>
+    <div style="font-size:11.5px; font-style:italic; color:#8a7d64; margin-bottom:4px;">${skillsText}</div>
+    <div>${(p.gfiUsed??0)>0?'A por ellos '+p.gfiUsed+'/3':''}${condLabel}${ball.carrierId===p.id?' · 🏈 lleva el balón':''}</div>`;
+
+  if(p.condition==='aturdido'){
+    btn.textContent = '🔄 Dar la vuelta (Aturdido → Tumbado)';
+    btn.style.display = 'block';
+  } else if(p.condition==='tumbado'){
+    btn.textContent = '🧍 Levantar (marcar de pie)';
+    btn.style.display = 'block';
+  } else {
+    btn.style.display = 'none';
+  }
 }
 
 function assignBall(){
@@ -593,7 +686,7 @@ function resolveDodge(success){
     completeStep(p, toR, toC, fromGfi ? 'none' : 'normal');
   } else {
     p.row = toR; p.col = toC;
-    p.downed = true;
+    p.condition = 'tumbado';
     p.activated = true;
     selected = null;
     renderRosters(); renderPitch(); renderSelInfo();
@@ -640,7 +733,7 @@ function resolveGfi(success){
   } else {
     p.gfiUsed = (p.gfiUsed ?? 0) + 1;
     p.row = toR; p.col = toC;
-    p.downed = true;
+    p.condition = 'tumbado';
     p.activated = true;
     selected = null;
     renderRosters(); renderPitch(); renderSelInfo();
@@ -656,6 +749,11 @@ function openArmorModal(p){
   document.getElementById('armorDie1').textContent='–';
   document.getElementById('armorDie2').textContent='–';
   document.getElementById('armorSum').textContent='Suma: –';
+  document.getElementById('armorPassRow').style.display='none';
+  document.getElementById('injuryBlock').style.display='none';
+  document.getElementById('injuryDie1').textContent='–';
+  document.getElementById('injuryDie2').textContent='–';
+  document.getElementById('injurySum').textContent='Suma: –';
   document.getElementById('armorModal').classList.add('show');
   broadcastState();
 }
@@ -665,8 +763,57 @@ function rollArmor(){
   document.getElementById('armorDie1').textContent=d1;
   document.getElementById('armorDie2').textContent=d2;
   document.getElementById('armorSum').textContent='Suma: '+(d1+d2);
+  document.getElementById('armorPassRow').style.display='block';
   const p = players.find(x=>x.id===armorForPlayer);
   log('🎲 Armadura (' + (p?p.name:'?') + '): ' + d1 + ' + ' + d2 + ' = ' + (d1+d2));
+  broadcastState();
+}
+
+function armorResult(broken){
+  const p = players.find(x=>x.id===armorForPlayer);
+  if(broken){
+    document.getElementById('armorPassRow').style.display='none';
+    document.getElementById('injuryBlock').style.display='block';
+    log('🛡️ Armadura ROTA' + (p?(' — '+p.name):'') + '. Tirad heridas.');
+  } else {
+    if(p){ p.condition='tumbado'; }
+    log('🛡️ Armadura aguanta' + (p?(' — '+p.name+' sigue tumbado.'):'.'));
+    renderRosters(); renderPitch(); renderSelInfo();
+    closeArmorModal();
+  }
+  broadcastState();
+}
+
+function rollInjury(){
+  const d1=Math.floor(Math.random()*6)+1, d2=Math.floor(Math.random()*6)+1;
+  document.getElementById('injuryDie1').textContent=d1;
+  document.getElementById('injuryDie2').textContent=d2;
+  document.getElementById('injurySum').textContent='Suma: '+(d1+d2);
+  const p = players.find(x=>x.id===armorForPlayer);
+  log('🎲 Heridas (' + (p?p.name:'?') + '): ' + d1 + ' + ' + d2 + ' = ' + (d1+d2));
+  broadcastState();
+}
+
+function chooseInjury(kind){
+  const p = players.find(x=>x.id===armorForPlayer);
+  if(p){
+    if(kind==='aturdido'){
+      p.condition='aturdido';
+      log('🤕 ' + p.name + ' queda ATURDIDO.');
+    } else if(kind==='ko'){
+      p.condition='ko';
+      p.onPitch=false; p.row=null; p.col=null;
+      if(ball.carrierId===p.id) ball.carrierId=null;
+      log('😵 ' + p.name + ' queda INCONSCIENTE y sale del campo.');
+    } else if(kind==='injured'){
+      p.condition='injured';
+      p.onPitch=false; p.row=null; p.col=null;
+      if(ball.carrierId===p.id) ball.carrierId=null;
+      log('🚑 ' + p.name + ' queda HERIDO — no puede seguir jugando este partido.');
+    }
+  }
+  renderRosters(); renderPitch(); renderSelInfo();
+  closeArmorModal();
   broadcastState();
 }
 
@@ -674,6 +821,51 @@ function closeArmorModal(){
   document.getElementById('armorModal').classList.remove('show');
   armorForPlayer = null;
   broadcastState();
+}
+
+// ---------- KO recovery, at the start of each new drive ----------
+let koQueue = [];
+let pendingKo = null;
+
+function startKoRecoveryFlow(){
+  koQueue = players.filter(p=>p.condition==='ko').map(p=>p.id);
+  processNextKo();
+}
+
+function processNextKo(){
+  if(koQueue.length===0){ pendingKo=null; broadcastState(); return; }
+  const id = koQueue.shift();
+  const p = players.find(x=>x.id===id);
+  if(!p || p.condition!=='ko'){ processNextKo(); return; }
+  pendingKo = id;
+  document.getElementById('koText').textContent = `Recuperación de ${p.name} (${teamName(p.team)}). Tirad D6 y decidid.`;
+  document.getElementById('koDie').textContent = '–';
+  document.getElementById('koModal').classList.add('show');
+  broadcastState();
+}
+
+function rollKoDie(){
+  const r = Math.floor(Math.random()*6)+1;
+  document.getElementById('koDie').textContent = r;
+  log('🎲 Recuperación: tirada ' + r);
+  broadcastState();
+}
+
+function resolveKo(recovered){
+  const p = players.find(x=>x.id===pendingKo);
+  document.getElementById('koModal').classList.remove('show');
+  if(p){
+    if(recovered){
+      p.condition='standing';
+      log('✅ ' + p.name + ' se recupera y vuelve a estar disponible.');
+    } else {
+      log('😵 ' + p.name + ' sigue inconsciente.');
+    }
+  }
+  pendingKo = null;
+  renderRosters();
+  broadcastState();
+  processNextKo();
 }
 
 // ---------- Turns ----------
@@ -692,7 +884,11 @@ function beginTurn(team){
 }
 
 function resetBoardForNewDrive(){
-  players.forEach(p=>{ p.onPitch=false; p.row=null; p.col=null; p.activated=false; p.downed=false; p.remainingMove=p.ma; p.gfiUsed=0; });
+  players.forEach(p=>{
+    p.onPitch=false; p.row=null; p.col=null; p.activated=false;
+    if(p.condition==='tumbado' || p.condition==='aturdido'){ p.condition='standing'; }
+    p.remainingMove=p.ma; p.gfiUsed=0;
+  });
   ball = { carrierId: null };
   selected=null; placing=null;
 }
@@ -715,6 +911,7 @@ function confirmTD(){
     updateStatus('¡Mitad terminada tras el ensayo! Pulsad "Empezar Mitad 2".');
   } else {
     updateStatus('Nuevo drive: fase de colocación.');
+    startKoRecoveryFlow();
   }
   renderScoreboard(); renderRosters(); renderPitch();
   pendingTD = null;
@@ -754,6 +951,7 @@ function addNewHalfButton(){
     renderScoreboard();
     updateStatus('¡Comienza la Mitad 2! Colocad y pulsad "Iniciar Drive".');
     broadcastState();
+    startKoRecoveryFlow();
   };
   document.getElementById('setupPanel').appendChild(btn);
 }

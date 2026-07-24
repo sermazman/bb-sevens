@@ -232,11 +232,12 @@ function renderRosters(){
     players.filter(p=>p.team===team).forEach(p=>{
       const div = document.createElement('div');
       div.className = 'roster-item' + (p.onPitch ? ' on-pitch' : '') + (placing===p.id ? ' picking':'');
-      const posTag = p.position ? `<span style="color:#8a7d64; font-size:10.5px;">${p.position}</span>` : '';
-      const downedTag = p.downed ? `<span style="color:var(--bad); font-size:10.5px;">CAÍDO</span>` : '';
+      const posTag = p.position ? `<span class="pos">${p.position}</span>` : '<span class="pos"></span>';
+      const downedTag = p.downed ? `<span class="downed-tag">CAÍDO</span>` : '';
+      const hasStats = [p.st,p.ag,p.pa,p.av].some(v=>v!==undefined && v!==null);
+      const statsTag = hasStats ? `<span class="stats mono">ST${p.st??'-'} AG${p.ag??'-'} PA${p.pa??'-'} AV${p.av??'-'}</span>` : '';
       div.innerHTML = `<span class="num" style="background:${teamColorHex[team]}">${p.num}</span>
-        <span>${p.name}</span>${posTag}${downedTag}
-        <span class="mono" style="color:#a99b7f; font-size:11px;">MA${p.onPitch?(p.remainingMove??p.ma):p.ma}/${p.ma}</span>
+        <span class="pname">${p.name}</span>${posTag}${downedTag}${statsTag}
         <button class="rm-btn" title="Eliminar" onclick="removePlayer(${p.id}, event)">✕</button>`;
       div.onclick = (e)=>{
         if(e.target.classList.contains('rm-btn')) return;
@@ -387,7 +388,7 @@ function renderPitch(){
         t.className = 'token' + (occ.id===selected?' selected':'') + (occ.activated?' activated':'') + (occ.downed?' downed':'');
         t.style.background = teamColorHex[occ.team];
         t.textContent = occ.num;
-        t.title = occ.name + ' (MA ' + occ.ma + ')' + (occ.downed?' — CAÍDO':'');
+        t.title = occ.name + ' — MA ' + (occ.remainingMove ?? occ.ma) + '/' + occ.ma + (occ.downed ? ' (CAÍDO)' : '');
         if(ball.carrierId===occ.id){
           const dot = document.createElement('div');
           dot.className='carrier-dot';

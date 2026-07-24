@@ -10,6 +10,7 @@ let placing = null;    // player id currently being placed/repositioned (SETUP p
 let phase = 'setup';   // 'setup' | 'live'
 let pendingTD = null;
 let pendingDodge = null; // { playerId, toR, toC }
+let pendingGfi = null;   // { playerId, toR, toC }
 let armorForPlayer = null; // player id currently being armor-rolled
 let state = { half: 1, active: 'A', turns: { A: 0, B: 0 } };
 
@@ -77,7 +78,7 @@ function setupConnHandlers(){
 
 function snapshotState(){
   return {
-    players, ball, phase, state, pendingTD, pendingDodge, armorForPlayer, nextId,
+    players, ball, phase, state, pendingTD, pendingDodge, pendingGfi, armorForPlayer, nextId,
     teamAName: document.getElementById('teamAName').value,
     teamBName: document.getElementById('teamBName').value,
     kickSelectValue: document.getElementById('kickSelect').value,
@@ -86,6 +87,9 @@ function snapshotState(){
     dodgeModalOpen: document.getElementById('dodgeModal').classList.contains('show'),
     dodgeText: document.getElementById('dodgeText').textContent,
     dodgeDieText: document.getElementById('dodgeDie').textContent,
+    gfiModalOpen: document.getElementById('gfiModal').classList.contains('show'),
+    gfiText: document.getElementById('gfiText').textContent,
+    gfiDieText: document.getElementById('gfiDie').textContent,
     armorModalOpen: document.getElementById('armorModal').classList.contains('show'),
     armorText: document.getElementById('armorText').textContent,
     armorDie1: document.getElementById('armorDie1').textContent,
@@ -107,6 +111,7 @@ function applyRemoteState(payload){
   state = payload.state;
   pendingTD = payload.pendingTD;
   pendingDodge = payload.pendingDodge;
+  pendingGfi = payload.pendingGfi;
   armorForPlayer = payload.armorForPlayer;
   nextId = payload.nextId;
   document.getElementById('teamAName').value = payload.teamAName;
@@ -128,6 +133,10 @@ function applyRemoteState(payload){
   document.getElementById('dodgeText').textContent = payload.dodgeText || '';
   document.getElementById('dodgeDie').textContent = payload.dodgeDieText || '–';
   document.getElementById('dodgeModal').classList.toggle('show', !!payload.dodgeModalOpen);
+
+  document.getElementById('gfiText').textContent = payload.gfiText || '';
+  document.getElementById('gfiDie').textContent = payload.gfiDieText || '–';
+  document.getElementById('gfiModal').classList.toggle('show', !!payload.gfiModalOpen);
 
   document.getElementById('armorText').textContent = payload.armorText || '';
   document.getElementById('armorDie1').textContent = payload.armorDie1 || '–';
@@ -152,6 +161,7 @@ function updateStatus(msg){ document.getElementById('statusLine').textContent = 
 function anyModalOpen(){
   return document.getElementById('tdModal').classList.contains('show') ||
          document.getElementById('dodgeModal').classList.contains('show') ||
+         document.getElementById('gfiModal').classList.contains('show') ||
          document.getElementById('armorModal').classList.contains('show');
 }
 
@@ -161,14 +171,14 @@ function openAddPlayer(team){
   if(num === null) return;
   const name = prompt('Nombre (opcional):') || ('Jugador ' + num);
   const ma = parseFloat(prompt('Movimiento (MA):', '6')) || 6;
-  players.push({ id: nextId++, team, num, name, ma, remainingMove: ma, downed:false, row:null, col:null, activated:false, onPitch:false });
+  players.push({ id: nextId++, team, num, name, ma, remainingMove: ma, gfiUsed:0, downed:false, row:null, col:null, activated:false, onPitch:false });
   renderRosters();
   broadcastState();
 }
 
 function quickFill(team){
   for(let i=1;i<=7;i++){
-    players.push({ id: nextId++, team, num:i, name:'Jugador '+i, ma:6, remainingMove:6, downed:false, row:null, col:null, activated:false, onPitch:false });
+    players.push({ id: nextId++, team, num:i, name:'Jugador '+i, ma:6, remainingMove:6, gfiUsed:0, downed:false, row:null, col:null, activated:false, onPitch:false });
   }
   renderRosters();
   broadcastState();
@@ -192,7 +202,7 @@ function importTeamFile(team, inputEl){
         id: nextId++, team,
         num: pd.num ?? '?',
         name: pd.name || ('Jugador ' + (pd.num ?? '')),
-        ma, remainingMove: ma, downed:false,
+        ma, remainingMove: ma, gfiUsed:0, downed:false,
         st: pd.st, ag: pd.ag, pa: pd.pa, av: pd.av,
         position: pd.position || null,
         skills: pd.skills || [],
@@ -233,7 +243,7 @@ function renderRosters(){
       const div = document.createElement('div');
       div.className = 'roster-item' + (p.onPitch ? ' on-pitch' : '') + (placing===p.id ? ' picking':'');
       const posText = p.position || 'Sin posición';
-      const downedTag = p.downed ? `<span class="downed-tag">CAÍDO</span>` : '';
+      const downedTag = p.downed ? `<span class="downed-tag">TUMBADO</span>` : '';
       const skillsText = (p.skills && p.skills.length) ? p.skills.join(', ') : 'Sin habilidades';
       div.innerHTML = `
         <div class="ri-row1">
@@ -354,10 +364,18 @@ function occupiedBy(r,c){
   return players.find(p=>p.onPitch && p.row===r && p.col===c);
 }
 
+function moveMode(p){
+  if(p.downed) return null;
+  if((p.remainingMove ?? p.ma) >= 1) return 'normal';
+  if((p.gfiUsed ?? 0) < 3) return 'gfi';
+  return null;
+}
+
 function inAdjacentReach(p,r,c){
   if(p.row===null || p.downed) return false;
   const dist = Math.max(Math.abs(p.row-r), Math.abs(p.col-c));
-  return dist===1 && p.team===state.active && !p.activated && (p.remainingMove ?? p.ma) >= 1;
+  if(dist!==1 || p.team!==state.active || p.activated) return false;
+  return moveMode(p) !== null;
 }
 
 function isInOpponentTackleZone(r,c,team){
@@ -377,14 +395,18 @@ function renderPitch(){
       cell.className = cellClass(r,c);
 
       let highlightable = false;
+      let highlightGfi = false;
       if(phase==='live' && selected!==null){
         const p = players.find(x=>x.id===selected);
-        if(p && inAdjacentReach(p,r,c) && !occupiedBy(r,c)) highlightable = true;
+        if(p && inAdjacentReach(p,r,c) && !occupiedBy(r,c)){
+          highlightable = true;
+          highlightGfi = moveMode(p) === 'gfi';
+        }
       } else if(phase==='setup' && placing!==null){
         const p = players.find(x=>x.id===placing);
         if(p && isLegalSetupCell(p.team,r,c)) highlightable = true;
       }
-      if(highlightable) cell.classList.add('reachable');
+      if(highlightable) cell.classList.add(highlightGfi ? 'reachable-gfi' : 'reachable');
 
       cell.onclick = ()=> cellClicked(r,c);
 
@@ -394,7 +416,9 @@ function renderPitch(){
         t.className = 'token' + (occ.id===selected?' selected':'') + (occ.activated?' activated':'') + (occ.downed?' downed':'');
         t.style.background = teamColorHex[occ.team];
         t.textContent = occ.num;
-        t.title = occ.name + ' — MA ' + (occ.remainingMove ?? occ.ma) + '/' + occ.ma + (occ.downed ? ' (CAÍDO)' : '');
+        t.title = occ.name + ' — MA ' + (occ.remainingMove ?? occ.ma) + '/' + occ.ma +
+          ((occ.gfiUsed ?? 0) > 0 ? ' · A por ellos ' + occ.gfiUsed + '/3' : '') +
+          (occ.downed ? ' (TUMBADO)' : '');
         if(ball.carrierId===occ.id){
           const dot = document.createElement('div');
           dot.className='carrier-dot';
@@ -451,10 +475,14 @@ function cellClicked(r,c){
     const p = players.find(x=>x.id===selected);
     if(p && inAdjacentReach(p,r,c) && !occupiedBy(r,c)){
       const fromR=p.row, fromC=p.col;
-      if(isInOpponentTackleZone(fromR,fromC,p.team)){
-        openDodgeModal(p, r, c);
+      const mode = moveMode(p);
+      const tackle = isInOpponentTackleZone(fromR,fromC,p.team);
+      if(mode==='gfi'){
+        openGfiModal(p, r, c, tackle);
+      } else if(tackle){
+        openDodgeModal(p, r, c, false);
       } else {
-        completeStep(p, r, c);
+        completeStep(p, r, c, 'normal');
       }
       return;
     }
@@ -462,11 +490,13 @@ function cellClicked(r,c){
   selected=null; renderPitch(); renderSelInfo();
 }
 
-function completeStep(p, r, c){
+function completeStep(p, r, c, consume){
   p.row=r; p.col=c;
-  p.remainingMove = (p.remainingMove ?? p.ma) - 1;
+  if(consume==='gfi'){ p.gfiUsed = (p.gfiUsed ?? 0) + 1; }
+  else if(consume==='normal'){ p.remainingMove = Math.max(0, (p.remainingMove ?? p.ma) - 1); }
+  // consume==='none' → already accounted for by a prior chained check
   if(ball.carrierId===p.id){ checkTouchdown(p); }
-  if(p.remainingMove<=0 || pendingTD){
+  if(moveMode(p)===null || pendingTD){
     p.activated = true;
     selected = null;
   }
@@ -510,7 +540,7 @@ function renderSelInfo(){
   if(selected===null){ el.textContent='Ninguno'; return; }
   const p = players.find(x=>x.id===selected);
   if(!p){ el.textContent='Ninguno'; return; }
-  el.innerHTML = `${p.name} · #${p.num} · Equipo ${teamName(p.team)} · MA restante ${p.remainingMove ?? p.ma}/${p.ma}${p.downed?' · <span style="color:var(--bad)">CAÍDO</span>':''}${ball.carrierId===p.id?' · 🏈 lleva el balón':''}`;
+  el.innerHTML = `${p.name} · #${p.num} · Equipo ${teamName(p.team)} · MA restante ${p.remainingMove ?? p.ma}/${p.ma}${(p.gfiUsed??0)>0?' · A por ellos '+p.gfiUsed+'/3':''}${p.downed?' · <span style="color:var(--bad)">TUMBADO</span>':''}${ball.carrierId===p.id?' · 🏈 lleva el balón':''}`;
 }
 
 function assignBall(){
@@ -534,9 +564,11 @@ function checkTouchdown(p){
 }
 
 // ---------- Dodge / Armor ----------
-function openDodgeModal(p, toR, toC){
-  pendingDodge = { playerId:p.id, toR, toC };
-  document.getElementById('dodgeText').textContent = `${p.name} sale de una zona de marcaje rival. Tirad D6 y aplicad vuestros modificadores de AG.`;
+function openDodgeModal(p, toR, toC, fromGfi){
+  pendingDodge = { playerId:p.id, toR, toC, fromGfi: !!fromGfi };
+  document.getElementById('dodgeText').textContent = fromGfi
+    ? `${p.name} ha superado "a por ellos" pero esa casilla también sale de una zona de marcaje rival. Tirad D6 de esquiva y aplicad el modificador de AG.`
+    : `${p.name} sale de una zona de marcaje rival. Tirad D6 y aplicad vuestros modificadores de AG.`;
   document.getElementById('dodgeDie').textContent = '–';
   document.getElementById('dodgeModal').classList.add('show');
   broadcastState();
@@ -551,20 +583,68 @@ function rollDodgeDie(){
 
 function resolveDodge(success){
   if(!pendingDodge) return;
-  const { playerId, toR, toC } = pendingDodge;
+  const { playerId, toR, toC, fromGfi } = pendingDodge;
   const p = players.find(x=>x.id===playerId);
   document.getElementById('dodgeModal').classList.remove('show');
   pendingDodge = null;
   if(!p){ broadcastState(); return; }
 
   if(success){
-    completeStep(p, toR, toC);
+    completeStep(p, toR, toC, fromGfi ? 'none' : 'normal');
   } else {
+    p.row = toR; p.col = toC;
     p.downed = true;
     p.activated = true;
     selected = null;
     renderRosters(); renderPitch(); renderSelInfo();
     log('💥 ' + p.name + ' falla la esquiva y cae al suelo.');
+    broadcastState();
+    openArmorModal(p);
+  }
+}
+
+function openGfiModal(p, toR, toC, chainDodge){
+  pendingGfi = { playerId:p.id, toR, toC, chainDodge: !!chainDodge };
+  const attempt = (p.gfiUsed ?? 0) + 1;
+  document.getElementById('gfiText').textContent = `${p.name} intenta "a por ellos" — casilla extra ${attempt}/3. Tirad D6.` +
+    (chainDodge ? ' Esa casilla también sale de una zona de marcaje: si supera esto, tocará esquivar justo después.' : '');
+  document.getElementById('gfiDie').textContent = '–';
+  document.getElementById('gfiModal').classList.add('show');
+  broadcastState();
+}
+
+function rollGfiDie(){
+  const r = Math.floor(Math.random()*6)+1;
+  document.getElementById('gfiDie').textContent = r;
+  log('🎲 A por ellos: tirada ' + r);
+  broadcastState();
+}
+
+function resolveGfi(success){
+  if(!pendingGfi) return;
+  const { playerId, toR, toC, chainDodge } = pendingGfi;
+  const p = players.find(x=>x.id===playerId);
+  document.getElementById('gfiModal').classList.remove('show');
+  pendingGfi = null;
+  if(!p){ broadcastState(); return; }
+
+  if(success){
+    if(chainDodge){
+      p.gfiUsed = (p.gfiUsed ?? 0) + 1;
+      renderRosters(); renderSelInfo();
+      broadcastState();
+      openDodgeModal(p, toR, toC, true);
+    } else {
+      completeStep(p, toR, toC, 'gfi');
+    }
+  } else {
+    p.gfiUsed = (p.gfiUsed ?? 0) + 1;
+    p.row = toR; p.col = toC;
+    p.downed = true;
+    p.activated = true;
+    selected = null;
+    renderRosters(); renderPitch(); renderSelInfo();
+    log('💥 ' + p.name + ' falla "a por ellos" y cae al suelo.');
     broadcastState();
     openArmorModal(p);
   }
@@ -605,14 +685,14 @@ function isHalfComplete(team){
 function beginTurn(team){
   state.turns[team]++;
   state.active = team;
-  players.filter(p=>p.team===team).forEach(p=>{ p.activated=false; p.remainingMove = p.ma; });
+  players.filter(p=>p.team===team).forEach(p=>{ p.activated=false; p.remainingMove = p.ma; p.gfiUsed = 0; });
   renderScoreboard(); renderRosters(); renderPitch();
   updateStatus('Turno de ' + teamName(team));
   broadcastState();
 }
 
 function resetBoardForNewDrive(){
-  players.forEach(p=>{ p.onPitch=false; p.row=null; p.col=null; p.activated=false; p.downed=false; p.remainingMove=p.ma; });
+  players.forEach(p=>{ p.onPitch=false; p.row=null; p.col=null; p.activated=false; p.downed=false; p.remainingMove=p.ma; p.gfiUsed=0; });
   ball = { carrierId: null };
   selected=null; placing=null;
 }
@@ -679,7 +759,7 @@ function addNewHalfButton(){
 }
 
 function resetActivations(){
-  players.filter(p=>p.team===state.active).forEach(p=>{ p.activated=false; p.remainingMove=p.ma; });
+  players.filter(p=>p.team===state.active).forEach(p=>{ p.activated=false; p.remainingMove=p.ma; p.gfiUsed=0; });
   renderRosters(); renderPitch();
   log('Activaciones reiniciadas manualmente (mismo turno).');
   broadcastState();

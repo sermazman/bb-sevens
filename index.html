@@ -89,9 +89,9 @@
       <span style="background:var(--turf-wide)"></span>Zona lateral
       <span style="background:var(--endzone-a)"></span>Zona anotación Rojo
       <span style="background:var(--endzone-b)"></span>Zona anotación Azul
-      &nbsp;&nbsp;·&nbsp;&nbsp; Casillas doradas = movimiento o colocación permitida
+      &nbsp;&nbsp;·&nbsp;&nbsp; Dorado = movimiento normal &nbsp;·&nbsp; Rojo = "a por ellos" (extra, con riesgo)
     </div>
-    <div class="small-note">Movimiento casilla a casilla. Click derecho para terminar la activación. Pasa el ratón sobre una ficha del campo para ver su MA restante. Al salir de una casilla marcada por un rival, salta la esquiva (1D6, aplicáis el modificador); si falla, cae y se tira armadura (2D6).</div>
+    <div class="small-note">Movimiento casilla a casilla. Al agotar el MA podéis seguir hasta 3 casillas más "a por ellos" (1D6 por casilla, os la jugáis). Click derecho para terminar la activación. Pasa el ratón sobre una ficha del campo para ver su MA restante. Al salir de una casilla marcada por un rival, salta la esquiva (1D6, aplicáis el modificador); si falla, cae y se tira armadura (2D6).</div>
 
     <div class="reserve-zone">
       <h2>🩹 Banquillo lesionado</h2>
@@ -191,6 +191,19 @@
     <div class="row" style="margin-top:12px;">
       <button onclick="resolveDodge(true)">✅ Superada</button>
       <button class="danger" onclick="resolveDodge(false)">❌ Fallada</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="gfiModal">
+  <div class="modal">
+    <h2>¡A POR ELLOS!</h2>
+    <p id="gfiText">Casilla extra de movimiento.</p>
+    <div class="die-face" id="gfiDie" style="margin:0 auto 14px auto;">–</div>
+    <button class="primary full" onclick="rollGfiDie()">Tirar D6</button>
+    <div class="row" style="margin-top:12px;">
+      <button onclick="resolveGfi(true)">✅ Sigue en pie</button>
+      <button class="danger" onclick="resolveGfi(false)">❌ Se cae</button>
     </div>
   </div>
 </div>

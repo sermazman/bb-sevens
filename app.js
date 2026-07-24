@@ -171,6 +171,12 @@ function applyRemoteState(payload){
 
 // ---------- Basic helpers ----------
 function teamName(t){ return t==='A' ? document.getElementById('teamAName').value : document.getElementById('teamBName').value; }
+function playerTooltipText(p, extra){
+  const skillsText = (p.skills && p.skills.length) ? p.skills.join(', ') : 'Sin habilidades';
+  let txt = `${p.name} #${p.num} — ${p.position || 'Sin posición'}\nMA ${p.ma} · ST ${p.st ?? '-'} · AG ${p.ag ?? '-'} · PA ${p.pa ?? '-'} · AV ${p.av ?? '-'}\n${skillsText}`;
+  if(extra) txt += '\n' + extra;
+  return txt;
+}
 function log(msg){
   const h = document.getElementById('hist');
   const d = document.createElement('div');
@@ -295,8 +301,9 @@ function renderReserveZone(){
     if(!koEl || !injEl) return;
     const kos = players.filter(p=>p.team===team && p.condition==='ko');
     const injs = players.filter(p=>p.team===team && p.condition==='injured');
-    koEl.innerHTML = kos.length ? kos.map(p=>`<span class="reserve-tag">#${p.num} ${p.name}</span>`).join('') : '<span class="small-note">Ninguno</span>';
-    injEl.innerHTML = injs.length ? injs.map(p=>`<span class="reserve-tag">#${p.num} ${p.name}</span>`).join('') : '<span class="small-note">Ninguno</span>';
+    const chip = (p, extra) => `<div class="token-chip" style="background:${teamColorHex[team]}" title="${playerTooltipText(p, extra).replace(/"/g,'&quot;')}">${p.num}</div>`;
+    koEl.innerHTML = kos.length ? kos.map(p=>chip(p,'INCONSCIENTE')).join('') : '<span class="small-note">Ninguno</span>';
+    injEl.innerHTML = injs.length ? injs.map(p=>chip(p,'HERIDO')).join('') : '<span class="small-note">Ninguno</span>';
   });
 }
 
@@ -358,7 +365,7 @@ function handleRecoveryButton(){
 // ---------- Setup / placement (pre-turn) ----------
 function placeOnPitch(id){
   if(phase!=='setup'){
-    alert('Solo se puede colocar/mover jugadores desde el banquillo durante la Fase de colocación (antes del drive, o justo después de un ensayo).');
+    alert('Solo se puede colocar/mover jugadores desde el banquillo durante la Fase de colocación (antes de la entrada, o justo después de un touchdown).');
     return;
   }
   placing = id;
@@ -476,9 +483,10 @@ function renderPitch(){
         t.className = 'token' + (occ.id===selected?' selected':'') + (occ.activated?' activated':'') + condClass;
         t.style.background = teamColorHex[occ.team];
         t.textContent = occ.num;
-        t.title = occ.name + ' — MA ' + (occ.remainingMove ?? occ.ma) + '/' + occ.ma +
+        const pitchExtra = 'MA restante ' + (occ.remainingMove ?? occ.ma) + '/' + occ.ma +
           ((occ.gfiUsed ?? 0) > 0 ? ' · A por ellos ' + occ.gfiUsed + '/3' : '') +
-          (occ.condition==='tumbado' ? ' (TUMBADO)' : occ.condition==='aturdido' ? ' (ATURDIDO)' : '');
+          (occ.condition==='tumbado' ? ' · TUMBADO' : occ.condition==='aturdido' ? ' · ATURDIDO' : '');
+        t.title = playerTooltipText(occ, pitchExtra);
         if(occ.condition==='tumbado' || occ.condition==='aturdido'){
           const mark = document.createElement('div');
           mark.className = 'token-mark';
@@ -531,7 +539,7 @@ function cellClicked(r,c){
     p.onPitch=true; p.row=r; p.col=c;
     placing=null;
     renderRosters(); renderPitch();
-    updateStatus('Jugador colocado. Seguid colocando o pulsad "Iniciar Drive".');
+    updateStatus('Jugador colocado. Seguid colocando o pulsad "Iniciar Entrada".');
     broadcastState();
     return;
   }
@@ -898,7 +906,7 @@ function confirmTD(){
   const scoringTeam = pendingTD.team;
   const scoreEl = document.getElementById(scoringTeam==='A' ? 'scoreA':'scoreB');
   scoreEl.textContent = parseInt(scoreEl.textContent) + 1;
-  log('🏆 ¡ENSAYO! ' + teamName(scoringTeam) + ' — ' + pendingTD.name);
+  log('🏆 ¡TOUCHDOWN! ' + teamName(scoringTeam) + ' — ' + pendingTD.name);
 
   const halfOver = isHalfComplete(scoringTeam);
   resetBoardForNewDrive();
@@ -908,9 +916,9 @@ function confirmTD(){
 
   if(halfOver){
     addNewHalfButton();
-    updateStatus('¡Mitad terminada tras el ensayo! Pulsad "Empezar Mitad 2".');
+    updateStatus('¡Mitad terminada tras el touchdown! Pulsad "Empezar Mitad 2".');
   } else {
-    updateStatus('Nuevo drive: fase de colocación.');
+    updateStatus('Nueva entrada: fase de colocación.');
     startKoRecoveryFlow();
   }
   renderScoreboard(); renderRosters(); renderPitch();
@@ -920,7 +928,7 @@ function confirmTD(){
 
 function endTurn(){
   if(phase!=='live'){
-    alert('Terminad de colocar y pulsad "Iniciar Drive" primero.');
+    alert('Terminad de colocar y pulsad "Iniciar Entrada" primero.');
     return;
   }
   const finishing = state.active;
@@ -949,7 +957,7 @@ function addNewHalfButton(){
     players.forEach(p=>{ p.activated=false; });
     btn.remove();
     renderScoreboard();
-    updateStatus('¡Comienza la Mitad 2! Colocad y pulsad "Iniciar Drive".');
+    updateStatus('¡Comienza la Mitad 2! Colocad y pulsad "Iniciar Entrada".');
     broadcastState();
     startKoRecoveryFlow();
   };
@@ -1000,11 +1008,22 @@ function rollBlock(n){
   log('🎲 Bloqueo x'+n+': ' + results.join(' / '));
 }
 
-function rollD6(){
-  const r = Math.floor(Math.random()*6)+1;
+function rollGeneric(sides, count){
   const label = document.getElementById('d6label').value.trim();
-  document.getElementById('d6out').innerHTML = `<div class="die-face">${r}</div><div style="font-size:12px; color:#a99b7f;">${label?label+' — resultado':'Resultado'}: <b style="color:var(--paper)">${r}</b></div>`;
-  log('🎲 D6' + (label?(' ('+label+')'):'') + ': ' + r);
+  const results = [];
+  for(let i=0;i<count;i++){ results.push(Math.floor(Math.random()*sides)+1); }
+  const el = document.getElementById('genericResult');
+  el.innerHTML='';
+  results.forEach(r=>{
+    const d = document.createElement('div');
+    d.className='block-face';
+    d.style.minWidth='42px';
+    d.style.fontSize='16px';
+    d.textContent = r;
+    el.appendChild(d);
+  });
+  const sumText = count>1 ? ' (suma ' + results.reduce((a,b)=>a+b,0) + ')' : '';
+  log('🎲 ' + count + 'd' + sides + (label?(' ('+label+')'):'') + ': ' + results.join(', ') + sumText);
 }
 
 function rollPass(){

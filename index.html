@@ -39,14 +39,14 @@
   <div>
     <div class="panel setup" id="setupPanel">
       <h2>🏈 Fase de colocación</h2>
-      <label>Equipo que patea (inicia el drive)</label>
+      <label>Equipo que patea (inicia la entrada)</label>
       <select id="kickSelect" onchange="onKickChange()">
         <option value="A">Rojo</option>
         <option value="B">Azul</option>
       </select>
       <div class="small-note" id="setupHint">Recibe: Azul</div>
       <div class="small-note">Click en un jugador del banquillo (o en una ficha ya colocada, para reposicionarla) y luego en una casilla resaltada dentro de vuestra mitad.</div>
-      <button class="full primary" onclick="startDrive()" style="margin-top:10px;">▶ Iniciar Drive</button>
+      <button class="full primary" onclick="startDrive()" style="margin-top:10px;">▶ Iniciar Entrada</button>
     </div>
 
     <div class="panel">
@@ -157,14 +157,15 @@
     </div>
 
     <div class="panel">
-      <h2>D6 genérico</h2>
+      <h2>Dados genéricos</h2>
       <label>Etiqueta (opcional)</label>
       <input type="text" id="d6label" placeholder="ej. Esquivar, Recoger, Armadura...">
-      <button class="full primary" onclick="rollD6()">Tirar D6</button>
-      <div class="die-result" id="d6out">
-        <div class="die-face">–</div>
-        <div style="font-size:12px; color:#a99b7f;">Sin tiradas aún</div>
+      <div class="row">
+        <button onclick="rollGeneric(6,1)">Tirar 1d6</button>
+        <button onclick="rollGeneric(6,2)">Tirar 2d6</button>
+        <button onclick="rollGeneric(8,1)">Tirar 1d8</button>
       </div>
+      <div class="block-face-list" id="genericResult"></div>
     </div>
 
     <div class="panel">
@@ -188,9 +189,9 @@
 
 <div class="modal-back" id="tdModal">
   <div class="modal">
-    <h2>¡ENSAYO!</h2>
+    <h2>¡TOUCHDOWN!</h2>
     <p id="tdText">Equipo anota.</p>
-    <button class="primary" onclick="confirmTD()">Reiniciar para el próximo drive</button>
+    <button class="primary" onclick="confirmTD()">Reiniciar para la próxima entrada</button>
   </div>
 </div>
 

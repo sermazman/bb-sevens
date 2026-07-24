@@ -77,6 +77,7 @@
       <h2>Jugador seleccionado</h2>
       <div id="selInfo" class="mono" style="font-size:13px; color:#cfc3a8;">Ninguno</div>
       <button class="full" style="margin-top:10px;" onclick="assignBall()">🏈 Asignar balón a este jugador</button>
+      <button class="full" onclick="standUp()">🧍 Levantar (marcar de pie)</button>
       <button class="full danger" onclick="sendToBench()">Sacar del campo (al banquillo)</button>
     </div>
   </div>
@@ -116,7 +117,7 @@
     </div>
 
     <div class="pitch-wrap">
-      <div class="pitch" id="pitch"></div>
+      <div class="pitch" id="pitch" oncontextmenu="return handlePitchRightClick(event)"></div>
     </div>
 
     <div class="legend">
@@ -126,7 +127,7 @@
       <span style="background:var(--endzone-b)"></span>Zona anotación Azul
       &nbsp;&nbsp;·&nbsp;&nbsp; Casillas doradas = movimiento o colocación permitida
     </div>
-    <div class="small-note">Movimiento por distancia (MA), sin comprobar bloqueos/asistencias avanzadas — vosotros gestionáis habilidades, esquivas y GFI.</div>
+    <div class="small-note">Movimiento casilla a casilla hasta agotar el MA. Click derecho en el tablero para terminar la activación antes de tiempo. Al salir de una casilla marcada por un rival en pie, salta la comprobación de esquiva (1D6, aplicáis vosotros el modificador); si falla, cae y se tira armadura (2D6).</div>
   </div>
 
   <div>
@@ -176,6 +177,33 @@
     <h2>¡ENSAYO!</h2>
     <p id="tdText">Equipo anota.</p>
     <button class="primary" onclick="confirmTD()">Reiniciar para el próximo drive</button>
+  </div>
+</div>
+
+<div class="modal-back" id="dodgeModal">
+  <div class="modal">
+    <h2>¡ESQUIVA!</h2>
+    <p id="dodgeText">Sale de una zona de marcaje.</p>
+    <div class="die-face" id="dodgeDie" style="margin:0 auto 14px auto;">–</div>
+    <button class="primary full" onclick="rollDodgeDie()">Tirar D6</button>
+    <div class="row" style="margin-top:12px;">
+      <button onclick="resolveDodge(true)">✅ Superada</button>
+      <button class="danger" onclick="resolveDodge(false)">❌ Fallada</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="armorModal">
+  <div class="modal">
+    <h2>ARMADURA</h2>
+    <p id="armorText">Tirada de armadura.</p>
+    <div class="row" style="justify-content:center; gap:10px;">
+      <div class="die-face" id="armorDie1">–</div>
+      <div class="die-face" id="armorDie2">–</div>
+    </div>
+    <div class="mono" id="armorSum" style="margin:10px 0; font-size:18px; color:var(--gold);">Suma: –</div>
+    <button class="primary full" onclick="rollArmor()">Tirar 2D6</button>
+    <button class="full" style="margin-top:8px;" onclick="closeArmorModal()">Cerrar</button>
   </div>
 </div>
 

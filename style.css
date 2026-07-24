@@ -46,23 +46,33 @@ header.top .sub{font-size:12px; letter-spacing:2px; text-transform:uppercase; co
 .header-right{font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#a99b7f; white-space:nowrap;}
 
 .conn-header{
-  background:linear-gradient(180deg, var(--panel-2), var(--panel));
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:transparent;
   border:1px solid #4a7a9c;
-  border-radius:6px;
-  padding:8px 12px;
-  min-width:280px;
+  border-radius:22px;
+  padding:7px 14px;
+  font-size:11px;
+  white-space:nowrap;
   flex:1;
-  max-width:420px;
+  max-width:460px;
+  overflow-x:auto;
 }
-.conn-header h2{font-size:12px; margin-bottom:4px;}
-.conn-header .small-note{margin:0 0 6px 0;}
-.conn-header .row{align-items:center;}
-.conn-header button{padding:7px 8px; font-size:11px;}
-.conn-header input{margin-bottom:0; padding:7px 8px; font-size:12px;}
+.conn-header .cstat{
+  color:#a99b7f;
+  max-width:190px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.conn-header #connControls{display:flex; align-items:center; gap:6px;}
+.conn-header button{padding:5px 9px; font-size:10.5px; margin:0;}
+.conn-header input{width:64px; margin:0; padding:5px 7px; font-size:11px;}
 .room-code-inline{
-  font-family:'JetBrains Mono'; font-weight:800; font-size:18px; letter-spacing:3px;
+  font-family:'JetBrains Mono'; font-weight:800; font-size:15px; letter-spacing:2px;
   background:#100e0c; border:1px dashed var(--gold); border-radius:5px;
-  padding:5px 8px; text-align:center; color:var(--gold); display:inline-block;
+  padding:3px 8px; color:var(--gold);
 }
 
 /* ---- Layout ---- */
@@ -70,7 +80,7 @@ header.top .sub{font-size:12px; letter-spacing:2px; text-transform:uppercase; co
   max-width:1400px;
   margin:0 auto;
   display:grid;
-  grid-template-columns: 250px 1fr 280px;
+  grid-template-columns: 250px minmax(0,1fr) 280px;
   gap:16px;
 }
 @media (max-width: 1100px){
@@ -233,64 +243,60 @@ button.full{width:100%; margin-top:6px;}
 
 /* ---- Reserve strip (KO / injured, placeholder for phase 3) ---- */
 .reserve-zone{
-  max-width:1400px; margin:0 auto 16px auto;
-  background:repeating-linear-gradient(135deg, #3a1414, #3a1414 10px, #2c1010 10px, #2c1010 20px);
+  background:linear-gradient(180deg, var(--panel-2), var(--panel));
   border:1px solid var(--bad);
   border-radius:6px;
   padding:12px 16px;
-  min-height:56px;
+  min-height:44px;
   display:flex; align-items:center; gap:14px;
+  margin-top:14px;
 }
 .reserve-zone h2{font-size:13px; color:#ffb3a7; margin:0; white-space:nowrap;}
-.reserve-zone .small-note{color:#e0b8b0; margin:0;}
+.reserve-zone .small-note{color:#cfc3a8; margin:0;}
 
 /* ---- Wide teams section ---- */
 .teams-wide{
-  max-width:1400px; margin:0 auto;
   display:grid;
   grid-template-columns: 1fr 1fr;
   gap:16px;
+  margin-top:14px;
 }
-@media (max-width: 900px){ .teams-wide{grid-template-columns:1fr;} }
+@media (max-width: 700px){ .teams-wide{grid-template-columns:1fr;} }
 
 .team-wide-panel{
   background:linear-gradient(180deg, var(--panel-2), var(--panel));
   border:1px solid var(--panel-line);
   border-radius:6px;
   padding:16px;
-  position:relative;
-  overflow:hidden;
+  min-width:0;
 }
 .team-wide-panel.a{border-color:var(--team-a);}
 .team-wide-panel.b{border-color:var(--team-b);}
-.team-wide-panel::after{
-  content:''; position:absolute; top:0; right:0; bottom:0; width:70px;
-  opacity:0.5; pointer-events:none;
-}
-.team-wide-panel.a::after{background:repeating-linear-gradient(135deg, transparent, transparent 8px, var(--team-a) 8px, var(--team-a) 10px);}
-.team-wide-panel.b::after{background:repeating-linear-gradient(135deg, transparent, transparent 8px, var(--team-b) 8px, var(--team-b) 10px);}
 
 .team-name-input{font-family:'Anton', sans-serif; font-size:19px; letter-spacing:0.5px;}
 
-.roster-list{max-height:260px; overflow-y:auto; margin-top:6px;}
+.roster-list{max-height:320px; overflow-y:auto; margin-top:6px;}
 .roster-item{
-  display:flex; align-items:center; gap:10px;
-  padding:6px 8px; border-radius:4px; font-size:13px;
+  display:flex; flex-direction:column; gap:3px;
+  padding:7px 8px; border-radius:4px; font-size:13px;
   cursor:pointer; border:1px solid transparent;
+  margin-bottom:2px;
 }
 .roster-item:hover{background:#2b261e;}
 .roster-item.on-pitch{opacity:0.4;}
 .roster-item.picking{outline:1px solid var(--gold); background:#2b261e;}
-.roster-item .num{
+.ri-row1{display:flex; align-items:center; gap:8px; min-width:0;}
+.ri-row1 .num{
   width:22px; height:22px; border-radius:50%;
   display:flex; align-items:center; justify-content:center;
   font-size:10px; font-weight:700; color:#fff; flex-shrink:0;
 }
-.roster-item .pname{min-width:110px;}
-.roster-item .pos{color:#8a7d64; font-size:10.5px; min-width:70px;}
-.roster-item .stats{color:#a99b7f; font-size:11px; margin-left:auto;}
-.roster-item .downed-tag{color:var(--bad); font-size:10px; font-weight:700;}
-.rm-btn{background:none; border:none; color:#a99b7f; font-size:14px; padding:0 4px;}
+.ri-row1 .pname{font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.ri-row1 .pos{color:#8a7d64; font-size:10.5px; white-space:nowrap;}
+.ri-row1 .downed-tag{color:var(--bad); font-size:10px; font-weight:700; white-space:nowrap;}
+.ri-row1 .rm-btn{margin-left:auto; background:none; border:none; color:#a99b7f; font-size:14px; padding:0 4px; flex-shrink:0;}
+.ri-row2{font-size:11px; color:#a99b7f; letter-spacing:0.5px;}
+.ri-row3{font-size:10.5px; color:#8a7d64; font-style:italic; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 
 .room-code{
   font-family:'JetBrains Mono'; font-weight:800; font-size:26px; letter-spacing:4px;

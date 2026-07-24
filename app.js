@@ -232,13 +232,19 @@ function renderRosters(){
     players.filter(p=>p.team===team).forEach(p=>{
       const div = document.createElement('div');
       div.className = 'roster-item' + (p.onPitch ? ' on-pitch' : '') + (placing===p.id ? ' picking':'');
-      const posTag = p.position ? `<span class="pos">${p.position}</span>` : '<span class="pos"></span>';
+      const posText = p.position || 'Sin posición';
       const downedTag = p.downed ? `<span class="downed-tag">CAÍDO</span>` : '';
-      const hasStats = [p.st,p.ag,p.pa,p.av].some(v=>v!==undefined && v!==null);
-      const statsTag = hasStats ? `<span class="stats mono">ST${p.st??'-'} AG${p.ag??'-'} PA${p.pa??'-'} AV${p.av??'-'}</span>` : '';
-      div.innerHTML = `<span class="num" style="background:${teamColorHex[team]}">${p.num}</span>
-        <span class="pname">${p.name}</span>${posTag}${downedTag}${statsTag}
-        <button class="rm-btn" title="Eliminar" onclick="removePlayer(${p.id}, event)">✕</button>`;
+      const skillsText = (p.skills && p.skills.length) ? p.skills.join(', ') : 'Sin habilidades';
+      div.innerHTML = `
+        <div class="ri-row1">
+          <span class="num" style="background:${teamColorHex[team]}">${p.num}</span>
+          <span class="pname">${p.name}</span>
+          <span class="pos">${posText}</span>
+          ${downedTag}
+          <button class="rm-btn" title="Eliminar" onclick="removePlayer(${p.id}, event)">✕</button>
+        </div>
+        <div class="ri-row2 mono">MA ${p.ma ?? '-'} · ST ${p.st ?? '-'} · AG ${p.ag ?? '-'} · PA ${p.pa ?? '-'} · AV ${p.av ?? '-'}</div>
+        <div class="ri-row3">${skillsText}</div>`;
       div.onclick = (e)=>{
         if(e.target.classList.contains('rm-btn')) return;
         if(!p.onPitch){ placeOnPitch(p.id); }

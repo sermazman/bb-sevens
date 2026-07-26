@@ -144,6 +144,7 @@ button.full{width:100%; margin-top:6px;}
 }
 .sb-team{text-align:center; flex:1;}
 .sb-team .label{font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#a99b7f;}
+.sb-team .sb-race{font-size:9.5px; letter-spacing:0.5px; color:#6b6152; min-height:12px; margin-top:1px;}
 .sb-team .score{font-family:'JetBrains Mono'; font-weight:800; font-size:34px; color:var(--gold);}
 .sb-mid{text-align:center; padding:0 10px;}
 .sb-mid .half{font-size:10px; letter-spacing:2px; text-transform:uppercase; color:#a99b7f;}

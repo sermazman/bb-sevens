@@ -13,6 +13,7 @@ let pendingDodge = null; // { playerId, toR, toC }
 let pendingGfi = null;   // { playerId, toR, toC }
 let armorForPlayer = null; // player id currently being armor-rolled
 let state = { half: 1, active: 'A', turns: { A: 0, B: 0 } };
+let teamRace = { A: '', B: '' };
 
 // ---------- Remote play (PeerJS) ----------
 let peer = null;
@@ -79,7 +80,7 @@ function setupConnHandlers(){
 function snapshotState(){
   return {
     players, ball, phase, state, pendingTD, pendingDodge, pendingGfi, armorForPlayer, nextId,
-    koQueue, pendingKo,
+    koQueue, pendingKo, teamRace,
     teamAName: document.getElementById('teamAName').value,
     teamBName: document.getElementById('teamBName').value,
     kickSelectValue: document.getElementById('kickSelect').value,
@@ -124,6 +125,7 @@ function applyRemoteState(payload){
   armorForPlayer = payload.armorForPlayer;
   koQueue = payload.koQueue || [];
   pendingKo = payload.pendingKo;
+  teamRace = payload.teamRace || { A:'', B:'' };
   nextId = payload.nextId;
   document.getElementById('teamAName').value = payload.teamAName;
   document.getElementById('teamBName').value = payload.teamBName;
@@ -223,6 +225,7 @@ function importTeamFile(team, inputEl){
     if(data.teamName){
       document.getElementById(team==='A' ? 'teamAName':'teamBName').value = data.teamName;
     }
+    teamRace[team] = data.race || '';
     data.players.forEach(pd=>{
       const ma = pd.ma || 6;
       players.push({
@@ -251,7 +254,7 @@ function exportTeam(team){
     st:p.st, ag:p.ag, pa:p.pa, av:p.av,
     position:p.position, skills:p.skills
   }));
-  const data = { teamName: teamName(team), players: list };
+  const data = { teamName: teamName(team), race: teamRace[team] || '', players: list };
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -966,6 +969,8 @@ function resetActivations(){
 function renderScoreboard(){
   document.getElementById('sbNameA').textContent = teamName('A');
   document.getElementById('sbNameB').textContent = teamName('B');
+  document.getElementById('sbRaceA').textContent = teamRace.A || '';
+  document.getElementById('sbRaceB').textContent = teamRace.B || '';
   document.getElementById('halfNum').textContent = state.half;
   document.getElementById('turnA').textContent = Math.min(state.turns.A,6);
   document.getElementById('turnB').textContent = Math.min(state.turns.B,6);

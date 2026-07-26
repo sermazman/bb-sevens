@@ -20,7 +20,8 @@ let blockTargeting = null;   // attacker id currently choosing an adjacent targe
 let activeBlock = null;      // { attackerId, defenderId, isBlitz }
 let pendingArmorQueue = [];
 let pendingPush = null;      // { attackerId, defenderId, kind, isBlitz }
-let pendingFollowUp = null;  // { attackerId, defenderId, vacatedR, vacatedC, fallKind, isBlitz }
+let pendingFollowUp = null;  // { attackerId, defenderId, vacatedR, vacatedC, fallKind, isBlitz, directInjuryPlayerId }
+let crowdPushMode = false;
 
 // ---------- Remote play (PeerJS) ----------
 let peer = null;
@@ -106,6 +107,8 @@ function snapshotState(){
     armorDie2: document.getElementById('armorDie2').textContent,
     armorSum: document.getElementById('armorSum').textContent,
     armorPassRowVisible: document.getElementById('armorPassRow').style.display==='block',
+    armorRollBtnVisible: document.getElementById('armorRollBtn').style.display!=='none',
+    crowdPushMode,
     injuryBlockVisible: document.getElementById('injuryBlock').style.display==='block',
     injuryDie1: document.getElementById('injuryDie1').textContent,
     injuryDie2: document.getElementById('injuryDie2').textContent,
@@ -177,6 +180,8 @@ function applyRemoteState(payload){
   document.getElementById('armorDie2').textContent = payload.armorDie2 || '–';
   document.getElementById('armorSum').textContent = payload.armorSum || 'Suma: –';
   document.getElementById('armorPassRow').style.display = payload.armorPassRowVisible ? 'block' : 'none';
+  document.getElementById('armorRollBtn').style.display = (payload.armorRollBtnVisible===false) ? 'none' : 'block';
+  crowdPushMode = !!payload.crowdPushMode;
   document.getElementById('injuryBlock').style.display = payload.injuryBlockVisible ? 'block' : 'none';
   document.getElementById('injuryDie1').textContent = payload.injuryDie1 || '–';
   document.getElementById('injuryDie2').textContent = payload.injuryDie2 || '–';
@@ -186,6 +191,11 @@ function applyRemoteState(payload){
   document.getElementById('koText').textContent = payload.koText || '';
   document.getElementById('koDie').textContent = payload.koDieText || '–';
   document.getElementById('koModal').classList.toggle('show', !!payload.koModalOpen);
+  document.getElementById('pushControlPanel').style.display = payload.pendingPush ? 'block' : 'none';
+  if(payload.pendingPush){
+    const pd = players.find(x=>x.id===payload.pendingPush.defenderId);
+    document.getElementById('pushControlText').textContent = 'Elegid casilla de destino para ' + (pd?pd.name:'el jugador') + ', o si sale de banda:';
+  }
 
   document.getElementById('blockText').textContent = payload.blockText || '';
   document.getElementById('blockDiceArea').innerHTML = payload.blockDiceAreaHtml || '';
@@ -300,7 +310,8 @@ function renderRosters(){
   ['A','B'].forEach(team=>{
     const el = document.getElementById('roster'+team);
     el.innerHTML='';
-    players.filter(p=>p.team===team && p.condition!=='ko' && p.condition!=='injured').forEach(p=>{
+    const retired = ['ko','injured','injuredGrave','dead'];
+    players.filter(p=>p.team===team && !retired.includes(p.condition)).forEach(p=>{
       const div = document.createElement('div');
       div.className = 'roster-item' + (p.onPitch ? ' on-pitch' : '') + (placing===p.id ? ' picking':'');
       const posText = p.position || 'Sin posición';
@@ -332,12 +343,15 @@ function renderReserveZone(){
   ['A','B'].forEach(team=>{
     const koEl = document.getElementById('koList'+team);
     const injEl = document.getElementById('injuredList'+team);
-    if(!koEl || !injEl) return;
+    const sevEl = document.getElementById('severeList'+team);
+    if(!koEl || !injEl || !sevEl) return;
     const kos = players.filter(p=>p.team===team && p.condition==='ko');
     const injs = players.filter(p=>p.team===team && p.condition==='injured');
+    const severe = players.filter(p=>p.team===team && (p.condition==='injuredGrave' || p.condition==='dead'));
     const chip = (p, extra) => `<div class="token-chip" style="background:${teamColorHex[team]}" title="${playerTooltipText(p, extra).replace(/"/g,'&quot;')}">${p.num}</div>`;
     koEl.innerHTML = kos.length ? kos.map(p=>chip(p,'INCONSCIENTE')).join('') : '<span class="small-note">Ninguno</span>';
-    injEl.innerHTML = injs.length ? injs.map(p=>chip(p,'HERIDO')).join('') : '<span class="small-note">Ninguno</span>';
+    injEl.innerHTML = injs.length ? injs.map(p=>chip(p,'HERIDO (LEVE)')).join('') : '<span class="small-note">Ninguno</span>';
+    sevEl.innerHTML = severe.length ? severe.map(p=>chip(p, p.condition==='dead' ? 'MUERTO' : 'HERIDA GRAVE')).join('') : '<span class="small-note">Ninguno</span>';
   });
 }
 
@@ -757,7 +771,10 @@ function chooseBlockTarget(defenderId){
 
   const isBlitz = (blitzActivePlayer === attacker.id);
   if(isBlitz){ blitzActivePlayer = null; }
+  executeBlockHit(attacker, defender, isBlitz);
+}
 
+function executeBlockHit(attacker, defender, isBlitz){
   if(isBlitz){
     if((attacker.remainingMove ?? attacker.ma) >= 1){
       attacker.remainingMove -= 1;
@@ -838,6 +855,8 @@ function applyBlockOutcome(kind){
     selected = null;
   }
   pendingPush = { attackerId: attacker.id, defenderId: defender.id, kind, isBlitz };
+  document.getElementById('pushControlPanel').style.display = 'block';
+  document.getElementById('pushControlText').textContent = 'Elegid casilla de destino para ' + defender.name + ', o si sale de banda:';
   renderRosters(); renderPitch(); renderSelInfo();
   updateStatus('Elegid casilla de empuje para ' + defender.name + ' (resaltada en el campo).');
   broadcastState();
@@ -861,6 +880,7 @@ function isValidPushCell(defender, r, c){
 function resolvePush(r,c){
   const info = pendingPush;
   pendingPush = null;
+  document.getElementById('pushControlPanel').style.display = 'none';
   const attacker = players.find(x=>x.id===info.attackerId);
   const defender = players.find(x=>x.id===info.defenderId);
   if(!defender){ renderPitch(); broadcastState(); return; }
@@ -874,6 +894,39 @@ function resolvePush(r,c){
     vacatedR: fromR, vacatedC: fromC,
     fallKind: (info.kind==='stumble' || info.kind==='pow') ? info.kind : null,
     isBlitz: info.isBlitz
+  };
+
+  renderRosters(); renderPitch();
+  broadcastState();
+
+  if(attacker){
+    document.getElementById('followUpText').textContent = `¿${attacker.name} avanza a la casilla que deja libre ${defender.name}?`;
+    document.getElementById('followUpModal').classList.add('show');
+    broadcastState();
+  } else {
+    finishPushSequence(pendingFollowUp);
+  }
+}
+
+function pushOutOfBounds(){
+  if(!pendingPush) return;
+  const info = pendingPush;
+  pendingPush = null;
+  document.getElementById('pushControlPanel').style.display = 'none';
+  const attacker = players.find(x=>x.id===info.attackerId);
+  const defender = players.find(x=>x.id===info.defenderId);
+  if(!defender){ renderPitch(); broadcastState(); return; }
+
+  const fromR = defender.row, fromC = defender.col;
+  defender.onPitch = false; defender.row = null; defender.col = null;
+  if(ball.carrierId===defender.id){ ball.carrierId = null; }
+  log('🌀 ' + defender.name + ' sale del campo empujado — tirada de heridas directa (sin armadura).');
+
+  pendingFollowUp = {
+    attackerId: info.attackerId, defenderId: null,
+    vacatedR: fromR, vacatedC: fromC,
+    fallKind: null, isBlitz: info.isBlitz,
+    directInjuryPlayerId: defender.id
   };
 
   renderRosters(); renderPitch();
@@ -904,11 +957,20 @@ function resolveFollowUp(doFollow){
   finishPushSequence(info);
 }
 
+function playerHasSkill(p, ...keywords){
+  if(!p || !p.skills) return false;
+  const lower = p.skills.map(s => (s||'').toLowerCase());
+  return keywords.some(k => lower.some(s => s.includes(k)));
+}
+
 function finishPushSequence(info){
   if(!info) return;
   const attacker = players.find(x=>x.id===info.attackerId);
 
-  if(info.fallKind){
+  if(info.directInjuryPlayerId){
+    const defender = players.find(x=>x.id===info.directInjuryPlayerId);
+    if(defender){ openInjuryDirect(defender); }
+  } else if(info.fallKind){
     const defender = players.find(x=>x.id===info.defenderId);
     if(defender){
       defender.condition = 'tumbado';
@@ -916,6 +978,17 @@ function finishPushSequence(info){
       renderRosters(); renderPitch();
       broadcastState();
       openArmorModal(defender);
+    }
+  } else {
+    // plain push, defender still standing — check Furia/Frenzy
+    const defender = players.find(x=>x.id===info.defenderId);
+    if(attacker && defender && attacker.condition==='standing' && defender.condition==='standing'){
+      const stillAdjacent = Math.max(Math.abs(attacker.row-defender.row), Math.abs(attacker.col-defender.col))===1;
+      if(stillAdjacent && playerHasSkill(attacker, 'furia', 'frenzy')){
+        log('😡 ¡FURIA! ' + attacker.name + ' debe repetir el placaje.');
+        executeBlockHit(attacker, defender, info.isBlitz);
+        return; // el propio placaje repetido gestiona la continuación del Blitz si procede
+      }
     }
   }
 
@@ -1038,12 +1111,31 @@ function resolveGfi(success){
 
 function openArmorModal(p){
   armorForPlayer = p.id;
+  crowdPushMode = false;
   document.getElementById('armorText').textContent = `Tirada de armadura para ${p.name} (AV a comparar por vosotros).`;
+  document.getElementById('armorRollBtn').style.display = 'block';
   document.getElementById('armorDie1').textContent='–';
   document.getElementById('armorDie2').textContent='–';
   document.getElementById('armorSum').textContent='Suma: –';
   document.getElementById('armorPassRow').style.display='none';
   document.getElementById('injuryBlock').style.display='none';
+  document.getElementById('injuryDie1').textContent='–';
+  document.getElementById('injuryDie2').textContent='–';
+  document.getElementById('injurySum').textContent='Suma: –';
+  document.getElementById('armorModal').classList.add('show');
+  broadcastState();
+}
+
+function openInjuryDirect(p){
+  armorForPlayer = p.id;
+  crowdPushMode = true;
+  document.getElementById('armorText').textContent = `${p.name} sale del campo empujado — tirada de heridas directa (sin armadura).`;
+  document.getElementById('armorRollBtn').style.display = 'none';
+  document.getElementById('armorDie1').textContent='–';
+  document.getElementById('armorDie2').textContent='–';
+  document.getElementById('armorSum').textContent='(sin tirada de armadura)';
+  document.getElementById('armorPassRow').style.display='none';
+  document.getElementById('injuryBlock').style.display='block';
   document.getElementById('injuryDie1').textContent='–';
   document.getElementById('injuryDie2').textContent='–';
   document.getElementById('injurySum').textContent='Suma: –';
@@ -1091,20 +1183,36 @@ function chooseInjury(kind){
   const p = players.find(x=>x.id===armorForPlayer);
   if(p){
     if(kind==='aturdido'){
-      p.condition='aturdido';
-      log('🤕 ' + p.name + ' queda ATURDIDO.');
+      if(crowdPushMode){
+        p.condition='standing';
+        log('🌀 ' + p.name + ' vuelve al banquillo tras salir del campo, sin lesión.');
+      } else {
+        p.condition='aturdido';
+        log('🤕 ' + p.name + ' queda ATURDIDO.');
+      }
     } else if(kind==='ko'){
       p.condition='ko';
       p.onPitch=false; p.row=null; p.col=null;
       if(ball.carrierId===p.id) ball.carrierId=null;
-      log('😵 ' + p.name + ' queda INCONSCIENTE y sale del campo.');
+      log('😵 ' + p.name + ' queda INCONSCIENTE' + (crowdPushMode ? ' tras salir del campo.' : ' y sale del campo.'));
     } else if(kind==='injured'){
       p.condition='injured';
       p.onPitch=false; p.row=null; p.col=null;
       if(ball.carrierId===p.id) ball.carrierId=null;
-      log('🚑 ' + p.name + ' queda HERIDO — no puede seguir jugando este partido.');
+      log('🚑 ' + p.name + ' queda HERIDO (leve) — no puede seguir jugando este partido.');
+    } else if(kind==='injuredGrave'){
+      p.condition='injuredGrave';
+      p.onPitch=false; p.row=null; p.col=null;
+      if(ball.carrierId===p.id) ball.carrierId=null;
+      log('🚑 ' + p.name + ' sufre una HERIDA GRAVE — fuera del partido.');
+    } else if(kind==='dead'){
+      p.condition='dead';
+      p.onPitch=false; p.row=null; p.col=null;
+      if(ball.carrierId===p.id) ball.carrierId=null;
+      log('☠️ ' + p.name + ' ha MUERTO.');
     }
   }
+  crowdPushMode = false;
   renderRosters(); renderPitch(); renderSelInfo();
   closeArmorModal();
   broadcastState();
@@ -1198,6 +1306,8 @@ function resetBoardForNewDrive(){
   pendingArmorQueue = [];
   pendingPush = null;
   pendingFollowUp = null;
+  crowdPushMode = false;
+  document.getElementById('pushControlPanel').style.display = 'none';
 }
 
 function confirmTD(){

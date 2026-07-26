@@ -286,7 +286,7 @@ button.full{width:100%; margin-top:6px;}
   display:grid;
   grid-template-columns: 1fr 1fr;
   gap:16px;
-  margin-top:14px;
+  margin-top:8px;
 }
 @media (max-width: 700px){ .teams-wide{grid-template-columns:1fr;} }
 
@@ -302,7 +302,7 @@ button.full{width:100%; margin-top:6px;}
 
 .team-name-input{font-family:'Anton', sans-serif; font-size:19px; letter-spacing:0.5px;}
 
-.roster-list{max-height:320px; overflow-y:auto; margin-top:6px;}
+.roster-list{max-height:440px; overflow-y:auto; margin-top:6px;}
 .roster-item{
   display:flex; flex-direction:column; gap:3px;
   padding:7px 8px; border-radius:4px; font-size:13px;

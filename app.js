@@ -338,28 +338,11 @@ function standUp(){
   broadcastState();
 }
 
-function flipAturdido(){
-  if(selected===null) return;
-  const p = players.find(x=>x.id===selected);
-  if(!p || p.condition!=='aturdido') return;
-  if(phase!=='live' || p.team!==state.active){
-    alert('Solo puede darse la vuelta en el turno de su propio equipo.');
-    return;
-  }
-  p.condition = 'tumbado';
-  p.activated = true;
-  selected = null;
-  renderRosters(); renderPitch(); renderSelInfo();
-  log('🔄 ' + p.name + ' se da la vuelta (Aturdido → Tumbado).');
-  broadcastState();
-}
-
 function handleRecoveryButton(){
   if(selected===null) return;
   const p = players.find(x=>x.id===selected);
   if(!p) return;
   if(p.condition==='tumbado'){ standUp(); }
-  else if(p.condition==='aturdido'){ flipAturdido(); }
 }
 
 // ---------- Setup / placement (pre-turn) ----------
@@ -634,8 +617,7 @@ function renderSelInfo(){
     <div>${(p.gfiUsed??0)>0?'A por ellos '+p.gfiUsed+'/3':''}${condLabel}${ball.carrierId===p.id?' · 🏈 lleva el balón':''}</div>`;
 
   if(p.condition==='aturdido'){
-    btn.textContent = '🔄 Dar la vuelta (Aturdido → Tumbado)';
-    btn.style.display = 'block';
+    btn.style.display = 'none';
   } else if(p.condition==='tumbado'){
     btn.textContent = '🧍 Levantar (marcar de pie)';
     btn.style.display = 'block';
@@ -885,7 +867,17 @@ function isHalfComplete(team){
 function beginTurn(team){
   state.turns[team]++;
   state.active = team;
-  players.filter(p=>p.team===team).forEach(p=>{ p.activated=false; p.remainingMove = p.ma; p.gfiUsed = 0; });
+  players.filter(p=>p.team===team).forEach(p=>{
+    if(p.condition==='aturdido'){
+      p.condition = 'tumbado';
+      p.activated = true; // se da la vuelta automáticamente y agota su turno
+      log('🔄 ' + p.name + ' se da la vuelta (Aturdido → Tumbado).');
+    } else {
+      p.activated = false;
+    }
+    p.remainingMove = p.ma;
+    p.gfiUsed = 0;
+  });
   renderScoreboard(); renderRosters(); renderPitch();
   updateStatus('Turno de ' + teamName(team));
   broadcastState();

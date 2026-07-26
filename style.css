@@ -206,6 +206,11 @@ button.full{width:100%; margin-top:6px;}
 .token.selected{outline:2px solid #fff; outline-offset:1px; z-index:5;}
 .token.activated{opacity:0.45;}
 .token.tumbado, .token.aturdido{opacity:0.55;}
+.token.block-target{outline:2px solid var(--bad); outline-offset:2px; cursor:pointer; animation:pulseTarget 1s ease-in-out infinite;}
+@keyframes pulseTarget{
+  0%,100%{ box-shadow:0 0 0 0 rgba(192,57,43,0.6); }
+  50%{ box-shadow:0 0 0 4px rgba(192,57,43,0); }
+}
 .token-mark{
   position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
   font-family:'JetBrains Mono'; font-weight:800; font-size:15px; color:var(--gold);

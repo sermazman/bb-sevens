@@ -53,6 +53,8 @@
       <h2>Jugador seleccionado</h2>
       <div id="selInfo" class="mono" style="font-size:13px; color:#cfc3a8;">Ninguno</div>
       <button class="full" style="margin-top:10px;" onclick="assignBall()">🏈 Asignar balón a este jugador</button>
+      <button class="full" id="blockBtn" onclick="startBlockTargeting()" style="display:none;">⚔️ Placar</button>
+      <button class="full" id="blitzBtn" onclick="declareBlitz()" style="display:none;">⚡ Blitz</button>
       <button class="full danger" onclick="knockDown()">👊 Derribar (tirar armadura)</button>
       <button class="full" id="recoveryBtn" onclick="handleRecoveryButton()" style="display:none;">🧍 Levantar (marcar de pie)</button>
       <button class="full danger" onclick="sendToBench()">Sacar del campo (al banquillo)</button>
@@ -272,6 +274,42 @@
     <div class="row" style="margin-top:12px;">
       <button onclick="resolveKo(true)">✅ Recupera</button>
       <button class="danger" onclick="resolveKo(false)">❌ Sigue inconsciente</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="blockModal">
+  <div class="modal">
+    <h2>PLACAJE</h2>
+    <p id="blockText">Resolviendo un placaje.</p>
+    <div class="row">
+      <button onclick="rollBlockDiceModal(1)">1 dado</button>
+      <button onclick="rollBlockDiceModal(2)">2 dados</button>
+      <button onclick="rollBlockDiceModal(3)">3 dados</button>
+    </div>
+    <div class="block-face-list" id="blockDiceArea"></div>
+    <div id="blockOutcomeRow" style="display:none; margin-top:12px;">
+      <div class="small-note" style="margin-bottom:6px;">Elegid el resultado aplicado:</div>
+      <div class="row">
+        <button onclick="applyBlockOutcome('attackerDown')">Atacante cae</button>
+        <button onclick="applyBlockOutcome('bothDown')">Ambos caen</button>
+      </div>
+      <div class="row" style="margin-top:6px;">
+        <button onclick="applyBlockOutcome('push')">Empujón</button>
+        <button onclick="applyBlockOutcome('stumble')">Desequilibrado</button>
+        <button class="danger" onclick="applyBlockOutcome('pow')">POW (defensor cae)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="followUpModal">
+  <div class="modal">
+    <h2>MOVIMIENTO DE IMPULSO</h2>
+    <p id="followUpText">¿El atacante avanza al hueco?</p>
+    <div class="row">
+      <button onclick="resolveFollowUp(true)">✅ Avanza</button>
+      <button onclick="resolveFollowUp(false)">❌ Se queda</button>
     </div>
   </div>
 </div>

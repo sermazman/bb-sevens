@@ -9,36 +9,38 @@
 <link rel="stylesheet" href="style.css">
 <style>
   /* Ajustes propios de esta página, siguiendo la misma paleta de style.css */
-  .rw{max-width:980px; margin:0 auto;}
-  .player-card{
+  .rw{max-width:1180px; margin:0 auto;}
+
+  /* ---- Tabla de jugadores ---- */
+  .roster-table{
     background:linear-gradient(180deg, var(--panel-2), var(--panel));
     border:1px solid var(--panel-line);
     border-radius:6px;
-    padding:12px 14px;
-    margin-bottom:10px;
+    overflow-x:auto;
   }
-  .player-card .pc-top{
-    display:flex; align-items:center; gap:10px; margin-bottom:8px;
-  }
-  .player-card .pc-num{
-    width:60px; flex-shrink:0;
-  }
-  .player-card .pc-name{ flex:1; min-width:0; }
-  .player-card .pc-remove{
-    flex-shrink:0; background:none; border:1px solid var(--bad); color:var(--bad);
-    padding:6px 10px;
-  }
-  .pc-stats{
+  .rt-row{
     display:grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap:8px;
+    grid-template-columns: 46px 1.4fr 1.1fr 50px 50px 55px 55px 55px 1.6fr 34px;
+    gap:10px;
+    align-items:center;
+    padding:10px 12px;
+    border-bottom:1px solid var(--panel-line);
+    min-width:820px;
   }
-  .pc-stats label{margin-bottom:2px;}
-  .pc-stats input{margin-bottom:0;}
-  .pc-position-row{display:flex; gap:8px; margin-bottom:8px;}
-  .pc-position-row > *{flex:1;}
-  .pc-skills{margin-top:8px;}
-  .skill-tags{display:flex; flex-wrap:wrap; gap:6px; margin:6px 0;}
+  .rt-row:last-child{border-bottom:none;}
+  .rt-row.rt-head{
+    font-size:10.5px; text-transform:uppercase; letter-spacing:1px; color:#a99b7f;
+    padding:8px 12px; background:#100e0c; border-radius:6px 6px 0 0;
+  }
+  .rt-row.rt-body:nth-child(even){background:rgba(255,255,255,0.02);}
+  .rt-row input{margin-bottom:0; padding:6px 7px; font-size:13px;}
+  .rt-row input.mono{font-family:'JetBrains Mono', monospace;}
+  .pc-remove{
+    background:none; border:1px solid var(--bad); color:var(--bad);
+    padding:6px 0; width:34px; font-size:13px;
+  }
+  .pc-skills-cell{min-width:0;}
+  .skill-tags{display:flex; flex-wrap:wrap; gap:5px; margin-bottom:5px;}
   .skill-tag{
     background:#100e0c; border:1px solid var(--gold); color:var(--gold);
     border-radius:12px; padding:3px 10px; font-size:11.5px; display:flex; align-items:center; gap:6px;
@@ -86,10 +88,8 @@
       <input type="file" id="fileImport" accept="application/json" style="display:none" onchange="importFile(this)">
       <button onclick="newTeam()">🆕 Plantilla en blanco</button>
       <button class="primary" onclick="exportTeamJSON()">💾 Descargar JSON</button>
-      <button onclick="toggleJsonPreview()">👁 Ver JSON</button>
     </div>
     <div class="small-note" style="margin-top:8px;">El JSON generado aquí es 100% compatible con el botón "Cargar JSON" del tablero principal (mismo formato: teamName / race / players[]).</div>
-    <div class="jsonbox" id="jsonPreview" style="display:none; margin-top:10px;"></div>
   </div>
 
   <div class="panel" id="libraryPanel">
@@ -126,8 +126,22 @@
 
   <div class="panel">
     <h2>Jugadores <span class="badge-count" id="playerCount">0</span></h2>
-    <div id="playersList"></div>
-    <button class="full primary" onclick="addPlayer()" style="margin-top:6px;">+ Añadir jugador</button>
+    <div class="roster-table">
+      <div class="rt-row rt-head">
+        <div>Núm.</div>
+        <div>Nombre</div>
+        <div>Posición</div>
+        <div>MA</div>
+        <div>ST</div>
+        <div>AG</div>
+        <div>PA</div>
+        <div>AV</div>
+        <div>Habilidades</div>
+        <div></div>
+      </div>
+      <div id="playersList"></div>
+    </div>
+    <button class="full primary" onclick="addPlayer()" style="margin-top:10px;">+ Añadir jugador</button>
   </div>
 
 </div>
@@ -243,44 +257,30 @@ function renderPlayers(){
   el.innerHTML = '';
   team.players.forEach(p => {
     const div = document.createElement('div');
-    div.className = 'player-card';
+    div.className = 'rt-row rt-body';
     const skillsHtml = p.skills.map((s, idx) =>
       `<span class="skill-tag">${s} <button onclick="removeSkill(${p._uid}, ${idx})">✕</button></span>`
     ).join('');
     div.innerHTML = `
-      <div class="pc-top">
-        <div class="pc-num">
-          <label>Dorsal</label>
-          <input type="text" value="${p.num}" oninput="updateField(${p._uid}, 'num', this.value)">
-        </div>
-        <div class="pc-name">
-          <label>Nombre</label>
-          <input type="text" value="${p.name}" oninput="updateField(${p._uid}, 'name', this.value)">
-        </div>
-        <button class="pc-remove" onclick="removePlayer(${p._uid})">✕ Quitar</button>
+      <div><input type="text" class="mono" value="${p.num}" oninput="updateField(${p._uid}, 'num', this.value)"></div>
+      <div><input type="text" value="${p.name}" oninput="updateField(${p._uid}, 'name', this.value)"></div>
+      <div>
+        <input type="text" list="pos-${p._uid}" value="${p.position}" oninput="updateField(${p._uid}, 'position', this.value)">
+        <datalist id="pos-${p._uid}">${positionOptionsFor(team.race)}</datalist>
       </div>
-      <div class="pc-position-row">
-        <div>
-          <label>Posición</label>
-          <input type="text" list="pos-${p._uid}" value="${p.position}" oninput="updateField(${p._uid}, 'position', this.value)">
-          <datalist id="pos-${p._uid}">${positionOptionsFor(team.race)}</datalist>
-        </div>
-      </div>
-      <div class="pc-stats">
-        <div><label>MA</label><input type="text" value="${p.ma}" oninput="updateField(${p._uid}, 'ma', this.value)"></div>
-        <div><label>ST</label><input type="text" value="${p.st}" oninput="updateField(${p._uid}, 'st', this.value)"></div>
-        <div><label>AG</label><input type="text" value="${p.ag}" oninput="updateField(${p._uid}, 'ag', this.value)"></div>
-        <div><label>PA</label><input type="text" value="${p.pa}" oninput="updateField(${p._uid}, 'pa', this.value)"></div>
-        <div><label>AV</label><input type="text" value="${p.av}" oninput="updateField(${p._uid}, 'av', this.value)"></div>
-      </div>
-      <div class="pc-skills">
-        <label>Habilidades</label>
-        <div class="skill-tags">${skillsHtml || '<span class="small-note">Sin habilidades</span>'}</div>
+      <div><input type="text" class="mono" value="${p.ma}" oninput="updateField(${p._uid}, 'ma', this.value)"></div>
+      <div><input type="text" class="mono" value="${p.st}" oninput="updateField(${p._uid}, 'st', this.value)"></div>
+      <div><input type="text" class="mono" value="${p.ag}" oninput="updateField(${p._uid}, 'ag', this.value)"></div>
+      <div><input type="text" class="mono" value="${p.pa}" oninput="updateField(${p._uid}, 'pa', this.value)"></div>
+      <div><input type="text" class="mono" value="${p.av}" oninput="updateField(${p._uid}, 'av', this.value)"></div>
+      <div class="pc-skills-cell">
+        <div class="skill-tags">${skillsHtml}</div>
         <div class="skill-add-row">
-          <input type="text" placeholder="ej. Bloqueo" onkeydown="if(event.key==='Enter'){addSkill(${p._uid}, this);}">
-          <button onclick="addSkill(${p._uid}, this.previousElementSibling)">+ Añadir</button>
+          <input type="text" placeholder="+ habilidad" onkeydown="if(event.key==='Enter'){addSkill(${p._uid}, this);}">
+          <button onclick="addSkill(${p._uid}, this.previousElementSibling)">＋</button>
         </div>
-      </div>`;
+      </div>
+      <div><button class="pc-remove" onclick="removePlayer(${p._uid})">✕</button></div>`;
     el.appendChild(div);
   });
   document.getElementById('playerCount').textContent = team.players.length;
@@ -305,23 +305,7 @@ function buildExportData(){
   };
 }
 
-let jsonRefreshTimer = null;
-function scheduleJsonRefresh(){
-  clearTimeout(jsonRefreshTimer);
-  jsonRefreshTimer = setTimeout(() => {
-    const box = document.getElementById('jsonPreview');
-    if(box.style.display !== 'none'){
-      box.textContent = JSON.stringify(buildExportData(), null, 2);
-    }
-  }, 150);
-}
-
-function toggleJsonPreview(){
-  const box = document.getElementById('jsonPreview');
-  const show = box.style.display === 'none';
-  box.style.display = show ? 'block' : 'none';
-  if(show) box.textContent = JSON.stringify(buildExportData(), null, 2);
-}
+function scheduleJsonRefresh(){ /* sin vista previa por ahora; se mantiene por si se reactiva más adelante */ }
 
 function exportTeamJSON(){
   const data = buildExportData();

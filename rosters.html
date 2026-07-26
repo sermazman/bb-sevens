@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sevens Pitch — Editor de Plantillas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* Ajustes propios de esta página, siguiendo la misma paleta de style.css */
+  .rw{max-width:980px; margin:0 auto;}
+  .player-card{
+    background:linear-gradient(180deg, var(--panel-2), var(--panel));
+    border:1px solid var(--panel-line);
+    border-radius:6px;
+    padding:12px 14px;
+    margin-bottom:10px;
+  }
+  .player-card .pc-top{
+    display:flex; align-items:center; gap:10px; margin-bottom:8px;
+  }
+  .player-card .pc-num{
+    width:60px; flex-shrink:0;
+  }
+  .player-card .pc-name{ flex:1; min-width:0; }
+  .player-card .pc-remove{
+    flex-shrink:0; background:none; border:1px solid var(--bad); color:var(--bad);
+    padding:6px 10px;
+  }
+  .pc-stats{
+    display:grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap:8px;
+  }
+  .pc-stats label{margin-bottom:2px;}
+  .pc-stats input{margin-bottom:0;}
+  .pc-position-row{display:flex; gap:8px; margin-bottom:8px;}
+  .pc-position-row > *{flex:1;}
+  .pc-skills{margin-top:8px;}
+  .skill-tags{display:flex; flex-wrap:wrap; gap:6px; margin:6px 0;}
+  .skill-tag{
+    background:#100e0c; border:1px solid var(--gold); color:var(--gold);
+    border-radius:12px; padding:3px 10px; font-size:11.5px; display:flex; align-items:center; gap:6px;
+  }
+  .skill-tag button{
+    border:none; background:none; color:var(--bad); padding:0; font-size:13px; cursor:pointer;
+  }
+  .skill-add-row{display:flex; gap:6px;}
+  .skill-add-row input{margin-bottom:0;}
+  .skill-add-row button{white-space:nowrap;}
+  .jsonbox{
+    background:#100e0c; border:1px solid var(--panel-line); border-radius:6px;
+    padding:10px; font-family:'JetBrains Mono', monospace; font-size:11.5px;
+    color:#a99b7f; max-height:260px; overflow:auto; white-space:pre-wrap; word-break:break-word;
+  }
+  .lib-item{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:8px 10px; border:1px solid var(--panel-line); border-radius:4px; margin-bottom:6px;
+  }
+  .lib-item span{font-size:13px;}
+  .top-actions{display:flex; gap:8px; flex-wrap:wrap;}
+  .badge-count{
+    display:inline-block; background:var(--gold); color:#1c1712; font-weight:800;
+    border-radius:10px; padding:1px 8px; font-size:11px; margin-left:8px;
+  }
+  a.backlink{color:#a99b7f; text-decoration:none; font-size:12px;}
+  a.backlink:hover{color:var(--gold);}
+</style>
+</head>
+<body>
+
+<div class="rw">
+  <header class="top" style="border-bottom:2px solid var(--panel-line); padding-bottom:12px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+    <div>
+      <h1 style="font-size:26px; color:var(--gold);">Sevens Pitch</h1>
+      <div class="sub" style="font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#a99b7f;">Editor de plantillas</div>
+    </div>
+    <a class="backlink" href="index.html">← Volver al tablero</a>
+  </header>
+
+  <div class="panel">
+    <h2>📁 Cargar / Guardar</h2>
+    <div class="top-actions">
+      <button onclick="document.getElementById('fileImport').click()">📁 Cargar JSON</button>
+      <input type="file" id="fileImport" accept="application/json" style="display:none" onchange="importFile(this)">
+      <button onclick="newTeam()">🆕 Plantilla en blanco</button>
+      <button class="primary" onclick="exportTeamJSON()">💾 Descargar JSON</button>
+      <button onclick="toggleJsonPreview()">👁 Ver JSON</button>
+    </div>
+    <div class="small-note" style="margin-top:8px;">El JSON generado aquí es 100% compatible con el botón "Cargar JSON" del tablero principal (mismo formato: teamName / race / players[]).</div>
+    <div class="jsonbox" id="jsonPreview" style="display:none; margin-top:10px;"></div>
+  </div>
+
+  <div class="panel" id="libraryPanel">
+    <h2>📚 Librería de plantillas <span class="badge-count" id="libCount">0</span></h2>
+    <div id="libraryList"><div class="small-note">Buscando plantillas en /rosters/...</div></div>
+    <div class="small-note" style="margin-top:6px;">Solo funciona cuando la página está publicada online (GitHub Pages); al abrir el archivo local (file://) el navegador bloquea esta lectura.</div>
+  </div>
+
+  <div class="panel">
+    <h2>Datos del equipo</h2>
+    <div class="row">
+      <div>
+        <label>Nombre del equipo</label>
+        <input type="text" id="teamNameInput" value="Nuevo Equipo" oninput="scheduleJsonRefresh()">
+      </div>
+      <div>
+        <label>Raza</label>
+        <input type="text" id="teamRaceInput" list="raceList" value="Humanos" oninput="scheduleJsonRefresh()">
+        <datalist id="raceList">
+          <option value="Humanos">
+          <option value="Orcos">
+          <option value="Enanos">
+          <option value="Elfos Altos">
+          <option value="Skaven">
+          <option value="No-Muertos">
+          <option value="Caos">
+          <option value="Amazonas">
+          <option value="Nurgle">
+          <option value="Goblins">
+        </datalist>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Jugadores <span class="badge-count" id="playerCount">0</span></h2>
+    <div id="playersList"></div>
+    <button class="full primary" onclick="addPlayer()" style="margin-top:6px;">+ Añadir jugador</button>
+  </div>
+
+</div>
+
+<script>
+let team = { teamName: 'Nuevo Equipo', race: 'Humanos', players: [] };
+let uid = 1;
+
+const POSITIONS_BY_RACE = {
+  'Humanos': ['Lineman','Blitzer','Thrower','Catcher'],
+  'Orcos': ['Lineman','Blitzer','Thrower','Black Orc'],
+  'Enanos': ['Lineman','Blitzer','Runner','Troll Slayer'],
+  'Elfos Altos': ['Lineman','Blitzer','Thrower','Catcher'],
+  'Skaven': ['Lineman','Blitzer','Thrower','Gutter Runner'],
+  'No-Muertos': ['Skeleton','Zombie','Ghoul','Wight'],
+  'Caos': ['Beastman','Chaos Warrior'],
+  'Amazonas': ['Linewoman','Blitzer','Thrower'],
+  'Nurgle': ['Rotter','Pestigor','Bloater'],
+  'Goblins': ['Goblin','Bomma','Fanatic']
+};
+
+function emptyPlayer(num){
+  return { _uid: uid++, num: num, name: 'Jugador ' + num, position: 'Lineman', ma: 6, st: 3, ag: '3+', pa: '4+', av: '8+', skills: [] };
+}
+
+function newTeam(){
+  if(team.players.length && !confirm('Esto borra la plantilla actual sin guardar. ¿Continuar?')) return;
+  team = { teamName: 'Nuevo Equipo', race: 'Humanos', players: [] };
+  document.getElementById('teamNameInput').value = team.teamName;
+  document.getElementById('teamRaceInput').value = team.race;
+  renderPlayers();
+}
+
+function loadTeamData(data){
+  team.teamName = data.teamName || 'Equipo sin nombre';
+  team.race = data.race || '';
+  team.players = (data.players || []).map(pd => ({
+    _uid: uid++,
+    num: pd.num ?? '',
+    name: pd.name || '',
+    position: pd.position || '',
+    ma: pd.ma ?? 6,
+    st: pd.st ?? '',
+    ag: pd.ag ?? '',
+    pa: pd.pa ?? '',
+    av: pd.av ?? '',
+    skills: Array.isArray(pd.skills) ? [...pd.skills] : []
+  }));
+  document.getElementById('teamNameInput').value = team.teamName;
+  document.getElementById('teamRaceInput').value = team.race;
+  renderPlayers();
+}
+
+function importFile(inputEl){
+  const file = inputEl.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    let data;
+    try{ data = JSON.parse(e.target.result); }
+    catch(err){ alert('El archivo no es un JSON válido.'); return; }
+    if(!data.players || !Array.isArray(data.players)){ alert('El JSON debe tener un array "players".'); return; }
+    loadTeamData(data);
+  };
+  reader.readAsText(file);
+  inputEl.value = '';
+}
+
+function addPlayer(){
+  const nextNum = team.players.length ? Math.max(...team.players.map(p=>parseInt(p.num)||0)) + 1 : 1;
+  team.players.push(emptyPlayer(nextNum));
+  renderPlayers();
+}
+
+function removePlayer(_uid){
+  team.players = team.players.filter(p => p._uid !== _uid);
+  renderPlayers();
+}
+
+function findPlayer(_uid){ return team.players.find(p => p._uid === _uid); }
+
+function updateField(_uid, field, value){
+  const p = findPlayer(_uid);
+  if(!p) return;
+  p[field] = value;
+  scheduleJsonRefresh();
+}
+
+function addSkill(_uid, inputEl){
+  const val = inputEl.value.trim();
+  if(!val) return;
+  const p = findPlayer(_uid);
+  if(!p) return;
+  p.skills.push(val);
+  inputEl.value = '';
+  renderPlayers();
+}
+
+function removeSkill(_uid, idx){
+  const p = findPlayer(_uid);
+  if(!p) return;
+  p.skills.splice(idx, 1);
+  renderPlayers();
+}
+
+function positionOptionsFor(race){
+  const list = POSITIONS_BY_RACE[race] || [];
+  return list.map(p => `<option value="${p}">`).join('');
+}
+
+function renderPlayers(){
+  const el = document.getElementById('playersList');
+  el.innerHTML = '';
+  team.players.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'player-card';
+    const skillsHtml = p.skills.map((s, idx) =>
+      `<span class="skill-tag">${s} <button onclick="removeSkill(${p._uid}, ${idx})">✕</button></span>`
+    ).join('');
+    div.innerHTML = `
+      <div class="pc-top">
+        <div class="pc-num">
+          <label>Dorsal</label>
+          <input type="text" value="${p.num}" oninput="updateField(${p._uid}, 'num', this.value)">
+        </div>
+        <div class="pc-name">
+          <label>Nombre</label>
+          <input type="text" value="${p.name}" oninput="updateField(${p._uid}, 'name', this.value)">
+        </div>
+        <button class="pc-remove" onclick="removePlayer(${p._uid})">✕ Quitar</button>
+      </div>
+      <div class="pc-position-row">
+        <div>
+          <label>Posición</label>
+          <input type="text" list="pos-${p._uid}" value="${p.position}" oninput="updateField(${p._uid}, 'position', this.value)">
+          <datalist id="pos-${p._uid}">${positionOptionsFor(team.race)}</datalist>
+        </div>
+      </div>
+      <div class="pc-stats">
+        <div><label>MA</label><input type="text" value="${p.ma}" oninput="updateField(${p._uid}, 'ma', this.value)"></div>
+        <div><label>ST</label><input type="text" value="${p.st}" oninput="updateField(${p._uid}, 'st', this.value)"></div>
+        <div><label>AG</label><input type="text" value="${p.ag}" oninput="updateField(${p._uid}, 'ag', this.value)"></div>
+        <div><label>PA</label><input type="text" value="${p.pa}" oninput="updateField(${p._uid}, 'pa', this.value)"></div>
+        <div><label>AV</label><input type="text" value="${p.av}" oninput="updateField(${p._uid}, 'av', this.value)"></div>
+      </div>
+      <div class="pc-skills">
+        <label>Habilidades</label>
+        <div class="skill-tags">${skillsHtml || '<span class="small-note">Sin habilidades</span>'}</div>
+        <div class="skill-add-row">
+          <input type="text" placeholder="ej. Bloqueo" onkeydown="if(event.key==='Enter'){addSkill(${p._uid}, this);}">
+          <button onclick="addSkill(${p._uid}, this.previousElementSibling)">+ Añadir</button>
+        </div>
+      </div>`;
+    el.appendChild(div);
+  });
+  document.getElementById('playerCount').textContent = team.players.length;
+  scheduleJsonRefresh();
+}
+
+document.getElementById('teamNameInput').addEventListener('input', (e) => { team.teamName = e.target.value; scheduleJsonRefresh(); });
+document.getElementById('teamRaceInput').addEventListener('input', (e) => { team.race = e.target.value; renderPlayers(); });
+
+function buildExportData(){
+  return {
+    teamName: team.teamName,
+    race: team.race,
+    players: team.players.map(p => ({
+      num: isNaN(parseInt(p.num)) ? p.num : parseInt(p.num),
+      name: p.name,
+      position: p.position,
+      ma: isNaN(parseFloat(p.ma)) ? p.ma : parseFloat(p.ma),
+      st: p.st, ag: p.ag, pa: p.pa, av: p.av,
+      skills: p.skills
+    }))
+  };
+}
+
+let jsonRefreshTimer = null;
+function scheduleJsonRefresh(){
+  clearTimeout(jsonRefreshTimer);
+  jsonRefreshTimer = setTimeout(() => {
+    const box = document.getElementById('jsonPreview');
+    if(box.style.display !== 'none'){
+      box.textContent = JSON.stringify(buildExportData(), null, 2);
+    }
+  }, 150);
+}
+
+function toggleJsonPreview(){
+  const box = document.getElementById('jsonPreview');
+  const show = box.style.display === 'none';
+  box.style.display = show ? 'block' : 'none';
+  if(show) box.textContent = JSON.stringify(buildExportData(), null, 2);
+}
+
+function exportTeamJSON(){
+  const data = buildExportData();
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (team.teamName || 'equipo').replace(/\s+/g,'_') + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ---------- Librería de plantillas (fetch de /rosters/index.json) ----------
+async function loadLibrary(){
+  const listEl = document.getElementById('libraryList');
+  try{
+    const res = await fetch('rosters/index.json');
+    if(!res.ok) throw new Error('no index');
+    const files = await res.json();
+    document.getElementById('libCount').textContent = files.length;
+    if(!files.length){ listEl.innerHTML = '<div class="small-note">No hay plantillas todavía en /rosters/.</div>'; return; }
+    listEl.innerHTML = '';
+    files.forEach(fname => {
+      const row = document.createElement('div');
+      row.className = 'lib-item';
+      row.innerHTML = `<span>${fname}</span><button onclick="loadFromLibrary('${fname}')">Cargar</button>`;
+      listEl.appendChild(row);
+    });
+  } catch(err){
+    listEl.innerHTML = '<div class="small-note">No se pudo leer /rosters/index.json (normal si estás abriendo el archivo en local en vez de online).</div>';
+  }
+}
+
+async function loadFromLibrary(fname){
+  try{
+    const res = await fetch('rosters/' + fname);
+    const data = await res.json();
+    loadTeamData(data);
+  } catch(err){
+    alert('No se pudo cargar rosters/' + fname);
+  }
+}
+
+// init
+newTeam();
+addPlayer();
+loadLibrary();
+</script>
+</body>
+</html>

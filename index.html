@@ -85,10 +85,43 @@
       <button class="full" onclick="resetActivations()">Reiniciar activaciones (mismo turno)</button>
     </div>
 
+    <div class="panel" id="kickPlacementPanel" style="display:none; border-color:#5aa469;">
+      <h2 style="color:#8fd19e;">🏈 Colocación del saque</h2>
+      <div class="small-note" id="kickPlacementText">Elegid la casilla (resaltada en verde).</div>
+    </div>
+
+    <div class="panel" id="kickoffPanel" style="display:none; border-color:#4a7a9c;">
+      <h2 style="color:#7db8e8;">🏈 Saque inicial</h2>
+      <div class="small-note" id="kickoffStepText">Tirad los dados y elegid la casilla.</div>
+      <div class="row" id="kickoffEventRow" style="margin-top:8px;">
+        <button onclick="rollKickoffEventDie()">Tirar 1D6 (evento)</button>
+        <div class="die-face" id="kickoffEventDie">–</div>
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <button onclick="rollKickoffDirDie()">Tirar 1D8 (dirección)</button>
+        <div class="die-face" id="kickoffDirDie">–</div>
+      </div>
+      <button class="full danger" style="margin-top:8px;" onclick="kickoffOutOfBounds()">🌀 Fuera del campo</button>
+    </div>
+
+    <div class="panel" id="freeCatchPanel" style="display:none; border-color:var(--gold);">
+      <h2 style="color:var(--gold);">🏈 Recepción libre</h2>
+      <div class="small-note" id="freeCatchText">Click en vuestro jugador para asignarle el balón.</div>
+    </div>
+
     <div class="panel" id="pushControlPanel" style="display:none; border-color:var(--bad);">
       <h2 style="color:#ffb3a7;">🌀 Empuje en curso</h2>
       <div class="small-note" id="pushControlText">Elegid la casilla de destino en el campo, o si sale de banda:</div>
       <button class="full danger" onclick="pushOutOfBounds()">🌀 Empujar fuera del campo</button>
+    </div>
+
+    <div class="panel" id="ballBouncePanel" style="display:none; border-color:#4a7a9c;">
+      <h2 style="color:#7db8e8;">🏈 Balón botando</h2>
+      <div class="small-note">Elegid la casilla adyacente correspondiente (resaltada en azul en el campo).</div>
+      <div class="row" style="margin-top:8px;">
+        <button onclick="rollBounceDirDie()">Tirar 1D8 (dirección)</button>
+        <div class="die-face" id="bounceDirDie">–</div>
+      </div>
     </div>
 
     <div class="pitch-wrap">
@@ -324,6 +357,19 @@
     <div class="row">
       <button onclick="resolveFollowUp(true)">✅ Avanza</button>
       <button onclick="resolveFollowUp(false)">❌ Se queda</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="catchModal">
+  <div class="modal">
+    <h2>RECOGER BALÓN</h2>
+    <p id="catchText">Intento de recogida.</p>
+    <div class="die-face" id="catchDie" style="margin:0 auto 14px auto;">–</div>
+    <button class="primary full" onclick="rollCatchDie()">Tirar D6</button>
+    <div class="row" style="margin-top:12px;">
+      <button onclick="resolveCatch(true)">✅ Recoge</button>
+      <button class="danger" onclick="resolveCatch(false)">❌ Falla</button>
     </div>
   </div>
 </div>

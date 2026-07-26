@@ -4,7 +4,11 @@ const teamColorHex = { A: '#c0392b', B: '#2a6fb0' };
 
 let players = [];
 let nextId = 1;
-let ball = { carrierId: null };
+let ball = { carrierId: null, row: null, col: null };
+let ballBounceActive = false;
+let pendingCatch = null;
+let pendingBallDrop = null;
+let pendingDriveStart = null;
 let selected = null;   // token selected during LIVE phase (for movement)
 let placing = null;    // player id currently being placed/repositioned (SETUP phase)
 let phase = 'setup';   // 'setup' | 'live'
@@ -89,6 +93,8 @@ function snapshotState(){
   return {
     players, ball, phase, state, pendingTD, pendingDodge, pendingGfi, armorForPlayer, nextId,
     koQueue, pendingKo, teamRace,
+    ballBounceActive, pendingCatch, pendingBallDrop, pendingDriveStart,
+    pendingKickPlacement, kickoffBounceStep, kickoffKickingTeam, kickoffReceivingTeam, freeCatchTeam,
     blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp,
     teamAName: document.getElementById('teamAName').value,
     teamBName: document.getElementById('teamBName').value,
@@ -121,7 +127,17 @@ function snapshotState(){
     blockDiceAreaHtml: document.getElementById('blockDiceArea').innerHTML,
     blockOutcomeRowVisible: document.getElementById('blockOutcomeRow').style.display==='block',
     followUpModalOpen: document.getElementById('followUpModal').classList.contains('show'),
-    followUpText: document.getElementById('followUpText').textContent
+    followUpText: document.getElementById('followUpText').textContent,
+    catchModalOpen: document.getElementById('catchModal').classList.contains('show'),
+    catchText: document.getElementById('catchText').textContent,
+    catchDieText: document.getElementById('catchDie').textContent,
+    kickPlacementText: document.getElementById('kickPlacementText').textContent,
+    kickoffStepText: document.getElementById('kickoffStepText').textContent,
+    kickoffEventRowVisible: document.getElementById('kickoffEventRow').style.display!=='none',
+    kickoffEventDieText: document.getElementById('kickoffEventDie').textContent,
+    kickoffDirDieText: document.getElementById('kickoffDirDie').textContent,
+    bounceDirDieText: document.getElementById('bounceDirDie').textContent,
+    freeCatchText: document.getElementById('freeCatchText').textContent
   };
 }
 
@@ -143,6 +159,15 @@ function applyRemoteState(payload){
   koQueue = payload.koQueue || [];
   pendingKo = payload.pendingKo;
   teamRace = payload.teamRace || { A:'', B:'' };
+  ballBounceActive = !!payload.ballBounceActive;
+  pendingCatch = payload.pendingCatch;
+  pendingBallDrop = payload.pendingBallDrop;
+  pendingDriveStart = payload.pendingDriveStart;
+  pendingKickPlacement = payload.pendingKickPlacement;
+  kickoffBounceStep = payload.kickoffBounceStep || 0;
+  kickoffKickingTeam = payload.kickoffKickingTeam;
+  kickoffReceivingTeam = payload.kickoffReceivingTeam;
+  freeCatchTeam = payload.freeCatchTeam;
   blitzUsedByTeam = payload.blitzUsedByTeam || { A:false, B:false };
   blitzActivePlayer = payload.blitzActivePlayer;
   blockTargeting = payload.blockTargeting;
@@ -205,6 +230,25 @@ function applyRemoteState(payload){
   document.getElementById('followUpText').textContent = payload.followUpText || '';
   document.getElementById('followUpModal').classList.toggle('show', !!payload.followUpModalOpen);
 
+  document.getElementById('catchText').textContent = payload.catchText || '';
+  document.getElementById('catchDie').textContent = payload.catchDieText || '–';
+  document.getElementById('catchModal').classList.toggle('show', !!payload.catchModalOpen);
+
+  document.getElementById('ballBouncePanel').style.display = payload.ballBounceActive ? 'block' : 'none';
+  document.getElementById('bounceDirDie').textContent = payload.bounceDirDieText || '–';
+
+  document.getElementById('kickPlacementPanel').style.display = payload.pendingKickPlacement ? 'block' : 'none';
+  document.getElementById('kickPlacementText').textContent = payload.kickPlacementText || '';
+
+  document.getElementById('kickoffPanel').style.display = payload.kickoffBounceStep ? 'block' : 'none';
+  document.getElementById('kickoffStepText').textContent = payload.kickoffStepText || '';
+  document.getElementById('kickoffEventRow').style.display = payload.kickoffEventRowVisible ? 'flex' : 'none';
+  document.getElementById('kickoffEventDie').textContent = payload.kickoffEventDieText || '–';
+  document.getElementById('kickoffDirDie').textContent = payload.kickoffDirDieText || '–';
+
+  document.getElementById('freeCatchPanel').style.display = payload.freeCatchTeam ? 'block' : 'none';
+  document.getElementById('freeCatchText').textContent = payload.freeCatchText || '';
+
   renderRosters(); renderPitch(); renderScoreboard(); renderSelInfo();
   if(payload.statusMsg) updateStatus(payload.statusMsg);
   applyingRemote = false;
@@ -232,7 +276,8 @@ function anyModalOpen(){
          document.getElementById('armorModal').classList.contains('show') ||
          document.getElementById('koModal').classList.contains('show') ||
          document.getElementById('blockModal').classList.contains('show') ||
-         document.getElementById('followUpModal').classList.contains('show');
+         document.getElementById('followUpModal').classList.contains('show') ||
+         document.getElementById('catchModal').classList.contains('show');
 }
 
 // ---------- Roster management ----------
@@ -403,6 +448,7 @@ function knockDown(){
   selected = null;
   renderRosters(); renderPitch(); renderSelInfo();
   log('👊 ' + p.name + ' es derribado manualmente.');
+  queueBallDropIfCarrier(p.id, p.row, p.col);
   broadcastState();
   openArmorModal(p);
 }
@@ -449,7 +495,7 @@ function startDrive(){
   phase='live';
   placing=null; selected=null;
   document.getElementById('setupPanel').style.display='none';
-  beginTurn(receiving);
+  beginKickPlacement(kicking, receiving);
 }
 
 function showSetupPanel(){
@@ -507,7 +553,15 @@ function renderPitch(){
 
       let highlightable = false;
       let highlightGfi = false;
-      if(pendingPush){
+      let highlightBounce = false;
+      let highlightKickZone = false;
+      if(pendingKickPlacement){
+        if(isValidKickPlacementCell(r,c)){ highlightable = true; highlightKickZone = true; }
+      } else if(kickoffBounceStep){
+        if(isValidKickoffBounceCell(r,c)){ highlightable = true; highlightBounce = true; }
+      } else if(ballBounceActive){
+        if(isValidBounceCell(r,c)){ highlightable = true; highlightBounce = true; }
+      } else if(pendingPush){
         const defender = players.find(x=>x.id===pendingPush.defenderId);
         if(defender && isValidPushCell(defender, r, c)) highlightable = true;
       } else if(phase==='live' && selected!==null){
@@ -520,7 +574,7 @@ function renderPitch(){
         const p = players.find(x=>x.id===placing);
         if(p && isLegalSetupCell(p.team,r,c)) highlightable = true;
       }
-      if(highlightable) cell.classList.add(highlightGfi ? 'reachable-gfi' : 'reachable');
+      if(highlightable) cell.classList.add(highlightKickZone ? 'kick-zone' : (highlightBounce ? 'bounce-target' : (highlightGfi ? 'reachable-gfi' : 'reachable')));
 
       cell.onclick = ()=> cellClicked(r,c);
 
@@ -529,7 +583,8 @@ function renderPitch(){
         const t = document.createElement('div');
         const condClass = occ.condition==='tumbado' ? ' tumbado' : occ.condition==='aturdido' ? ' aturdido' : '';
         const targetClass = isValidBlockTarget(occ.id) ? ' block-target' : '';
-        t.className = 'token' + (occ.id===selected?' selected':'') + (occ.activated?' activated':'') + condClass + targetClass;
+        const freeCatchClass = (freeCatchTeam===occ.team && occ.onPitch && occ.condition==='standing') ? ' free-catch-target' : '';
+        t.className = 'token' + (occ.id===selected?' selected':'') + (occ.activated?' activated':'') + condClass + targetClass + freeCatchClass;
         t.style.background = teamColorHex[occ.team];
         t.textContent = occ.num;
         const pitchExtra = 'MA restante ' + (occ.remainingMove ?? occ.ma) + '/' + occ.ma +
@@ -549,6 +604,14 @@ function renderPitch(){
         }
         t.onclick=(e)=>{ e.stopPropagation(); tokenClicked(occ.id); };
         cell.appendChild(t);
+      }
+
+      if(ball.carrierId===null && ball.row===r && ball.col===c){
+        const looseBall = document.createElement('div');
+        looseBall.className = 'loose-ball';
+        looseBall.textContent = '🏈';
+        looseBall.title = 'Balón suelto';
+        cell.appendChild(looseBall);
       }
 
       pitch.appendChild(cell);
@@ -575,6 +638,18 @@ function endActivation(id){
 }
 
 function cellClicked(r,c){
+  if(pendingKickPlacement){
+    if(isValidKickPlacementCell(r,c)){ placeKickBall(r,c); }
+    return;
+  }
+  if(kickoffBounceStep){
+    if(isValidKickoffBounceCell(r,c)){ resolveKickoffBounce(r,c); }
+    return;
+  }
+  if(ballBounceActive){
+    if(isValidBounceCell(r,c)){ resolveBounce(r,c); }
+    return;
+  }
   if(pendingPush){
     const defender = players.find(x=>x.id===pendingPush.defenderId);
     if(defender && isValidPushCell(defender, r, c)){ resolvePush(r,c); }
@@ -633,6 +708,10 @@ function completeStep(p, r, c, consume){
 }
 
 function tokenClicked(id){
+  if(freeCatchTeam!==null){
+    assignFreeCatch(id);
+    return;
+  }
   if(blockTargeting!==null){
     if(isValidBlockTarget(id)){ chooseBlockTarget(id); }
     return;
@@ -830,6 +909,7 @@ function applyBlockOutcome(kind){
     attacker.activated = true;
     selected = null;
     log('👊 ' + attacker.name + ' (atacante) cae.');
+    queueBallDropIfCarrier(attacker.id, attacker.row, attacker.col);
     renderRosters(); renderPitch(); renderSelInfo();
     broadcastState();
     openArmorModal(attacker);
@@ -842,6 +922,8 @@ function applyBlockOutcome(kind){
     attacker.activated = true;
     selected = null;
     log('👊 Ambos caen: ' + attacker.name + ' y ' + defender.name + '.');
+    queueBallDropIfCarrier(attacker.id, attacker.row, attacker.col);
+    queueBallDropIfCarrier(defender.id, defender.row, defender.col);
     renderRosters(); renderPitch(); renderSelInfo();
     broadcastState();
     pendingArmorQueue = [defender.id, attacker.id];
@@ -918,8 +1000,8 @@ function pushOutOfBounds(){
   if(!defender){ renderPitch(); broadcastState(); return; }
 
   const fromR = defender.row, fromC = defender.col;
+  queueBallDropIfCarrier(defender.id, fromR, fromC);
   defender.onPitch = false; defender.row = null; defender.col = null;
-  if(ball.carrierId===defender.id){ ball.carrierId = null; }
   log('🌀 ' + defender.name + ' sale del campo empujado — tirada de heridas directa (sin armadura).');
 
   pendingFollowUp = {
@@ -975,6 +1057,7 @@ function finishPushSequence(info){
     if(defender){
       defender.condition = 'tumbado';
       log('💥 ' + defender.name + (info.fallKind==='pow' ? ' cae (POW).' : ' cae (desequilibrado).'));
+      queueBallDropIfCarrier(defender.id, defender.row, defender.col);
       renderRosters(); renderPitch();
       broadcastState();
       openArmorModal(defender);
@@ -1007,6 +1090,235 @@ function checkTouchdown(p){
     document.getElementById('tdText').textContent = `${teamName(p.team)} anota con ${p.name}!`;
     document.getElementById('tdModal').classList.add('show');
   }
+}
+
+// ---------- Ball: loose position, bounces, catching, kickoff ----------
+function ballPosition(){
+  if(ball.carrierId!==null){
+    const carrier = players.find(x=>x.id===ball.carrierId);
+    if(carrier) return { row: carrier.row, col: carrier.col };
+  }
+  if(ball.row===null) return null;
+  return { row: ball.row, col: ball.col };
+}
+
+function isValidBounceCell(r,c){
+  if(!ballBounceActive) return false;
+  const pos = ballPosition();
+  if(!pos) return false;
+  const dist = Math.max(Math.abs(pos.row-r), Math.abs(pos.col-c));
+  return dist===1 && r>=0 && r<ROWS && c>=0 && c<COLS;
+}
+
+function startBallBounce(){
+  ballBounceActive = true;
+  document.getElementById('ballBouncePanel').style.display = 'block';
+  renderPitch();
+  updateStatus('El balón bota: tirad 1D8 y elegid la casilla adyacente correspondiente (resaltada en azul).');
+  broadcastState();
+}
+
+function resolveBounce(r,c){
+  ballBounceActive = false;
+  ball.row = r; ball.col = c;
+  document.getElementById('ballBouncePanel').style.display = 'none';
+  renderPitch();
+  broadcastState();
+
+  const occ = occupiedBy(r,c);
+  if(!occ){
+    log('🏈 El balón queda suelto en el campo.');
+    checkDriveStartAfterBounce();
+    return;
+  }
+  if(occ.condition==='standing'){
+    openCatchModal(occ);
+  } else {
+    log('🏈 El balón bota sobre ' + occ.name + ' (' + (occ.condition==='tumbado'?'tumbado':'aturdido') + ') y sigue botando.');
+    startBallBounce();
+  }
+}
+
+function openCatchModal(p){
+  pendingCatch = p.id;
+  document.getElementById('catchText').textContent = `${p.name} intenta recoger el balón. Tirad D6 (AG ${p.ag ?? '-'}) y decidid.`;
+  document.getElementById('catchDie').textContent = '–';
+  document.getElementById('catchModal').classList.add('show');
+  broadcastState();
+}
+
+function rollCatchDie(){
+  const r = Math.floor(Math.random()*6)+1;
+  document.getElementById('catchDie').textContent = r;
+  log('🎲 Recoger balón: tirada ' + r);
+  broadcastState();
+}
+
+function resolveCatch(success){
+  const p = players.find(x=>x.id===pendingCatch);
+  document.getElementById('catchModal').classList.remove('show');
+  pendingCatch = null;
+  if(p && success){
+    ball.carrierId = p.id;
+    log('🏈 ' + p.name + ' recoge el balón.');
+    renderPitch(); renderRosters();
+    broadcastState();
+    checkTouchdown(p);
+    if(!pendingTD) checkDriveStartAfterBounce();
+  } else if(p){
+    log('🏈 ' + p.name + ' falla la recogida — el balón sigue botando.');
+    broadcastState();
+    startBallBounce();
+  } else {
+    broadcastState();
+  }
+}
+
+function checkDriveStartAfterBounce(){
+  if(pendingDriveStart){
+    const team = pendingDriveStart;
+    pendingDriveStart = null;
+    beginTurn(team);
+  }
+}
+
+// ---------- Kickoff: manual placement + kick event + double scatter + free catch ----------
+let pendingKickPlacement = null; // { kickingTeam, receivingTeam }
+let kickoffBounceStep = 0;       // 0 inactive, 1 first scatter, 2 second scatter
+let kickoffKickingTeam = null;
+let kickoffReceivingTeam = null;
+let freeCatchTeam = null;
+
+function beginKickPlacement(kicking, receiving){
+  pendingKickPlacement = { kickingTeam: kicking, receivingTeam: receiving };
+  document.getElementById('kickPlacementPanel').style.display = 'block';
+  document.getElementById('kickPlacementText').textContent =
+    `Equipo ${teamName(kicking)}: elegid la casilla del saque (zona neutral, resaltada en verde, o campo de ${teamName(receiving)}).`;
+  renderPitch();
+  updateStatus('Colocando el balón del saque inicial...');
+  broadcastState();
+}
+
+function isValidKickPlacementCell(r,c){
+  if(!pendingKickPlacement) return false;
+  const kicking = pendingKickPlacement.kickingTeam;
+  const neutral = (c>=LOS_A+1 && c<=LOS_B-1);
+  const opponentHalf = kicking==='A' ? (c>=LOS_B && c<=COLS-2) : (c>=1 && c<=LOS_A);
+  return neutral || opponentHalf;
+}
+
+function placeKickBall(r,c){
+  const info = pendingKickPlacement;
+  pendingKickPlacement = null;
+  document.getElementById('kickPlacementPanel').style.display = 'none';
+  ball.carrierId = null; ball.row = r; ball.col = c;
+  kickoffKickingTeam = info.kickingTeam;
+  kickoffReceivingTeam = info.receivingTeam;
+  log('🏈 Saque colocado por ' + teamName(info.kickingTeam) + '.');
+  renderPitch();
+  broadcastState();
+  startKickoffBounce(1);
+}
+
+function startKickoffBounce(step){
+  kickoffBounceStep = step;
+  document.getElementById('kickoffPanel').style.display = 'block';
+  document.getElementById('kickoffEventRow').style.display = step===1 ? 'flex' : 'none';
+  document.getElementById('kickoffStepText').textContent = step===1
+    ? 'Patada inicial: tirad 1D6 (evento — aplicadlo vosotros) y 1D8 (dirección), luego elegid la casilla adyacente resaltada, o "Fuera del campo".'
+    : 'Segundo rebote: tirad 1D8 (dirección) y elegid la casilla adyacente resaltada, o "Fuera del campo".';
+  renderPitch();
+  broadcastState();
+}
+
+function rollKickoffEventDie(){
+  const r = Math.floor(Math.random()*6)+1;
+  document.getElementById('kickoffEventDie').textContent = r;
+  log('🎲 Evento de patada inicial: ' + r + ' (aplicad el resultado que corresponda de vuestra tabla).');
+  broadcastState();
+}
+
+function rollKickoffDirDie(){
+  const r = Math.floor(Math.random()*8)+1;
+  document.getElementById('kickoffDirDie').textContent = r;
+  log('🎲 Dirección del rebote (D8): ' + r);
+  broadcastState();
+}
+
+function rollBounceDirDie(){
+  const r = Math.floor(Math.random()*8)+1;
+  document.getElementById('bounceDirDie').textContent = r;
+  log('🎲 Dirección del rebote (D8): ' + r);
+  broadcastState();
+}
+
+function isValidKickoffBounceCell(r,c){
+  if(!kickoffBounceStep) return false;
+  if(ball.row===null) return false;
+  const dist = Math.max(Math.abs(ball.row-r), Math.abs(ball.col-c));
+  return dist===1 && r>=0 && r<ROWS && c>=0 && c<COLS;
+}
+
+function kickoffOutOfBounds(){
+  if(!kickoffBounceStep) return;
+  log('🌀 El balón sale del campo durante el saque — recepción libre.');
+  finishKickoffAsFreeCatch();
+}
+
+function resolveKickoffBounce(r,c){
+  ball.row = r; ball.col = c;
+  const step = kickoffBounceStep;
+  kickoffBounceStep = 0;
+  document.getElementById('kickoffPanel').style.display = 'none';
+  renderPitch();
+  broadcastState();
+
+  const inKickerHalf = kickoffKickingTeam==='A' ? (c>=1 && c<=LOS_A) : (c>=LOS_B && c<=COLS-2);
+  if(inKickerHalf){
+    log('🏈 El balón acaba en el campo de ' + teamName(kickoffKickingTeam) + ' — recepción libre.');
+    finishKickoffAsFreeCatch();
+    return;
+  }
+
+  if(step===1){
+    startKickoffBounce(2);
+    return;
+  }
+
+  pendingDriveStart = kickoffReceivingTeam;
+  const occ = occupiedBy(r,c);
+  if(occ && occ.condition==='standing'){
+    openCatchModal(occ);
+  } else {
+    log('🏈 El balón queda en el campo tras el saque.');
+    checkDriveStartAfterBounce();
+  }
+}
+
+function finishKickoffAsFreeCatch(){
+  kickoffBounceStep = 0;
+  document.getElementById('kickoffPanel').style.display = 'none';
+  freeCatchTeam = kickoffReceivingTeam;
+  document.getElementById('freeCatchPanel').style.display = 'block';
+  document.getElementById('freeCatchText').textContent = 'Recepción libre para ' + teamName(freeCatchTeam) + ': click en vuestro jugador en pie para asignarle el balón.';
+  renderPitch();
+  updateStatus('Recepción libre: elegid jugador.');
+  broadcastState();
+}
+
+function assignFreeCatch(playerId){
+  const p = players.find(x=>x.id===playerId);
+  if(!p || p.team!==freeCatchTeam || !p.onPitch || p.condition!=='standing') return;
+  ball.carrierId = p.id;
+  const receiving = kickoffReceivingTeam;
+  freeCatchTeam = null;
+  document.getElementById('freeCatchPanel').style.display = 'none';
+  log('🏈 Recepción libre asignada a ' + p.name + '.');
+  renderPitch(); renderRosters();
+  broadcastState();
+  pendingDriveStart = receiving;
+  checkTouchdown(p);
+  if(!pendingTD) checkDriveStartAfterBounce();
 }
 
 // ---------- Dodge / Armor ----------
@@ -1044,6 +1356,7 @@ function resolveDodge(success){
     selected = null;
     renderRosters(); renderPitch(); renderSelInfo();
     log('💥 ' + p.name + ' falla la esquiva y cae al suelo.');
+    queueBallDropIfCarrier(p.id, toR, toC);
     broadcastState();
     openArmorModal(p);
   }
@@ -1104,6 +1417,7 @@ function resolveGfi(success){
     selected = null;
     renderRosters(); renderPitch(); renderSelInfo();
     log('💥 ' + p.name + ' falla "a por ellos" y cae al suelo.');
+    queueBallDropIfCarrier(p.id, toR, toC);
     broadcastState();
     openArmorModal(p);
   }
@@ -1112,7 +1426,7 @@ function resolveGfi(success){
 function openArmorModal(p){
   armorForPlayer = p.id;
   crowdPushMode = false;
-  document.getElementById('armorText').textContent = `Tirada de armadura para ${p.name} (AV a comparar por vosotros).`;
+  document.getElementById('armorText').textContent = `Tirando armadura a ${p.name} con AV ${p.av ?? '(sin dato)'}.`;
   document.getElementById('armorRollBtn').style.display = 'block';
   document.getElementById('armorDie1').textContent='–';
   document.getElementById('armorDie2').textContent='–';
@@ -1218,11 +1532,30 @@ function chooseInjury(kind){
   broadcastState();
 }
 
+function queueBallDropIfCarrier(playerId, r, c){
+  if(ball.carrierId === playerId){
+    pendingBallDrop = { playerId, r, c };
+  }
+}
+
 function closeArmorModal(){
   document.getElementById('armorModal').classList.remove('show');
   armorForPlayer = null;
   broadcastState();
-  processNextArmorInQueue();
+  if(pendingArmorQueue && pendingArmorQueue.length>0){
+    processNextArmorInQueue();
+    return;
+  }
+  if(pendingBallDrop){
+    const info = pendingBallDrop;
+    pendingBallDrop = null;
+    ball.carrierId = null;
+    ball.row = info.r; ball.col = info.c;
+    log('🏈 Se le cae el balón.');
+    renderPitch();
+    broadcastState();
+    startBallBounce();
+  }
 }
 
 // ---------- KO recovery, at the start of each new drive ----------
@@ -1297,7 +1630,12 @@ function resetBoardForNewDrive(){
     if(p.condition==='tumbado' || p.condition==='aturdido'){ p.condition='standing'; }
     p.remainingMove=p.ma; p.gfiUsed=0; p.blockedThisActivation=false;
   });
-  ball = { carrierId: null };
+  ball = { carrierId: null, row: null, col: null };
+  ballBounceActive = false;
+  pendingCatch = null;
+  pendingBallDrop = null;
+  pendingDriveStart = null;
+  document.getElementById('ballBouncePanel').style.display = 'none';
   selected=null; placing=null;
   blitzUsedByTeam = { A:false, B:false };
   blitzActivePlayer = null;
@@ -1308,6 +1646,14 @@ function resetBoardForNewDrive(){
   pendingFollowUp = null;
   crowdPushMode = false;
   document.getElementById('pushControlPanel').style.display = 'none';
+  pendingKickPlacement = null;
+  kickoffBounceStep = 0;
+  kickoffKickingTeam = null;
+  kickoffReceivingTeam = null;
+  freeCatchTeam = null;
+  document.getElementById('kickPlacementPanel').style.display = 'none';
+  document.getElementById('kickoffPanel').style.display = 'none';
+  document.getElementById('freeCatchPanel').style.display = 'none';
 }
 
 function confirmTD(){

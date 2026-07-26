@@ -348,6 +348,20 @@ function handleRecoveryButton(){
   if(p.condition==='tumbado'){ standUp(); }
 }
 
+function knockDown(){
+  if(selected===null){ alert('Selecciona primero un jugador en el campo.'); return; }
+  const p = players.find(x=>x.id===selected);
+  if(!p || !p.onPitch){ alert('El jugador debe estar en el campo.'); return; }
+  if(p.condition!=='standing'){ alert('Ese jugador ya está en el suelo.'); return; }
+  p.condition = 'tumbado';
+  p.activated = true;
+  selected = null;
+  renderRosters(); renderPitch(); renderSelInfo();
+  log('👊 ' + p.name + ' es derribado manualmente.');
+  broadcastState();
+  openArmorModal(p);
+}
+
 // ---------- Setup / placement (pre-turn) ----------
 function placeOnPitch(id){
   if(phase!=='setup'){
@@ -871,13 +885,7 @@ function beginTurn(team){
   state.turns[team]++;
   state.active = team;
   players.filter(p=>p.team===team).forEach(p=>{
-    if(p.condition==='aturdido'){
-      p.condition = 'tumbado';
-      p.activated = true; // se da la vuelta automáticamente y agota su turno
-      log('🔄 ' + p.name + ' se da la vuelta (Aturdido → Tumbado).');
-    } else {
-      p.activated = false;
-    }
+    p.activated = false;
     p.remainingMove = p.ma;
     p.gfiUsed = 0;
   });
@@ -927,6 +935,11 @@ function endTurn(){
     return;
   }
   const finishing = state.active;
+
+  players.filter(p=>p.team===finishing && p.condition==='aturdido').forEach(p=>{
+    p.condition = 'tumbado';
+    log('🔄 ' + p.name + ' se da la vuelta (Aturdido → Tumbado) al final del turno.');
+  });
 
   if(isHalfComplete(finishing)){
     resetBoardForNewDrive();

@@ -148,9 +148,13 @@ function snapshotState(){
   };
 }
 
+const SAVE_KEY = 'bbsevens_autosave_v1';
+
 function broadcastState(){
   if(applyingRemote) return;
-  if(conn && conn.open){ conn.send({ type:'state', payload: snapshotState() }); }
+  const snap = snapshotState();
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(snap)); }catch(e){}
+  if(conn && conn.open){ conn.send({ type:'state', payload: snap }); }
 }
 
 function applyRemoteState(payload){
@@ -291,7 +295,8 @@ function anyModalOpen(){
          document.getElementById('koModal').classList.contains('show') ||
          document.getElementById('blockModal').classList.contains('show') ||
          document.getElementById('followUpModal').classList.contains('show') ||
-         document.getElementById('catchModal').classList.contains('show');
+         document.getElementById('catchModal').classList.contains('show') ||
+         document.getElementById('resumeModal').classList.contains('show');
 }
 
 // ---------- Roster management ----------
@@ -1186,7 +1191,8 @@ function finishPushSequence(info){
 
 function checkTouchdown(p){
   if(ball.carrierId!==p.id) return;
-  if(p.col===0 || p.col===COLS-1){
+  const opponentEndzoneCol = p.team==='A' ? (COLS-1) : 0;
+  if(p.col===opponentEndzoneCol){
     pendingTD = { team: p.team, name: p.name };
     document.getElementById('tdText').textContent = `${teamName(p.team)} anota con ${p.name}!`;
     document.getElementById('tdModal').classList.add('show');
@@ -1962,8 +1968,67 @@ function rollPass(){
   log('🎲 Pase (obj. '+target+'+): tirada ' + r + ' → ' + result);
 }
 
+// ---------- Save / Load ----------
+function downloadSaveFile(){
+  const snap = snapshotState();
+  const blob = new Blob([JSON.stringify(snap, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const stamp = new Date().toISOString().slice(0,16).replace(/[:T]/g,'-');
+  a.download = 'bb-sevens-partida-' + stamp + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  log('💾 Copia de seguridad descargada.');
+}
+
+function loadSaveFile(inputEl){
+  const file = inputEl.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    let data;
+    try{ data = JSON.parse(e.target.result); }
+    catch(err){ alert('El archivo no es una partida válida.'); return; }
+    applyRemoteState(data);
+    log('📂 Partida cargada desde archivo.');
+    updateStatus('Partida cargada desde archivo.');
+  };
+  reader.readAsText(file);
+  inputEl.value = '';
+}
+
+function checkForAutosave(){
+  let saved = null;
+  try{ saved = localStorage.getItem(SAVE_KEY); }catch(e){}
+  if(!saved) return;
+  let data;
+  try{ data = JSON.parse(saved); }catch(e){ return; }
+  if(!data || !data.players || data.players.length===0) return;
+  document.getElementById('resumeModal').classList.add('show');
+  window._pendingResumeData = data;
+}
+
+function resumeAutosave(){
+  const data = window._pendingResumeData;
+  document.getElementById('resumeModal').classList.remove('show');
+  if(data){
+    applyRemoteState(data);
+    log('▶️ Partida recuperada automáticamente.');
+    updateStatus('Partida recuperada.');
+  }
+  window._pendingResumeData = null;
+}
+
+function discardAutosave(){
+  document.getElementById('resumeModal').classList.remove('show');
+  try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+  window._pendingResumeData = null;
+}
+
 // init
 renderRosters();
 renderPitch();
 renderScoreboard();
 showSetupPanel();
+checkForAutosave();

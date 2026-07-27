@@ -37,6 +37,16 @@
 <div class="app">
 
   <div>
+    <div class="panel">
+      <h2>💾 Partida</h2>
+      <div class="small-note">Se guarda sola en este navegador tras cada acción. Si se cae la conexión, recargad la página y os ofrecerá recuperarla.</div>
+      <div class="row" style="margin-top:8px;">
+        <button onclick="downloadSaveFile()">⬇️ Descargar copia</button>
+        <button onclick="document.getElementById('loadSaveInput').click()">⬆️ Cargar copia</button>
+      </div>
+      <input type="file" id="loadSaveInput" accept="application/json" style="display:none" onchange="loadSaveFile(this)">
+    </div>
+
     <div class="panel setup" id="setupPanel">
       <h2>🏈 Fase de colocación</h2>
       <label>Equipo que patea (inicia la entrada)</label>
@@ -354,6 +364,17 @@
         <button onclick="applyBlockOutcome('stumble')">Desequilibrado</button>
         <button class="danger" onclick="applyBlockOutcome('pow')">POW (defensor cae)</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="resumeModal">
+  <div class="modal">
+    <h2>PARTIDA GUARDADA</h2>
+    <p>Hemos encontrado una partida guardada en este navegador. ¿Queréis recuperarla?</p>
+    <div class="row">
+      <button class="primary" onclick="resumeAutosave()">▶️ Reanudar</button>
+      <button class="danger" onclick="discardAutosave()">🗑️ Empezar de cero</button>
     </div>
   </div>
 </div>

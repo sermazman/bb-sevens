@@ -57,8 +57,10 @@
       <button class="full" id="blockBtn" onclick="startBlockTargeting()" style="display:none;">⚔️ Placar</button>
       <button class="full" id="blitzBtn" onclick="declareBlitz()" style="display:none;">⚡ Blitz</button>
       <button class="full danger" onclick="knockDown()">👊 Derribar (tirar armadura)</button>
+      <button class="full" id="despistadoBtn" onclick="toggleDespistado()">😵‍💫 Marcar Despistado</button>
       <button class="full" id="recoveryBtn" onclick="handleRecoveryButton()" style="display:none;">🧍 Levantar (marcar de pie)</button>
       <button class="full danger" onclick="sendToBench()">Sacar del campo (al banquillo)</button>
+      <button class="full danger" style="margin-top:14px;" onclick="resetActivations()">⚠️ Reiniciar activaciones (mismo turno)</button>
     </div>
   </div>
 
@@ -81,10 +83,7 @@
       </div>
     </div>
 
-    <div class="row" style="margin-bottom:10px;">
-      <button class="primary full" onclick="endTurn()">Terminar turno →</button>
-      <button class="full" onclick="resetActivations()">Reiniciar activaciones (mismo turno)</button>
-    </div>
+    <button class="primary full" style="margin-bottom:10px;" onclick="endTurn()">Terminar turno →</button>
 
     <div class="panel" id="kickPlacementPanel" style="display:none; border-color:#5aa469;">
       <h2 style="color:#8fd19e;">🏈 Colocación del saque</h2>
@@ -130,7 +129,7 @@
 
     <div class="panel" id="ballBouncePanel" style="display:none; border-color:#4a7a9c;">
       <h2 style="color:#7db8e8;">🏈 Balón botando</h2>
-      <div class="small-note">Elegid la casilla adyacente correspondiente (resaltada en azul en el campo).</div>
+      <div class="small-note">Elegid la casilla numerada (1-8) según el resultado del D8: 1-2-3 arriba, 4-balón-5 en medio, 6-7-8 abajo.</div>
       <div class="row" style="margin-top:8px;">
         <button onclick="rollBounceDirDie()">Tirar 1D8 (dirección)</button>
         <div class="die-face" id="bounceDirDie">–</div>

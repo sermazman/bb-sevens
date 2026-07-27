@@ -372,7 +372,8 @@ function renderRosters(){
       div.className = 'roster-item' + (p.onPitch ? ' on-pitch' : '') + (placing===p.id ? ' picking':'');
       const posText = p.position || 'Sin posición';
       const condTag = p.condition==='tumbado' ? `<span class="downed-tag">TUMBADO</span>`
-                     : p.condition==='aturdido' ? `<span class="downed-tag">ATURDIDO</span>` : '';
+                     : p.condition==='aturdido' ? `<span class="downed-tag">ATURDIDO</span>`
+                     : p.condition==='despistado' ? `<span class="downed-tag">DESPISTADO</span>` : '';
       const skillsText = (p.skills && p.skills.length) ? p.skills.join(', ') : 'Sin habilidades';
       div.innerHTML = `
         <div class="ri-row1">
@@ -460,6 +461,23 @@ function knockDown(){
   queueBallDropIfCarrier(p.id, p.row, p.col);
   broadcastState();
   openArmorModal(p);
+}
+
+function toggleDespistado(){
+  if(selected===null) return;
+  const p = players.find(x=>x.id===selected);
+  if(!p || !p.onPitch) return;
+  if(p.condition==='despistado'){
+    p.condition = 'standing';
+    log('✅ ' + p.name + ' deja de estar Despistado.');
+  } else if(p.condition==='standing'){
+    p.condition = 'despistado';
+    log('😵‍💫 ' + p.name + ' marcado como DESPISTADO (manual).');
+  } else {
+    return;
+  }
+  renderRosters(); renderPitch(); renderSelInfo();
+  broadcastState();
 }
 
 // ---------- Setup / placement (pre-turn) ----------
@@ -584,13 +602,17 @@ function renderPitch(){
         if(p && isLegalSetupCell(p.team,r,c)) highlightable = true;
       }
       if(highlightable) cell.classList.add(highlightKickZone ? 'kick-zone' : (highlightBounce ? 'bounce-target' : (highlightGfi ? 'reachable-gfi' : 'reachable')));
+      if(highlightBounce && ball.row!==null){
+        const num = bounceDirectionNumber(ball.row, ball.col, r, c);
+        if(num) cell.dataset.bnum = num;
+      }
 
       cell.onclick = ()=> cellClicked(r,c);
 
       const occ = posMap[r+'_'+c];
       if(occ){
         const t = document.createElement('div');
-        const condClass = occ.condition==='tumbado' ? ' tumbado' : occ.condition==='aturdido' ? ' aturdido' : '';
+        const condClass = occ.condition==='tumbado' ? ' tumbado' : occ.condition==='aturdido' ? ' aturdido' : occ.condition==='despistado' ? ' despistado' : '';
         const targetClass = isValidBlockTarget(occ.id) ? ' block-target' : '';
         const freeCatchClass = (freeCatchTeam===occ.team && occ.onPitch && occ.condition==='standing') ? ' free-catch-target' : '';
         t.className = 'token' + (occ.id===selected?' selected':'') + (occ.activated?' activated':'') + condClass + targetClass + freeCatchClass;
@@ -598,12 +620,12 @@ function renderPitch(){
         t.textContent = occ.num;
         const pitchExtra = 'MA restante ' + (occ.remainingMove ?? occ.ma) + '/' + occ.ma +
           ((occ.gfiUsed ?? 0) > 0 ? ' · A por ellos ' + occ.gfiUsed + '/3' : '') +
-          (occ.condition==='tumbado' ? ' · TUMBADO' : occ.condition==='aturdido' ? ' · ATURDIDO' : '');
+          (occ.condition==='tumbado' ? ' · TUMBADO' : occ.condition==='aturdido' ? ' · ATURDIDO' : occ.condition==='despistado' ? ' · DESPISTADO' : '');
         t.title = playerTooltipText(occ, pitchExtra);
-        if(occ.condition==='tumbado' || occ.condition==='aturdido'){
+        if(occ.condition==='tumbado' || occ.condition==='aturdido' || occ.condition==='despistado'){
           const mark = document.createElement('div');
           mark.className = 'token-mark';
-          mark.textContent = occ.condition==='tumbado' ? 'T' : 'A';
+          mark.textContent = occ.condition==='tumbado' ? 'T' : occ.condition==='aturdido' ? 'A' : 'D';
           t.appendChild(mark);
         }
         if(ball.carrierId===occ.id){
@@ -754,7 +776,7 @@ function tokenClicked(id){
     updateStatus('No es el turno de ' + teamName(p.team) + '.');
     return;
   }
-  if(p.activated && p.condition!=='tumbado' && p.condition!=='aturdido'){
+  if(p.activated && p.condition!=='tumbado' && p.condition!=='aturdido' && p.condition!=='despistado'){
     updateStatus(p.name + ' ya se ha activado este turno.');
     return;
   }
@@ -772,11 +794,13 @@ function renderSelInfo(){
   const btn = document.getElementById('recoveryBtn');
   const blockBtn = document.getElementById('blockBtn');
   const blitzBtn = document.getElementById('blitzBtn');
+  const despBtn = document.getElementById('despistadoBtn');
   if(selected===null){
     el.innerHTML = 'Ninguno';
     btn.style.display = 'none';
     blockBtn.style.display = 'none';
     blitzBtn.style.display = 'none';
+    despBtn.style.display = 'none';
     return;
   }
   const p = players.find(x=>x.id===selected);
@@ -785,10 +809,12 @@ function renderSelInfo(){
     btn.style.display = 'none';
     blockBtn.style.display = 'none';
     blitzBtn.style.display = 'none';
+    despBtn.style.display = 'none';
     return;
   }
   const condLabel = p.condition==='tumbado' ? ' · <span style="color:var(--bad)">TUMBADO</span>'
-                   : p.condition==='aturdido' ? ' · <span style="color:var(--bad)">ATURDIDO</span>' : '';
+                   : p.condition==='aturdido' ? ' · <span style="color:var(--bad)">ATURDIDO</span>'
+                   : p.condition==='despistado' ? ' · <span style="color:var(--gold)">DESPISTADO</span>' : '';
   const blitzLabel = (blitzActivePlayer===p.id) ? ' · <span style="color:var(--gold)">⚡ BLITZ EN CURSO</span>' : '';
   const skillsText = (p.skills && p.skills.length) ? p.skills.join(', ') : 'Sin habilidades';
   el.innerHTML = `
@@ -801,6 +827,16 @@ function renderSelInfo(){
   const canAct = phase==='live' && p.team===state.active && !p.activated && p.condition==='standing';
   blockBtn.style.display = (canAct && !p.blockedThisActivation) ? 'block' : 'none';
   blitzBtn.style.display = (canAct && !p.blockedThisActivation && !blitzUsedByTeam[p.team] && blitzActivePlayer!==p.id) ? 'block' : 'none';
+
+  if(p.condition==='standing'){
+    despBtn.textContent = '😵‍💫 Marcar Despistado';
+    despBtn.style.display = 'block';
+  } else if(p.condition==='despistado'){
+    despBtn.textContent = '✅ Quitar Despistado';
+    despBtn.style.display = 'block';
+  } else {
+    despBtn.style.display = 'none';
+  }
 
   if(p.condition==='aturdido'){
     btn.style.display = 'none';
@@ -1146,6 +1182,16 @@ function ballPosition(){
   return { row: ball.row, col: ball.col };
 }
 
+function bounceDirectionNumber(baseR, baseC, r, c){
+  const dr = r - baseR, dc = c - baseC;
+  const map = {
+    '-1,-1':1, '-1,0':2, '-1,1':3,
+    '0,-1':4,           '0,1':5,
+    '1,-1':6, '1,0':7, '1,1':8
+  };
+  return map[dr+','+dc] || null;
+}
+
 function isValidBounceCell(r,c){
   if(!ballBounceActive) return false;
   const pos = ballPosition();
@@ -1179,7 +1225,7 @@ function resolveBounce(r,c){
   if(occ.condition==='standing'){
     openCatchModal(occ);
   } else {
-    log('🏈 El balón bota sobre ' + occ.name + ' (' + (occ.condition==='tumbado'?'tumbado':'aturdido') + ') y sigue botando.');
+    log('🏈 El balón bota sobre ' + occ.name + ' (' + occ.condition + ') y sigue botando.');
     startBallBounce();
   }
 }
@@ -1298,8 +1344,8 @@ function startKickoffBounce(step){
   document.getElementById('kickoffDirDie').textContent = '–';
   document.getElementById('kickoffDistDie').textContent = '–';
   document.getElementById('kickoffStepText').textContent = step===1
-    ? 'Patada inicial: tirad 1D8 (dirección) y 1D6 (nº de casillas). Elegid la casilla adyacente resaltada que marca la dirección, o "Fuera del campo".'
-    : 'Rebote final: tirad 1D8 (dirección) y elegid la casilla adyacente resaltada, o "Fuera del campo".';
+    ? 'Patada inicial: tirad 1D8 (dirección) y 1D6 (nº de casillas). Elegid la casilla numerada (1-8: 1-2-3 arriba, 4-balón-5 en medio, 6-7-8 abajo), o "Fuera del campo".'
+    : 'Rebote final: tirad 1D8 y elegid la casilla numerada (1-8), o "Fuera del campo".';
   renderPitch();
   broadcastState();
 }

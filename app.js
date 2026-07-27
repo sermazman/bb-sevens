@@ -22,6 +22,7 @@ let blitzUsedByTeam = { A: false, B: false };
 let blitzActivePlayer = null;
 let blockTargeting = null;   // attacker id currently choosing an adjacent target
 let activeBlock = null;      // { attackerId, defenderId, isBlitz }
+let blockDiceRolled = false;
 let pendingArmorQueue = [];
 let pendingPush = null;      // { attackerId, defenderId, kind, isBlitz }
 let pendingFollowUp = null;  // { attackerId, defenderId, vacatedR, vacatedC, fallKind, isBlitz, directInjuryPlayerId }
@@ -126,6 +127,7 @@ function snapshotState(){
     blockText: document.getElementById('blockText').textContent,
     blockDiceAreaHtml: document.getElementById('blockDiceArea').innerHTML,
     blockOutcomeRowVisible: document.getElementById('blockOutcomeRow').style.display==='block',
+    blockDiceRolled,
     followUpModalOpen: document.getElementById('followUpModal').classList.contains('show'),
     followUpText: document.getElementById('followUpText').textContent,
     catchModalOpen: document.getElementById('catchModal').classList.contains('show'),
@@ -231,6 +233,7 @@ function applyRemoteState(payload){
   document.getElementById('blockText').textContent = payload.blockText || '';
   document.getElementById('blockDiceArea').innerHTML = payload.blockDiceAreaHtml || '';
   document.getElementById('blockOutcomeRow').style.display = payload.blockOutcomeRowVisible ? 'block' : 'none';
+  blockDiceRolled = !!payload.blockDiceRolled;
   document.getElementById('blockModal').classList.toggle('show', !!payload.blockModalOpen);
 
   document.getElementById('followUpText').textContent = payload.followUpText || '';
@@ -751,6 +754,11 @@ function completeStep(p, r, c, consume){
 }
 
 function tokenClicked(id){
+  const p0 = players.find(x=>x.id===id);
+  if(p0 && p0.onPitch && (placingBallFree || pendingKickPlacement || kickoffBounceStep || ballBounceActive || pendingPush)){
+    cellClicked(p0.row, p0.col);
+    return;
+  }
   if(freeCatchTeam!==null){
     assignFreeCatch(id);
     return;
@@ -897,6 +905,9 @@ function startBlockTargeting(){
   const hasTarget = players.some(p2 => p2.onPitch && p2.team!==p.team && p2.condition==='standing' &&
     Math.max(Math.abs(p2.row-p.row), Math.abs(p2.col-p.col))===1);
   if(!hasTarget){ alert('No hay rivales en pie adyacentes.'); return; }
+  document.getElementById('blockDiceArea').innerHTML = '';
+  document.getElementById('blockOutcomeRow').style.display = 'none';
+  blockDiceRolled = false;
   blockTargeting = p.id;
   renderPitch();
   updateStatus('Elige el rival a placar (ficha resaltada en rojo).');
@@ -935,6 +946,7 @@ function executeBlockHit(attacker, defender, isBlitz){
 
 function proceedToBlockDice(attacker, defender, isBlitzHit){
   activeBlock = { attackerId: attacker.id, defenderId: defender.id, isBlitz: !!isBlitzHit };
+  blockDiceRolled = false;
   document.getElementById('blockText').textContent = `${attacker.name} placa a ${defender.name} (${teamName(defender.team)}).`;
   document.getElementById('blockDiceArea').innerHTML = '';
   document.getElementById('blockOutcomeRow').style.display = 'none';
@@ -954,12 +966,14 @@ function rollBlockDiceModal(n){
     el.appendChild(d);
   });
   document.getElementById('blockOutcomeRow').style.display = 'block';
+  blockDiceRolled = true;
   log('🎲 Placaje x' + n + ': ' + results.map(i=>BLOCK_FACES[i].replace('\n',' ')).join(' / '));
   broadcastState();
 }
 
 function applyBlockOutcome(kind){
   if(!activeBlock) return;
+  if(!blockDiceRolled){ alert('Tirad primero los dados de placaje.'); return; }
   const attacker = players.find(x=>x.id===activeBlock.attackerId);
   const defender = players.find(x=>x.id===activeBlock.defenderId);
   const isBlitz = activeBlock.isBlitz;
@@ -1037,6 +1051,7 @@ function resolvePush(r,c){
   log('➡️ ' + defender.name + ' es empujado.');
 
   const hitLooseBall = (ball.carrierId===null && ball.row===r && ball.col===c);
+  if(!hitLooseBall){ checkTouchdown(defender); }
 
   pendingFollowUp = {
     attackerId: info.attackerId, defenderId: info.defenderId,
@@ -1051,6 +1066,11 @@ function resolvePush(r,c){
   if(hitLooseBall){
     log('🏈 El balón sale despedido por el empujón y rebota.');
     startBallBounce();
+  }
+
+  if(pendingTD){
+    pendingFollowUp = null;
+    return;
   }
 
   if(attacker){
@@ -1108,6 +1128,7 @@ function resolveFollowUp(doFollow){
       if(ball.carrierId===null && ball.row===info.vacatedR && ball.col===info.vacatedC && attacker.condition==='standing'){
         landedOnBall = true;
       }
+      checkTouchdown(attacker);
     }
   }
   renderRosters(); renderPitch(); renderSelInfo();

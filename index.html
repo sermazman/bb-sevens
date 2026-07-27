@@ -53,6 +53,7 @@
       <h2>Jugador seleccionado</h2>
       <div id="selInfo" class="mono" style="font-size:13px; color:#cfc3a8;">Ninguno</div>
       <button class="full" style="margin-top:10px;" onclick="assignBall()">🏈 Asignar balón a este jugador</button>
+      <button class="full" onclick="startPlaceBallFree()">📍 Colocar balón suelto en el campo</button>
       <button class="full" id="blockBtn" onclick="startBlockTargeting()" style="display:none;">⚔️ Placar</button>
       <button class="full" id="blitzBtn" onclick="declareBlitz()" style="display:none;">⚡ Blitz</button>
       <button class="full danger" onclick="knockDown()">👊 Derribar (tirar armadura)</button>
@@ -93,15 +94,27 @@
     <div class="panel" id="kickoffPanel" style="display:none; border-color:#4a7a9c;">
       <h2 style="color:#7db8e8;">🏈 Saque inicial</h2>
       <div class="small-note" id="kickoffStepText">Tirad los dados y elegid la casilla.</div>
-      <div class="row" id="kickoffEventRow" style="margin-top:8px;">
-        <button onclick="rollKickoffEventDie()">Tirar 1D6 (evento)</button>
-        <div class="die-face" id="kickoffEventDie">–</div>
-      </div>
       <div class="row" style="margin-top:8px;">
         <button onclick="rollKickoffDirDie()">Tirar 1D8 (dirección)</button>
         <div class="die-face" id="kickoffDirDie">–</div>
       </div>
+      <div class="row" id="kickoffDistRow" style="margin-top:8px;">
+        <button onclick="rollKickoffDistanceDie()">Tirar 1D6 (distancia)</button>
+        <div class="die-face" id="kickoffDistDie">–</div>
+      </div>
       <button class="full danger" style="margin-top:8px;" onclick="kickoffOutOfBounds()">🌀 Fuera del campo</button>
+    </div>
+
+    <div class="panel" id="kickoffEventPanel" style="display:none; border-color:#7db8e8;">
+      <h2 style="color:#7db8e8;">🎲 Evento de patada inicial</h2>
+      <div class="small-note">Tirad 2D6 y aplicad el resultado de vuestra tabla de eventos.</div>
+      <div class="row" style="justify-content:center; gap:10px; margin-top:8px;">
+        <div class="die-face" id="kickoffEventDie1">–</div>
+        <div class="die-face" id="kickoffEventDie2">–</div>
+      </div>
+      <div class="mono" id="kickoffEventSum" style="margin:8px 0; color:var(--gold);">Suma: –</div>
+      <button class="full primary" onclick="rollKickoffEvent2D6()">Tirar 2D6</button>
+      <button class="full" style="margin-top:8px;" onclick="continueAfterKickoffEvent()">➡️ Continuar al rebote final</button>
     </div>
 
     <div class="panel" id="freeCatchPanel" style="display:none; border-color:var(--gold);">
@@ -135,8 +148,6 @@
         <div id="koListA" class="reserve-tags"><span class="small-note">Ninguno</span></div>
         <div class="small-note" style="margin-top:6px;">Heridos:</div>
         <div id="injuredListA" class="reserve-tags"><span class="small-note">Ninguno</span></div>
-        <div class="small-note" style="margin-top:6px;">Graves / Fallecidos:</div>
-        <div id="severeListA" class="reserve-tags"><span class="small-note">Ninguno</span></div>
       </div>
       <div class="reserve-team">
         <h2 style="color:var(--team-b);">🩹 Azul — bajas</h2>
@@ -144,8 +155,6 @@
         <div id="koListB" class="reserve-tags"><span class="small-note">Ninguno</span></div>
         <div class="small-note" style="margin-top:6px;">Heridos:</div>
         <div id="injuredListB" class="reserve-tags"><span class="small-note">Ninguno</span></div>
-        <div class="small-note" style="margin-top:6px;">Graves / Fallecidos:</div>
-        <div id="severeListB" class="reserve-tags"><span class="small-note">Ninguno</span></div>
       </div>
     </div>
 

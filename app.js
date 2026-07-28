@@ -44,6 +44,16 @@ function updateConnStatus(msg, connected){
   document.getElementById('connDot').classList.toggle('on', !!connected);
 }
 
+function toggleGameMenu(){
+  document.getElementById('gameMenuDropdown').classList.toggle('show');
+}
+document.addEventListener('click', (e)=>{
+  const wrap = document.querySelector('.game-menu-wrap');
+  if(wrap && !wrap.contains(e.target)){
+    document.getElementById('gameMenuDropdown').classList.remove('show');
+  }
+});
+
 function hostRoom(){
   const code = generateCode();
   peer = new Peer('bb7-' + code);

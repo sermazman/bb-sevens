@@ -17,17 +17,34 @@
     <div class="sub">Tablero digital · Blood Bowl Sevens</div>
   </div>
 
-  <div class="conn-header">
-    <span class="conn-dot" id="connDot"></span>
-    <span class="cstat mono" id="connStatus">Sin conectar</span>
-    <span id="connControls" style="display:flex; gap:6px; align-items:center;">
-      <button class="primary" onclick="hostRoom()">Crear sala</button>
-      <input type="text" id="joinCodeInput" placeholder="CÓDIGO" maxlength="4">
-      <button onclick="joinRoom()">Unirse</button>
-    </span>
-    <span id="roomCodeBox" style="display:none;">
-      <span class="room-code-inline" id="roomCodeText">----</span>
-    </span>
+  <div class="game-menu-wrap">
+    <button class="menu-toggle" onclick="toggleGameMenu()">
+      <span class="conn-dot" id="connDot"></span>
+      ⚙️ Menú ▾
+    </button>
+    <div class="game-menu-dropdown" id="gameMenuDropdown">
+      <h3>Conexión remota</h3>
+      <div class="small-note" id="connStatus">Sin conectar. Jugad los dos en el mismo enlace.</div>
+      <div id="connControls" style="margin-top:6px;">
+        <button class="primary full" onclick="hostRoom()">Crear sala</button>
+        <div class="row" style="margin-top:6px;">
+          <input type="text" id="joinCodeInput" placeholder="CÓDIGO" maxlength="4">
+          <button onclick="joinRoom()">Unirse</button>
+        </div>
+      </div>
+      <div id="roomCodeBox" style="display:none; margin-top:6px;">
+        <span class="small-note">Código de sala:</span>
+        <span class="room-code-inline" id="roomCodeText">----</span>
+      </div>
+
+      <h3 style="margin-top:14px;">Partida</h3>
+      <div class="small-note">Se guarda sola en este navegador tras cada acción. Si se cae la conexión, recargad la página y os ofrecerá recuperarla.</div>
+      <div class="row" style="margin-top:8px;">
+        <button onclick="downloadSaveFile()">⬇️ Descargar</button>
+        <button onclick="document.getElementById('loadSaveInput').click()">⬆️ Cargar</button>
+      </div>
+      <input type="file" id="loadSaveInput" accept="application/json" style="display:none" onchange="loadSaveFile(this)">
+    </div>
   </div>
 
   <div class="header-right mono" id="statusLine">Fase de colocación</div>
@@ -37,16 +54,6 @@
 <div class="app">
 
   <div>
-    <div class="panel">
-      <h2>💾 Partida</h2>
-      <div class="small-note">Se guarda sola en este navegador tras cada acción. Si se cae la conexión, recargad la página y os ofrecerá recuperarla.</div>
-      <div class="row" style="margin-top:8px;">
-        <button onclick="downloadSaveFile()">⬇️ Descargar copia</button>
-        <button onclick="document.getElementById('loadSaveInput').click()">⬆️ Cargar copia</button>
-      </div>
-      <input type="file" id="loadSaveInput" accept="application/json" style="display:none" onchange="loadSaveFile(this)">
-    </div>
-
     <div class="panel setup" id="setupPanel">
       <h2>🏈 Fase de colocación</h2>
       <label>Equipo que patea (inicia la entrada)</label>

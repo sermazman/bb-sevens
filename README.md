@@ -22,8 +22,12 @@ Tablero interactivo para jugar partidas de Blood Bowl Sevens, con conexión en d
 Cada equipo tiene botones para cargar (`📁 Cargar JSON`) y guardar (`💾 Guardar JSON`) su plantilla. Usa `equipo-ejemplo.json` como referencia del formato.
 Se cambiará los textos JSON por "EQUIPOS" en sus lugares necesarios. Quedará más limpio.
 
-## Próximas mejoras posibles
+## Habilidades automatizadas
+- Esprintar
+- Furia (en pruebas)
 
-- Implementación de habilidades
+## Próximas mejoras posibles
+- Colocacion automatica del 7 inicial 
+- Levantar jugador gastan 3 MA o ninguno por habilidad "En pie de Un salto"
 - Evento de Patada inicial automático según se lanza 2d6
 - Inclusión de imágenes en lugar de las fichas

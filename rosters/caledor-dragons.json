@@ -1,6 +1,8 @@
 {
-  "teamName": "Caledor Dragons",
+  "teamName": "Altos Dragones",
   "race": "Altos Elfos",
+  "color": "#42adff",
+  "textColor": "auto",
   "players": [
     { "num": 1, "name": "Gareth Ironside", "position": "Lineman", "ma": 6, "st": 3, "ag": "2+", "pa": "3+", "av": "9+", "skills": [] },
     { "num": 2, "name": "Aldric Bowman", "position": "Lineman", "ma": 6, "st": 3, "ag": "2+", "pa": "3+", "av": "9+", "skills": [] },

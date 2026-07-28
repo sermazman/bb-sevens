@@ -48,9 +48,26 @@
   .skill-tag button{
     border:none; background:none; color:var(--bad); padding:0; font-size:13px; cursor:pointer;
   }
+  /* Colores por categoría de habilidad */
+  .skill-tag.cat-general{border-color:#d8a94b; color:#d8a94b;}
+  .skill-tag.cat-agilidad{border-color:#7cbf5a; color:#7cbf5a;}
+  .skill-tag.cat-pase{border-color:#4a90c4; color:#6bb1e6;}
+  .skill-tag.cat-fuerza{border-color:#d1793a; color:#e0904f;}
+  .skill-tag.cat-triquinuelas{border-color:#9b6fd1; color:#b28fe0;}
+  .skill-tag.cat-mutacion{border-color:#4bbfb0; color:#4bbfb0;}
+  .skill-tag.cat-personalizada{border-color:#6b6152; color:#a99b7f;}
   .skill-add-row{display:flex; gap:6px;}
-  .skill-add-row input{margin-bottom:0;}
-  .skill-add-row button{white-space:nowrap;}
+  .skill-add-row select{margin-bottom:0; flex:1; min-width:0;}
+  .skill-add-row button{white-space:nowrap; padding:6px 8px;}
+  .cat-legend{display:flex; flex-wrap:wrap; gap:12px; margin-top:4px;}
+  .cat-legend-item{display:flex; align-items:center; gap:5px; font-size:11.5px; color:#a99b7f;}
+  .cat-legend-dot{width:9px; height:9px; border-radius:50%; flex-shrink:0;}
+  .cat-legend-item.cat-general .cat-legend-dot{background:#d8a94b;}
+  .cat-legend-item.cat-agilidad .cat-legend-dot{background:#7cbf5a;}
+  .cat-legend-item.cat-pase .cat-legend-dot{background:#4a90c4;}
+  .cat-legend-item.cat-fuerza .cat-legend-dot{background:#d1793a;}
+  .cat-legend-item.cat-triquinuelas .cat-legend-dot{background:#9b6fd1;}
+  .cat-legend-item.cat-mutacion .cat-legend-dot{background:#4bbfb0;}
   .jsonbox{
     background:#100e0c; border:1px solid var(--panel-line); border-radius:6px;
     padding:10px; font-family:'JetBrains Mono', monospace; font-size:11.5px;
@@ -124,6 +141,12 @@
     </div>
   </div>
 
+  <div class="panel" id="skillLegendPanel">
+    <h2>🎨 Categorías de habilidades</h2>
+    <div class="cat-legend" id="catLegend"></div>
+    <div class="small-note" style="margin-top:6px;">Al añadir una habilidad se elige de esta lista, así todo el mundo usa el mismo texto exacto. La categoría de cada una queda registrada para futuras funciones (filtros, estadísticas, etc.).</div>
+  </div>
+
   <div class="panel">
     <h2>Jugadores <span class="badge-count" id="playerCount">0</span></h2>
     <div class="roster-table">
@@ -162,6 +185,59 @@ const POSITIONS_BY_RACE = {
   'Nurgle': ['Rotter','Pestigor','Bloater'],
   'Goblins': ['Goblin','Bomma','Fanatic']
 };
+
+// Catálogo de habilidades embebido (fallback si no se puede leer rosters/skills.json,
+// por ejemplo al abrir el archivo en local en vez de online).
+const DEFAULT_SKILL_CATALOG = {
+  "General": ["Agallas", "Equilibrio Firme", "Forcejear", "Furia*", "Manos seguras", "Patada", "Placaje defensivo", "◆Placar", "Profesional", "Provocar", "Robar balón", "Zafarse"],
+  "Agilidad": ["Atrapar", "Echarse a un lado", "En pie de un salto", "Esprintar", "◆Esquivar", "Golpe a la carrera", "Pies Firmes", "Placaje heroico", "Proteger el cuero", "Recepción heroica", "Romper defensas", "Saltar"],
+  "Pase": ["Atento al balón", "Cañonero", "Líder", "Nervios de acero", "Parte nubes", "Pasar", "Pasar y Seguir", "Pase a lo loco", "Pase precipitado", "Pase seguro", "Patada despeje", "Precisión"],
+  "Fuerza": ["Abrirse paso", "Apartar", "Brazo fuerte", "Cabeza dura", "◆Defensa", "◆Golpe mortífero", "Imparable", "Llave de brazo", "Luchador", "Mantenerse firme", "Ojo de halcón", "Placaje múltiple"],
+  "Triquiñuelas": ["Agresor discreto", "Crujir", "Dejada", "Falta rápida", "Furtivo", "Innovador violento", "Jugar sucio", "Meter la bota", "Perseguir", "Piquete de ojos", "Saboteador", "Vuelo letal"],
+  "Mutación": ["Apariencia", "Boca monstruosa", "Brazos adicionales", "Cola prensil", "Cuernos", "Dos cabezas", "Garras", "Mano grande", "Piel férrea", "Piernas muy largas", "Presencia", "Tentáculos"]
+};
+
+const CATEGORY_CLASS = {
+  "General": "cat-general",
+  "Agilidad": "cat-agilidad",
+  "Pase": "cat-pase",
+  "Fuerza": "cat-fuerza",
+  "Triquiñuelas": "cat-triquinuelas",
+  "Mutación": "cat-mutacion"
+};
+
+let SKILL_CATALOG = DEFAULT_SKILL_CATALOG;
+let SKILL_TO_CATEGORY = {};
+
+function rebuildSkillIndex(){
+  SKILL_TO_CATEGORY = {};
+  Object.entries(SKILL_CATALOG).forEach(([cat, list]) => {
+    list.forEach(name => { SKILL_TO_CATEGORY[name] = cat; });
+  });
+}
+rebuildSkillIndex();
+
+function renderCatLegend(){
+  const el = document.getElementById('catLegend');
+  el.innerHTML = Object.keys(SKILL_CATALOG).map(cat =>
+    `<span class="cat-legend-item ${CATEGORY_CLASS[cat] || ''}"><span class="cat-legend-dot"></span>${cat}</span>`
+  ).join('');
+}
+renderCatLegend();
+
+async function loadSkillCatalog(){
+  try{
+    const res = await fetch('rosters/skills.json');
+    if(!res.ok) throw new Error('no skills.json');
+    const data = await res.json();
+    SKILL_CATALOG = data;
+    rebuildSkillIndex();
+    renderCatLegend();
+    renderPlayers();
+  } catch(err){
+    // Se queda con DEFAULT_SKILL_CATALOG, sin avisar: es un fallback normal en local.
+  }
+}
 
 function emptyPlayer(num){
   return { _uid: uid++, num: num, name: 'Jugador ' + num, position: 'Lineman', ma: 6, st: 3, ag: '3+', pa: '4+', av: '8+', skills: [] };
@@ -230,13 +306,22 @@ function updateField(_uid, field, value){
   scheduleJsonRefresh();
 }
 
-function addSkill(_uid, inputEl){
-  const val = inputEl.value.trim();
+function addSkillFromCatalog(_uid, selectEl){
+  const val = selectEl.value;
   if(!val) return;
   const p = findPlayer(_uid);
   if(!p) return;
-  p.skills.push(val);
-  inputEl.value = '';
+  if(!p.skills.includes(val)) p.skills.push(val);
+  selectEl.value = '';
+  renderPlayers();
+}
+
+function addCustomSkill(_uid){
+  const val = prompt('Nombre de la habilidad personalizada (no está en el catálogo estándar):');
+  if(!val || !val.trim()) return;
+  const p = findPlayer(_uid);
+  if(!p) return;
+  p.skills.push(val.trim());
   renderPlayers();
 }
 
@@ -252,15 +337,24 @@ function positionOptionsFor(race){
   return list.map(p => `<option value="${p}">`).join('');
 }
 
+function skillSelectOptionsHtml(){
+  return Object.entries(SKILL_CATALOG).map(([cat, list]) =>
+    `<optgroup label="${cat}">${list.map(s => `<option value="${s}">${s}</option>`).join('')}</optgroup>`
+  ).join('');
+}
+
 function renderPlayers(){
   const el = document.getElementById('playersList');
   el.innerHTML = '';
   team.players.forEach(p => {
     const div = document.createElement('div');
     div.className = 'rt-row rt-body';
-    const skillsHtml = p.skills.map((s, idx) =>
-      `<span class="skill-tag">${s} <button onclick="removeSkill(${p._uid}, ${idx})">✕</button></span>`
-    ).join('');
+    const skillsHtml = p.skills.map((s, idx) => {
+      const cat = SKILL_TO_CATEGORY[s];
+      const catClass = cat ? (CATEGORY_CLASS[cat] || '') : 'cat-personalizada';
+      const title = cat ? cat : 'Personalizada';
+      return `<span class="skill-tag ${catClass}" title="${title}">${s} <button onclick="removeSkill(${p._uid}, ${idx})">✕</button></span>`;
+    }).join('');
     div.innerHTML = `
       <div><input type="text" class="mono" value="${p.num}" oninput="updateField(${p._uid}, 'num', this.value)"></div>
       <div><input type="text" value="${p.name}" oninput="updateField(${p._uid}, 'name', this.value)"></div>
@@ -276,8 +370,11 @@ function renderPlayers(){
       <div class="pc-skills-cell">
         <div class="skill-tags">${skillsHtml}</div>
         <div class="skill-add-row">
-          <input type="text" placeholder="+ habilidad" onkeydown="if(event.key==='Enter'){addSkill(${p._uid}, this);}">
-          <button onclick="addSkill(${p._uid}, this.previousElementSibling)">＋</button>
+          <select onchange="addSkillFromCatalog(${p._uid}, this)">
+            <option value="">+ habilidad...</option>
+            ${skillSelectOptionsHtml()}
+          </select>
+          <button onclick="addCustomSkill(${p._uid})" title="Habilidad personalizada, fuera del catálogo">✎</button>
         </div>
       </div>
       <div><button class="pc-remove" onclick="removePlayer(${p._uid})">✕</button></div>`;
@@ -353,6 +450,7 @@ async function loadFromLibrary(fname){
 newTeam();
 addPlayer();
 loadLibrary();
+loadSkillCatalog();
 </script>
 </body>
 </html>

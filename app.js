@@ -23,6 +23,14 @@ let customColorsEnabled = false;
 function tokenColorFor(p){
   return (customColorsEnabled && teamCustomColor[p.team]) ? teamCustomColor[p.team] : teamColorHex[p.team];
 }
+function contrastTextColor(hex){
+  if(!hex) return '#fff';
+  const h = hex.replace('#','');
+  const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+  if(isNaN(r) || isNaN(g) || isNaN(b)) return '#fff';
+  const luminance = (0.299*r + 0.587*g + 0.114*b) / 255;
+  return luminance > 0.6 ? '#161311' : '#fff';
+}
 function setCustomColors(v){
   customColorsEnabled = v;
   document.getElementById('colorsOnBtn').classList.toggle('active', v);
@@ -422,7 +430,7 @@ function renderRosters(){
       const skillsText = (p.skills && p.skills.length) ? p.skills.join(', ') : 'Sin habilidades';
       div.innerHTML = `
         <div class="ri-row1">
-          <span class="num" style="background:${tokenColorFor(p)}">${p.num}</span>
+          <span class="num" style="background:${tokenColorFor(p)}; color:${contrastTextColor(tokenColorFor(p))}">${p.num}</span>
           <span class="pname">${p.name}</span>
           <span class="pos">${posText}</span>
           ${condTag}
@@ -448,7 +456,7 @@ function renderReserveZone(){
     if(!koEl || !injEl) return;
     const kos = players.filter(p=>p.team===team && p.condition==='ko');
     const injs = players.filter(p=>p.team===team && (p.condition==='injured' || p.condition==='injuredGrave' || p.condition==='dead'));
-    const chip = (p, extra) => `<div class="token-chip" style="background:${tokenColorFor(p)}" title="${playerTooltipText(p, extra).replace(/"/g,'&quot;')}">${p.num}</div>`;
+    const chip = (p, extra) => `<div class="token-chip" style="background:${tokenColorFor(p)}; color:${contrastTextColor(tokenColorFor(p))}" title="${playerTooltipText(p, extra).replace(/"/g,'&quot;')}">${p.num}</div>`;
     const injuryLabel = (p) => p.condition==='dead' ? 'MUERTO' : p.condition==='injuredGrave' ? 'HERIDA GRAVE' : 'HERIDO (LEVE)';
     koEl.innerHTML = kos.length ? kos.map(p=>chip(p,'INCONSCIENTE')).join('') : '<span class="small-note">Ninguno</span>';
     injEl.innerHTML = injs.length ? injs.map(p=>chip(p, injuryLabel(p))).join('') : '<span class="small-note">Ninguno</span>';
@@ -662,6 +670,7 @@ function renderPitch(){
         const freeCatchClass = (freeCatchTeam===occ.team && occ.onPitch && occ.condition==='standing') ? ' free-catch-target' : '';
         t.className = 'token' + (occ.id===selected?' selected':'') + (occ.activated?' activated':'') + condClass + targetClass + freeCatchClass;
         t.style.background = tokenColorFor(occ);
+        t.style.color = contrastTextColor(tokenColorFor(occ));
         t.textContent = occ.num;
         const pitchExtra = 'MA restante ' + (occ.remainingMove ?? occ.ma) + '/' + occ.ma +
           ((occ.gfiUsed ?? 0) > 0 ? ' · A por ellos ' + occ.gfiUsed + '/3' : '') +

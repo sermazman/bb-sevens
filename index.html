@@ -185,7 +185,10 @@
 
     <div class="teams-wide">
       <div class="team-wide-panel a">
-        <input class="team-name-input" id="teamAName" type="text" value="Equipo Rojo" style="border-color:var(--team-a)">
+        <div class="row" style="align-items:center; gap:8px;">
+          <input class="team-name-input" id="teamAName" type="text" value="Equipo Rojo" style="border-color:var(--team-a); flex:1;">
+          <input type="color" id="teamAColor" class="color-pick" value="#c0392b" title="Color del equipo" onchange="setTeamColor('A', this.value)">
+        </div>
         <h3>Plantilla en banquillo</h3>
         <div class="roster-list" id="rosterA"></div>
         <div class="row" style="margin-top:8px;">
@@ -200,7 +203,10 @@
       </div>
 
       <div class="team-wide-panel b">
-        <input class="team-name-input" id="teamBName" type="text" value="Equipo Azul" style="border-color:var(--team-b)">
+        <div class="row" style="align-items:center; gap:8px;">
+          <input class="team-name-input" id="teamBName" type="text" value="Equipo Azul" style="border-color:var(--team-b); flex:1;">
+          <input type="color" id="teamBColor" class="color-pick" value="#2a6fb0" title="Color del equipo" onchange="setTeamColor('B', this.value)">
+        </div>
         <h3>Plantilla en banquillo</h3>
         <div class="roster-list" id="rosterB"></div>
         <div class="row" style="margin-top:8px;">
@@ -220,7 +226,7 @@
       <span class="small-note" style="margin:0;">COLORES PERSONALIZADOS DE FICHA:</span>
       <button id="colorsOnBtn" class="mini-toggle" onclick="setCustomColors(true)">SÍ</button>
       <button id="colorsOffBtn" class="mini-toggle active" onclick="setCustomColors(false)">NO</button>
-      <span class="small-note" style="margin:0;">Ajusta el color de cada jugador con la ruedita junto a su ficha en la plantilla.</span>
+      <span class="small-note" style="margin:0;">Ajusta el color de cada equipo con la ruedita junto a su nombre, arriba.</span>
     </div>
   </div>
 

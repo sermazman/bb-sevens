@@ -18,9 +18,10 @@ let pendingGfi = null;   // { playerId, toR, toC }
 let armorForPlayer = null; // player id currently being armor-rolled
 let state = { half: 1, active: 'A', turns: { A: 0, B: 0 } };
 let teamRace = { A: '', B: '' };
+let teamCustomColor = { A: null, B: null };
 let customColorsEnabled = false;
 function tokenColorFor(p){
-  return (customColorsEnabled && p.color) ? p.color : teamColorHex[p.team];
+  return (customColorsEnabled && teamCustomColor[p.team]) ? teamCustomColor[p.team] : teamColorHex[p.team];
 }
 function setCustomColors(v){
   customColorsEnabled = v;
@@ -29,10 +30,8 @@ function setCustomColors(v){
   renderRosters(); renderPitch();
   broadcastState();
 }
-function setPlayerColor(id, hex){
-  const p = players.find(x=>x.id===id);
-  if(!p) return;
-  p.color = hex;
+function setTeamColor(team, hex){
+  teamCustomColor[team] = hex;
   renderRosters(); renderPitch();
   broadcastState();
 }
@@ -121,7 +120,7 @@ function setupConnHandlers(){
 function snapshotState(){
   return {
     players, ball, phase, state, pendingTD, pendingDodge, pendingGfi, armorForPlayer, nextId,
-    koQueue, pendingKo, teamRace, customColorsEnabled,
+    koQueue, pendingKo, teamRace, customColorsEnabled, teamCustomColor,
     ballBounceActive, pendingCatch, pendingBallDrop, pendingDriveStart,
     pendingKickPlacement, kickoffBounceStep, kickoffKickingTeam, kickoffReceivingTeam, freeCatchTeam, placingBallFree,
     blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp,
@@ -199,6 +198,9 @@ function applyRemoteState(payload){
   pendingKo = payload.pendingKo;
   teamRace = payload.teamRace || { A:'', B:'' };
   customColorsEnabled = !!payload.customColorsEnabled;
+  teamCustomColor = payload.teamCustomColor || { A:null, B:null };
+  if(teamCustomColor.A) document.getElementById('teamAColor').value = teamCustomColor.A;
+  if(teamCustomColor.B) document.getElementById('teamBColor').value = teamCustomColor.B;
   document.getElementById('colorsOnBtn').classList.toggle('active', customColorsEnabled);
   document.getElementById('colorsOffBtn').classList.toggle('active', !customColorsEnabled);
   ballBounceActive = !!payload.ballBounceActive;
@@ -336,14 +338,14 @@ function openAddPlayer(team){
   if(num === null) return;
   const name = prompt('Nombre (opcional):') || ('Jugador ' + num);
   const ma = parseFloat(prompt('Movimiento (MA):', '6')) || 6;
-  players.push({ id: nextId++, team, num, name, ma, remainingMove: ma, gfiUsed:0, condition:'standing', blockedThisActivation:false, color:null, row:null, col:null, activated:false, onPitch:false });
+  players.push({ id: nextId++, team, num, name, ma, remainingMove: ma, gfiUsed:0, condition:'standing', blockedThisActivation:false, row:null, col:null, activated:false, onPitch:false });
   renderRosters();
   broadcastState();
 }
 
 function quickFill(team){
   for(let i=1;i<=7;i++){
-    players.push({ id: nextId++, team, num:i, name:'Jugador '+i, ma:6, remainingMove:6, gfiUsed:0, condition:'standing', blockedThisActivation:false, color:null, row:null, col:null, activated:false, onPitch:false });
+    players.push({ id: nextId++, team, num:i, name:'Jugador '+i, ma:6, remainingMove:6, gfiUsed:0, condition:'standing', blockedThisActivation:false, row:null, col:null, activated:false, onPitch:false });
   }
   renderRosters();
   broadcastState();
@@ -362,13 +364,17 @@ function importTeamFile(team, inputEl){
       document.getElementById(team==='A' ? 'teamAName':'teamBName').value = data.teamName;
     }
     teamRace[team] = data.race || '';
+    if(data.color){
+      teamCustomColor[team] = data.color;
+      document.getElementById(team==='A' ? 'teamAColor':'teamBColor').value = data.color;
+    }
     data.players.forEach(pd=>{
       const ma = pd.ma || 6;
       players.push({
         id: nextId++, team,
         num: pd.num ?? '?',
         name: pd.name || ('Jugador ' + (pd.num ?? '')),
-        ma, remainingMove: ma, gfiUsed:0, condition:'standing', blockedThisActivation:false, color: pd.color || null,
+        ma, remainingMove: ma, gfiUsed:0, condition:'standing', blockedThisActivation:false,
         st: pd.st, ag: pd.ag, pa: pd.pa, av: pd.av,
         position: pd.position || null,
         skills: pd.skills || [],
@@ -388,9 +394,9 @@ function exportTeam(team){
   const list = players.filter(p=>p.team===team).map(p=>({
     num:p.num, name:p.name, ma:p.ma,
     st:p.st, ag:p.ag, pa:p.pa, av:p.av,
-    position:p.position, skills:p.skills, color:p.color
+    position:p.position, skills:p.skills
   }));
-  const data = { teamName: teamName(team), race: teamRace[team] || '', players: list };
+  const data = { teamName: teamName(team), race: teamRace[team] || '', color: teamCustomColor[team] || null, players: list };
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -420,7 +426,6 @@ function renderRosters(){
           <span class="pname">${p.name}</span>
           <span class="pos">${posText}</span>
           ${condTag}
-          <input type="color" class="color-pick" value="${p.color || teamColorHex[team]}" title="Color de la ficha" onclick="event.stopPropagation()" onchange="setPlayerColor(${p.id}, this.value)">
           <button class="rm-btn" title="Eliminar" onclick="removePlayer(${p.id}, event)">✕</button>
         </div>
         <div class="ri-row2 mono">MA ${p.ma ?? '-'} · ST ${p.st ?? '-'} · AG ${p.ag ?? '-'} · PA ${p.pa ?? '-'} · AV ${p.av ?? '-'}</div>

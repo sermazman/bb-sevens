@@ -615,10 +615,14 @@ function occupiedBy(r,c){
   return players.find(p=>p.onPitch && p.row===r && p.col===c);
 }
 
+function maxGfiFor(p){
+  return playerHasSkill(p, 'esprintar', 'sprint') ? 3 : 2;
+}
+
 function moveMode(p){
   if(p.condition!=='standing') return null;
   if((p.remainingMove ?? p.ma) >= 1) return 'normal';
-  if((p.gfiUsed ?? 0) < 3) return 'gfi';
+  if((p.gfiUsed ?? 0) < maxGfiFor(p)) return 'gfi';
   return null;
 }
 
@@ -687,7 +691,7 @@ function renderPitch(){
         t.style.color = textColorFor(occ);
         t.textContent = occ.num;
         const pitchExtra = 'MA restante ' + (occ.remainingMove ?? occ.ma) + '/' + occ.ma +
-          ((occ.gfiUsed ?? 0) > 0 ? ' · A por ellos ' + occ.gfiUsed + '/3' : '') +
+          ((occ.gfiUsed ?? 0) > 0 ? ' · A por ellos ' + occ.gfiUsed + '/' + maxGfiFor(occ) : '') +
           (occ.condition==='tumbado' ? ' · TUMBADO' : occ.condition==='aturdido' ? ' · ATURDIDO' : occ.condition==='despistado' ? ' · DESPISTADO' : '');
         t.title = playerTooltipText(occ, pitchExtra);
         if(occ.condition==='tumbado' || occ.condition==='aturdido' || occ.condition==='despistado'){
@@ -895,7 +899,7 @@ function renderSelInfo(){
     <div style="color:#a99b7f; font-size:11.5px; margin-bottom:4px;">${p.position || 'Sin posición'}</div>
     <div class="mono" style="margin-bottom:4px;">MA ${p.ma} (restante ${p.remainingMove ?? p.ma}) · ST ${p.st ?? '-'} · AG ${p.ag ?? '-'} · PA ${p.pa ?? '-'} · AV ${p.av ?? '-'}</div>
     <div style="font-size:11.5px; font-style:italic; color:#8a7d64; margin-bottom:4px;">${skillsText}</div>
-    <div>${(p.gfiUsed??0)>0?'A por ellos '+p.gfiUsed+'/3':''}${condLabel}${blitzLabel}${ball.carrierId===p.id?' · 🏈 lleva el balón':''}</div>`;
+    <div>${(p.gfiUsed??0)>0?'A por ellos '+p.gfiUsed+'/'+maxGfiFor(p):''}${condLabel}${blitzLabel}${ball.carrierId===p.id?' · 🏈 lleva el balón':''}</div>`;
 
   const canAct = phase==='live' && p.team===state.active && !p.activated && p.condition==='standing';
   blockBtn.style.display = (canAct && !p.blockedThisActivation) ? 'block' : 'none';
@@ -1591,7 +1595,7 @@ function resolveDodge(success){
 function openGfiModal(p, toR, toC, chainDodge, blockDefenderId){
   pendingGfi = { playerId:p.id, toR, toC, chainDodge: !!chainDodge, blockDefenderId: blockDefenderId || null };
   const attempt = (p.gfiUsed ?? 0) + 1;
-  let msg = `${p.name} intenta "a por ellos" — casilla extra ${attempt}/3. Tirad D6.`;
+  let msg = `${p.name} intenta "a por ellos" — casilla extra ${attempt}/${maxGfiFor(p)}. Tirad D6.`;
   if(blockDefenderId){
     msg = `${p.name} ya no le queda MA para el placaje del Blitz — tirad D6 "a por ellos" para intentarlo igualmente.`;
   } else if(chainDodge){

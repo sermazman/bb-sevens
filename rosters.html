@@ -90,17 +90,13 @@
   .two-col-row{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
   @media (max-width:800px){ .two-col-row{grid-template-columns:1fr;} }
 
-  .team-color-grid{display:flex; align-items:center; gap:18px;}
-  .team-color-controls{flex:1; min-width:0;}
-  .team-color-controls input[type=color]{
-    width:100%; height:38px; padding:2px; cursor:pointer; margin-bottom:0;
-  }
-  .team-color-preview{
-    display:flex; flex-direction:column; align-items:center; gap:6px; flex-shrink:0;
-  }
-  .token-chip.token-preview-lg{
-    width:72px; height:72px; font-size:26px; border-width:3px;
-  }
+  .team-color-compact{display:flex; align-items:flex-end; gap:12px; flex-wrap:wrap;}
+  .tcc-field{display:flex; flex-direction:column; gap:3px;}
+  .tcc-field label{font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:#a99b7f; margin-bottom:0;}
+  .tcc-field input[type=color]{width:46px; height:30px; padding:1px; cursor:pointer; margin-bottom:0;}
+  .tcc-field select{width:auto; margin-bottom:0; padding:5px 7px; font-size:12px;}
+  .tcc-preview{margin-left:auto;}
+  .token-chip.token-preview-sm{width:42px; height:42px; font-size:15px; border-width:2px;}
 </style>
 </head>
 <body>
@@ -127,8 +123,14 @@
 
   <div class="panel" id="libraryPanel">
     <h2>📚 Librería de plantillas <span class="badge-count" id="libCount">0</span></h2>
-    <div id="libraryList"><div class="small-note">Buscando plantillas en /rosters/...</div></div>
-    <div class="small-note" style="margin-top:6px;">Solo funciona cuando la página está publicada online (GitHub Pages); al abrir el archivo local (file://) el navegador bloquea esta lectura.</div>
+    <div class="row" style="align-items:flex-end;">
+      <div style="flex:1;">
+        <label>Selecciona una plantilla</label>
+        <select id="librarySelect"><option value="">Cargando plantillas...</option></select>
+      </div>
+      <button class="primary" onclick="loadSelectedTemplate()" style="flex:0 0 auto; margin-bottom:8px;">📥 Cargar</button>
+    </div>
+    <div class="small-note" id="libraryStatus" style="margin-top:6px;"></div>
   </div>
 
   <div class="two-col-row">
@@ -140,24 +142,27 @@
 
     <div class="panel" id="teamColorPanel">
       <h2>🎨 Color del equipo</h2>
-      <div class="team-color-grid">
-        <div class="team-color-controls">
-          <label>Color de fondo de las fichas</label>
+      <div class="team-color-compact">
+        <div class="tcc-field">
+          <label>Fondo</label>
           <input type="color" id="teamColorInput" value="#c0392b" oninput="onTeamColorChange(this.value)">
-
-          <label style="margin-top:10px;">Color del número</label>
-          <select id="textColorMode" onchange="onTextColorModeChange(this.value)">
-            <option value="auto">Automático (según el fondo)</option>
-            <option value="custom">Personalizado</option>
-          </select>
-          <input type="color" id="teamTextColorInput" value="#ffffff" style="display:none; margin-top:6px;" oninput="onTeamTextColorChange(this.value)">
-          <div class="small-note">"Automático" calcula blanco o negro según el contraste con el color de fondo, igual que hace el tablero.</div>
         </div>
-        <div class="team-color-preview">
-          <div class="token-chip token-preview-lg" id="tokenPreview">7</div>
-          <div class="small-note">Ficha de ejemplo</div>
+        <div class="tcc-field">
+          <label>Número</label>
+          <select id="textColorMode" onchange="onTextColorModeChange(this.value)">
+            <option value="auto">Auto</option>
+            <option value="custom">Manual</option>
+          </select>
+        </div>
+        <div class="tcc-field" id="customColorField" style="display:none;">
+          <label>&nbsp;</label>
+          <input type="color" id="teamTextColorInput" value="#ffffff" oninput="onTeamTextColorChange(this.value)">
+        </div>
+        <div class="tcc-preview">
+          <div class="token-chip token-preview-sm" id="tokenPreview">7</div>
         </div>
       </div>
+      <div class="small-note" style="margin-top:6px;">"Auto" calcula blanco o negro según el contraste con el fondo.</div>
     </div>
   </div>
 
@@ -338,8 +343,9 @@ function syncColorUI(){
   document.getElementById('teamColorInput').value = team.color || '#c0392b';
   const isAuto = !team.textColor || team.textColor === 'auto';
   document.getElementById('textColorMode').value = isAuto ? 'auto' : 'custom';
+  const customField = document.getElementById('customColorField');
   const customInput = document.getElementById('teamTextColorInput');
-  customInput.style.display = isAuto ? 'none' : 'block';
+  customField.style.display = isAuto ? 'none' : 'flex';
   if(!isAuto) customInput.value = team.textColor;
   renderTokenPreview();
 }
@@ -351,14 +357,15 @@ function onTeamColorChange(val){
 }
 
 function onTextColorModeChange(mode){
+  const customField = document.getElementById('customColorField');
   const customInput = document.getElementById('teamTextColorInput');
   if(mode === 'auto'){
     team.textColor = 'auto';
-    customInput.style.display = 'none';
+    customField.style.display = 'none';
   } else {
     team.textColor = customInput.value || autoTextColor(team.color);
     customInput.value = team.textColor;
-    customInput.style.display = 'block';
+    customField.style.display = 'flex';
   }
   renderTokenPreview();
   scheduleJsonRefresh();
@@ -518,32 +525,56 @@ function exportTeamJSON(){
 
 // ---------- Librería de plantillas (fetch de /rosters/index.json) ----------
 async function loadLibrary(){
-  const listEl = document.getElementById('libraryList');
+  const select = document.getElementById('librarySelect');
+  const status = document.getElementById('libraryStatus');
   try{
     const res = await fetch('rosters/index.json');
-    if(!res.ok) throw new Error('no index');
+    if(!res.ok) throw new Error('rosters/index.json respondió ' + res.status);
     const files = await res.json();
     document.getElementById('libCount').textContent = files.length;
-    if(!files.length){ listEl.innerHTML = '<div class="small-note">No hay plantillas todavía en /rosters/.</div>'; return; }
-    listEl.innerHTML = '';
-    files.forEach(fname => {
-      const row = document.createElement('div');
-      row.className = 'lib-item';
-      row.innerHTML = `<span>${fname}</span><button onclick="loadFromLibrary('${fname}')">Cargar</button>`;
-      listEl.appendChild(row);
-    });
+    if(!files.length){
+      select.innerHTML = '<option value="">No hay plantillas en /rosters/</option>';
+      return;
+    }
+    // Mejor esfuerzo: leer cada archivo para mostrar nombre de equipo en vez del nombre de fichero.
+    const entries = await Promise.all(files.map(async fname => {
+      try{
+        const r = await fetch('rosters/' + fname);
+        if(!r.ok) throw new Error('http ' + r.status);
+        const d = await r.json();
+        const label = (d.teamName || fname) + (d.race ? ' — ' + d.race : '');
+        return { fname, label };
+      } catch(e){
+        return { fname, label: fname + ' (no se pudo leer)' };
+      }
+    }));
+    select.innerHTML = '<option value="">-- Selecciona una plantilla --</option>' +
+      entries.map(en => `<option value="${en.fname}">${en.label}</option>`).join('');
+    status.textContent = '';
   } catch(err){
-    listEl.innerHTML = '<div class="small-note">No se pudo leer /rosters/index.json (normal si estás abriendo el archivo en local en vez de online).</div>';
+    select.innerHTML = '<option value="">No disponible</option>';
+    status.textContent = 'No se pudo leer rosters/index.json (' + err.message + '). Normal si abres el archivo en local en vez de publicarlo online.';
   }
 }
 
+function loadSelectedTemplate(){
+  const fname = document.getElementById('librarySelect').value;
+  if(!fname){ alert('Selecciona antes una plantilla de la lista.'); return; }
+  loadFromLibrary(fname);
+}
+
 async function loadFromLibrary(fname){
+  const status = document.getElementById('libraryStatus');
   try{
     const res = await fetch('rosters/' + fname);
+    if(!res.ok) throw new Error('http ' + res.status);
     const data = await res.json();
+    if(!data.players || !Array.isArray(data.players)){ throw new Error('el JSON no tiene un array "players"'); }
     loadTeamData(data);
+    status.textContent = 'Cargado: ' + fname;
   } catch(err){
-    alert('No se pudo cargar rosters/' + fname);
+    status.textContent = 'No se pudo cargar rosters/' + fname + ' (' + err.message + ')';
+    alert('No se pudo cargar rosters/' + fname + '\n' + err.message);
   }
 }
 

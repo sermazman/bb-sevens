@@ -5,9 +5,9 @@
     { "num": 1, "name": "Gareth Ironside", "position": "Lineman", "ma": 6, "st": 3, "ag": "3+", "pa": "4+", "av": "8+", "skills": [] },
     { "num": 2, "name": "Aldric Bowman", "position": "Lineman", "ma": 6, "st": 3, "ag": "3+", "pa": "4+", "av": "8+", "skills": [] },
     { "num": 3, "name": "Wilhelm Krantz", "position": "Lineman", "ma": 6, "st": 3, "ag": "3+", "pa": "4+", "av": "8+", "skills": [] },
-    { "num": 4, "name": "Roland Blackwood", "position": "Blitzer", "ma": 7, "st": 3, "ag": "3+", "pa": "4+", "av": "8+", "skills": ["Bloqueo"] },
-    { "num": 5, "name": "Edmund Steiner", "position": "Blitzer", "ma": 7, "st": 3, "ag": "3+", "pa": "4+", "av": "8+", "skills": ["Bloqueo"] },
-    { "num": 6, "name": "Fritz Oberwald", "position": "Thrower", "ma": 6, "st": 3, "ag": "3+", "pa": "2+", "av": "8+", "skills": ["Manos Firmes", "Pase"] },
-    { "num": 7, "name": "Jonas Falk", "position": "Catcher", "ma": 8, "st": 2, "ag": "3+", "pa": "4+", "av": "7+", "skills": ["Recepción", "Esquiva"] }
+    { "num": 4, "name": "Roland Blackwood", "position": "Blitzer", "ma": 7, "st": 3, "ag": "3+", "pa": "4+", "av": "8+", "skills": ["Placar"] },
+    { "num": 5, "name": "Edmund Steiner", "position": "Blitzer", "ma": 7, "st": 3, "ag": "3+", "pa": "4+", "av": "8+", "skills": ["Placar"] },
+    { "num": 6, "name": "Fritz Oberwald", "position": "Thrower", "ma": 6, "st": 3, "ag": "3+", "pa": "2+", "av": "8+", "skills": ["Manos seguras", "Pasar"] },
+    { "num": 7, "name": "Jonas Falk", "position": "Catcher", "ma": 8, "st": 2, "ag": "3+", "pa": "4+", "av": "7+", "skills": ["Atrapar", "Esquivar"] }
   ]
 }

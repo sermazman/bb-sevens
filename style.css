@@ -345,6 +345,19 @@ button.full{width:100%; margin-top:6px;}
 .ri-row1 .pos{color:#8a7d64; font-size:10.5px; white-space:nowrap;}
 .ri-row1 .downed-tag{color:var(--bad); font-size:10px; font-weight:700; white-space:nowrap;}
 .ri-row1 .rm-btn{margin-left:auto; background:none; border:none; color:#a99b7f; font-size:14px; padding:0 4px; flex-shrink:0;}
+.color-pick{
+  width:20px; height:20px; padding:0; border:1px solid var(--panel-line); border-radius:4px;
+  background:none; cursor:pointer; flex-shrink:0;
+}
+.color-pick::-webkit-color-swatch-wrapper{padding:1px;}
+.color-pick::-webkit-color-swatch{border:none; border-radius:2px;}
+
+.color-toggle-row{
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  margin-top:10px; padding-top:10px; border-top:1px solid var(--panel-line);
+}
+.mini-toggle{padding:5px 12px; font-size:11px;}
+.mini-toggle.active{background:var(--gold); color:#1c1712; border-color:var(--gold);}
 .ri-row2{font-size:11px; color:#a99b7f; letter-spacing:0.5px;}
 .ri-row3{font-size:10.5px; color:#8a7d64; font-style:italic; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 

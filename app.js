@@ -18,6 +18,24 @@ let pendingGfi = null;   // { playerId, toR, toC }
 let armorForPlayer = null; // player id currently being armor-rolled
 let state = { half: 1, active: 'A', turns: { A: 0, B: 0 } };
 let teamRace = { A: '', B: '' };
+let customColorsEnabled = false;
+function tokenColorFor(p){
+  return (customColorsEnabled && p.color) ? p.color : teamColorHex[p.team];
+}
+function setCustomColors(v){
+  customColorsEnabled = v;
+  document.getElementById('colorsOnBtn').classList.toggle('active', v);
+  document.getElementById('colorsOffBtn').classList.toggle('active', !v);
+  renderRosters(); renderPitch();
+  broadcastState();
+}
+function setPlayerColor(id, hex){
+  const p = players.find(x=>x.id===id);
+  if(!p) return;
+  p.color = hex;
+  renderRosters(); renderPitch();
+  broadcastState();
+}
 let blitzUsedByTeam = { A: false, B: false };
 let blitzActivePlayer = null;
 let blockTargeting = null;   // attacker id currently choosing an adjacent target
@@ -103,7 +121,7 @@ function setupConnHandlers(){
 function snapshotState(){
   return {
     players, ball, phase, state, pendingTD, pendingDodge, pendingGfi, armorForPlayer, nextId,
-    koQueue, pendingKo, teamRace,
+    koQueue, pendingKo, teamRace, customColorsEnabled,
     ballBounceActive, pendingCatch, pendingBallDrop, pendingDriveStart,
     pendingKickPlacement, kickoffBounceStep, kickoffKickingTeam, kickoffReceivingTeam, freeCatchTeam, placingBallFree,
     blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp,
@@ -180,6 +198,9 @@ function applyRemoteState(payload){
   koQueue = payload.koQueue || [];
   pendingKo = payload.pendingKo;
   teamRace = payload.teamRace || { A:'', B:'' };
+  customColorsEnabled = !!payload.customColorsEnabled;
+  document.getElementById('colorsOnBtn').classList.toggle('active', customColorsEnabled);
+  document.getElementById('colorsOffBtn').classList.toggle('active', !customColorsEnabled);
   ballBounceActive = !!payload.ballBounceActive;
   pendingCatch = payload.pendingCatch;
   pendingBallDrop = payload.pendingBallDrop;
@@ -315,14 +336,14 @@ function openAddPlayer(team){
   if(num === null) return;
   const name = prompt('Nombre (opcional):') || ('Jugador ' + num);
   const ma = parseFloat(prompt('Movimiento (MA):', '6')) || 6;
-  players.push({ id: nextId++, team, num, name, ma, remainingMove: ma, gfiUsed:0, condition:'standing', blockedThisActivation:false, row:null, col:null, activated:false, onPitch:false });
+  players.push({ id: nextId++, team, num, name, ma, remainingMove: ma, gfiUsed:0, condition:'standing', blockedThisActivation:false, color:null, row:null, col:null, activated:false, onPitch:false });
   renderRosters();
   broadcastState();
 }
 
 function quickFill(team){
   for(let i=1;i<=7;i++){
-    players.push({ id: nextId++, team, num:i, name:'Jugador '+i, ma:6, remainingMove:6, gfiUsed:0, condition:'standing', blockedThisActivation:false, row:null, col:null, activated:false, onPitch:false });
+    players.push({ id: nextId++, team, num:i, name:'Jugador '+i, ma:6, remainingMove:6, gfiUsed:0, condition:'standing', blockedThisActivation:false, color:null, row:null, col:null, activated:false, onPitch:false });
   }
   renderRosters();
   broadcastState();
@@ -347,7 +368,7 @@ function importTeamFile(team, inputEl){
         id: nextId++, team,
         num: pd.num ?? '?',
         name: pd.name || ('Jugador ' + (pd.num ?? '')),
-        ma, remainingMove: ma, gfiUsed:0, condition:'standing', blockedThisActivation:false,
+        ma, remainingMove: ma, gfiUsed:0, condition:'standing', blockedThisActivation:false, color: pd.color || null,
         st: pd.st, ag: pd.ag, pa: pd.pa, av: pd.av,
         position: pd.position || null,
         skills: pd.skills || [],
@@ -367,7 +388,7 @@ function exportTeam(team){
   const list = players.filter(p=>p.team===team).map(p=>({
     num:p.num, name:p.name, ma:p.ma,
     st:p.st, ag:p.ag, pa:p.pa, av:p.av,
-    position:p.position, skills:p.skills
+    position:p.position, skills:p.skills, color:p.color
   }));
   const data = { teamName: teamName(team), race: teamRace[team] || '', players: list };
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
@@ -395,10 +416,11 @@ function renderRosters(){
       const skillsText = (p.skills && p.skills.length) ? p.skills.join(', ') : 'Sin habilidades';
       div.innerHTML = `
         <div class="ri-row1">
-          <span class="num" style="background:${teamColorHex[team]}">${p.num}</span>
+          <span class="num" style="background:${tokenColorFor(p)}">${p.num}</span>
           <span class="pname">${p.name}</span>
           <span class="pos">${posText}</span>
           ${condTag}
+          <input type="color" class="color-pick" value="${p.color || teamColorHex[team]}" title="Color de la ficha" onclick="event.stopPropagation()" onchange="setPlayerColor(${p.id}, this.value)">
           <button class="rm-btn" title="Eliminar" onclick="removePlayer(${p.id}, event)">✕</button>
         </div>
         <div class="ri-row2 mono">MA ${p.ma ?? '-'} · ST ${p.st ?? '-'} · AG ${p.ag ?? '-'} · PA ${p.pa ?? '-'} · AV ${p.av ?? '-'}</div>
@@ -421,7 +443,7 @@ function renderReserveZone(){
     if(!koEl || !injEl) return;
     const kos = players.filter(p=>p.team===team && p.condition==='ko');
     const injs = players.filter(p=>p.team===team && (p.condition==='injured' || p.condition==='injuredGrave' || p.condition==='dead'));
-    const chip = (p, extra) => `<div class="token-chip" style="background:${teamColorHex[team]}" title="${playerTooltipText(p, extra).replace(/"/g,'&quot;')}">${p.num}</div>`;
+    const chip = (p, extra) => `<div class="token-chip" style="background:${tokenColorFor(p)}" title="${playerTooltipText(p, extra).replace(/"/g,'&quot;')}">${p.num}</div>`;
     const injuryLabel = (p) => p.condition==='dead' ? 'MUERTO' : p.condition==='injuredGrave' ? 'HERIDA GRAVE' : 'HERIDO (LEVE)';
     koEl.innerHTML = kos.length ? kos.map(p=>chip(p,'INCONSCIENTE')).join('') : '<span class="small-note">Ninguno</span>';
     injEl.innerHTML = injs.length ? injs.map(p=>chip(p, injuryLabel(p))).join('') : '<span class="small-note">Ninguno</span>';
@@ -634,7 +656,7 @@ function renderPitch(){
         const targetClass = isValidBlockTarget(occ.id) ? ' block-target' : '';
         const freeCatchClass = (freeCatchTeam===occ.team && occ.onPitch && occ.condition==='standing') ? ' free-catch-target' : '';
         t.className = 'token' + (occ.id===selected?' selected':'') + (occ.activated?' activated':'') + condClass + targetClass + freeCatchClass;
-        t.style.background = teamColorHex[occ.team];
+        t.style.background = tokenColorFor(occ);
         t.textContent = occ.num;
         const pitchExtra = 'MA restante ' + (occ.remainingMove ?? occ.ma) + '/' + occ.ma +
           ((occ.gfiUsed ?? 0) > 0 ? ' · A por ellos ' + occ.gfiUsed + '/3' : '') +

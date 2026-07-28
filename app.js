@@ -36,16 +36,13 @@ function textColorFor(p){
   const override = teamTextColor[p.team];
   if(override==='white') return '#fff';
   if(override==='black') return '#161311';
+  if(override && override.startsWith('#')) return override;
   return contrastTextColor(tokenColorFor(p));
 }
 function setCustomColors(v){
   customColorsEnabled = v;
   document.getElementById('colorsOnBtn').classList.toggle('active', v);
   document.getElementById('colorsOffBtn').classList.toggle('active', !v);
-  ['A','B'].forEach(team=>{
-    document.getElementById('team'+team+'Color').style.display = v ? 'block' : 'none';
-    document.getElementById('team'+team+'TextColor').style.display = v ? 'block' : 'none';
-  });
   renderRosters(); renderPitch();
   broadcastState();
 }
@@ -223,15 +220,7 @@ function applyRemoteState(payload){
   teamRace = payload.teamRace || { A:'', B:'' };
   customColorsEnabled = !!payload.customColorsEnabled;
   teamCustomColor = payload.teamCustomColor || { A:null, B:null };
-  if(teamCustomColor.A) document.getElementById('teamAColor').value = teamCustomColor.A;
-  if(teamCustomColor.B) document.getElementById('teamBColor').value = teamCustomColor.B;
   teamTextColor = payload.teamTextColor || { A:'auto', B:'auto' };
-  document.getElementById('teamATextColor').value = teamTextColor.A;
-  document.getElementById('teamBTextColor').value = teamTextColor.B;
-  ['A','B'].forEach(team=>{
-    document.getElementById('team'+team+'Color').style.display = customColorsEnabled ? 'block' : 'none';
-    document.getElementById('team'+team+'TextColor').style.display = customColorsEnabled ? 'block' : 'none';
-  });
   document.getElementById('colorsOnBtn').classList.toggle('active', customColorsEnabled);
   document.getElementById('colorsOffBtn').classList.toggle('active', !customColorsEnabled);
   ballBounceActive = !!payload.ballBounceActive;
@@ -397,11 +386,9 @@ function importTeamFile(team, inputEl){
     teamRace[team] = data.race || '';
     if(data.color){
       teamCustomColor[team] = data.color;
-      document.getElementById(team==='A' ? 'teamAColor':'teamBColor').value = data.color;
     }
     if(data.textColor){
       teamTextColor[team] = data.textColor;
-      document.getElementById(team==='A' ? 'teamATextColor':'teamBTextColor').value = data.textColor;
     }
     data.players.forEach(pd=>{
       const ma = pd.ma || 6;

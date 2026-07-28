@@ -1,6 +1,8 @@
 {
-  "teamName": "Reikland Reavers",
+  "teamName": "Humans Ravens",
   "race": "Humanos",
+  "color": "#0b1cfe",
+  "textColor": "#f6fa00",
   "players": [
     { "num": 1, "name": "Gareth Ironside", "position": "Lineman", "ma": 6, "st": 3, "ag": "3+", "pa": "4+", "av": "8+", "skills": [] },
     { "num": 2, "name": "Aldric Bowman", "position": "Lineman", "ma": 6, "st": 3, "ag": "3+", "pa": "4+", "av": "8+", "skills": [] },

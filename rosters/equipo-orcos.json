@@ -1,0 +1,15 @@
+{
+  "teamName": "Colmillo Verde",
+  "race": "Orcos",
+  "color": "#3a5c33",
+  "textColor": "auto",
+  "players": [
+    { "num": 1, "name": "Grukk Bocafiera", "position": "Lineman", "ma": 5, "st": 3, "ag": "4+", "pa": "5+", "av": "9+", "skills": [] },
+    { "num": 2, "name": "Snagga Vientre-Verde", "position": "Lineman", "ma": 5, "st": 3, "ag": "4+", "pa": "5+", "av": "9+", "skills": [] },
+    { "num": 3, "name": "Morg Piel-Dura", "position": "Lineman", "ma": 5, "st": 3, "ag": "4+", "pa": "5+", "av": "9+", "skills": [] },
+    { "num": 4, "name": "Thrag Machaca-Huesos", "position": "Blitzer", "ma": 5, "st": 3, "ag": "4+", "pa": "5+", "av": "9+", "skills": ["Bloqueo"] },
+    { "num": 5, "name": "Borgut Cabeza-Negra", "position": "Black Orc Blocker", "ma": 4, "st": 4, "ag": "5+", "pa": "6+", "av": "10+", "skills": ["Cráneo Duro"] },
+    { "num": 6, "name": "Krunk Ojo-Ciego", "position": "Thrower", "ma": 4, "st": 3, "ag": "4+", "pa": "3+", "av": "9+", "skills": ["Manos Firmes", "Pase"] },
+    { "num": 7, "name": "Gorbash", "position": "Troll", "ma": 4, "st": 5, "ag": "5+", "pa": "6+", "av": "9+", "skills": ["Siempre Hambriento", "Solitario (4+)", "Golpe Contundente (+1)", "Realmente Estúpido", "Lanzar Compañero", "Vómito Proyectil"] }
+  ]
+}

@@ -1,8 +1,8 @@
 {
-  "General": ["Agallas", "Equilibrio Firme", "Forcejear", "Furia*", "Manos seguras", "Patada", "Placaje defensivo", "◆Placar", "Profesional", "Provocar", "Robar balón", "Zafarse"],
-  "Agilidad": ["Atrapar", "Echarse a un lado", "En pie de un salto", "Esprintar", "◆Esquivar", "Golpe a la carrera", "Pies Firmes", "Placaje heroico", "Proteger el cuero", "Recepción heroica", "Romper defensas", "Saltar"],
+  "General": ["Agallas", "Equilibrio Firme", "Forcejear", "Furia", "Manos seguras", "Patada", "Placaje defensivo", "Placar", "Profesional", "Provocar", "Robar balón", "Zafarse"],
+  "Agilidad": ["Atrapar", "Echarse a un lado", "En pie de un salto", "Esprintar", "Esquivar", "Golpe a la carrera", "Pies Firmes", "Placaje heroico", "Proteger el cuero", "Recepción heroica", "Romper defensas", "Saltar"],
   "Pase": ["Atento al balón", "Cañonero", "Líder", "Nervios de acero", "Parte nubes", "Pasar", "Pasar y Seguir", "Pase a lo loco", "Pase precipitado", "Pase seguro", "Patada despeje", "Precisión"],
-  "Fuerza": ["Abrirse paso", "Apartar", "Brazo fuerte", "Cabeza dura", "◆Defensa", "◆Golpe mortífero", "Imparable", "Llave de brazo", "Luchador", "Mantenerse firme", "Ojo de halcón", "Placaje múltiple"],
+  "Fuerza": ["Abrirse paso", "Apartar", "Brazo fuerte", "Cabeza dura", "Defensa", "Golpe mortífero", "Imparable", "Llave de brazo", "Luchador", "Mantenerse firme", "Ojo de halcón", "Placaje múltiple"],
   "Triquiñuelas": ["Agresor discreto", "Crujir", "Dejada", "Falta rápida", "Furtivo", "Innovador violento", "Jugar sucio", "Meter la bota", "Perseguir", "Piquete de ojos", "Saboteador", "Vuelo letal"],
-  "Mutación": ["Apariencia", "Boca monstruosa", "Brazos adicionales", "Cola prensil", "Cuernos", "Dos cabezas", "Garras", "Mano grande", "Piel férrea", "Piernas muy largas", "Presencia", "Tentáculos"]
+  "Mutación": ["Apariencia asquerosa", "Boca monstruosa", "Brazos adicionales", "Cola prensil", "Cuernos", "Dos cabezas", "Garras", "Mano grande", "Piel férrea", "Piernas muy largas", "Presencia perturbadora", "Tentáculos"]
 }

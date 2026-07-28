@@ -19,6 +19,7 @@ let armorForPlayer = null; // player id currently being armor-rolled
 let state = { half: 1, active: 'A', turns: { A: 0, B: 0 } };
 let teamRace = { A: '', B: '' };
 let teamCustomColor = { A: null, B: null };
+let teamTextColor = { A: 'auto', B: 'auto' };
 let customColorsEnabled = false;
 function tokenColorFor(p){
   return (customColorsEnabled && teamCustomColor[p.team]) ? teamCustomColor[p.team] : teamColorHex[p.team];
@@ -31,15 +32,30 @@ function contrastTextColor(hex){
   const luminance = (0.299*r + 0.587*g + 0.114*b) / 255;
   return luminance > 0.6 ? '#161311' : '#fff';
 }
+function textColorFor(p){
+  const override = teamTextColor[p.team];
+  if(override==='white') return '#fff';
+  if(override==='black') return '#161311';
+  return contrastTextColor(tokenColorFor(p));
+}
 function setCustomColors(v){
   customColorsEnabled = v;
   document.getElementById('colorsOnBtn').classList.toggle('active', v);
   document.getElementById('colorsOffBtn').classList.toggle('active', !v);
+  ['A','B'].forEach(team=>{
+    document.getElementById('team'+team+'Color').style.display = v ? 'block' : 'none';
+    document.getElementById('team'+team+'TextColor').style.display = v ? 'block' : 'none';
+  });
   renderRosters(); renderPitch();
   broadcastState();
 }
 function setTeamColor(team, hex){
   teamCustomColor[team] = hex;
+  renderRosters(); renderPitch();
+  broadcastState();
+}
+function setTeamTextColor(team, mode){
+  teamTextColor[team] = mode;
   renderRosters(); renderPitch();
   broadcastState();
 }
@@ -128,7 +144,7 @@ function setupConnHandlers(){
 function snapshotState(){
   return {
     players, ball, phase, state, pendingTD, pendingDodge, pendingGfi, armorForPlayer, nextId,
-    koQueue, pendingKo, teamRace, customColorsEnabled, teamCustomColor,
+    koQueue, pendingKo, teamRace, customColorsEnabled, teamCustomColor, teamTextColor,
     ballBounceActive, pendingCatch, pendingBallDrop, pendingDriveStart,
     pendingKickPlacement, kickoffBounceStep, kickoffKickingTeam, kickoffReceivingTeam, freeCatchTeam, placingBallFree,
     blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp,
@@ -209,6 +225,13 @@ function applyRemoteState(payload){
   teamCustomColor = payload.teamCustomColor || { A:null, B:null };
   if(teamCustomColor.A) document.getElementById('teamAColor').value = teamCustomColor.A;
   if(teamCustomColor.B) document.getElementById('teamBColor').value = teamCustomColor.B;
+  teamTextColor = payload.teamTextColor || { A:'auto', B:'auto' };
+  document.getElementById('teamATextColor').value = teamTextColor.A;
+  document.getElementById('teamBTextColor').value = teamTextColor.B;
+  ['A','B'].forEach(team=>{
+    document.getElementById('team'+team+'Color').style.display = customColorsEnabled ? 'block' : 'none';
+    document.getElementById('team'+team+'TextColor').style.display = customColorsEnabled ? 'block' : 'none';
+  });
   document.getElementById('colorsOnBtn').classList.toggle('active', customColorsEnabled);
   document.getElementById('colorsOffBtn').classList.toggle('active', !customColorsEnabled);
   ballBounceActive = !!payload.ballBounceActive;
@@ -376,6 +399,10 @@ function importTeamFile(team, inputEl){
       teamCustomColor[team] = data.color;
       document.getElementById(team==='A' ? 'teamAColor':'teamBColor').value = data.color;
     }
+    if(data.textColor){
+      teamTextColor[team] = data.textColor;
+      document.getElementById(team==='A' ? 'teamATextColor':'teamBTextColor').value = data.textColor;
+    }
     data.players.forEach(pd=>{
       const ma = pd.ma || 6;
       players.push({
@@ -404,7 +431,7 @@ function exportTeam(team){
     st:p.st, ag:p.ag, pa:p.pa, av:p.av,
     position:p.position, skills:p.skills
   }));
-  const data = { teamName: teamName(team), race: teamRace[team] || '', color: teamCustomColor[team] || null, players: list };
+  const data = { teamName: teamName(team), race: teamRace[team] || '', color: teamCustomColor[team] || null, textColor: teamTextColor[team] || 'auto', players: list };
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -430,7 +457,7 @@ function renderRosters(){
       const skillsText = (p.skills && p.skills.length) ? p.skills.join(', ') : 'Sin habilidades';
       div.innerHTML = `
         <div class="ri-row1">
-          <span class="num" style="background:${tokenColorFor(p)}; color:${contrastTextColor(tokenColorFor(p))}">${p.num}</span>
+          <span class="num" style="background:${tokenColorFor(p)}; color:${textColorFor(p)}">${p.num}</span>
           <span class="pname">${p.name}</span>
           <span class="pos">${posText}</span>
           ${condTag}
@@ -456,7 +483,7 @@ function renderReserveZone(){
     if(!koEl || !injEl) return;
     const kos = players.filter(p=>p.team===team && p.condition==='ko');
     const injs = players.filter(p=>p.team===team && (p.condition==='injured' || p.condition==='injuredGrave' || p.condition==='dead'));
-    const chip = (p, extra) => `<div class="token-chip" style="background:${tokenColorFor(p)}; color:${contrastTextColor(tokenColorFor(p))}" title="${playerTooltipText(p, extra).replace(/"/g,'&quot;')}">${p.num}</div>`;
+    const chip = (p, extra) => `<div class="token-chip" style="background:${tokenColorFor(p)}; color:${textColorFor(p)}" title="${playerTooltipText(p, extra).replace(/"/g,'&quot;')}">${p.num}</div>`;
     const injuryLabel = (p) => p.condition==='dead' ? 'MUERTO' : p.condition==='injuredGrave' ? 'HERIDA GRAVE' : 'HERIDO (LEVE)';
     koEl.innerHTML = kos.length ? kos.map(p=>chip(p,'INCONSCIENTE')).join('') : '<span class="small-note">Ninguno</span>';
     injEl.innerHTML = injs.length ? injs.map(p=>chip(p, injuryLabel(p))).join('') : '<span class="small-note">Ninguno</span>';
@@ -670,7 +697,7 @@ function renderPitch(){
         const freeCatchClass = (freeCatchTeam===occ.team && occ.onPitch && occ.condition==='standing') ? ' free-catch-target' : '';
         t.className = 'token' + (occ.id===selected?' selected':'') + (occ.activated?' activated':'') + condClass + targetClass + freeCatchClass;
         t.style.background = tokenColorFor(occ);
-        t.style.color = contrastTextColor(tokenColorFor(occ));
+        t.style.color = textColorFor(occ);
         t.textContent = occ.num;
         const pitchExtra = 'MA restante ' + (occ.remainingMove ?? occ.ma) + '/' + occ.ma +
           ((occ.gfiUsed ?? 0) > 0 ? ' · A por ellos ' + occ.gfiUsed + '/3' : '') +

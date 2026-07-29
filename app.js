@@ -618,6 +618,16 @@ function showSetupPanel(){
 }
 
 // ---------- Pitch rendering ----------
+function shadeColor(hex, percent){
+  const h = (hex || '').replace('#','');
+  let r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+  if(isNaN(r)||isNaN(g)||isNaN(b)) return hex;
+  r = Math.max(0,Math.min(255, Math.round(r + (percent/100)*255)));
+  g = Math.max(0,Math.min(255, Math.round(g + (percent/100)*255)));
+  b = Math.max(0,Math.min(255, Math.round(b + (percent/100)*255)));
+  return '#' + [r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+
 function cellClass(row,col){
   let cls = ['cell'];
   const isWide = (row<=1 || row>=9);
@@ -668,6 +678,15 @@ function renderPitch(){
     for(let c=0;c<COLS;c++){
       const cell = document.createElement('div');
       cell.className = cellClass(r,c);
+      if(customColorsEnabled){
+        if(c===0 && teamCustomColor.A){
+          const base = teamCustomColor.A, dark = shadeColor(base, -20);
+          cell.style.background = `repeating-linear-gradient(135deg, ${base}, ${base} 6px, ${dark} 6px, ${dark} 12px)`;
+        } else if(c===COLS-1 && teamCustomColor.B){
+          const base = teamCustomColor.B, dark = shadeColor(base, -20);
+          cell.style.background = `repeating-linear-gradient(135deg, ${base}, ${base} 6px, ${dark} 6px, ${dark} 12px)`;
+        }
+      }
 
       let highlightable = false;
       let highlightGfi = false;
@@ -682,7 +701,7 @@ function renderPitch(){
         if(isValidBounceCell(r,c)){ highlightable = true; highlightBounce = true; }
       } else if(pendingPush){
         const defender = players.find(x=>x.id===pendingPush.defenderId);
-        if(defender && isValidPushCell(defender, r, c, pendingPush.offsets, pendingPush.freePush)){
+        if(defender && isValidPushCell(defender, r, c, pendingPush.offsets, isFreePushActive(pendingPush))){
           highlightable = true;
           highlightPush = true;
         }
@@ -710,7 +729,8 @@ function renderPitch(){
         const condClass = occ.condition==='tumbado' ? ' tumbado' : occ.condition==='aturdido' ? ' aturdido' : occ.condition==='despistado' ? ' despistado' : '';
         const targetClass = isValidBlockTarget(occ.id) ? ' block-target' : '';
         const freeCatchClass = (freeCatchTeam===occ.team && occ.onPitch && occ.condition==='standing') ? ' free-catch-target' : '';
-        t.className = 'token' + (occ.id===selected?' selected':'') + (occ.activated?' activated':'') + condClass + targetClass + freeCatchClass;
+        const showActivated = occ.activated && phase==='live' && occ.team===state.active;
+        t.className = 'token' + (occ.id===selected?' selected':'') + (showActivated?' activated':'') + condClass + targetClass + freeCatchClass;
         t.style.background = tokenColorFor(occ);
         t.style.color = textColorFor(occ);
         t.textContent = occ.num;
@@ -746,20 +766,35 @@ function renderPitch(){
   }
 
   renderPushGhosts(pitch);
+  renderEndzoneLabels(pitch);
+}
+
+function renderEndzoneLabels(pitch){
+  if(!customColorsEnabled) return;
+  ['A','B'].forEach(team=>{
+    if(!teamCustomColor[team]) return;
+    const col = team==='A' ? 0 : COLS-1;
+    const label = document.createElement('div');
+    label.className = 'endzone-label';
+    label.style.left = (col*35) + 'px';
+    label.style.height = (ROWS*35-1) + 'px';
+    label.textContent = teamName(team);
+    label.style.color = textColorFor({ team });
+    pitch.appendChild(label);
+  });
 }
 
 function renderPushGhosts(pitch){
   if(!pendingPush) return;
   const mover = players.find(x=>x.id===pendingPush.defenderId);
   if(!mover) return;
-  const targets = currentPushTargets(mover, pendingPush.offsets, pendingPush.freePush);
+  const targets = currentPushTargets(mover, pendingPush.offsets, isFreePushActive(pendingPush));
   targets.forEach(t=>{
     if(t.row>=0 && t.row<ROWS && t.col>=0 && t.col<COLS) return; // in-bounds, already handled as a normal cell
     const ghost = document.createElement('div');
     ghost.className = 'ghost-push-target';
     ghost.style.top = (t.row*35) + 'px';
     ghost.style.left = (t.col*35) + 'px';
-    ghost.textContent = '🌀';
     ghost.title = 'Empujar fuera del campo';
     ghost.onclick = (e)=>{ e.stopPropagation(); pushOutOfBounds(); };
     pitch.appendChild(ghost);
@@ -808,7 +843,7 @@ function cellClicked(r,c){
   }
   if(pendingPush){
     const defender = players.find(x=>x.id===pendingPush.defenderId);
-    if(defender && isValidPushCell(defender, r, c, pendingPush.offsets, pendingPush.freePush)){ resolvePush(r,c); }
+    if(defender && isValidPushCell(defender, r, c, pendingPush.offsets, isFreePushActive(pendingPush))){ resolvePush(r,c); }
     return;
   }
   if(anyModalOpen()) return;
@@ -1157,6 +1192,8 @@ function applyBlockOutcome(kind){
   document.getElementById('pushControlText').textContent = attacker.freePushOverride
     ? 'Empuje libre activado: elegid cualquiera de las 8 casillas adyacentes para ' + defender.name + '.'
     : 'Elegid una de las 3 casillas resaltadas para ' + defender.name + ' (según la dirección del placaje) — puede empujar en cadena si hay otro jugador ahí.';
+  document.getElementById('pushFreeToggleBtn').textContent = attacker.freePushOverride ? '🔒 Desactivar empuje libre' : '🔓 Activar todos los empujes';
+  document.getElementById('pushFreeToggleBtn').classList.toggle('active-toggle', !!attacker.freePushOverride);
   renderRosters(); renderPitch(); renderSelInfo();
   updateStatus('Elegid casilla de empuje para ' + defender.name + '.');
   broadcastState();
@@ -1186,6 +1223,30 @@ function computePushOffsets(pusherR, pusherC, targetR, targetC){
     // horizontal hit: the 3 squares continuing straight on, spanning the column
     return [{dr:-1,dc:awayC},{dr:0,dc:awayC},{dr:1,dc:awayC}];
   }
+}
+
+function isFreePushActive(info){
+  if(!info) return false;
+  const root = info.chainRoot || info;
+  const attacker = players.find(x=>x.id===root.attackerId);
+  return !!(attacker && attacker.freePushOverride);
+}
+
+function toggleFreePushDuringPush(){
+  if(!pendingPush) return;
+  const root = pendingPush.chainRoot || pendingPush;
+  const attacker = players.find(x=>x.id===root.attackerId);
+  if(!attacker) return;
+  attacker.freePushOverride = !attacker.freePushOverride;
+  const active = attacker.freePushOverride;
+  document.getElementById('pushFreeToggleBtn').textContent = active ? '🔒 Desactivar empuje libre' : '🔓 Activar todos los empujes';
+  document.getElementById('pushFreeToggleBtn').classList.toggle('active-toggle', active);
+  document.getElementById('pushControlText').textContent = active
+    ? 'Empuje libre activado: elegid cualquiera de las 8 casillas adyacentes.'
+    : 'Elegid una de las 3 casillas resaltadas en rojo, según la dirección.';
+  log(active ? '🔓 Empuje libre activado (' + attacker.name + ').' : '🔒 Empuje libre desactivado (' + attacker.name + ').');
+  renderPitch(); renderSelInfo();
+  broadcastState();
 }
 
 function currentPushTargets(mover, offsets, freePush){
@@ -1219,6 +1280,11 @@ function resolvePush(r,c){
     log('⛓️ Empuje en cadena: ' + mover.name + ' choca con ' + occupant.name + ', que también será empujado.');
     pendingPush = { attackerId: info.attackerId, defenderId: occupant.id, kind: info.kind, isBlitz: info.isBlitz, offsets: newOffsets, freePush: info.freePush, chainRoot: info.chainRoot || info };
     document.getElementById('pushControlText').textContent = 'Empuje en cadena: elegid casilla para ' + occupant.name + ' (dirección heredada del empujón anterior, resaltada en el campo).';
+    const rootAttacker = players.find(x=>x.id===(info.chainRoot || info).attackerId);
+    if(rootAttacker){
+      document.getElementById('pushFreeToggleBtn').textContent = rootAttacker.freePushOverride ? '🔒 Desactivar empuje libre' : '🔓 Activar todos los empujes';
+      document.getElementById('pushFreeToggleBtn').classList.toggle('active-toggle', !!rootAttacker.freePushOverride);
+    }
     renderPitch();
     broadcastState();
     return;

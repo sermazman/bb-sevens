@@ -1174,17 +1174,16 @@ function processNextArmorInQueue(){
 let chainPushStack = []; // steps of a chain push in progress: {playerId, fromR, fromC, toR, toC}
 
 function computePushOffsets(pusherR, pusherC, targetR, targetC){
-  const adr = Math.sign(targetR - pusherR);
-  const adc = Math.sign(targetC - pusherC);
-  const awayR = -adr, awayC = -adc;
-  if(adr!==0 && adc!==0){
-    // diagonal hit: opposite diagonal + its two orthogonal neighbours
+  const awayR = Math.sign(targetR - pusherR);
+  const awayC = Math.sign(targetC - pusherC);
+  if(awayR!==0 && awayC!==0){
+    // diagonal hit: continues into the opposite diagonal + its two orthogonal neighbours
     return [{dr:awayR,dc:awayC},{dr:awayR,dc:0},{dr:0,dc:awayC}];
-  } else if(adr!==0){
-    // vertical hit: the 3 squares directly opposite, spanning the row
+  } else if(awayR!==0){
+    // vertical hit: the 3 squares continuing straight on, spanning the row
     return [{dr:awayR,dc:-1},{dr:awayR,dc:0},{dr:awayR,dc:1}];
   } else {
-    // horizontal hit: the 3 squares directly opposite, spanning the column
+    // horizontal hit: the 3 squares continuing straight on, spanning the column
     return [{dr:-1,dc:awayC},{dr:0,dc:awayC},{dr:1,dc:awayC}];
   }
 }

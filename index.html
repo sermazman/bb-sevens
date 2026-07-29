@@ -44,6 +44,13 @@
         <button onclick="document.getElementById('loadSaveInput').click()">⬆️ Cargar</button>
       </div>
       <input type="file" id="loadSaveInput" accept="application/json" style="display:none" onchange="loadSaveFile(this)">
+
+      <h3 style="margin-top:14px;">Colores personalizados</h3>
+      <div class="small-note">El color de cada equipo (ficha y número) se define al cargar su JSON — campos "color" y "textColor".</div>
+      <div class="row" style="margin-top:6px;">
+        <button id="colorsOnBtn" class="mini-toggle active" onclick="setCustomColors(true)">SÍ</button>
+        <button id="colorsOffBtn" class="mini-toggle" onclick="setCustomColors(false)">NO</button>
+      </div>
     </div>
   </div>
 
@@ -219,13 +226,6 @@
       </div>
     </div>
     <div class="small-note" style="margin-top:6px;">Si el JSON no trae ST/AG/PA/AV/habilidades, se muestran como "–" — rellénalas a mano si os ayuda a llevar la partida.</div>
-
-    <div class="color-toggle-row">
-      <span class="small-note" style="margin:0;">COLORES PERSONALIZADOS DE FICHA:</span>
-      <button id="colorsOnBtn" class="mini-toggle" onclick="setCustomColors(true)">SÍ</button>
-      <button id="colorsOffBtn" class="mini-toggle active" onclick="setCustomColors(false)">NO</button>
-      <span class="small-note" style="margin:0;">El color de cada equipo (ficha y número) se define al cargar su JSON — ver campos "color" y "textColor".</span>
-    </div>
   </div>
 
   <div>
@@ -371,8 +371,8 @@
       <button onclick="rollBlockDiceModal(3)">3 dados</button>
     </div>
     <div class="block-face-list" id="blockDiceArea"></div>
-    <div id="blockOutcomeRow" style="display:none; margin-top:12px;">
-      <div class="small-note" style="margin-bottom:6px;">Elegid el resultado aplicado:</div>
+    <div id="blockOutcomeRow" class="disabled-block" style="margin-top:12px;">
+      <div class="small-note" style="margin-bottom:6px;">Elegid el resultado aplicado (tirad los dados primero):</div>
       <div class="row">
         <button onclick="applyBlockOutcome('attackerDown')">Atacante cae</button>
         <button onclick="applyBlockOutcome('bothDown')">Ambos caen</button>
@@ -381,6 +381,9 @@
         <button onclick="applyBlockOutcome('push')">Empujón</button>
         <button onclick="applyBlockOutcome('stumble')">Desequilibrado</button>
         <button class="danger" onclick="applyBlockOutcome('pow')">POW (defensor cae)</button>
+      </div>
+      <div class="row" style="margin-top:6px;">
+        <button onclick="applyBlockOutcome('none')">Ninguno cae (ambos con Placar)</button>
       </div>
     </div>
   </div>

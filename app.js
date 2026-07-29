@@ -20,7 +20,7 @@ let state = { half: 1, active: 'A', turns: { A: 0, B: 0 } };
 let teamRace = { A: '', B: '' };
 let teamCustomColor = { A: null, B: null };
 let teamTextColor = { A: 'auto', B: 'auto' };
-let customColorsEnabled = false;
+let customColorsEnabled = true;
 function tokenColorFor(p){
   return (customColorsEnabled && teamCustomColor[p.team]) ? teamCustomColor[p.team] : teamColorHex[p.team];
 }
@@ -144,7 +144,7 @@ function snapshotState(){
     koQueue, pendingKo, teamRace, customColorsEnabled, teamCustomColor, teamTextColor,
     ballBounceActive, pendingCatch, pendingBallDrop, pendingDriveStart,
     pendingKickPlacement, kickoffBounceStep, kickoffKickingTeam, kickoffReceivingTeam, freeCatchTeam, placingBallFree,
-    blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp,
+    blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp, chainPushStack,
     teamAName: document.getElementById('teamAName').value,
     teamBName: document.getElementById('teamBName').value,
     kickSelectValue: document.getElementById('kickSelect').value,
@@ -174,7 +174,7 @@ function snapshotState(){
     blockModalOpen: document.getElementById('blockModal').classList.contains('show'),
     blockText: document.getElementById('blockText').textContent,
     blockDiceAreaHtml: document.getElementById('blockDiceArea').innerHTML,
-    blockOutcomeRowVisible: document.getElementById('blockOutcomeRow').style.display==='block',
+    blockOutcomeRowVisible: document.getElementById('blockOutcomeRow').classList.contains('active'),
     blockDiceRolled,
     followUpModalOpen: document.getElementById('followUpModal').classList.contains('show'),
     followUpText: document.getElementById('followUpText').textContent,
@@ -240,6 +240,7 @@ function applyRemoteState(payload){
   pendingArmorQueue = payload.pendingArmorQueue || [];
   pendingPush = payload.pendingPush;
   pendingFollowUp = payload.pendingFollowUp;
+  chainPushStack = payload.chainPushStack || [];
   nextId = payload.nextId;
   document.getElementById('teamAName').value = payload.teamAName;
   document.getElementById('teamBName').value = payload.teamBName;
@@ -289,7 +290,7 @@ function applyRemoteState(payload){
 
   document.getElementById('blockText').textContent = payload.blockText || '';
   document.getElementById('blockDiceArea').innerHTML = payload.blockDiceAreaHtml || '';
-  document.getElementById('blockOutcomeRow').style.display = payload.blockOutcomeRowVisible ? 'block' : 'none';
+  document.getElementById('blockOutcomeRow').classList.toggle('active', !!payload.blockOutcomeRowVisible);
   blockDiceRolled = !!payload.blockDiceRolled;
   document.getElementById('blockModal').classList.toggle('show', !!payload.blockModalOpen);
 
@@ -320,7 +321,7 @@ function applyRemoteState(payload){
   document.getElementById('freeCatchPanel').style.display = payload.freeCatchTeam ? 'block' : 'none';
   document.getElementById('freeCatchText').textContent = payload.freeCatchText || '';
 
-  renderRosters(); renderPitch(); renderScoreboard(); renderSelInfo();
+  renderRosters(); renderPitch(); renderScoreboard(); renderSelInfo(); updateKickSelectLabels();
   if(payload.statusMsg) updateStatus(payload.statusMsg);
   applyingRemote = false;
 }
@@ -403,7 +404,7 @@ function importTeamFile(team, inputEl){
         row:null, col:null, activated:false, onPitch:false
       });
     });
-    renderRosters(); renderScoreboard();
+    renderRosters(); renderScoreboard(); updateKickSelectLabels();
     log('📁 Equipo cargado para ' + teamName(team) + ': ' + data.players.length + ' jugadores.');
     updateStatus('Equipo importado.');
     broadcastState();
@@ -592,8 +593,15 @@ function startDrive(){
   beginKickPlacement(kicking, receiving);
 }
 
+function updateKickSelectLabels(){
+  const sel = document.getElementById('kickSelect');
+  if(sel.options[0]) sel.options[0].textContent = teamName('A');
+  if(sel.options[1]) sel.options[1].textContent = teamName('B');
+}
+
 function showSetupPanel(){
   document.getElementById('setupPanel').style.display='block';
+  updateKickSelectLabels();
   onKickChangeQuiet();
 }
 
@@ -975,7 +983,7 @@ function startBlockTargeting(){
     Math.max(Math.abs(p2.row-p.row), Math.abs(p2.col-p.col))===1);
   if(!hasTarget){ alert('No hay rivales en pie adyacentes.'); return; }
   document.getElementById('blockDiceArea').innerHTML = '';
-  document.getElementById('blockOutcomeRow').style.display = 'none';
+  document.getElementById('blockOutcomeRow').classList.remove('active');
   blockDiceRolled = false;
   blockTargeting = p.id;
   renderPitch();
@@ -1018,7 +1026,7 @@ function proceedToBlockDice(attacker, defender, isBlitzHit){
   blockDiceRolled = false;
   document.getElementById('blockText').textContent = `${attacker.name} placa a ${defender.name} (${teamName(defender.team)}).`;
   document.getElementById('blockDiceArea').innerHTML = '';
-  document.getElementById('blockOutcomeRow').style.display = 'none';
+  document.getElementById('blockOutcomeRow').classList.remove('active');
   document.getElementById('blockModal').classList.add('show');
   broadcastState();
 }
@@ -1034,7 +1042,7 @@ function rollBlockDiceModal(n){
     d.innerHTML = BLOCK_FACES[idx].replace('\n','<br>');
     el.appendChild(d);
   });
-  document.getElementById('blockOutcomeRow').style.display = 'block';
+  document.getElementById('blockOutcomeRow').classList.add('active');
   blockDiceRolled = true;
   log('🎲 Placaje x' + n + ': ' + results.map(i=>BLOCK_FACES[i].replace('\n',' ')).join(' / '));
   broadcastState();
@@ -1079,14 +1087,29 @@ function applyBlockOutcome(kind){
     return;
   }
 
+  if(kind==='none'){
+    log('🤝 Nadie cae (ambos jugadores con Placar). Sigue el juego.');
+    if(!isBlitz){
+      attacker.activated = true;
+      selected = null;
+    } else if(attacker.condition==='standing'){
+      selected = attacker.id;
+      updateStatus(attacker.name + ' puede seguir moviéndose (Blitz).');
+    }
+    renderRosters(); renderPitch(); renderSelInfo();
+    broadcastState();
+    return;
+  }
+
   // push / stumble / pow
   if(!isBlitz){
     attacker.activated = true;
     selected = null;
   }
+  chainPushStack = [];
   pendingPush = { attackerId: attacker.id, defenderId: defender.id, kind, isBlitz };
   document.getElementById('pushControlPanel').style.display = 'block';
-  document.getElementById('pushControlText').textContent = 'Elegid casilla de destino para ' + defender.name + ', o si sale de banda:';
+  document.getElementById('pushControlText').textContent = 'Elegid casilla de destino para ' + defender.name + ', o si sale de banda (puede empujar en cadena si hay otro jugador ahí):';
   renderRosters(); renderPitch(); renderSelInfo();
   updateStatus('Elegid casilla de empuje para ' + defender.name + ' (resaltada en el campo).');
   broadcastState();
@@ -1101,32 +1124,59 @@ function processNextArmorInQueue(){
 }
 
 // ---------- Push resolution + follow-up ----------
-function isValidPushCell(defender, r, c){
-  if(!defender) return false;
-  const dist = Math.max(Math.abs(defender.row-r), Math.abs(defender.col-c));
-  return dist===1 && !occupiedBy(r,c);
+let chainPushStack = []; // steps of a chain push in progress: {playerId, fromR, fromC, toR, toC}
+
+function isValidPushCell(mover, r, c){
+  if(!mover) return false;
+  const dist = Math.max(Math.abs(mover.row-r), Math.abs(mover.col-c));
+  return dist===1 && r>=0 && r<ROWS && c>=0 && c<COLS;
 }
 
 function resolvePush(r,c){
   const info = pendingPush;
   pendingPush = null;
+  const mover = players.find(x=>x.id===info.defenderId);
+  if(!mover){ document.getElementById('pushControlPanel').style.display='none'; chainPushStack=[]; renderPitch(); broadcastState(); return; }
+
+  const occupant = occupiedBy(r,c);
+  chainPushStack.push({ playerId: mover.id, fromR: mover.row, fromC: mover.col, toR: r, toC: c });
+
+  if(occupant){
+    log('⛓️ Empuje en cadena: ' + mover.name + ' choca con ' + occupant.name + ', que también será empujado.');
+    pendingPush = { attackerId: info.attackerId, defenderId: occupant.id, kind: info.kind, isBlitz: info.isBlitz, chainRoot: info.chainRoot || info };
+    document.getElementById('pushControlText').textContent = 'Empuje en cadena: elegid casilla de destino para ' + occupant.name + ' (o "fuera del campo").';
+    renderPitch();
+    broadcastState();
+    return;
+  }
+
+  // chain terminates in an empty square: unwind from last to first
   document.getElementById('pushControlPanel').style.display = 'none';
-  const attacker = players.find(x=>x.id===info.attackerId);
-  const defender = players.find(x=>x.id===info.defenderId);
-  if(!defender){ renderPitch(); broadcastState(); return; }
+  const chain = chainPushStack;
+  chainPushStack = [];
+  for(let i=chain.length-1; i>=0; i--){
+    const step = chain[i];
+    const p2 = players.find(x=>x.id===step.playerId);
+    if(p2){ p2.row = step.toR; p2.col = step.toC; }
+  }
 
-  const fromR = defender.row, fromC = defender.col;
-  defender.row = r; defender.col = c;
-  log('➡️ ' + defender.name + ' es empujado.');
+  const rootInfo = info.chainRoot || info;
+  const original = chain[0];
+  const originalPlayer = players.find(x=>x.id===original.playerId);
+  const attacker = players.find(x=>x.id===rootInfo.attackerId);
 
-  const hitLooseBall = (ball.carrierId===null && ball.row===r && ball.col===c);
-  if(!hitLooseBall){ checkTouchdown(defender); }
+  log(chain.length>1
+    ? '➡️ Empuje en cadena resuelto (' + chain.length + ' jugadores desplazados).'
+    : '➡️ ' + originalPlayer.name + ' es empujado.');
+
+  const hitLooseBall = (ball.carrierId===null && ball.row===original.toR && ball.col===original.toC);
+  if(!hitLooseBall && originalPlayer){ checkTouchdown(originalPlayer); }
 
   pendingFollowUp = {
-    attackerId: info.attackerId, defenderId: info.defenderId,
-    vacatedR: fromR, vacatedC: fromC,
-    fallKind: (info.kind==='stumble' || info.kind==='pow') ? info.kind : null,
-    isBlitz: info.isBlitz
+    attackerId: rootInfo.attackerId, defenderId: original.playerId,
+    vacatedR: original.fromR, vacatedC: original.fromC,
+    fallKind: (rootInfo.kind==='stumble' || rootInfo.kind==='pow') ? rootInfo.kind : null,
+    isBlitz: rootInfo.isBlitz
   };
 
   renderRosters(); renderPitch();
@@ -1142,8 +1192,8 @@ function resolvePush(r,c){
     return;
   }
 
-  if(attacker){
-    document.getElementById('followUpText').textContent = `¿${attacker.name} avanza a la casilla que deja libre ${defender.name}?`;
+  if(attacker && originalPlayer){
+    document.getElementById('followUpText').textContent = `¿${attacker.name} avanza a la casilla que deja libre ${originalPlayer.name}?`;
     document.getElementById('followUpModal').classList.add('show');
     broadcastState();
   } else {
@@ -1156,27 +1206,45 @@ function pushOutOfBounds(){
   const info = pendingPush;
   pendingPush = null;
   document.getElementById('pushControlPanel').style.display = 'none';
-  const attacker = players.find(x=>x.id===info.attackerId);
-  const defender = players.find(x=>x.id===info.defenderId);
-  if(!defender){ renderPitch(); broadcastState(); return; }
+  const mover = players.find(x=>x.id===info.defenderId);
+  if(!mover){ chainPushStack=[]; renderPitch(); broadcastState(); return; }
 
-  const fromR = defender.row, fromC = defender.col;
-  queueBallDropIfCarrier(defender.id, fromR, fromC);
-  defender.onPitch = false; defender.row = null; defender.col = null;
-  log('🌀 ' + defender.name + ' sale del campo empujado — tirada de heridas directa (sin armadura).');
+  const fromR = mover.row, fromC = mover.col;
+  queueBallDropIfCarrier(mover.id, fromR, fromC);
+  mover.onPitch = false; mover.row = null; mover.col = null;
+  log('🌀 ' + mover.name + ' sale del campo empujado' + (chainPushStack.length ? ' (empuje en cadena)' : '') + ' — tirada de heridas directa (sin armadura).');
+
+  const chain = chainPushStack;
+  chainPushStack = [];
+  let vacatedR = fromR, vacatedC = fromC;
+  for(let i=chain.length-1; i>=0; i--){
+    const step = chain[i];
+    const p2 = players.find(x=>x.id===step.playerId);
+    if(p2){ p2.row = vacatedR; p2.col = vacatedC; }
+    vacatedR = step.fromR; vacatedC = step.fromC;
+  }
+
+  const rootInfo = info.chainRoot || info;
+  const attacker = players.find(x=>x.id===rootInfo.attackerId);
+  const original = chain[0];
+  const followUpDefenderId = original ? original.playerId : mover.id;
+  const followUpPlayer = original ? players.find(x=>x.id===original.playerId) : null;
+  const followUpVacatedR = original ? original.fromR : fromR;
+  const followUpVacatedC = original ? original.fromC : fromC;
 
   pendingFollowUp = {
-    attackerId: info.attackerId, defenderId: null,
-    vacatedR: fromR, vacatedC: fromC,
-    fallKind: null, isBlitz: info.isBlitz,
-    directInjuryPlayerId: defender.id
+    attackerId: rootInfo.attackerId, defenderId: original ? followUpDefenderId : null,
+    vacatedR: followUpVacatedR, vacatedC: followUpVacatedC,
+    fallKind: null, isBlitz: rootInfo.isBlitz,
+    directInjuryPlayerId: mover.id
   };
 
   renderRosters(); renderPitch();
   broadcastState();
 
-  if(attacker){
-    document.getElementById('followUpText').textContent = `¿${attacker.name} avanza a la casilla que deja libre ${defender.name}?`;
+  if(attacker && (followUpPlayer || !original)){
+    const targetName = followUpPlayer ? followUpPlayer.name : mover.name;
+    document.getElementById('followUpText').textContent = `¿${attacker.name} avanza a la casilla que deja libre ${targetName}?`;
     document.getElementById('followUpModal').classList.add('show');
     broadcastState();
   } else {
@@ -1873,6 +1941,7 @@ function resetBoardForNewDrive(){
   activeBlock = null;
   pendingArmorQueue = [];
   pendingPush = null;
+  chainPushStack = [];
   pendingFollowUp = null;
   crowdPushMode = false;
   document.getElementById('pushControlPanel').style.display = 'none';
@@ -1981,8 +2050,8 @@ function renderScoreboard(){
   }
 }
 
-document.getElementById('teamAName').addEventListener('input', ()=>{ renderScoreboard(); onKickChangeQuiet(); broadcastState(); });
-document.getElementById('teamBName').addEventListener('input', ()=>{ renderScoreboard(); onKickChangeQuiet(); broadcastState(); });
+document.getElementById('teamAName').addEventListener('input', ()=>{ renderScoreboard(); onKickChangeQuiet(); updateKickSelectLabels(); broadcastState(); });
+document.getElementById('teamBName').addEventListener('input', ()=>{ renderScoreboard(); onKickChangeQuiet(); updateKickSelectLabels(); broadcastState(); });
 
 // ---------- Dice (free-standing rollers) ----------
 const BLOCK_FACES = ['ATACANTE\nCAE','AMBOS\nCAEN','EMPUJE','EMPUJE','TAMBALEO','DEFENSOR\nCAE (POW)'];

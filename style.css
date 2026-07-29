@@ -358,6 +358,8 @@ button.full{width:100%; margin-top:6px;}
 }
 .mini-toggle{padding:5px 12px; font-size:11px;}
 .mini-toggle.active{background:var(--gold); color:#1c1712; border-color:var(--gold);}
+.disabled-block{opacity:0.35; pointer-events:none; filter:grayscale(0.6); transition:opacity .15s ease;}
+.disabled-block.active{opacity:1; pointer-events:auto; filter:none;}
 .ri-row2{font-size:11px; color:#a99b7f; letter-spacing:0.5px;}
 .ri-row3{font-size:10.5px; color:#8a7d64; font-style:italic; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 

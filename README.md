@@ -22,6 +22,10 @@ Tablero interactivo para jugar partidas de Blood Bowl Sevens, con conexión en d
 Cada equipo tiene botones para cargar (`📁 Cargar JSON`) y guardar (`💾 Guardar JSON`) su plantilla. Usa `equipo-ejemplo.json` como referencia del formato.
 Se cambiará los textos JSON por "EQUIPOS" en sus lugares necesarios. Quedará más limpio.
 
+## Vocabulario del juego
+Bocadillo / modal = la ventana emergente que tapa la pantalla (PLACAJE, TOUCHDOWN, etc.)
+Panel = las cajas fijas siempre visibles en la interfaz (Dado de bloqueo, Jugador seleccionado, etc.)
+
 ## Habilidades automatizadas
 - Esprintar
 - Furia (en pruebas)

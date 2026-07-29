@@ -130,6 +130,7 @@ button:focus-visible{outline:2px solid var(--gold); outline-offset:2px;}
 button.primary{background:var(--gold); color:#1c1712; border-color:var(--gold);}
 button.primary:hover{background:#e6bd63;}
 button.danger{border-color:var(--bad);}
+button.active-toggle{background:var(--gold); color:#1c1712; border-color:var(--gold);}
 button.full{width:100%; margin-top:6px;}
 .row{display:flex; gap:6px;}
 .row > *{flex:1;}
@@ -156,7 +157,8 @@ button.full{width:100%; margin-top:6px;}
 /* ---- Pitch ---- */
 .pitch-wrap{
   overflow-x:auto;
-  padding:10px;
+  overflow-y:visible;
+  padding:42px;
   background:#0e0d0b;
   border:1px solid var(--panel-line);
   border-radius:6px;
@@ -168,6 +170,7 @@ button.full{width:100%; margin-top:6px;}
   gap:1px;
   width:max-content;
   margin:0 auto;
+  position:relative;
 }
 .cell{
   background:var(--turf-1);
@@ -202,6 +205,22 @@ button.full{width:100%; margin-top:6px;}
 .cell.kick-zone::after{
   content:''; position:absolute; inset:9px; border-radius:50%;
   background:rgba(90,164,105,0.4); pointer-events:none;
+}
+.cell.push-option{box-shadow: inset 0 0 0 2px var(--bad); cursor:pointer;}
+.cell.push-option::after{
+  content:''; position:absolute; inset:9px; border-radius:50%;
+  background:rgba(192,57,43,0.4); pointer-events:none;
+}
+.ghost-push-target{
+  position:absolute; width:var(--cell); height:var(--cell);
+  background:rgba(192,57,43,0.55);
+  border:2px dashed var(--bad);
+  border-radius:5px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:15px;
+  cursor:pointer;
+  z-index:30;
+  animation:pulseTarget 1s ease-in-out infinite;
 }
 .token.free-catch-target{outline:2px solid var(--gold); outline-offset:2px; cursor:pointer; animation:pulseTarget 1s ease-in-out infinite;}
 .loose-ball{

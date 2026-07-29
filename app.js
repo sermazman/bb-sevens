@@ -359,14 +359,14 @@ function openAddPlayer(team){
   if(num === null) return;
   const name = prompt('Nombre (opcional):') || ('Jugador ' + num);
   const ma = parseFloat(prompt('Movimiento (MA):', '6')) || 6;
-  players.push({ id: nextId++, team, num, name, ma, remainingMove: ma, gfiUsed:0, condition:'standing', blockedThisActivation:false, row:null, col:null, activated:false, onPitch:false });
+  players.push({ id: nextId++, team, num, name, ma, remainingMove: ma, gfiUsed:0, condition:'standing', blockedThisActivation:false, freePushOverride:false, row:null, col:null, activated:false, onPitch:false });
   renderRosters();
   broadcastState();
 }
 
 function quickFill(team){
   for(let i=1;i<=7;i++){
-    players.push({ id: nextId++, team, num:i, name:'Jugador '+i, ma:6, remainingMove:6, gfiUsed:0, condition:'standing', blockedThisActivation:false, row:null, col:null, activated:false, onPitch:false });
+    players.push({ id: nextId++, team, num:i, name:'Jugador '+i, ma:6, remainingMove:6, gfiUsed:0, condition:'standing', blockedThisActivation:false, freePushOverride:false, row:null, col:null, activated:false, onPitch:false });
   }
   renderRosters();
   broadcastState();
@@ -397,7 +397,7 @@ function importTeamFile(team, inputEl){
         id: nextId++, team,
         num: pd.num ?? '?',
         name: pd.name || ('Jugador ' + (pd.num ?? '')),
-        ma, remainingMove: ma, gfiUsed:0, condition:'standing', blockedThisActivation:false,
+        ma, remainingMove: ma, gfiUsed:0, condition:'standing', blockedThisActivation:false, freePushOverride:false,
         st: pd.st, ag: pd.ag, pa: pd.pa, av: pd.av,
         position: pd.position || null,
         skills: pd.skills || [],
@@ -548,6 +548,18 @@ function toggleDespistado(){
   broadcastState();
 }
 
+function toggleFreePush(){
+  if(selected===null) return;
+  const p = players.find(x=>x.id===selected);
+  if(!p) return;
+  p.freePushOverride = !p.freePushOverride;
+  log(p.freePushOverride
+    ? '🔓 ' + p.name + ': empuje libre activado (8 casillas, por habilidad no automatizada).'
+    : '🔒 ' + p.name + ': empuje libre desactivado, vuelve a las 3 casillas por dirección.');
+  renderSelInfo();
+  broadcastState();
+}
+
 // ---------- Setup / placement (pre-turn) ----------
 function placeOnPitch(id){
   if(phase!=='setup'){
@@ -661,6 +673,7 @@ function renderPitch(){
       let highlightGfi = false;
       let highlightBounce = false;
       let highlightKickZone = false;
+      let highlightPush = false;
       if(pendingKickPlacement){
         if(isValidKickPlacementCell(r,c)){ highlightable = true; highlightKickZone = true; }
       } else if(kickoffBounceStep){
@@ -669,7 +682,10 @@ function renderPitch(){
         if(isValidBounceCell(r,c)){ highlightable = true; highlightBounce = true; }
       } else if(pendingPush){
         const defender = players.find(x=>x.id===pendingPush.defenderId);
-        if(defender && isValidPushCell(defender, r, c)) highlightable = true;
+        if(defender && isValidPushCell(defender, r, c, pendingPush.offsets, pendingPush.freePush)){
+          highlightable = true;
+          highlightPush = true;
+        }
       } else if(phase==='live' && selected!==null){
         const p = players.find(x=>x.id===selected);
         if(p && inAdjacentReach(p,r,c) && !occupiedBy(r,c)){
@@ -680,7 +696,7 @@ function renderPitch(){
         const p = players.find(x=>x.id===placing);
         if(p && isLegalSetupCell(p.team,r,c)) highlightable = true;
       }
-      if(highlightable) cell.classList.add(highlightKickZone ? 'kick-zone' : (highlightBounce ? 'bounce-target' : (highlightGfi ? 'reachable-gfi' : 'reachable')));
+      if(highlightable) cell.classList.add(highlightKickZone ? 'kick-zone' : (highlightPush ? 'push-option' : (highlightBounce ? 'bounce-target' : (highlightGfi ? 'reachable-gfi' : 'reachable'))));
       if(highlightBounce && ball.row!==null){
         const num = bounceDirectionNumber(ball.row, ball.col, r, c);
         if(num) cell.dataset.bnum = num;
@@ -728,6 +744,26 @@ function renderPitch(){
       pitch.appendChild(cell);
     }
   }
+
+  renderPushGhosts(pitch);
+}
+
+function renderPushGhosts(pitch){
+  if(!pendingPush) return;
+  const mover = players.find(x=>x.id===pendingPush.defenderId);
+  if(!mover) return;
+  const targets = currentPushTargets(mover, pendingPush.offsets, pendingPush.freePush);
+  targets.forEach(t=>{
+    if(t.row>=0 && t.row<ROWS && t.col>=0 && t.col<COLS) return; // in-bounds, already handled as a normal cell
+    const ghost = document.createElement('div');
+    ghost.className = 'ghost-push-target';
+    ghost.style.top = (t.row*35) + 'px';
+    ghost.style.left = (t.col*35) + 'px';
+    ghost.textContent = '🌀';
+    ghost.title = 'Empujar fuera del campo';
+    ghost.onclick = (e)=>{ e.stopPropagation(); pushOutOfBounds(); };
+    pitch.appendChild(ghost);
+  });
 }
 
 function handlePitchRightClick(e){
@@ -772,7 +808,7 @@ function cellClicked(r,c){
   }
   if(pendingPush){
     const defender = players.find(x=>x.id===pendingPush.defenderId);
-    if(defender && isValidPushCell(defender, r, c)){ resolvePush(r,c); }
+    if(defender && isValidPushCell(defender, r, c, pendingPush.offsets, pendingPush.freePush)){ resolvePush(r,c); }
     return;
   }
   if(anyModalOpen()) return;
@@ -880,12 +916,14 @@ function renderSelInfo(){
   const blockBtn = document.getElementById('blockBtn');
   const blitzBtn = document.getElementById('blitzBtn');
   const despBtn = document.getElementById('despistadoBtn');
+  const freePushBtn = document.getElementById('freePushBtn');
   if(selected===null){
     el.innerHTML = 'Ninguno';
     btn.style.display = 'none';
     blockBtn.style.display = 'none';
     blitzBtn.style.display = 'none';
     despBtn.style.display = 'none';
+    freePushBtn.style.display = 'none';
     return;
   }
   const p = players.find(x=>x.id===selected);
@@ -895,23 +933,29 @@ function renderSelInfo(){
     blockBtn.style.display = 'none';
     blitzBtn.style.display = 'none';
     despBtn.style.display = 'none';
+    freePushBtn.style.display = 'none';
     return;
   }
   const condLabel = p.condition==='tumbado' ? ' · <span style="color:var(--bad)">TUMBADO</span>'
                    : p.condition==='aturdido' ? ' · <span style="color:var(--bad)">ATURDIDO</span>'
                    : p.condition==='despistado' ? ' · <span style="color:var(--gold)">DESPISTADO</span>' : '';
   const blitzLabel = (blitzActivePlayer===p.id) ? ' · <span style="color:var(--gold)">⚡ BLITZ EN CURSO</span>' : '';
+  const freePushLabel = p.freePushOverride ? ' · <span style="color:var(--gold)">🔓 EMPUJE LIBRE</span>' : '';
   const skillsText = (p.skills && p.skills.length) ? p.skills.join(', ') : 'Sin habilidades';
   el.innerHTML = `
     <div style="font-weight:700; font-size:14px; margin-bottom:4px;">${p.name} <span style="color:#a99b7f; font-weight:400;">#${p.num} · ${teamName(p.team)}</span></div>
     <div style="color:#a99b7f; font-size:11.5px; margin-bottom:4px;">${p.position || 'Sin posición'}</div>
     <div class="mono" style="margin-bottom:4px;">MA ${p.ma} (restante ${p.remainingMove ?? p.ma}) · ST ${p.st ?? '-'} · AG ${p.ag ?? '-'} · PA ${p.pa ?? '-'} · AV ${p.av ?? '-'}</div>
     <div style="font-size:11.5px; font-style:italic; color:#8a7d64; margin-bottom:4px;">${skillsText}</div>
-    <div>${(p.gfiUsed??0)>0?'A por ellos '+p.gfiUsed+'/'+maxGfiFor(p):''}${condLabel}${blitzLabel}${ball.carrierId===p.id?' · 🏈 lleva el balón':''}</div>`;
+    <div>${(p.gfiUsed??0)>0?'A por ellos '+p.gfiUsed+'/'+maxGfiFor(p):''}${condLabel}${blitzLabel}${freePushLabel}${ball.carrierId===p.id?' · 🏈 lleva el balón':''}</div>`;
 
   const canAct = phase==='live' && p.team===state.active && !p.activated && p.condition==='standing';
   blockBtn.style.display = (canAct && !p.blockedThisActivation) ? 'block' : 'none';
   blitzBtn.style.display = (canAct && !p.blockedThisActivation && !blitzUsedByTeam[p.team] && blitzActivePlayer!==p.id) ? 'block' : 'none';
+
+  freePushBtn.style.display = (p.onPitch && p.condition==='standing') ? 'block' : 'none';
+  freePushBtn.textContent = p.freePushOverride ? '🔒 Desactivar empuje libre' : '🔓 Activar todos los empujes';
+  freePushBtn.classList.toggle('active-toggle', !!p.freePushOverride);
 
   if(p.condition==='standing'){
     despBtn.textContent = '😵‍💫 Marcar Despistado';
@@ -1107,11 +1151,14 @@ function applyBlockOutcome(kind){
     selected = null;
   }
   chainPushStack = [];
-  pendingPush = { attackerId: attacker.id, defenderId: defender.id, kind, isBlitz };
+  const offsets = computePushOffsets(attacker.row, attacker.col, defender.row, defender.col);
+  pendingPush = { attackerId: attacker.id, defenderId: defender.id, kind, isBlitz, offsets, freePush: !!attacker.freePushOverride };
   document.getElementById('pushControlPanel').style.display = 'block';
-  document.getElementById('pushControlText').textContent = 'Elegid casilla de destino para ' + defender.name + ', o si sale de banda (puede empujar en cadena si hay otro jugador ahí):';
+  document.getElementById('pushControlText').textContent = attacker.freePushOverride
+    ? 'Empuje libre activado: elegid cualquiera de las 8 casillas adyacentes para ' + defender.name + '.'
+    : 'Elegid una de las 3 casillas resaltadas para ' + defender.name + ' (según la dirección del placaje) — puede empujar en cadena si hay otro jugador ahí.';
   renderRosters(); renderPitch(); renderSelInfo();
-  updateStatus('Elegid casilla de empuje para ' + defender.name + ' (resaltada en el campo).');
+  updateStatus('Elegid casilla de empuje para ' + defender.name + '.');
   broadcastState();
 }
 
@@ -1126,10 +1173,37 @@ function processNextArmorInQueue(){
 // ---------- Push resolution + follow-up ----------
 let chainPushStack = []; // steps of a chain push in progress: {playerId, fromR, fromC, toR, toC}
 
-function isValidPushCell(mover, r, c){
+function computePushOffsets(pusherR, pusherC, targetR, targetC){
+  const adr = Math.sign(targetR - pusherR);
+  const adc = Math.sign(targetC - pusherC);
+  const awayR = -adr, awayC = -adc;
+  if(adr!==0 && adc!==0){
+    // diagonal hit: opposite diagonal + its two orthogonal neighbours
+    return [{dr:awayR,dc:awayC},{dr:awayR,dc:0},{dr:0,dc:awayC}];
+  } else if(adr!==0){
+    // vertical hit: the 3 squares directly opposite, spanning the row
+    return [{dr:awayR,dc:-1},{dr:awayR,dc:0},{dr:awayR,dc:1}];
+  } else {
+    // horizontal hit: the 3 squares directly opposite, spanning the column
+    return [{dr:-1,dc:awayC},{dr:0,dc:awayC},{dr:1,dc:awayC}];
+  }
+}
+
+function currentPushTargets(mover, offsets, freePush){
+  if(freePush){
+    const list = [];
+    for(let dr=-1; dr<=1; dr++) for(let dc=-1; dc<=1; dc++){
+      if(dr===0 && dc===0) continue;
+      list.push({ row: mover.row+dr, col: mover.col+dc });
+    }
+    return list;
+  }
+  return offsets.map(o=>({ row: mover.row+o.dr, col: mover.col+o.dc }));
+}
+
+function isValidPushCell(mover, r, c, offsets, freePush){
   if(!mover) return false;
-  const dist = Math.max(Math.abs(mover.row-r), Math.abs(mover.col-c));
-  return dist===1 && r>=0 && r<ROWS && c>=0 && c<COLS;
+  return currentPushTargets(mover, offsets || [], freePush).some(t=>t.row===r && t.col===c);
 }
 
 function resolvePush(r,c){
@@ -1142,9 +1216,10 @@ function resolvePush(r,c){
   chainPushStack.push({ playerId: mover.id, fromR: mover.row, fromC: mover.col, toR: r, toC: c });
 
   if(occupant){
+    const newOffsets = computePushOffsets(mover.row, mover.col, r, c);
     log('⛓️ Empuje en cadena: ' + mover.name + ' choca con ' + occupant.name + ', que también será empujado.');
-    pendingPush = { attackerId: info.attackerId, defenderId: occupant.id, kind: info.kind, isBlitz: info.isBlitz, chainRoot: info.chainRoot || info };
-    document.getElementById('pushControlText').textContent = 'Empuje en cadena: elegid casilla de destino para ' + occupant.name + ' (o "fuera del campo").';
+    pendingPush = { attackerId: info.attackerId, defenderId: occupant.id, kind: info.kind, isBlitz: info.isBlitz, offsets: newOffsets, freePush: info.freePush, chainRoot: info.chainRoot || info };
+    document.getElementById('pushControlText').textContent = 'Empuje en cadena: elegid casilla para ' + occupant.name + ' (dirección heredada del empujón anterior, resaltada en el campo).';
     renderPitch();
     broadcastState();
     return;

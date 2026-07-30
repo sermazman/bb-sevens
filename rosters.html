@@ -35,6 +35,9 @@
     padding:8px 12px; background:#100e0c; border-radius:6px 6px 0 0;
   }
   .rt-row.rt-body:nth-child(even){background:rgba(255,255,255,0.02);}
+  .rt-row-empty{opacity:0.5;}
+  .rt-row-empty > div:nth-child(3){opacity:1;}
+  .rt-row-empty select{border-color:var(--gold);}
   .rt-row input{margin-bottom:0; padding:6px 7px; font-size:13px;}
   .rt-row input.mono{font-family:'JetBrains Mono', monospace;}
   .pc-remove{
@@ -184,14 +187,16 @@
       </div>
       <div>
         <label>Raza</label>
-        <input type="text" id="teamRaceInput" list="raceList" value="Human" oninput="scheduleJsonRefresh()">
-        <datalist id="raceList"></datalist>
+        <select id="teamRaceInput" onchange="onTeamRaceChange(this.value)">
+          <option value="">-- Elige una raza --</option>
+        </select>
       </div>
     </div>
   </div>
 
   <div class="panel">
     <h2>Jugadores <span class="badge-count" id="playerCount">0</span></h2>
+    <div class="small-note" id="raceRequiredNote" style="margin-bottom:8px;">Elige primero una raza arriba para poder asignar posiciones a los 11 huecos.</div>
     <div class="roster-table">
       <div class="rt-row rt-head">
         <div>Núm.</div>
@@ -208,13 +213,12 @@
       </div>
       <div id="playersList"></div>
     </div>
-    <button class="full primary" onclick="addPlayer()" style="margin-top:10px;">+ Añadir jugador</button>
   </div>
 
 </div>
 
 <script>
-let team = { teamName: 'Nuevo Equipo', race: 'Human', color: '#c0392b', textColor: 'auto', players: [] };
+let team = { teamName: 'Nuevo Equipo', race: '', color: '#c0392b', textColor: 'auto', players: [] };
 let uid = 1;
 
 const FALLBACK_RACES = ["Amazon","Black Orc","Bretonia","Chaos Chosen","Chaos Dwarf","Chaos Renegades","Dark Elf","Dwarf","Elfos Silvanos","Elven Union","Gnome","Goblin","Halfling","High Elf","Human","Imperial Nobility","Khorne","Lizardman","Necromantic","Norse","Nurgle","Ogre","Old World Alliance","Orcs","Shambling Undead","Skaven","Slann","Snotling","Tomb King","Underworld Denizens","Vampire"];
@@ -230,10 +234,18 @@ function findCatalogEntry(race, position){
   return CATALOG_LOOKUP[catalogKey(race, position)] || null;
 }
 
-function populateRaceDatalist(races){
-  document.getElementById('raceList').innerHTML = races.map(r => `<option value="${r}">`).join('');
+function populateRaceSelect(races){
+  const sel = document.getElementById('teamRaceInput');
+  const current = team.race;
+  sel.innerHTML = '<option value="">-- Elige una raza --</option>' + races.map(r => `<option value="${r}">${r}</option>`).join('');
+  sel.value = current || '';
 }
-populateRaceDatalist(FALLBACK_RACES);
+populateRaceSelect(FALLBACK_RACES);
+
+function updateRaceRequiredNote(){
+  const note = document.getElementById('raceRequiredNote');
+  if(note) note.style.display = team.race ? 'none' : 'block';
+}
 
 async function loadPositionsCatalog(){
   try{
@@ -248,11 +260,11 @@ async function loadPositionsCatalog(){
       POSITIONS_BY_RACE[entry.race].push(entry.type);
       CATALOG_LOOKUP[catalogKey(entry.race, entry.type)] = entry;
     });
-    populateRaceDatalist(Object.keys(POSITIONS_BY_RACE).sort());
+    populateRaceSelect(Object.keys(POSITIONS_BY_RACE).sort());
     renderPlayers();
   } catch(err){
-    // Sin catálogo: siguen funcionando el texto libre de raza/posición,
-    // pero no habrá sugerencias de posición ni columna "Acceso" / CLAVE en la exportación.
+    // Sin catálogo: la raza se puede elegir de la lista básica, pero no habrá
+    // desplegable de posiciones ni columna "Acceso" / CLAVE en la exportación.
   }
 }
 
@@ -309,16 +321,30 @@ async function loadSkillCatalog(){
   }
 }
 
-function emptyPlayer(num){
-  return { _uid: uid++, num: num, name: 'Jugador ' + num, position: 'Lineman', ma: 6, st: 3, ag: '3+', pa: '4+', av: '8+', skills: [] };
+function buildEmptySlots(){
+  const slots = [];
+  for(let i = 1; i <= 11; i++){
+    slots.push({ _uid: uid++, num: i, name: '', position: '', ma: '', st: '', ag: '', pa: '', av: '', skills: [] });
+  }
+  return slots;
+}
+
+function stripTrailingClave(position, skillsArr){
+  const entry = findCatalogEntry(team.race, position);
+  if(entry && entry.clave && skillsArr.length && skillsArr[skillsArr.length - 1] === entry.clave){
+    return skillsArr.slice(0, -1);
+  }
+  return skillsArr;
 }
 
 function newTeam(){
-  if(team.players.length && !confirm('Esto borra la plantilla actual sin guardar. ¿Continuar?')) return;
-  team = { teamName: 'Nuevo Equipo', race: 'Human', color: '#c0392b', textColor: 'auto', players: [] };
+  const hasData = team.players && team.players.some(p => p.position || p.name);
+  if(hasData && !confirm('Esto borra la plantilla actual sin guardar. ¿Continuar?')) return;
+  team = { teamName: 'Nuevo Equipo', race: '', color: '#c0392b', textColor: 'auto', players: buildEmptySlots() };
   document.getElementById('teamNameInput').value = team.teamName;
-  document.getElementById('teamRaceInput').value = team.race;
+  populateRaceSelect(Object.keys(POSITIONS_BY_RACE).length ? Object.keys(POSITIONS_BY_RACE).sort() : FALLBACK_RACES);
   syncColorUI();
+  updateRaceRequiredNote();
   renderPlayers();
 }
 
@@ -327,21 +353,35 @@ function loadTeamData(data){
   team.race = data.race || '';
   team.color = data.color || '#c0392b';
   team.textColor = data.textColor || 'auto';
-  team.players = (data.players || []).map(pd => ({
-    _uid: uid++,
-    num: pd.num ?? '',
-    name: pd.name || '',
-    position: pd.position || '',
-    ma: pd.ma ?? 6,
-    st: pd.st ?? '',
-    ag: pd.ag ?? '',
-    pa: pd.pa ?? '',
-    av: pd.av ?? '',
-    skills: Array.isArray(pd.skills) ? [...pd.skills] : []
-  }));
+
+  const slots = buildEmptySlots();
+  const used = new Set();
+  (data.players || []).forEach(pd => {
+    const n = parseInt(pd.num);
+    let idx = (!isNaN(n) && n >= 1 && n <= 11 && !used.has(n - 1)) ? (n - 1) : -1;
+    if(idx === -1) idx = slots.findIndex((s, i) => !used.has(i) && !s.position);
+    if(idx === -1) return; // más de 11 jugadores en el archivo: se descartan los sobrantes
+    used.add(idx);
+    const rawSkills = Array.isArray(pd.skills) ? [...pd.skills] : [];
+    slots[idx] = {
+      _uid: uid++,
+      num: pd.num ?? (idx + 1),
+      name: pd.name || '',
+      position: pd.position || '',
+      ma: pd.ma ?? '',
+      st: pd.st ?? '',
+      ag: pd.ag ?? '',
+      pa: pd.pa ?? '',
+      av: pd.av ?? '',
+      skills: stripTrailingClave(pd.position || '', rawSkills)
+    };
+  });
+  team.players = slots;
+
   document.getElementById('teamNameInput').value = team.teamName;
-  document.getElementById('teamRaceInput').value = team.race;
+  populateRaceSelect(Object.keys(POSITIONS_BY_RACE).length ? Object.keys(POSITIONS_BY_RACE).sort() : FALLBACK_RACES);
   syncColorUI();
+  updateRaceRequiredNote();
   renderPlayers();
 }
 
@@ -417,14 +457,45 @@ function importFile(inputEl){
   inputEl.value = '';
 }
 
-function addPlayer(){
-  const nextNum = team.players.length ? Math.max(...team.players.map(p=>parseInt(p.num)||0)) + 1 : 1;
-  team.players.push(emptyPlayer(nextNum));
+function onTeamRaceChange(value){
+  const hasFilled = team.players.some(p => p.position);
+  if(hasFilled && !confirm('Cambiar de raza vacía los 11 huecos de jugadores (las posiciones no coinciden entre razas). ¿Continuar?')){
+    document.getElementById('teamRaceInput').value = team.race;
+    return;
+  }
+  team.race = value;
+  team.players = buildEmptySlots();
+  updateRaceRequiredNote();
+  renderPlayers();
+  scheduleJsonRefresh();
+}
+
+function onPositionChange(_uid, value){
+  const p = findPlayer(_uid);
+  if(!p) return;
+  if(!value){
+    p.position = ''; p.ma = ''; p.st = ''; p.ag = ''; p.pa = ''; p.av = ''; p.skills = [];
+    renderPlayers();
+    return;
+  }
+  const entry = findCatalogEntry(team.race, value);
+  p.position = value;
+  if(entry){
+    p.ma = entry.ma ?? '';
+    p.st = entry.st ?? '';
+    p.ag = entry.ag != null ? entry.ag + '+' : '';
+    p.pa = entry.pa != null ? entry.pa + '+' : '';
+    p.av = entry.av != null ? entry.av + '+' : '';
+    p.skills = Array.isArray(entry.skills) ? [...entry.skills] : [];
+  }
   renderPlayers();
 }
 
-function removePlayer(_uid){
-  team.players = team.players.filter(p => p._uid !== _uid);
+function clearSlot(_uid){
+  const p = findPlayer(_uid);
+  if(!p) return;
+  if(!confirm('¿Vaciar este hueco de jugador?')) return;
+  p.name = ''; p.position = ''; p.ma = ''; p.st = ''; p.ag = ''; p.pa = ''; p.av = ''; p.skills = [];
   renderPlayers();
 }
 
@@ -463,9 +534,9 @@ function removeSkill(_uid, idx){
   renderPlayers();
 }
 
-function positionOptionsFor(race){
+function positionOptionsFor(race, current){
   const list = POSITIONS_BY_RACE[race] || [];
-  return list.map(p => `<option value="${p}">`).join('');
+  return list.map(p => `<option value="${p}" ${p === current ? 'selected' : ''}>${p}</option>`).join('');
 }
 
 function skillSelectOptionsHtml(){
@@ -477,9 +548,10 @@ function skillSelectOptionsHtml(){
 function renderPlayers(){
   const el = document.getElementById('playersList');
   el.innerHTML = '';
+  const raceChosen = !!team.race;
   team.players.forEach(p => {
     const div = document.createElement('div');
-    div.className = 'rt-row rt-body';
+    div.className = 'rt-row rt-body' + (p.position ? '' : ' rt-row-empty');
     const skillsHtml = p.skills.map((s, idx) => {
       const cat = SKILL_TO_CATEGORY[s];
       const catClass = cat ? (CATEGORY_CLASS[cat] || '') : 'cat-personalizada';
@@ -491,10 +563,12 @@ function renderPlayers(){
     const accessTitle = catEntry && catEntry.primSec ? 'Acceso a habilidades según posición (Primaria / Secundaria)' : 'Sin dato de acceso para esta raza/posición en el catálogo';
     div.innerHTML = `
       <div><input type="text" class="mono" value="${p.num}" oninput="updateField(${p._uid}, 'num', this.value)"></div>
-      <div><input type="text" value="${p.name}" oninput="updateField(${p._uid}, 'name', this.value)"></div>
+      <div><input type="text" value="${p.name}" placeholder="Nombre" oninput="updateField(${p._uid}, 'name', this.value)"></div>
       <div>
-        <input type="text" list="pos-${p._uid}" value="${p.position}" oninput="updateField(${p._uid}, 'position', this.value)">
-        <datalist id="pos-${p._uid}">${positionOptionsFor(team.race)}</datalist>
+        <select onchange="onPositionChange(${p._uid}, this.value)" ${raceChosen ? '' : 'disabled'}>
+          <option value="" ${!p.position ? 'selected' : ''}>${raceChosen ? '— vacío —' : 'Elige raza'}</option>
+          ${raceChosen ? positionOptionsFor(team.race, p.position) : ''}
+        </select>
       </div>
       <div><input type="text" class="mono" value="${p.ma}" oninput="updateField(${p._uid}, 'ma', this.value)"></div>
       <div><input type="text" class="mono" value="${p.st}" oninput="updateField(${p._uid}, 'st', this.value)"></div>
@@ -512,10 +586,11 @@ function renderPlayers(){
         </div>
       </div>
       <div><span class="access-hint ${catEntry ? '' : 'access-empty'}" title="${accessTitle}">${accessText}</span></div>
-      <div><button class="pc-remove" onclick="removePlayer(${p._uid})">✕</button></div>`;
+      <div><button class="pc-remove" onclick="clearSlot(${p._uid})" title="Vaciar este hueco">✕</button></div>`;
     el.appendChild(div);
   });
-  document.getElementById('playerCount').textContent = team.players.length;
+  const filled = team.players.filter(p => p.position).length;
+  document.getElementById('playerCount').textContent = filled + '/11';
   scheduleJsonRefresh();
 }
 
@@ -530,12 +605,13 @@ function skillsWithClave(p){
 }
 
 function buildExportData(){
+  const filled = team.players.filter(p => p.position);
   return {
     teamName: team.teamName,
     race: team.race,
     color: team.color || '#c0392b',
     textColor: team.textColor || 'auto',
-    players: team.players.map(p => ({
+    players: filled.map(p => ({
       num: isNaN(parseInt(p.num)) ? p.num : parseInt(p.num),
       name: p.name,
       position: p.position,
@@ -586,7 +662,7 @@ function exportTeamPDF(){
   doc.setFontSize(9);
   doc.text('Sevens Pitch · ' + new Date().toLocaleDateString('es-ES'), pageWidth - 14, 20, { align: 'right' });
 
-  const rows = team.players.map(p => [
+  const rows = team.players.filter(p => p.position).map(p => [
     p.num, p.name, p.position, p.ma, p.st, p.ag, p.pa, p.av, skillsWithClave(p).join(', ')
   ]);
 
@@ -612,7 +688,7 @@ function exportTeamPDF(){
   const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 30;
   doc.setFontSize(8);
   doc.setTextColor(120,120,120);
-  doc.text(team.players.length + ' jugadores en plantilla', 14, finalY + 8);
+  doc.text(rows.length + ' jugadores en plantilla', 14, finalY + 8);
 
   const fname = (team.teamName || 'equipo').replace(/\s+/g,'_') + '.pdf';
   doc.save(fname);
@@ -675,7 +751,6 @@ async function loadFromLibrary(fname){
 
 // init
 newTeam();
-addPlayer();
 loadLibrary();
 loadSkillCatalog();
 loadPositionsCatalog();

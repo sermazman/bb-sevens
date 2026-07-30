@@ -21,31 +21,51 @@ let teamRace = { A: '', B: '' };
 let openingKickoffDone = false;
 let firstHalfKickingTeam = null;
 let pitchBackgroundUrl = null;
+let pitchBackgroundExact = false;
+
+function selectPitchBackground(path){
+  document.getElementById('pitchBgInput').value = '';
+  setPitchBackground(path || null, true);
+  broadcastState();
+}
 
 function applyPitchBackground(){
   const url = document.getElementById('pitchBgInput').value.trim();
   if(!url) return;
-  setPitchBackground(url);
+  document.getElementById('pitchBgSelect').value = '';
+  setPitchBackground(url, false);
   broadcastState();
 }
 
 function clearPitchBackground(){
   document.getElementById('pitchBgInput').value = '';
-  setPitchBackground(null);
+  document.getElementById('pitchBgSelect').value = '';
+  setPitchBackground(null, false);
   broadcastState();
 }
 
-function setPitchBackground(url){
+function setPitchBackground(url, exactFit){
   pitchBackgroundUrl = url || null;
+  pitchBackgroundExact = !!exactFit;
   const wrap = document.getElementById('pitchWrap');
-  if(pitchBackgroundUrl){
+  const pitchEl = document.getElementById('pitch');
+  wrap.style.backgroundImage = 'none';
+  if(pitchBackgroundUrl && exactFit){
+    // official, pre-sized field image: painted directly on the grid for a pixel-perfect match
+    pitchEl.style.backgroundImage = `url("${pitchBackgroundUrl}")`;
+    pitchEl.style.backgroundSize = '100% 100%';
+    pitchEl.style.backgroundPosition = 'center';
+    pitchEl.classList.add('custom-bg');
+  } else if(pitchBackgroundUrl){
+    // ad-hoc URL: painted on the outer wrap, cropped to fit
+    pitchEl.style.backgroundImage = 'none';
     wrap.style.backgroundImage = `url("${pitchBackgroundUrl}")`;
     wrap.style.backgroundSize = 'cover';
     wrap.style.backgroundPosition = 'center';
-    document.getElementById('pitch').classList.add('custom-bg');
+    pitchEl.classList.add('custom-bg');
   } else {
-    wrap.style.backgroundImage = 'none';
-    document.getElementById('pitch').classList.remove('custom-bg');
+    pitchEl.style.backgroundImage = 'none';
+    pitchEl.classList.remove('custom-bg');
   }
 }
 let teamCustomColor = { A: null, B: null };
@@ -171,7 +191,7 @@ function setupConnHandlers(){
 function snapshotState(){
   return {
     players, ball, phase, state, pendingTD, pendingDodge, pendingGfi, armorForPlayer, nextId,
-    koQueue, pendingKo, teamRace, customColorsEnabled, teamCustomColor, teamTextColor, openingKickoffDone, firstHalfKickingTeam, pitchBackgroundUrl,
+    koQueue, pendingKo, teamRace, customColorsEnabled, teamCustomColor, teamTextColor, openingKickoffDone, firstHalfKickingTeam, pitchBackgroundUrl, pitchBackgroundExact,
     ballBounceActive, pendingCatch, pendingBallDrop, pendingDriveStart,
     pendingKickPlacement, kickoffBounceStep, kickoffKickingTeam, kickoffReceivingTeam, freeCatchTeam, placingBallFree,
     blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp, chainPushStack,
@@ -254,8 +274,17 @@ function applyRemoteState(payload){
   openingKickoffDone = !!payload.openingKickoffDone;
   firstHalfKickingTeam = payload.firstHalfKickingTeam || null;
   document.getElementById('kickSelect').disabled = openingKickoffDone;
-  setPitchBackground(payload.pitchBackgroundUrl || null);
-  if(payload.pitchBackgroundUrl) document.getElementById('pitchBgInput').value = payload.pitchBackgroundUrl;
+  setPitchBackground(payload.pitchBackgroundUrl || null, !!payload.pitchBackgroundExact);
+  if(payload.pitchBackgroundUrl && payload.pitchBackgroundExact){
+    document.getElementById('pitchBgSelect').value = payload.pitchBackgroundUrl;
+    document.getElementById('pitchBgInput').value = '';
+  } else if(payload.pitchBackgroundUrl){
+    document.getElementById('pitchBgInput').value = payload.pitchBackgroundUrl;
+    document.getElementById('pitchBgSelect').value = '';
+  } else {
+    document.getElementById('pitchBgInput').value = '';
+    document.getElementById('pitchBgSelect').value = '';
+  }
   document.getElementById('colorsOnBtn').classList.toggle('active', customColorsEnabled);
   document.getElementById('colorsOffBtn').classList.toggle('active', !customColorsEnabled);
   ballBounceActive = !!payload.ballBounceActive;

@@ -53,10 +53,16 @@
       </div>
 
       <h3 style="margin-top:14px;">Fondo del campo</h3>
-      <div class="small-note">Pega la URL de una imagen (logo, textura...) para verla de fondo bajo el césped.</div>
+      <label>Campo oficial</label>
+      <select id="pitchBgSelect" onchange="selectPitchBackground(this.value)">
+        <option value="">Clásico (actual)</option>
+        <!-- Añadir aquí más opciones cuando haya imágenes nuevas, ej: -->
+        <!-- <option value="field/nevado.jpg">Nevado</option> -->
+      </select>
+      <div class="small-note" style="margin-top:6px;">O probar una imagen suelta por URL (no se guarda como opción fija):</div>
       <input type="text" id="pitchBgInput" placeholder="https://...">
       <div class="row">
-        <button onclick="applyPitchBackground()">Aplicar</button>
+        <button onclick="applyPitchBackground()">Aplicar URL</button>
         <button onclick="clearPitchBackground()">Quitar</button>
       </div>
     </div>

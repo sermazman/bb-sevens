@@ -211,6 +211,11 @@ button.full{width:100%; margin-top:6px;}
   content:''; position:absolute; inset:9px; border-radius:50%;
   background:rgba(192,57,43,0.4); pointer-events:none;
 }
+.cell.push-option-free{box-shadow:none; border:2px dashed var(--bad); cursor:pointer;}
+.cell.push-option-free::after{
+  content:''; position:absolute; inset:9px; border-radius:50%;
+  background:rgba(192,57,43,0.4); pointer-events:none;
+}
 .ghost-push-target{
   position:absolute; width:calc(var(--cell) / 2); height:calc(var(--cell) / 2);
   margin:calc(var(--cell) / 4);
@@ -237,6 +242,7 @@ button.full{width:100%; margin-top:6px;}
   z-index:5;
   overflow:hidden;
 }
+.endzone-label-flip{ transform: rotate(180deg); }
 .loose-ball{
   position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
   font-size:16px; pointer-events:none; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.7));

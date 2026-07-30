@@ -387,6 +387,7 @@ function importTeamFile(team, inputEl){
     teamRace[team] = data.race || '';
     if(data.color){
       teamCustomColor[team] = data.color;
+      if(!customColorsEnabled){ setCustomColors(true); }
     }
     if(data.textColor){
       teamTextColor[team] = data.textColor;
@@ -404,7 +405,7 @@ function importTeamFile(team, inputEl){
         row:null, col:null, activated:false, onPitch:false
       });
     });
-    renderRosters(); renderScoreboard(); updateKickSelectLabels();
+    renderRosters(); renderScoreboard(); renderPitch(); updateKickSelectLabels();
     log('📁 Equipo cargado para ' + teamName(team) + ': ' + data.players.length + ' jugadores.');
     updateStatus('Equipo importado.');
     broadcastState();
@@ -693,6 +694,7 @@ function renderPitch(){
       let highlightBounce = false;
       let highlightKickZone = false;
       let highlightPush = false;
+      let highlightPushFree = false;
       if(pendingKickPlacement){
         if(isValidKickPlacementCell(r,c)){ highlightable = true; highlightKickZone = true; }
       } else if(kickoffBounceStep){
@@ -701,9 +703,11 @@ function renderPitch(){
         if(isValidBounceCell(r,c)){ highlightable = true; highlightBounce = true; }
       } else if(pendingPush){
         const defender = players.find(x=>x.id===pendingPush.defenderId);
-        if(defender && isValidPushCell(defender, r, c, pendingPush.offsets, isFreePushActive(pendingPush))){
+        const freeActive = isFreePushActive(pendingPush);
+        if(defender && isValidPushCell(defender, r, c, pendingPush.offsets, freeActive)){
           highlightable = true;
           highlightPush = true;
+          highlightPushFree = freeActive;
         }
       } else if(phase==='live' && selected!==null){
         const p = players.find(x=>x.id===selected);
@@ -715,7 +719,7 @@ function renderPitch(){
         const p = players.find(x=>x.id===placing);
         if(p && isLegalSetupCell(p.team,r,c)) highlightable = true;
       }
-      if(highlightable) cell.classList.add(highlightKickZone ? 'kick-zone' : (highlightPush ? 'push-option' : (highlightBounce ? 'bounce-target' : (highlightGfi ? 'reachable-gfi' : 'reachable'))));
+      if(highlightable) cell.classList.add(highlightKickZone ? 'kick-zone' : (highlightPush ? (highlightPushFree ? 'push-option-free' : 'push-option') : (highlightBounce ? 'bounce-target' : (highlightGfi ? 'reachable-gfi' : 'reachable'))));
       if(highlightBounce && ball.row!==null){
         const num = bounceDirectionNumber(ball.row, ball.col, r, c);
         if(num) cell.dataset.bnum = num;
@@ -775,7 +779,7 @@ function renderEndzoneLabels(pitch){
     if(!teamCustomColor[team]) return;
     const col = team==='A' ? 0 : COLS-1;
     const label = document.createElement('div');
-    label.className = 'endzone-label';
+    label.className = 'endzone-label' + (team==='B' ? ' endzone-label-flip' : '');
     label.style.left = (col*35) + 'px';
     label.style.height = (ROWS*35-1) + 'px';
     label.textContent = teamName(team);

@@ -22,12 +22,12 @@
   }
   .rt-row{
     display:grid;
-    grid-template-columns: 46px 1.4fr 1.1fr 50px 50px 55px 55px 55px 1.6fr 34px;
-    gap:10px;
+    grid-template-columns: 46px 1.3fr 1.05fr 46px 46px 50px 50px 50px 1.5fr 78px 34px;
+    gap:8px;
     align-items:center;
     padding:10px 12px;
     border-bottom:1px solid var(--panel-line);
-    min-width:820px;
+    min-width:920px;
   }
   .rt-row:last-child{border-bottom:none;}
   .rt-row.rt-head{
@@ -42,6 +42,12 @@
     padding:6px 0; width:34px; font-size:13px;
   }
   .pc-skills-cell{min-width:0;}
+  .access-hint{
+    font-family:'JetBrains Mono', monospace; font-size:11px; color:#a99b7f;
+    background:#100e0c; border:1px solid var(--panel-line); border-radius:4px;
+    padding:4px 6px; text-align:center; white-space:nowrap; cursor:help;
+  }
+  .access-hint.access-empty{color:#5a5145;}
   .skill-tags{display:flex; flex-wrap:wrap; gap:5px; margin-bottom:5px;}
   .skill-tag{
     background:#100e0c; border:1px solid var(--gold); color:var(--gold);
@@ -178,19 +184,8 @@
       </div>
       <div>
         <label>Raza</label>
-        <input type="text" id="teamRaceInput" list="raceList" value="Humanos" oninput="scheduleJsonRefresh()">
-        <datalist id="raceList">
-          <option value="Humanos">
-          <option value="Orcos">
-          <option value="Enanos">
-          <option value="Elfos Altos">
-          <option value="Skaven">
-          <option value="No-Muertos">
-          <option value="Caos">
-          <option value="Amazonas">
-          <option value="Nurgle">
-          <option value="Goblins">
-        </datalist>
+        <input type="text" id="teamRaceInput" list="raceList" value="Human" oninput="scheduleJsonRefresh()">
+        <datalist id="raceList"></datalist>
       </div>
     </div>
   </div>
@@ -208,6 +203,7 @@
         <div>PA</div>
         <div>AV</div>
         <div>Habilidades</div>
+        <div>Acceso</div>
         <div></div>
       </div>
       <div id="playersList"></div>
@@ -218,21 +214,47 @@
 </div>
 
 <script>
-let team = { teamName: 'Nuevo Equipo', race: 'Humanos', color: '#c0392b', textColor: 'auto', players: [] };
+let team = { teamName: 'Nuevo Equipo', race: 'Human', color: '#c0392b', textColor: 'auto', players: [] };
 let uid = 1;
 
-const POSITIONS_BY_RACE = {
-  'Humanos': ['Lineman','Blitzer','Thrower','Catcher'],
-  'Orcos': ['Lineman','Blitzer','Thrower','Black Orc'],
-  'Enanos': ['Lineman','Blitzer','Runner','Troll Slayer'],
-  'Elfos Altos': ['Lineman','Blitzer','Thrower','Catcher'],
-  'Skaven': ['Lineman','Blitzer','Thrower','Gutter Runner'],
-  'No-Muertos': ['Skeleton','Zombie','Ghoul','Wight'],
-  'Caos': ['Beastman','Chaos Warrior'],
-  'Amazonas': ['Linewoman','Blitzer','Thrower'],
-  'Nurgle': ['Rotter','Pestigor','Bloater'],
-  'Goblins': ['Goblin','Bomma','Fanatic']
-};
+const FALLBACK_RACES = ["Amazon","Black Orc","Bretonia","Chaos Chosen","Chaos Dwarf","Chaos Renegades","Dark Elf","Dwarf","Elfos Silvanos","Elven Union","Gnome","Goblin","Halfling","High Elf","Human","Imperial Nobility","Khorne","Lizardman","Necromantic","Norse","Nurgle","Ogre","Old World Alliance","Orcs","Shambling Undead","Skaven","Slann","Snotling","Tomb King","Underworld Denizens","Vampire"];
+
+let POSITIONS_CATALOG = [];
+let POSITIONS_BY_RACE = {};
+let CATALOG_LOOKUP = {};
+
+function normKey(s){ return (s || '').trim().toLowerCase(); }
+function catalogKey(race, type){ return normKey(race) + '||' + normKey(type); }
+
+function findCatalogEntry(race, position){
+  return CATALOG_LOOKUP[catalogKey(race, position)] || null;
+}
+
+function populateRaceDatalist(races){
+  document.getElementById('raceList').innerHTML = races.map(r => `<option value="${r}">`).join('');
+}
+populateRaceDatalist(FALLBACK_RACES);
+
+async function loadPositionsCatalog(){
+  try{
+    const res = await fetch('rosters/positions.json');
+    if(!res.ok) throw new Error('http ' + res.status);
+    const data = await res.json();
+    POSITIONS_CATALOG = data;
+    POSITIONS_BY_RACE = {};
+    CATALOG_LOOKUP = {};
+    data.forEach(entry => {
+      if(!POSITIONS_BY_RACE[entry.race]) POSITIONS_BY_RACE[entry.race] = [];
+      POSITIONS_BY_RACE[entry.race].push(entry.type);
+      CATALOG_LOOKUP[catalogKey(entry.race, entry.type)] = entry;
+    });
+    populateRaceDatalist(Object.keys(POSITIONS_BY_RACE).sort());
+    renderPlayers();
+  } catch(err){
+    // Sin catálogo: siguen funcionando el texto libre de raza/posición,
+    // pero no habrá sugerencias de posición ni columna "Acceso" / CLAVE en la exportación.
+  }
+}
 
 // Catálogo de habilidades embebido (fallback si no se puede leer rosters/skills.json,
 // por ejemplo al abrir el archivo en local en vez de online).
@@ -293,7 +315,7 @@ function emptyPlayer(num){
 
 function newTeam(){
   if(team.players.length && !confirm('Esto borra la plantilla actual sin guardar. ¿Continuar?')) return;
-  team = { teamName: 'Nuevo Equipo', race: 'Humanos', color: '#c0392b', textColor: 'auto', players: [] };
+  team = { teamName: 'Nuevo Equipo', race: 'Human', color: '#c0392b', textColor: 'auto', players: [] };
   document.getElementById('teamNameInput').value = team.teamName;
   document.getElementById('teamRaceInput').value = team.race;
   syncColorUI();
@@ -464,6 +486,9 @@ function renderPlayers(){
       const title = cat ? cat : 'Personalizada';
       return `<span class="skill-tag ${catClass}" title="${title}">${s} <button onclick="removeSkill(${p._uid}, ${idx})">✕</button></span>`;
     }).join('');
+    const catEntry = findCatalogEntry(team.race, p.position);
+    const accessText = catEntry && catEntry.primSec ? catEntry.primSec : '–';
+    const accessTitle = catEntry && catEntry.primSec ? 'Acceso a habilidades según posición (Primaria / Secundaria)' : 'Sin dato de acceso para esta raza/posición en el catálogo';
     div.innerHTML = `
       <div><input type="text" class="mono" value="${p.num}" oninput="updateField(${p._uid}, 'num', this.value)"></div>
       <div><input type="text" value="${p.name}" oninput="updateField(${p._uid}, 'name', this.value)"></div>
@@ -486,6 +511,7 @@ function renderPlayers(){
           <button onclick="addCustomSkill(${p._uid})" title="Habilidad personalizada, fuera del catálogo">✎</button>
         </div>
       </div>
+      <div><span class="access-hint ${catEntry ? '' : 'access-empty'}" title="${accessTitle}">${accessText}</span></div>
       <div><button class="pc-remove" onclick="removePlayer(${p._uid})">✕</button></div>`;
     el.appendChild(div);
   });
@@ -495,6 +521,13 @@ function renderPlayers(){
 
 document.getElementById('teamNameInput').addEventListener('input', (e) => { team.teamName = e.target.value; scheduleJsonRefresh(); });
 document.getElementById('teamRaceInput').addEventListener('input', (e) => { team.race = e.target.value; renderPlayers(); });
+
+function skillsWithClave(p){
+  const entry = findCatalogEntry(team.race, p.position);
+  const list = [...(p.skills || [])];
+  if(entry && entry.clave) list.push(entry.clave);
+  return list;
+}
 
 function buildExportData(){
   return {
@@ -508,7 +541,7 @@ function buildExportData(){
       position: p.position,
       ma: isNaN(parseFloat(p.ma)) ? p.ma : parseFloat(p.ma),
       st: p.st, ag: p.ag, pa: p.pa, av: p.av,
-      skills: p.skills
+      skills: skillsWithClave(p)
     }))
   };
 }
@@ -554,7 +587,7 @@ function exportTeamPDF(){
   doc.text('Sevens Pitch · ' + new Date().toLocaleDateString('es-ES'), pageWidth - 14, 20, { align: 'right' });
 
   const rows = team.players.map(p => [
-    p.num, p.name, p.position, p.ma, p.st, p.ag, p.pa, p.av, (p.skills || []).join(', ')
+    p.num, p.name, p.position, p.ma, p.st, p.ag, p.pa, p.av, skillsWithClave(p).join(', ')
   ]);
 
   doc.autoTable({
@@ -645,6 +678,7 @@ newTeam();
 addPlayer();
 loadLibrary();
 loadSkillCatalog();
+loadPositionsCatalog();
 </script>
 </body>
 </html>

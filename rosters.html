@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
   /* Ajustes propios de esta página, siguiendo la misma paleta de style.css */
   .rw{max-width:1180px; margin:0 auto;}
@@ -117,6 +119,7 @@
       <input type="file" id="fileImport" accept="application/json" style="display:none" onchange="importFile(this)">
       <button onclick="newTeam()">🆕 Plantilla en blanco</button>
       <button class="primary" onclick="exportTeamJSON()">💾 Descargar JSON</button>
+      <button onclick="exportTeamPDF()">🖨 Descargar PDF</button>
     </div>
     <div class="small-note" style="margin-top:8px;">El JSON generado aquí es 100% compatible con el botón "Cargar JSON" del tablero principal (mismo formato: teamName / race / players[]).</div>
   </div>
@@ -521,6 +524,65 @@ function exportTeamJSON(){
   a.download = (team.teamName || 'equipo').replace(/\s+/g,'_') + '.json';
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function hexToRgbArr(hex){
+  const c = (hex || '#c0392b').replace('#','');
+  if(c.length !== 6) return [192,57,43];
+  return [parseInt(c.substr(0,2),16), parseInt(c.substr(2,2),16), parseInt(c.substr(4,2),16)];
+}
+
+function exportTeamPDF(){
+  if(!window.jspdf){ alert('No se pudo cargar la librería de PDF (revisa la conexión a internet).'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const teamColor = hexToRgbArr(team.color);
+  const pageWidth = doc.internal.pageSize.getWidth();
+
+  // Cabecera con el color del equipo
+  doc.setFillColor(...teamColor);
+  doc.rect(0, 0, pageWidth, 24, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(20);
+  doc.text(team.teamName || 'Equipo sin nombre', 14, 14);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(team.race || '', 14, 20);
+
+  doc.setFontSize(9);
+  doc.text('Sevens Pitch · ' + new Date().toLocaleDateString('es-ES'), pageWidth - 14, 20, { align: 'right' });
+
+  const rows = team.players.map(p => [
+    p.num, p.name, p.position, p.ma, p.st, p.ag, p.pa, p.av, (p.skills || []).join(', ')
+  ]);
+
+  doc.autoTable({
+    startY: 30,
+    head: [['#','Nombre','Posición','MA','ST','AG','PA','AV','Habilidades']],
+    body: rows,
+    styles: { font: 'helvetica', fontSize: 9, cellPadding: 2.4, valign: 'middle', textColor: [30,26,20] },
+    headStyles: { fillColor: teamColor, textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [244,240,231] },
+    columnStyles: {
+      0: { cellWidth: 8, halign: 'center' },
+      2: { cellWidth: 32 },
+      3: { cellWidth: 10, halign: 'center' },
+      4: { cellWidth: 10, halign: 'center' },
+      5: { cellWidth: 12, halign: 'center' },
+      6: { cellWidth: 12, halign: 'center' },
+      7: { cellWidth: 12, halign: 'center' }
+    },
+    margin: { left: 14, right: 14 }
+  });
+
+  const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 30;
+  doc.setFontSize(8);
+  doc.setTextColor(120,120,120);
+  doc.text(team.players.length + ' jugadores en plantilla', 14, finalY + 8);
+
+  const fname = (team.teamName || 'equipo').replace(/\s+/g,'_') + '.pdf';
+  doc.save(fname);
 }
 
 // ---------- Librería de plantillas (fetch de /rosters/index.json) ----------

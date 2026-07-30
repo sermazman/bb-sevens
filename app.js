@@ -2408,3 +2408,22 @@ renderPitch();
 renderScoreboard();
 showSetupPanel();
 checkForAutosave();
+loadFieldOptions();
+
+function loadFieldOptions(){
+  fetch('field/fields.json')
+    .then(res => res.ok ? res.json() : [])
+    .then(list => {
+      if(!Array.isArray(list)) return;
+      const sel = document.getElementById('pitchBgSelect');
+      list.forEach(entry => {
+        if(!entry || !entry.value || !entry.label) return;
+        if(entry.value === '') return; // "Clásico" ya está como opción fija
+        const opt = document.createElement('option');
+        opt.value = entry.value;
+        opt.textContent = entry.label;
+        sel.appendChild(opt);
+      });
+    })
+    .catch(()=>{ /* sin conexión a field/fields.json (normal si se abre el archivo local sin servidor) */ });
+}

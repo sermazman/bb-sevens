@@ -35,3 +35,10 @@ Panel = las cajas fijas siempre visibles en la interfaz (Dado de bloqueo, Jugado
 - Levantar jugador gastan 3 MA o ninguno por habilidad "En pie de Un salto"
 - Evento de Patada inicial automático según se lanza 2d6
 - Inclusión de imágenes en lugar de las fichas
+
+## Imagen para campo de juego
+Las medidas exactas que necesitaría, dado cómo está montado el tablero ahora mismo (20 columnas × 11 filas, casillas de 34px + 1px de separación):
+
+Base: 699 × 384 px
+Recomendado (para que se vea nítido en pantallas de alta resolución, el doble): 1398 × 768 px — redondeando, 1400 × 770 px va perfecto.
+Formato: JPG está bien si es solo textura/césped (pesa menos); PNG si necesitáis transparencia en algún borde.

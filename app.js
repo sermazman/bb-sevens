@@ -18,6 +18,36 @@ let pendingGfi = null;   // { playerId, toR, toC }
 let armorForPlayer = null; // player id currently being armor-rolled
 let state = { half: 1, active: 'A', turns: { A: 0, B: 0 } };
 let teamRace = { A: '', B: '' };
+let openingKickoffDone = false;
+let firstHalfKickingTeam = null;
+let pitchBackgroundUrl = null;
+
+function applyPitchBackground(){
+  const url = document.getElementById('pitchBgInput').value.trim();
+  if(!url) return;
+  setPitchBackground(url);
+  broadcastState();
+}
+
+function clearPitchBackground(){
+  document.getElementById('pitchBgInput').value = '';
+  setPitchBackground(null);
+  broadcastState();
+}
+
+function setPitchBackground(url){
+  pitchBackgroundUrl = url || null;
+  const wrap = document.getElementById('pitchWrap');
+  if(pitchBackgroundUrl){
+    wrap.style.backgroundImage = `url("${pitchBackgroundUrl}")`;
+    wrap.style.backgroundSize = 'cover';
+    wrap.style.backgroundPosition = 'center';
+    document.getElementById('pitch').classList.add('custom-bg');
+  } else {
+    wrap.style.backgroundImage = 'none';
+    document.getElementById('pitch').classList.remove('custom-bg');
+  }
+}
 let teamCustomColor = { A: null, B: null };
 let teamTextColor = { A: 'auto', B: 'auto' };
 let customColorsEnabled = true;
@@ -141,7 +171,7 @@ function setupConnHandlers(){
 function snapshotState(){
   return {
     players, ball, phase, state, pendingTD, pendingDodge, pendingGfi, armorForPlayer, nextId,
-    koQueue, pendingKo, teamRace, customColorsEnabled, teamCustomColor, teamTextColor,
+    koQueue, pendingKo, teamRace, customColorsEnabled, teamCustomColor, teamTextColor, openingKickoffDone, firstHalfKickingTeam, pitchBackgroundUrl,
     ballBounceActive, pendingCatch, pendingBallDrop, pendingDriveStart,
     pendingKickPlacement, kickoffBounceStep, kickoffKickingTeam, kickoffReceivingTeam, freeCatchTeam, placingBallFree,
     blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp, chainPushStack,
@@ -221,6 +251,11 @@ function applyRemoteState(payload){
   customColorsEnabled = !!payload.customColorsEnabled;
   teamCustomColor = payload.teamCustomColor || { A:null, B:null };
   teamTextColor = payload.teamTextColor || { A:'auto', B:'auto' };
+  openingKickoffDone = !!payload.openingKickoffDone;
+  firstHalfKickingTeam = payload.firstHalfKickingTeam || null;
+  document.getElementById('kickSelect').disabled = openingKickoffDone;
+  setPitchBackground(payload.pitchBackgroundUrl || null);
+  if(payload.pitchBackgroundUrl) document.getElementById('pitchBgInput').value = payload.pitchBackgroundUrl;
   document.getElementById('colorsOnBtn').classList.toggle('active', customColorsEnabled);
   document.getElementById('colorsOffBtn').classList.toggle('active', !customColorsEnabled);
   ballBounceActive = !!payload.ballBounceActive;
@@ -350,7 +385,8 @@ function anyModalOpen(){
          document.getElementById('blockModal').classList.contains('show') ||
          document.getElementById('followUpModal').classList.contains('show') ||
          document.getElementById('catchModal').classList.contains('show') ||
-         document.getElementById('resumeModal').classList.contains('show');
+         document.getElementById('resumeModal').classList.contains('show') ||
+         document.getElementById('losWarningModal').classList.contains('show');
 }
 
 // ---------- Roster management ----------
@@ -469,6 +505,8 @@ function renderReserveZone(){
   ['A','B'].forEach(team=>{
     const koEl = document.getElementById('koList'+team);
     const injEl = document.getElementById('injuredList'+team);
+    const header = document.getElementById('reserveHeader'+team);
+    if(header) header.textContent = '🩹 ' + teamName(team) + ' — bajas';
     if(!koEl || !injEl) return;
     const kos = players.filter(p=>p.team===team && p.condition==='ko');
     const injs = players.filter(p=>p.team===team && (p.condition==='injured' || p.condition==='injuredGrave' || p.condition==='dead'));
@@ -597,9 +635,33 @@ function onKickChangeQuiet(){
   document.getElementById('setupHint').textContent = 'Recibe: ' + teamName(rcv);
 }
 
+function checkLosMinimums(){
+  const problems = [];
+  ['A','B'].forEach(team=>{
+    const losCol = team==='A' ? LOS_A : LOS_B;
+    const count = players.filter(p=>p.onPitch && p.team===team && p.col===losCol && p.row>=2 && p.row<=8).length;
+    if(count < 3) problems.push({ team, count });
+  });
+  return problems;
+}
+
 function startDrive(){
+  const problems = checkLosMinimums();
+  if(problems.length){
+    const lines = problems.map(pr => `${teamName(pr.team)}: solo ${pr.count} de 3 jugadores mínimos en su línea de scrimmage (casillas centrales).`);
+    document.getElementById('losWarningText').innerHTML = lines.join('<br>');
+    document.getElementById('losWarningModal').classList.add('show');
+    return;
+  }
   const kicking = document.getElementById('kickSelect').value;
   const receiving = kicking==='A' ? 'B':'A';
+  if(!openingKickoffDone){
+    firstHalfKickingTeam = kicking;
+    openingKickoffDone = true;
+    const sel = document.getElementById('kickSelect');
+    sel.disabled = true;
+    document.getElementById('setupHint').textContent += ' (elección fija para el resto del partido)';
+  }
   phase='live';
   placing=null; selected=null;
   document.getElementById('setupPanel').style.display='none';
@@ -2161,6 +2223,14 @@ function addNewHalfButton(){
     state.half=2; state.turns={A:0,B:0};
     players.forEach(p=>{ p.activated=false; });
     btn.remove();
+    if(firstHalfKickingTeam){
+      const swapped = firstHalfKickingTeam==='A' ? 'B' : 'A';
+      const sel = document.getElementById('kickSelect');
+      sel.value = swapped;
+      sel.disabled = true;
+      onKickChangeQuiet();
+      log('🔄 Mitad 2: patea automáticamente ' + teamName(swapped) + ' (equipo receptor de la 1ª mitad).');
+    }
     renderScoreboard();
     updateStatus('¡Comienza la Mitad 2! Colocad y pulsad "Iniciar Entrada".');
     broadcastState();

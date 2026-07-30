@@ -179,6 +179,9 @@ button.full{width:100%; margin-top:6px;}
 }
 .cell.alt{background:var(--turf-2);}
 .cell.wide{background:var(--turf-wide);}
+.pitch.custom-bg .cell{background:rgba(47,90,42,0.55);}
+.pitch.custom-bg .cell.alt{background:rgba(53,99,49,0.55);}
+.pitch.custom-bg .cell.wide{background:rgba(41,79,38,0.55);}
 .cell.endzone-a{background:repeating-linear-gradient(135deg, var(--endzone-a), var(--endzone-a) 6px, #6b2727 6px, #6b2727 12px);}
 .cell.endzone-b{background:repeating-linear-gradient(135deg, var(--endzone-b), var(--endzone-b) 6px, #26507e 6px, #26507e 12px);}
 .cell.los{box-shadow: inset 2px 0 0 var(--chalk), inset -2px 0 0 var(--chalk);}
@@ -364,7 +367,7 @@ button.full{width:100%; margin-top:6px;}
 
 .team-name-input{font-family:'Anton', sans-serif; font-size:19px; letter-spacing:0.5px;}
 
-.roster-list{max-height:440px; overflow-y:auto; margin-top:6px;}
+.roster-list{margin-top:6px;}
 .roster-item{
   display:flex; flex-direction:column; gap:3px;
   padding:7px 8px; border-radius:4px; font-size:13px;

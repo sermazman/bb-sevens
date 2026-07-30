@@ -51,6 +51,14 @@
         <button id="colorsOnBtn" class="mini-toggle active" onclick="setCustomColors(true)">SÍ</button>
         <button id="colorsOffBtn" class="mini-toggle" onclick="setCustomColors(false)">NO</button>
       </div>
+
+      <h3 style="margin-top:14px;">Fondo del campo</h3>
+      <div class="small-note">Pega la URL de una imagen (logo, textura...) para verla de fondo bajo el césped.</div>
+      <input type="text" id="pitchBgInput" placeholder="https://...">
+      <div class="row">
+        <button onclick="applyPitchBackground()">Aplicar</button>
+        <button onclick="clearPitchBackground()">Quitar</button>
+      </div>
     </div>
   </div>
 
@@ -161,20 +169,20 @@
       </div>
     </div>
 
-    <div class="pitch-wrap">
+    <div class="pitch-wrap" id="pitchWrap">
       <div class="pitch" id="pitch" oncontextmenu="return handlePitchRightClick(event)"></div>
     </div>
 
     <div class="reserve-zone">
       <div class="reserve-team">
-        <h2 style="color:var(--team-a);">🩹 Rojo — bajas</h2>
+        <h2 style="color:var(--team-a);" id="reserveHeaderA">🩹 Rojo — bajas</h2>
         <div class="small-note">Inconscientes:</div>
         <div id="koListA" class="reserve-tags"><span class="small-note">Ninguno</span></div>
         <div class="small-note" style="margin-top:6px;">Heridos:</div>
         <div id="injuredListA" class="reserve-tags"><span class="small-note">Ninguno</span></div>
       </div>
       <div class="reserve-team">
-        <h2 style="color:var(--team-b);">🩹 Azul — bajas</h2>
+        <h2 style="color:var(--team-b);" id="reserveHeaderB">🩹 Azul — bajas</h2>
         <div class="small-note">Inconscientes:</div>
         <div id="koListB" class="reserve-tags"><span class="small-note">Ninguno</span></div>
         <div class="small-note" style="margin-top:6px;">Heridos:</div>
@@ -387,6 +395,14 @@
         <button onclick="applyBlockOutcome('none')">Ninguno cae (ambos con Placar)</button>
       </div>
     </div>
+  </div>
+</div>
+
+<div class="modal-back" id="losWarningModal">
+  <div class="modal">
+    <h2>⚠️ LÍNEA INCOMPLETA</h2>
+    <p id="losWarningText">Faltan jugadores en la línea de scrimmage.</p>
+    <button class="primary" onclick="document.getElementById('losWarningModal').classList.remove('show')">Recolocar</button>
   </div>
 </div>
 

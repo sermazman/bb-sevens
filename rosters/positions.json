@@ -1,0 +1,3753 @@
+[
+ {
+  "race": "Amazon",
+  "type": "Eagle Warrior Linewomen",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Esquivar"
+  ],
+  "prize": 50000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": "Human - Línea",
+  "primSec": "G / AF"
+ },
+ {
+  "race": "Amazon",
+  "type": "Python Warrior Throwers",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 3,
+  "av": 8,
+  "skills": [
+   "Esquivar",
+   "Atento al balón",
+   "Pasar",
+   "Pase seguro"
+  ],
+  "prize": 80000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": "Human - Lanzador",
+  "primSec": "GP / AF"
+ },
+ {
+  "race": "Amazon",
+  "type": "Piranha Warrior Blitzers",
+  "ma": 7,
+  "st": 3,
+  "ag": 3,
+  "pa": 5,
+  "av": 8,
+  "skills": [
+   "Esquivar",
+   "Pegar y correr",
+   "En pie de un salto"
+  ],
+  "prize": 90000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": "Human - Blitzer",
+  "primSec": "AG / F"
+ },
+ {
+  "race": "Amazon",
+  "type": "Jaguar Warrior Blockers",
+  "ma": 6,
+  "st": 4,
+  "ag": 3,
+  "pa": 5,
+  "av": 9,
+  "skills": [
+   "Romper Defensas",
+   "Esquivar"
+  ],
+  "prize": 110000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": "Human - Defensor",
+  "primSec": "GF / A"
+ },
+ {
+  "race": "Amazon",
+  "type": "Journey Eagle Warrior Linewomen",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Solitario (4+)",
+   "Esquivar"
+  ],
+  "prize": 50000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": "Human - Linea",
+  "primSec": "G / AF"
+ },
+ {
+  "race": "Bretonia",
+  "type": "Squire",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Forcejear"
+  ],
+  "prize": 50000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": "Human - Línea",
+  "primSec": "G / AF"
+ },
+ {
+  "race": "Bretonia",
+  "type": "Knigth Catcher",
+  "ma": 7,
+  "st": 3,
+  "ag": 3,
+  "pa": 3,
+  "av": 9,
+  "skills": [
+   "Agallas",
+   "Atrapar",
+   "Nervios de Acero"
+  ],
+  "prize": 85000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": "Human - Receptor",
+  "primSec": "AG / F"
+ },
+ {
+  "race": "Bretonia",
+  "type": "Knigth Thrower",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 3,
+  "av": 9,
+  "skills": [
+   "Agallas",
+   "Nervios de Acero",
+   "Pasar"
+  ],
+  "prize": 80000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": "Human - Lanzador",
+  "primSec": "GP / AF"
+ },
+ {
+  "race": "Bretonia",
+  "type": "Grial Knigths",
+  "ma": 7,
+  "st": 4,
+  "ag": 3,
+  "pa": 4,
+  "av": 10,
+  "skills": [
+   "Agallas",
+   "Equilibrio Firme",
+   "Placar"
+  ],
+  "prize": 95000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": "Human - Blitzer",
+  "primSec": "FG / A"
+ },
+ {
+  "race": "Bretonia",
+  "type": "Journey Eagle Warrior Linewomen",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Solitario (4+)",
+   "Forcejear"
+  ],
+  "prize": 50000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": "Human - Línea",
+  "primSec": "G / AF"
+ },
+ {
+  "race": "Black Orc",
+  "type": "Goblin Bruiser",
+  "ma": 6,
+  "st": 2,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Esquivar",
+   "Humanoide bala",
+   "Escurridizo",
+   "Cabeza dura"
+  ],
+  "prize": 45000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": "Goblin - Línea",
+  "primSec": "AT / FGP"
+ },
+ {
+  "race": "Black Orc",
+  "type": "Black Orc",
+  "ma": 4,
+  "st": 4,
+  "ag": 4,
+  "pa": 5,
+  "av": 10,
+  "skills": [
+   "Luchador",
+   "Apartar"
+  ],
+  "prize": 90000,
+  "qty": 6,
+  "bigGuy": false,
+  "clave": "Orc - Defensor",
+  "primSec": "FG / AT"
+ },
+ {
+  "race": "Black Orc",
+  "type": "Trained Troll",
+  "ma": 4,
+  "st": 5,
+  "ag": 5,
+  "pa": 5,
+  "av": 10,
+  "skills": [
+   "Golpe mortífero (+1)",
+   "Lanzar compañero",
+   "Proyectil de vómito",
+   "Realmente estúpido",
+   "Siempre hambriento",
+   "Regeneración"
+  ],
+  "prize": 115000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": "Troll - Grandullon",
+  "primSec": "F / AGP"
+ },
+ {
+  "race": "Black Orc",
+  "type": "Journey Goblin",
+  "ma": 6,
+  "st": 2,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Solitario (4+)",
+   "Esquivar",
+   "Humanoide bala",
+   "Escurridizo",
+   "Cabeza dura"
+  ],
+  "prize": 45000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": "Goblin - Línea",
+  "primSec": "AT / FGP"
+ },
+ {
+  "race": "Chaos Chosen",
+  "type": "Beastman Lineman",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 3,
+  "av": 9,
+  "skills": [
+   "Cuernos",
+   "Cabeza dura"
+  ],
+  "prize": 55000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": "Beastman - Linea",
+  "primSec": "GM / AFPT"
+ },
+ {
+  "race": "Chaos Chosen",
+  "type": "Chaos Chosen",
+  "ma": 5,
+  "st": 4,
+  "ag": 3,
+  "pa": 5,
+  "av": 10,
+  "skills": [
+   "Llave de Brazo"
+  ],
+  "prize": 100000,
+  "qty": 4,
+  "bigGuy": false,
+  "clave": "Human - Defensor",
+  "primSec": "FGM / AT"
+ },
+ {
+  "race": "Chaos Chosen",
+  "type": "Troll",
+  "ma": 4,
+  "st": 5,
+  "ag": 5,
+  "pa": 5,
+  "av": 10,
+  "skills": [
+   "Siempre hambriento",
+   "Solitario (4+)",
+   "Golpe mortífero (+1)",
+   "Proyectil de vómito",
+   "Realmente estúpido",
+   "Regeneración",
+   "Lanzar compañero"
+  ],
+  "prize": 115000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": "Troll - Grandullon",
+  "primSec": "FM / AGP"
+ },
+ {
+  "race": "Chaos Chosen",
+  "type": "Ogre",
+  "ma": 5,
+  "st": 5,
+  "ag": 4,
+  "pa": 5,
+  "av": 10,
+  "skills": [
+   "Estúpido",
+   "Solitario (4+)",
+   "Golpe mortífero (+1)",
+   "Cabeza dura",
+   "Lanzar Compañero"
+  ],
+  "prize": 140000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": "Ogre - Grandullon",
+  "primSec": "FM / AG"
+ },
+ {
+  "race": "Chaos Chosen",
+  "type": "Minotaur",
+  "ma": 5,
+  "st": 5,
+  "ag": 4,
+  "pa": 6,
+  "av": 9,
+  "skills": [
+   "Solitario (4+)",
+   "Furia",
+   "Cuernos",
+   "Golpe mortífero (+1)",
+   "Cabeza dura",
+   "Ira descontrolada"
+  ],
+  "prize": 150000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": "Minotaur - Grandullon",
+  "primSec": "FM / AG"
+ },
+ {
+  "race": "Chaos Chosen",
+  "type": "Journey Beastman",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 3,
+  "av": 9,
+  "skills": [
+   "Solitario (4+)",
+   "Cuernos"
+  ],
+  "prize": 55000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": "Beastman - Linea",
+  "primSec": "GM / AFPT"
+ },
+ {
+  "race": "Chaos Dwarf",
+  "type": "Hobgoblin Lineman",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [],
+  "prize": 40000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Chaos Dwarf",
+  "type": "Hobgoblin Sneaky Stabba",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 5,
+  "av": 8,
+  "skills": [
+   "Perseguir",
+   "Puñal"
+  ],
+  "prize": 70000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Chaos Dwarf",
+  "type": "Chaos Dwarf Blocker",
+  "ma": 4,
+  "st": 3,
+  "ag": 4,
+  "pa": 6,
+  "av": 10,
+  "skills": [
+   "Placar",
+   "Piel ferrea",
+   "Cabeza dura"
+  ],
+  "prize": 70000,
+  "qty": 4,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Chaos Dwarf",
+  "type": "Chaos Dwarf Flamesmith",
+  "ma": 5,
+  "st": 3,
+  "ag": 4,
+  "pa": 6,
+  "av": 10,
+  "skills": [
+   "Luchador",
+   "Aliento de fuego",
+   "Presencia perturbadora Cabeza dura"
+  ],
+  "prize": 80000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Chaos Dwarf",
+  "type": "Bull Centaur Blitzer",
+  "ma": 6,
+  "st": 4,
+  "ag": 4,
+  "pa": 6,
+  "av": 10,
+  "skills": [
+   "Esprintar",
+   "Pies firmes",
+   "Cabeza dura"
+  ],
+  "prize": 130000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Chaos Dwarf",
+  "type": "Minotaur",
+  "ma": 5,
+  "st": 5,
+  "ag": 4,
+  "pa": 0,
+  "av": 9,
+  "skills": [
+   "Solitario (4+)",
+   "Furia",
+   "Cuernos",
+   "Golpe mortífero (+1)",
+   "Cabeza dura",
+   "Ira descontrolada"
+  ],
+  "prize": 150000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Chaos Dwarf",
+  "type": "Journey Hobgoblin Lineman",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Solitario (4+)"
+  ],
+  "prize": 40000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Chaos Renegades",
+  "type": "Linemen Renegade",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 9,
+  "skills": [],
+  "prize": 50000,
+  "qty": 12,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Chaos Renegades",
+  "type": "Thrower Renegade",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 3,
+  "av": 9,
+  "skills": [
+   "Animosidad (todo el equipo)",
+   "Pasar",
+   "Proteger el cuero"
+  ],
+  "prize": 75000,
+  "qty": 1,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Chaos Renegades",
+  "type": "Goblin Renegade",
+  "ma": 6,
+  "st": 2,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Animosidad (todo el equipo)",
+   "Esquivar",
+   "Humanoide bala",
+   "Escurridizo"
+  ],
+  "prize": 40000,
+  "qty": 1,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Chaos Renegades",
+  "type": "Skaven Renegade",
+  "ma": 7,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Animosidad (todo el equipo)"
+  ],
+  "prize": 50000,
+  "qty": 1,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Chaos Renegades",
+  "type": "Orc Renegade",
+  "ma": 5,
+  "st": 3,
+  "ag": 3,
+  "pa": 5,
+  "av": 10,
+  "skills": [
+   "Animosidad (todo el equipo)"
+  ],
+  "prize": 50000,
+  "qty": 1,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Chaos Renegades",
+  "type": "Dark Elf Renegade",
+  "ma": 6,
+  "st": 3,
+  "ag": 2,
+  "pa": 3,
+  "av": 9,
+  "skills": [
+   "Animosidad (todo el equipo)"
+  ],
+  "prize": 75000,
+  "qty": 1,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Chaos Renegades",
+  "type": "Troll Renegade",
+  "ma": 4,
+  "st": 5,
+  "ag": 5,
+  "pa": 5,
+  "av": 10,
+  "skills": [
+   "Siempre hambriento",
+   "Solitario (4+)",
+   "Golpe mortífero (+1)",
+   "Proyectil de vómito",
+   "Realmente estúpido",
+   "Regeneración",
+   "Lanzar compañero"
+  ],
+  "prize": 115000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Chaos Renegades",
+  "type": "Ogre Renegade",
+  "ma": 5,
+  "st": 5,
+  "ag": 4,
+  "pa": 5,
+  "av": 10,
+  "skills": [
+   "Estúpido",
+   "Solitario (4+)",
+   "Golpe mortífero (+1)",
+   "Cabeza dura",
+   "Lanzar Compañero"
+  ],
+  "prize": 140000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Chaos Renegades",
+  "type": "Minotaur Renegade",
+  "ma": 5,
+  "st": 5,
+  "ag": 4,
+  "pa": 0,
+  "av": 9,
+  "skills": [
+   "Solitario (4+)",
+   "Furia",
+   "Cuernos",
+   "Golpe mortífero (+1)",
+   "Cabeza dura",
+   "Ira descontrolada"
+  ],
+  "prize": 150000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Chaos Renegades",
+  "type": "Rat Ogre Renegade",
+  "ma": 6,
+  "st": 5,
+  "ag": 4,
+  "pa": 0,
+  "av": 9,
+  "skills": [
+   "Ferocidad animal",
+   "Furia",
+   "Solitario (4+)",
+   "Golpe mortífero (+1)",
+   "Cola prensil"
+  ],
+  "prize": 150000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Chaos Renegades",
+  "type": "Journey Lineman",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 9,
+  "skills": [
+   "Solitario (4+)"
+  ],
+  "prize": 50000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Dark Elf",
+  "type": "Lineman",
+  "ma": 6,
+  "st": 3,
+  "ag": 2,
+  "pa": 4,
+  "av": 9,
+  "skills": [],
+  "prize": 70000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Dark Elf",
+  "type": "Runner",
+  "ma": 7,
+  "st": 3,
+  "ag": 2,
+  "pa": 3,
+  "av": 8,
+  "skills": [
+   "Pase precipitado"
+  ],
+  "prize": 80000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Dark Elf",
+  "type": "Assassin",
+  "ma": 7,
+  "st": 3,
+  "ag": 2,
+  "pa": 5,
+  "av": 8,
+  "skills": [
+   "Perseguir",
+   "Puñal"
+  ],
+  "prize": 85000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Dark Elf",
+  "type": "Blitzer",
+  "ma": 7,
+  "st": 3,
+  "ag": 2,
+  "pa": 4,
+  "av": 9,
+  "skills": [
+   "Placar"
+  ],
+  "prize": 100000,
+  "qty": 4,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Dark Elf",
+  "type": "Witch Elf",
+  "ma": 7,
+  "st": 3,
+  "ag": 2,
+  "pa": 5,
+  "av": 8,
+  "skills": [
+   "Esquivar",
+   "Furia",
+   "En pie de un salto"
+  ],
+  "prize": 110000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Dark Elf",
+  "type": "Journey Elf",
+  "ma": 6,
+  "st": 3,
+  "ag": 2,
+  "pa": 4,
+  "av": 9,
+  "skills": [
+   "Solitario (4+)"
+  ],
+  "prize": 70000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Dwarf",
+  "type": "Lineman",
+  "ma": 4,
+  "st": 3,
+  "ag": 4,
+  "pa": 5,
+  "av": 10,
+  "skills": [
+   "Placar",
+   "Romper defensas",
+   "Cabeza dura"
+  ],
+  "prize": 70000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": "Dwarf - Linea",
+  "primSec": "GT / F"
+ },
+ {
+  "race": "Dwarf",
+  "type": "Runner",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 9,
+  "skills": [
+   "Manos seguras",
+   "Cabeza dura",
+   "Esprintar"
+  ],
+  "prize": 80000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": "Dwarf - Corredor",
+  "primSec": "GP / F"
+ },
+ {
+  "race": "Dwarf",
+  "type": "Blitzer",
+  "ma": 5,
+  "st": 3,
+  "ag": 4,
+  "pa": 4,
+  "av": 10,
+  "skills": [
+   "Cabeza dura",
+   "Placaje defensivo",
+   "Placaje heroico",
+   "Placar"
+  ],
+  "prize": 100000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": "Dwarf - Blitzer",
+  "primSec": "FG / P"
+ },
+ {
+  "race": "Dwarf",
+  "type": "Troll Slayer",
+  "ma": 5,
+  "st": 3,
+  "ag": 4,
+  "pa": 5,
+  "av": 9,
+  "skills": [
+   "Agallas",
+   "Cabeza dura",
+   "Furia",
+   "Odio (Troll)",
+   "Placar"
+  ],
+  "prize": 95000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": "Dwarf - Epecial",
+  "primSec": "FG / T"
+ },
+ {
+  "race": "Dwarf",
+  "type": "Deathroller",
+  "ma": 5,
+  "st": 7,
+  "ag": 5,
+  "pa": 0,
+  "av": 11,
+  "skills": [
+   "Abrirse paso",
+   "Arma secreta",
+   "El balón ni verlo",
+   "Golpe mortifero",
+   "Imparable",
+   "Jugar sucio",
+   "Mantenerse firme",
+   "Solitario (4+)"
+  ],
+  "prize": 170000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": "Dwarf - Especial - Grandullon",
+  "primSec": "FT / G"
+ },
+ {
+  "race": "Dwarf",
+  "type": "Journey Lineman",
+  "ma": 4,
+  "st": 3,
+  "ag": 4,
+  "pa": 5,
+  "av": 10,
+  "skills": [
+   "Solitario (4+)",
+   "Placar",
+   "Romper defensas",
+   "Cabeza dura"
+  ],
+  "prize": 70000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": "Dwarf - Linea",
+  "primSec": "GT / F"
+ },
+ {
+  "race": "Elven Union",
+  "type": "Lineman",
+  "ma": 6,
+  "st": 3,
+  "ag": 2,
+  "pa": 4,
+  "av": 8,
+  "skills": [],
+  "prize": 60000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Elven Union",
+  "type": "Thrower",
+  "ma": 6,
+  "st": 3,
+  "ag": 2,
+  "pa": 2,
+  "av": 8,
+  "skills": [
+   "Pasar"
+  ],
+  "prize": 75000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Elven Union",
+  "type": "Catcher",
+  "ma": 8,
+  "st": 3,
+  "ag": 2,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Atrapar",
+   "Nervios de acero"
+  ],
+  "prize": 100000,
+  "qty": 4,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Elven Union",
+  "type": "Blitzer",
+  "ma": 7,
+  "st": 3,
+  "ag": 2,
+  "pa": 3,
+  "av": 9,
+  "skills": [
+   "Placar",
+   "Echarse a un lado"
+  ],
+  "prize": 115000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Elven Union",
+  "type": "Journey Elf",
+  "ma": 6,
+  "st": 3,
+  "ag": 2,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Solitario (4+)"
+  ],
+  "prize": 60000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Goblin",
+  "type": "Goblin",
+  "ma": 6,
+  "st": 2,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Esquivar",
+   "Humanoide bala",
+   "Escurridizo"
+  ],
+  "prize": 40000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Goblin",
+  "type": "Bombardier",
+  "ma": 6,
+  "st": 2,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Bombardero",
+   "Esquivar",
+   "Arma secreta",
+   "Escurridizo"
+  ],
+  "prize": 45000,
+  "qty": 1,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Goblin",
+  "type": "Looney",
+  "ma": 6,
+  "st": 2,
+  "ag": 3,
+  "pa": 0,
+  "av": 8,
+  "skills": [
+   "Motosierra",
+   "Arma secreta",
+   "Escurridizo"
+  ],
+  "prize": 40000,
+  "qty": 1,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Goblin",
+  "type": "Doom Diver",
+  "ma": 6,
+  "st": 2,
+  "ag": 3,
+  "pa": 6,
+  "av": 8,
+  "skills": [
+   "Humanoide bala",
+   "Escurridizo",
+   "Planear"
+  ],
+  "prize": 60000,
+  "qty": 1,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Goblin",
+  "type": "Ooligan",
+  "ma": 6,
+  "st": 2,
+  "ag": 3,
+  "pa": 6,
+  "av": 8,
+  "skills": [
+   "Juego sucio (+1)",
+   "Presencia perturbadora",
+   "Esquivar",
+   "Humanoide bala",
+   "Escurridizo"
+  ],
+  "prize": 65000,
+  "qty": 1,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Goblin",
+  "type": "Fanatic",
+  "ma": 3,
+  "st": 7,
+  "ag": 3,
+  "pa": 0,
+  "av": 8,
+  "skills": [
+   "Bola y cadena",
+   "Sin manos",
+   "Arma secreta",
+   "Escurridizo"
+  ],
+  "prize": 70000,
+  "qty": 1,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Goblin",
+  "type": "Pogoer",
+  "ma": 7,
+  "st": 2,
+  "ag": 3,
+  "pa": 5,
+  "av": 8,
+  "skills": [
+   "Esquivar",
+   "Pogo saltarín",
+   "Escurridizo"
+  ],
+  "prize": 75000,
+  "qty": 1,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Goblin",
+  "type": "Troll",
+  "ma": 4,
+  "st": 5,
+  "ag": 5,
+  "pa": 5,
+  "av": 10,
+  "skills": [
+   "Siempre hambriento",
+   "Solitario (3+)",
+   "Golpe mortífero (+1)",
+   "Proyectil de vómito",
+   "Realmente estúpido",
+   "Regeneración",
+   "Lanzar compañero"
+  ],
+  "prize": 115000,
+  "qty": 2,
+  "bigGuy": true,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Goblin",
+  "type": "Journey Goblin",
+  "ma": 6,
+  "st": 2,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Solitario (4+)",
+   "Esquivar",
+   "Humanoide bala",
+   "Escurridizo"
+  ],
+  "prize": 40000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Gnome",
+  "type": "Linemen",
+  "ma": 5,
+  "st": 2,
+  "ag": 3,
+  "pa": 4,
+  "av": 7,
+  "skills": [
+   "En pie de un salto",
+   "Humanoide bala",
+   "Escurridizo",
+   "Forcejear"
+  ],
+  "prize": 40000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Gnome",
+  "type": "Illusionist",
+  "ma": 5,
+  "st": 2,
+  "ag": 3,
+  "pa": 3,
+  "av": 7,
+  "skills": [
+   "En pie de un salto",
+   "Escurridizo",
+   "Embaucador",
+   "Forcejear"
+  ],
+  "prize": 50000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Gnome",
+  "type": "Woodland Fox",
+  "ma": 7,
+  "st": 2,
+  "ag": 2,
+  "pa": 0,
+  "av": 6,
+  "skills": [
+   "Esquivar",
+   "Mi balón",
+   "Echarse a un lado",
+   "Escurridizo"
+  ],
+  "prize": 50000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Gnome",
+  "type": "Beastmaster",
+  "ma": 5,
+  "st": 2,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Defensa",
+   "En pie de un salto",
+   "Escurridizo",
+   "Forcejear"
+  ],
+  "prize": 55000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Gnome",
+  "type": "Altern Forest Treeman",
+  "ma": 2,
+  "st": 6,
+  "ag": 5,
+  "pa": 5,
+  "av": 11,
+  "skills": [
+   "Golpe mortífero (+1)",
+   "Mantenerse firme",
+   "Brazo fuerte",
+   "Echar raíces",
+   "Cabeza dura",
+   "Lanzar compañero",
+   "¡Tronco va!"
+  ],
+  "prize": 120000,
+  "qty": 2,
+  "bigGuy": true,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Gnome",
+  "type": "Journey Lineman",
+  "ma": 5,
+  "st": 2,
+  "ag": 3,
+  "pa": 4,
+  "av": 7,
+  "skills": [
+   "Solitario (4+)",
+   "En pie de un salto",
+   "Humanoide bala",
+   "Escurridizo",
+   "Forcejear"
+  ],
+  "prize": 40000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Halfling",
+  "type": "Halfling Hopeful",
+  "ma": 5,
+  "st": 2,
+  "ag": 3,
+  "pa": 4,
+  "av": 7,
+  "skills": [
+   "Esquivar",
+   "Humanoide bala",
+   "Escurridizo"
+  ],
+  "prize": 30000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Halfling",
+  "type": "Halfling Catcher",
+  "ma": 5,
+  "st": 2,
+  "ag": 3,
+  "pa": 5,
+  "av": 7,
+  "skills": [
+   "Atrapar",
+   "Esquivar",
+   "Humanoide bala",
+   "Esprintar",
+   "Escurridizo"
+  ],
+  "prize": 55000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Halfling",
+  "type": "Halfling Hefty",
+  "ma": 5,
+  "st": 2,
+  "ag": 3,
+  "pa": 3,
+  "av": 8,
+  "skills": [
+   "Esquivar",
+   "Zafarse",
+   "Escurridizo"
+  ],
+  "prize": 50000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Halfling",
+  "type": "Forest Treeman",
+  "ma": 2,
+  "st": 6,
+  "ag": 5,
+  "pa": 5,
+  "av": 11,
+  "skills": [
+   "Golpe mortífero (+1)",
+   "Mantenerse firme",
+   "Brazo fuerte",
+   "Echar raíces",
+   "Cabeza dura",
+   "Lanzar compañero",
+   "¡Tronco va!"
+  ],
+  "prize": 120000,
+  "qty": 2,
+  "bigGuy": true,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Halfling",
+  "type": "Journey Halfling",
+  "ma": 5,
+  "st": 2,
+  "ag": 3,
+  "pa": 4,
+  "av": 7,
+  "skills": [
+   "Solitario (4+)",
+   "Esquivar",
+   "Humanoide bala",
+   "Escurridizo"
+  ],
+  "prize": 30000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "High Elf",
+  "type": "Lineman",
+  "ma": 6,
+  "st": 3,
+  "ag": 2,
+  "pa": 4,
+  "av": 9,
+  "skills": [],
+  "prize": 65000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "High Elf",
+  "type": "White Lion",
+  "ma": 6,
+  "st": 3,
+  "ag": 2,
+  "pa": 3,
+  "av": 9,
+  "skills": [
+   "Partenubes",
+   "Pasar",
+   "Pase seguro"
+  ],
+  "prize": 100000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "High Elf",
+  "type": "Phoenix Warrior",
+  "ma": 8,
+  "st": 3,
+  "ag": 2,
+  "pa": 5,
+  "av": 9,
+  "skills": [
+   "Atrapar"
+  ],
+  "prize": 90000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "High Elf",
+  "type": "Dragon Prince",
+  "ma": 7,
+  "st": 3,
+  "ag": 2,
+  "pa": 4,
+  "av": 9,
+  "skills": [
+   "Placar"
+  ],
+  "prize": 100000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "High Elf",
+  "type": "Journey Elf",
+  "ma": 6,
+  "st": 3,
+  "ag": 2,
+  "pa": 4,
+  "av": 9,
+  "skills": [
+   "Solitario (4+)"
+  ],
+  "prize": 65000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Human",
+  "type": "Lineman",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 9,
+  "skills": [],
+  "prize": 50000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Human",
+  "type": "Catcher",
+  "ma": 8,
+  "st": 2,
+  "ag": 3,
+  "pa": 5,
+  "av": 8,
+  "skills": [
+   "Atrapar",
+   "Esquivar"
+  ],
+  "prize": 65000,
+  "qty": 4,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Human",
+  "type": "Thrower",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 2,
+  "av": 9,
+  "skills": [
+   "Pasar",
+   "Manos seguras"
+  ],
+  "prize": 80000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Human",
+  "type": "Blitzer",
+  "ma": 7,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 9,
+  "skills": [
+   "Placar"
+  ],
+  "prize": 85000,
+  "qty": 4,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Human",
+  "type": "Halfling Hopeful",
+  "ma": 5,
+  "st": 2,
+  "ag": 3,
+  "pa": 4,
+  "av": 7,
+  "skills": [
+   "Esquivar",
+   "Humanoide bala",
+   "Escurridizo"
+  ],
+  "prize": 30000,
+  "qty": 3,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Human",
+  "type": "Ogre",
+  "ma": 5,
+  "st": 5,
+  "ag": 4,
+  "pa": 5,
+  "av": 10,
+  "skills": [
+   "Estúpido",
+   "Solitario (4+)",
+   "Golpe mortífero (+1)",
+   "Cabeza dura",
+   "Lanzar Compañero"
+  ],
+  "prize": 140000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Human",
+  "type": "Journeyman",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 9,
+  "skills": [
+   "Solitario (4+)"
+  ],
+  "prize": 50000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Imperial Nobility",
+  "type": "Imperial Retainer",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Zafarse"
+  ],
+  "prize": 45000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": "Human - Linea",
+  "primSec": "G /AF"
+ },
+ {
+  "race": "Imperial Nobility",
+  "type": "Imperial Thrower",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 2,
+  "av": 9,
+  "skills": [
+   "Pasar",
+   "Pase y Seguir",
+   "Profesional"
+  ],
+  "prize": 75000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": "Human - Lanzador",
+  "primSec": "GP / AF"
+ },
+ {
+  "race": "Imperial Nobility",
+  "type": "Noble Blitzer",
+  "ma": 7,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 9,
+  "skills": [
+   "Placar",
+   "Atrapar",
+   "Profesional"
+  ],
+  "prize": 90000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": "Human - Blitzer",
+  "primSec": "AG / FP"
+ },
+ {
+  "race": "Imperial Nobility",
+  "type": "Bodyguard",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 5,
+  "av": 9,
+  "skills": [
+   "Mantenerse firme",
+   "Forcejear"
+  ],
+  "prize": 85000,
+  "qty": 4,
+  "bigGuy": false,
+  "clave": "Human - Defensor",
+  "primSec": "FG / A"
+ },
+ {
+  "race": "Imperial Nobility",
+  "type": "Ogre",
+  "ma": 5,
+  "st": 5,
+  "ag": 4,
+  "pa": 5,
+  "av": 10,
+  "skills": [
+   "Estúpido",
+   "Solitario (3+)",
+   "Golpe mortífero (+1)",
+   "Cabeza dura",
+   "Lanzar Compañero"
+  ],
+  "prize": 140000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": "Ogro - Grandullon",
+  "primSec": "F / AG"
+ },
+ {
+  "race": "Imperial Nobility",
+  "type": "Journeyman",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Solitario (4+)",
+   "Zafarse"
+  ],
+  "prize": 45000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": "Human - Linea",
+  "primSec": "G /AF"
+ },
+ {
+  "race": "Khorne",
+  "type": "Bloodborn Marauder Lineman",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Furia"
+  ],
+  "prize": 50000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Khorne",
+  "type": "Khorngors",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 9,
+  "skills": [
+   "Cuernos",
+   "Imparable"
+  ],
+  "prize": 70000,
+  "qty": 4,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Khorne",
+  "type": "Bloodseekers",
+  "ma": 5,
+  "st": 4,
+  "ag": 4,
+  "pa": 6,
+  "av": 10,
+  "skills": [
+   "Furia"
+  ],
+  "prize": 110000,
+  "qty": 4,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Khorne",
+  "type": "Bloodspawn",
+  "ma": 5,
+  "st": 5,
+  "ag": 4,
+  "pa": 0,
+  "av": 9,
+  "skills": [
+   "Garras",
+   "Furia",
+   "Solitario (4+)",
+   "Golpe Mortífero (+1)",
+   "Ira descontrolada"
+  ],
+  "prize": 160000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Khorne",
+  "type": "Journey Bloodborn",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Solitario (4+)",
+   "Furia"
+  ],
+  "prize": 50000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Lizardman",
+  "type": "Skink",
+  "ma": 8,
+  "st": 2,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Esquivar",
+   "Escurridizo"
+  ],
+  "prize": 60000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": "Lizarman - Linea",
+  "primSec": "A / FGPT"
+ },
+ {
+  "race": "Lizardman",
+  "type": "Chameleon Skink",
+  "ma": 7,
+  "st": 2,
+  "ag": 3,
+  "pa": 3,
+  "av": 8,
+  "skills": [
+   "Esquivar",
+   "Atento al balón",
+   "Perseguir",
+   "Escurridizo"
+  ],
+  "prize": 70000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": "Lizardman - Lanzador",
+  "primSec": "AP / FGT"
+ },
+ {
+  "race": "Lizardman",
+  "type": "Saurus",
+  "ma": 6,
+  "st": 4,
+  "ag": 5,
+  "pa": 6,
+  "av": 10,
+  "skills": [
+   "Imparable",
+   "Tembloroso"
+  ],
+  "prize": 90000,
+  "qty": 6,
+  "bigGuy": false,
+  "clave": "Lizardman - Defensor",
+  "primSec": "FG / A"
+ },
+ {
+  "race": "Lizardman",
+  "type": "Kroxigor",
+  "ma": 6,
+  "st": 5,
+  "ag": 5,
+  "pa": 6,
+  "av": 10,
+  "skills": [
+   "Estúpido",
+   "Solitario (4+)",
+   "Golpe mortífero (+1)",
+   "Cola prensil",
+   "Cabeza dura"
+  ],
+  "prize": 140000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": "Lizardman - Grandullon",
+  "primSec": "F / AG"
+ },
+ {
+  "race": "Lizardman",
+  "type": "Journey Skink",
+  "ma": 8,
+  "st": 2,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Solitario (4+)",
+   "Esquivar",
+   "Escurridizo"
+  ],
+  "prize": 60000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": "Lizardman - Lanzador",
+  "primSec": "A / FGPT"
+ },
+ {
+  "race": "Necromantic",
+  "type": "Zombie",
+  "ma": 4,
+  "st": 3,
+  "ag": 4,
+  "pa": 0,
+  "av": 9,
+  "skills": [
+   "Regeneración"
+  ],
+  "prize": 40000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Necromantic",
+  "type": "Ghoul",
+  "ma": 7,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Esquivar"
+  ],
+  "prize": 75000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Necromantic",
+  "type": "Wraiths",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 0,
+  "av": 9,
+  "skills": [
+   "Placar",
+   "Apariencia asquerosa",
+   "Sin manos",
+   "Regeneración",
+   "Echarse a un lado"
+  ],
+  "prize": 95000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Necromantic",
+  "type": "Flesh Golem",
+  "ma": 4,
+  "st": 4,
+  "ag": 4,
+  "pa": 0,
+  "av": 10,
+  "skills": [
+   "Regeneración",
+   "Mantenerse firme",
+   "Cabeza dura"
+  ],
+  "prize": 115000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Necromantic",
+  "type": "Werewolf",
+  "ma": 8,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 9,
+  "skills": [
+   "Garras",
+   "Furia",
+   "Regeneración"
+  ],
+  "prize": 125000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Necromantic",
+  "type": "Raised Zombie",
+  "ma": 4,
+  "st": 3,
+  "ag": 4,
+  "pa": 0,
+  "av": 9,
+  "skills": [
+   "Regeneración"
+  ],
+  "prize": 40000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Necromantic",
+  "type": "Journey Zombie",
+  "ma": 4,
+  "st": 3,
+  "ag": 4,
+  "pa": 0,
+  "av": 9,
+  "skills": [
+   "Solitario (4+)",
+   "Regeneración"
+  ],
+  "prize": 40000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Norse",
+  "type": "Raider Lineman",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Placar",
+   "Borracho",
+   "Cabeza dura"
+  ],
+  "prize": 50000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Norse",
+  "type": "Beer Boar",
+  "ma": 5,
+  "st": 1,
+  "ag": 3,
+  "pa": 0,
+  "av": 6,
+  "skills": [
+   "Esquivar",
+   "Sin manos",
+   "Recógeme",
+   "Escurridizo",
+   "Canijo"
+  ],
+  "prize": 20000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Norse",
+  "type": "Berserker",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 5,
+  "av": 8,
+  "skills": [
+   "Placar",
+   "Furia",
+   "En pie de un salto"
+  ],
+  "prize": 90000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Norse",
+  "type": "Valkyry",
+  "ma": 7,
+  "st": 3,
+  "ag": 3,
+  "pa": 3,
+  "av": 8,
+  "skills": [
+   "Atrapar",
+   "Agallas",
+   "Pasar",
+   "Robar balón"
+  ],
+  "prize": 95000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Norse",
+  "type": "Ulfwerener",
+  "ma": 6,
+  "st": 4,
+  "ag": 4,
+  "pa": 0,
+  "av": 9,
+  "skills": [
+   "Furia"
+  ],
+  "prize": 105000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Norse",
+  "type": "Yhetee",
+  "ma": 5,
+  "st": 5,
+  "ag": 4,
+  "pa": 0,
+  "av": 9,
+  "skills": [
+   "Garras",
+   "Presencia perturbadora",
+   "Furia",
+   "Solitario (4+)",
+   "Ira descontrolada"
+  ],
+  "prize": 140000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Norse",
+  "type": "Journeyman",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Soltario (4+)",
+   "Placar",
+   "Borracho",
+   "Cabeza dura"
+  ],
+  "prize": 50000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Nurgle",
+  "type": "Rotter",
+  "ma": 5,
+  "st": 3,
+  "ag": 4,
+  "pa": 6,
+  "av": 9,
+  "skills": [
+   "Descomposición",
+   "Infectado"
+  ],
+  "prize": 35000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Nurgle",
+  "type": "Pestigor",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 9,
+  "skills": [
+   "Cuernos",
+   "Infectado",
+   "Regeneración"
+  ],
+  "prize": 75000,
+  "qty": 4,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Nurgle",
+  "type": "Bloater",
+  "ma": 4,
+  "st": 4,
+  "ag": 4,
+  "pa": 6,
+  "av": 10,
+  "skills": [
+   "Presencia perturbadora",
+   "Apariencia asquerosa",
+   "Infectado",
+   "Regeneración"
+  ],
+  "prize": 115000,
+  "qty": 4,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Nurgle",
+  "type": "Rotspawn",
+  "ma": 4,
+  "st": 5,
+  "ag": 5,
+  "pa": 0,
+  "av": 10,
+  "skills": [
+   "Presencia perturbadora",
+   "Apariencia asquerosa",
+   "Solitario (4+)",
+   "Golpe mortífero (+1)",
+   "Infectado",
+   "Realmente estúpido",
+   "Regeneración",
+   "Tentáculos"
+  ],
+  "prize": 140000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Nurgle",
+  "type": "Journey Rotter",
+  "ma": 5,
+  "st": 3,
+  "ag": 3,
+  "pa": 6,
+  "av": 9,
+  "skills": [
+   "Soltario (4+)",
+   "Descomposición",
+   "Infectado"
+  ],
+  "prize": 35000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Ogre",
+  "type": "Gnoblar",
+  "ma": 5,
+  "st": 1,
+  "ag": 3,
+  "pa": 5,
+  "av": 6,
+  "skills": [
+   "Esquivar",
+   "Humanoide bala",
+   "Echarse a un lado",
+   "Escurridizo",
+   "Canijo"
+  ],
+  "prize": 15000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Ogre",
+  "type": "Ogre",
+  "ma": 5,
+  "st": 5,
+  "ag": 4,
+  "pa": 5,
+  "av": 10,
+  "skills": [
+   "Estúpido",
+   "Golpe mortífero (+1)",
+   "Cabeza dura",
+   "Lanzar Compañero"
+  ],
+  "prize": 140000,
+  "qty": 5,
+  "bigGuy": true,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Ogre",
+  "type": "Runt Punter",
+  "ma": 5,
+  "st": 5,
+  "ag": 4,
+  "pa": 4,
+  "av": 10,
+  "skills": [
+   "Estúpido",
+   "Patear compañero",
+   "Golpe mortífero (+1)",
+   "Cabeza dura"
+  ],
+  "prize": 145000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Ogre",
+  "type": "Journey Gnoblar",
+  "ma": 5,
+  "st": 1,
+  "ag": 3,
+  "pa": 5,
+  "av": 6,
+  "skills": [
+   "Solitario (4+)",
+   "Esquivar",
+   "Humanoide bala",
+   "Echarse a un lado",
+   "Escurridizo",
+   "Canijo"
+  ],
+  "prize": 15000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Old World Alliance",
+  "type": "Lineman",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 9,
+  "skills": [],
+  "prize": 50000,
+  "qty": 12,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Old World Alliance",
+  "type": "Catcher",
+  "ma": 8,
+  "st": 2,
+  "ag": 3,
+  "pa": 5,
+  "av": 8,
+  "skills": [
+   "Animosidad (todos los Enanos y Halflings)",
+   "Atrapar",
+   "Esquivar"
+  ],
+  "prize": 65000,
+  "qty": 1,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Old World Alliance",
+  "type": "Thrower",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 3,
+  "av": 9,
+  "skills": [
+   "Animosidad (todos los Enanos y Halflings)",
+   "Pasar",
+   "Manos seguras"
+  ],
+  "prize": 80000,
+  "qty": 1,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Old World Alliance",
+  "type": "Blitzer",
+  "ma": 7,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 9,
+  "skills": [
+   "Animosidad (todos los Enanos y Halflings)",
+   "Placar"
+  ],
+  "prize": 90000,
+  "qty": 1,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Old World Alliance",
+  "type": "Halfling Hopeful",
+  "ma": 5,
+  "st": 2,
+  "ag": 3,
+  "pa": 4,
+  "av": 7,
+  "skills": [
+   "Animosidad (todos los Enanos y Humanos)",
+   "Esquivar",
+   "Humanoide bala",
+   "Escurridizo"
+  ],
+  "prize": 30000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Old World Alliance",
+  "type": "Dwarf Blocker",
+  "ma": 4,
+  "st": 3,
+  "ag": 4,
+  "pa": 5,
+  "av": 10,
+  "skills": [
+   "Llave de brazo",
+   "Luchador",
+   "Solitario (3+)",
+   "Cabeza dura"
+  ],
+  "prize": 75000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Old World Alliance",
+  "type": "Dwarf Runner",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 9,
+  "skills": [
+   "Solitario (3+)",
+   "Manos seguras",
+   "Cabeza dura"
+  ],
+  "prize": 85000,
+  "qty": 1,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Old World Alliance",
+  "type": "Dwarf Blitzer",
+  "ma": 5,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 10,
+  "skills": [
+   "Placar",
+   "Solitario (3+)",
+   "Cabeza dura"
+  ],
+  "prize": 80000,
+  "qty": 1,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Old World Alliance",
+  "type": "Dwarf Troll Slayer",
+  "ma": 5,
+  "st": 3,
+  "ag": 4,
+  "pa": 0,
+  "av": 9,
+  "skills": [
+   "Placar",
+   "Furia",
+   "Agallas",
+   "Solitario (3+)",
+   "Cabeza dura"
+  ],
+  "prize": 95000,
+  "qty": 1,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Old World Alliance",
+  "type": "Ogre",
+  "ma": 5,
+  "st": 5,
+  "ag": 4,
+  "pa": 5,
+  "av": 10,
+  "skills": [
+   "Estúpido",
+   "Solitario (4+)",
+   "Golpe mortífero (+1)",
+   "Cabeza dura",
+   "Lanzar Compañero"
+  ],
+  "prize": 140000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Old World Alliance",
+  "type": "Forest Treeman",
+  "ma": 2,
+  "st": 6,
+  "ag": 5,
+  "pa": 5,
+  "av": 11,
+  "skills": [
+   "Golpe mortífero (+1)",
+   "Solitario (4+)",
+   "Mantenerse firme",
+   "Brazo fuerte",
+   "Echar raíces",
+   "Cabeza dura",
+   "Lanzar compañero",
+   "¡Tronco va!"
+  ],
+  "prize": 120000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Old World Alliance",
+  "type": "Journeyman",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 9,
+  "skills": [
+   "Solitario (4+)"
+  ],
+  "prize": 50000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Orcs",
+  "type": "Lineman",
+  "ma": 5,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 10,
+  "skills": [
+   "Animosidad (Orc Linemen)"
+  ],
+  "prize": 50000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Orcs",
+  "type": "Goblin",
+  "ma": 6,
+  "st": 2,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Esquivar",
+   "Humanoide bala",
+   "Escurridizo"
+  ],
+  "prize": 40000,
+  "qty": 4,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Orcs",
+  "type": "Thrower",
+  "ma": 5,
+  "st": 3,
+  "ag": 3,
+  "pa": 3,
+  "av": 9,
+  "skills": [
+   "Animosidad (todo el equipo)",
+   "Pasar",
+   "Manos seguras"
+  ],
+  "prize": 65000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Orcs",
+  "type": "Big Un",
+  "ma": 5,
+  "st": 4,
+  "ag": 4,
+  "pa": 0,
+  "av": 10,
+  "skills": [
+   "Animosidad (Big Un Blockers)"
+  ],
+  "prize": 90000,
+  "qty": 4,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Orcs",
+  "type": "Blitzer",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 10,
+  "skills": [
+   "Animosidad (todo el equipo)",
+   "Placar"
+  ],
+  "prize": 80000,
+  "qty": 4,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Orcs",
+  "type": "Untrained Troll",
+  "ma": 4,
+  "st": 5,
+  "ag": 5,
+  "pa": 5,
+  "av": 10,
+  "skills": [
+   "Siempre hambriento",
+   "Solitario (4+)",
+   "Golpe mortífero (+1)",
+   "Proyectil de vómito",
+   "Realmente estúpido",
+   "Regeneración",
+   "Lanzar compañero"
+  ],
+  "prize": 115000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Orcs",
+  "type": "Journey Orc",
+  "ma": 5,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 10,
+  "skills": [
+   "Solitario (4+)",
+   "Animosidad (Orc Linemen)"
+  ],
+  "prize": 50000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Shambling Undead",
+  "type": "Skeleton",
+  "ma": 5,
+  "st": 3,
+  "ag": 4,
+  "pa": 6,
+  "av": 8,
+  "skills": [
+   "Regeneración",
+   "Cabeza dura"
+  ],
+  "prize": 40000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Shambling Undead",
+  "type": "Zombie",
+  "ma": 4,
+  "st": 3,
+  "ag": 4,
+  "pa": 0,
+  "av": 9,
+  "skills": [
+   "Regeneración"
+  ],
+  "prize": 40000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Shambling Undead",
+  "type": "Ghoul",
+  "ma": 7,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Esquivar"
+  ],
+  "prize": 75000,
+  "qty": 4,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Shambling Undead",
+  "type": "Wight",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 5,
+  "av": 9,
+  "skills": [
+   "Placar",
+   "Regeneración"
+  ],
+  "prize": 90000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Shambling Undead",
+  "type": "Mummy",
+  "ma": 3,
+  "st": 5,
+  "ag": 5,
+  "pa": 0,
+  "av": 10,
+  "skills": [
+   "Golpe mortífero (+1)",
+   "Regeneración"
+  ],
+  "prize": 125000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Shambling Undead",
+  "type": "Raised Zombie",
+  "ma": 4,
+  "st": 3,
+  "ag": 4,
+  "pa": 0,
+  "av": 9,
+  "skills": [],
+  "prize": 40000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Shambling Undead",
+  "type": "Skeleton Journeyman",
+  "ma": 5,
+  "st": 3,
+  "ag": 4,
+  "pa": 6,
+  "av": 8,
+  "skills": [
+   "Solitario (4+)",
+   "Regeneración",
+   "Cabeza dura"
+  ],
+  "prize": 40000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Shambling Undead",
+  "type": "Zombie Journeyman",
+  "ma": 4,
+  "st": 3,
+  "ag": 4,
+  "pa": 0,
+  "av": 9,
+  "skills": [
+   "Solitario (4+)",
+   "Regeneración"
+  ],
+  "prize": 40000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Slann",
+  "type": "Lineman",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 9,
+  "skills": [
+   "Pogo saltarín",
+   "Piernas muy largas"
+  ],
+  "prize": 60000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Slann",
+  "type": "Catcher",
+  "ma": 7,
+  "st": 2,
+  "ag": 2,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Recepción heroica",
+   "Pogo saltarín",
+   "Piernas muy largas"
+  ],
+  "prize": 80000,
+  "qty": 4,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Slann",
+  "type": "Blitzer",
+  "ma": 7,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 9,
+  "skills": [
+   "Placaje heroico",
+   "En pie de un salto",
+   "Pogo saltarín",
+   "Piernas muy largas"
+  ],
+  "prize": 110000,
+  "qty": 4,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Slann",
+  "type": "Kroxigor",
+  "ma": 6,
+  "st": 5,
+  "ag": 5,
+  "pa": 0,
+  "av": 10,
+  "skills": [
+   "Estúpido",
+   "Solitario (4+)",
+   "Golpe mortífero (+1)",
+   "Cola prensil",
+   "Cabeza dura"
+  ],
+  "prize": 140000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Slann",
+  "type": "Journey Slann",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 9,
+  "skills": [
+   "Solitario (4+)",
+   "Pogo saltarín",
+   "Piernas muy largas"
+  ],
+  "prize": 60000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Skaven",
+  "type": "ClanRat",
+  "ma": 7,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [],
+  "prize": 50000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": "Skaven - LÍnea",
+  "primSec": "GT / AFM"
+ },
+ {
+  "race": "Skaven",
+  "type": "Thrower",
+  "ma": 7,
+  "st": 3,
+  "ag": 3,
+  "pa": 2,
+  "av": 8,
+  "skills": [
+   "Pasar",
+   "Manos seguras"
+  ],
+  "prize": 80000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": "Skaven - Lanzador",
+  "primSec": "GP / AFMT"
+ },
+ {
+  "race": "Skaven",
+  "type": "Gutter Runner",
+  "ma": 9,
+  "st": 2,
+  "ag": 2,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Esquivar",
+   "Apuñalar"
+  ],
+  "prize": 85000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": "Skaven - Corredor",
+  "primSec": "AGT / FM"
+ },
+ {
+  "race": "Skaven",
+  "type": "Blitzer",
+  "ma": 8,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 9,
+  "skills": [
+   "Placar",
+   "Robar balón"
+  ],
+  "prize": 90000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": "Skaven - Blitzer",
+  "primSec": "FG / AMT"
+ },
+ {
+  "race": "Skaven",
+  "type": "Rat Ogre",
+  "ma": 6,
+  "st": 5,
+  "ag": 4,
+  "pa": 0,
+  "av": 9,
+  "skills": [
+   "Ferocidad animal",
+   "Furia",
+   "Solitario (4+)",
+   "Golpe mortífero (+1)",
+   "Cola prensil"
+  ],
+  "prize": 150000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": "Skaven - Grandullon",
+  "primSec": "F / AGM"
+ },
+ {
+  "race": "Skaven",
+  "type": "Journey ClanRat",
+  "ma": 7,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Solitario (4+)"
+  ],
+  "prize": 50000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": "Skaven - LÍnea",
+  "primSec": "GT / AFM"
+ },
+ {
+  "race": "Tomb King",
+  "type": "Skeleton",
+  "ma": 5,
+  "st": 3,
+  "ag": 4,
+  "pa": 6,
+  "av": 8,
+  "skills": [
+   "Regeneración",
+   "Cabeza dura"
+  ],
+  "prize": 40000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Tomb King",
+  "type": "Anointed Throwers",
+  "ma": 6,
+  "st": 3,
+  "ag": 4,
+  "pa": 3,
+  "av": 8,
+  "skills": [
+   "Pasar",
+   "Regeneración",
+   "Manos seguras",
+   "Cabeza dura"
+  ],
+  "prize": 70000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Tomb King",
+  "type": "Anointed Blitzers",
+  "ma": 6,
+  "st": 3,
+  "ag": 4,
+  "pa": 6,
+  "av": 9,
+  "skills": [
+   "Placar",
+   "Regeneración",
+   "Cabeza dura"
+  ],
+  "prize": 90000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Tomb King",
+  "type": "Tomb Guardian",
+  "ma": 4,
+  "st": 5,
+  "ag": 5,
+  "pa": 0,
+  "av": 10,
+  "skills": [
+   "Descomposición",
+   "Regeneración"
+  ],
+  "prize": 100000,
+  "qty": 4,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Tomb King",
+  "type": "Journey Skeleton",
+  "ma": 5,
+  "st": 3,
+  "ag": 4,
+  "pa": 6,
+  "av": 8,
+  "skills": [
+   "Solitario (4+)",
+   "Regeneración",
+   "Cabeza dura"
+  ],
+  "prize": 40000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Snotling",
+  "type": "Snotling",
+  "ma": 5,
+  "st": 1,
+  "ag": 3,
+  "pa": 5,
+  "av": 6,
+  "skills": [
+   "Esquivar",
+   "Humanoide bala",
+   "Echarse a un lado",
+   "Escurridizo",
+   "Colocarse",
+   "Canijo"
+  ],
+  "prize": 15000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Snotling",
+  "type": "Fungus Flinga",
+  "ma": 5,
+  "st": 1,
+  "ag": 3,
+  "pa": 4,
+  "av": 6,
+  "skills": [
+   "Bombardero",
+   "Esquivar",
+   "Humanoide bala",
+   "Arma secreta",
+   "Echarse a un lado",
+   "Escurridizo"
+  ],
+  "prize": 30000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Snotling",
+  "type": "Fun-hoppa",
+  "ma": 6,
+  "st": 1,
+  "ag": 3,
+  "pa": 5,
+  "av": 6,
+  "skills": [
+   "Esquivar",
+   "Pogo saltarín",
+   "Humanoide bala",
+   "Echarse a un lado",
+   "Escurridizo"
+  ],
+  "prize": 20000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Snotling",
+  "type": "Stilty Runna",
+  "ma": 6,
+  "st": 1,
+  "ag": 3,
+  "pa": 5,
+  "av": 6,
+  "skills": [
+   "Esquivar",
+   "Humanoide bala",
+   "Echarse a un lado",
+   "Carrera",
+   "Escurridizo"
+  ],
+  "prize": 20000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Snotling",
+  "type": "Pump Wagon",
+  "ma": 4,
+  "st": 5,
+  "ag": 5,
+  "pa": 0,
+  "av": 9,
+  "skills": [
+   "Juego sucio (+1)",
+   "Imparable",
+   "Golpe mortífero (+1)",
+   "Realmente estúpido",
+   "Arma secreta",
+   "Mantenerse firme"
+  ],
+  "prize": 105000,
+  "qty": 2,
+  "bigGuy": true,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Snotling",
+  "type": "Trained Troll",
+  "ma": 4,
+  "st": 5,
+  "ag": 5,
+  "pa": 5,
+  "av": 10,
+  "skills": [
+   "Siempre hambriento",
+   "Solitario (3+)",
+   "Golpe mortífero (+1)",
+   "Proyectil de vómito",
+   "Realmente estúpido",
+   "Regeneración",
+   "Lanzar compañero"
+  ],
+  "prize": 115000,
+  "qty": 2,
+  "bigGuy": true,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Snotling",
+  "type": "Journey Snotling",
+  "ma": 5,
+  "st": 1,
+  "ag": 3,
+  "pa": 5,
+  "av": 6,
+  "skills": [
+   "Solitario (4+)",
+   "Esquivar",
+   "Humanoide bala",
+   "Echarse a un lado",
+   "Escurridizo",
+   "Colocarse",
+   "Canijo"
+  ],
+  "prize": 15000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Underworld Denizens",
+  "type": "Goblin",
+  "ma": 6,
+  "st": 2,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Esquivar",
+   "Humanoide bala",
+   "Escurridizo"
+  ],
+  "prize": 40000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": "Goblin - Linea",
+  "primSec": "AMT / GFP"
+ },
+ {
+  "race": "Underworld Denizens",
+  "type": "Snotling",
+  "ma": 5,
+  "st": 1,
+  "ag": 3,
+  "pa": 4,
+  "av": 6,
+  "skills": [
+   "Esquivar",
+   "Humanoide bala",
+   "Echarse a un lado",
+   "Escurridizo",
+   "Insifnificante",
+   "Canijo"
+  ],
+  "prize": 15000,
+  "qty": 6,
+  "bigGuy": false,
+  "clave": "Snotling - Linea",
+  "primSec": "AMT / G"
+ },
+ {
+  "race": "Underworld Denizens",
+  "type": "Skaven Clanrat",
+  "ma": 7,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Animosidad (Goblin)"
+  ],
+  "prize": 50000,
+  "qty": 3,
+  "bigGuy": false,
+  "clave": "Skaven - Linea",
+  "primSec": "GMT / AF"
+ },
+ {
+  "race": "Underworld Denizens",
+  "type": "Skaven Thrower",
+  "ma": 7,
+  "st": 3,
+  "ag": 3,
+  "pa": 2,
+  "av": 8,
+  "skills": [
+   "Animosidad (Goblin)",
+   "Pasar",
+   "Manos seguras"
+  ],
+  "prize": 80000,
+  "qty": 1,
+  "bigGuy": false,
+  "clave": "Skaven - Lanzador",
+  "primSec": "GMP / AFT"
+ },
+ {
+  "race": "Underworld Denizens",
+  "type": "Gutter Runner",
+  "ma": 9,
+  "st": 2,
+  "ag": 2,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Animosidad (Goblin)",
+   "Esquivar",
+   "Apuñalar"
+  ],
+  "prize": 85000,
+  "qty": 1,
+  "bigGuy": false,
+  "clave": "Skaven - Corredor",
+  "primSec": "AGMT / F"
+ },
+ {
+  "race": "Underworld Denizens",
+  "type": "Skaven Blitzer",
+  "ma": 8,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 9,
+  "skills": [
+   "Animosidad (Goblin)",
+   "Placar",
+   "Robar Balón"
+  ],
+  "prize": 90000,
+  "qty": 1,
+  "bigGuy": false,
+  "clave": "Skaven - Blitzer",
+  "primSec": "FGM / AT"
+ },
+ {
+  "race": "Underworld Denizens",
+  "type": "Troll",
+  "ma": 4,
+  "st": 5,
+  "ag": 5,
+  "pa": 5,
+  "av": 10,
+  "skills": [
+   "Realmente Estúpido",
+   "Golpe mortífero",
+   "Lanzar Compañero",
+   "Proyectil Vómito",
+   "Regeneración",
+   "SIempre hambriento",
+   "Solitario (4+)"
+  ],
+  "prize": 115000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": "Grandullon - Troll",
+  "primSec": "FM / AGP"
+ },
+ {
+  "race": "Underworld Denizens",
+  "type": "Rat Ogre",
+  "ma": 6,
+  "st": 5,
+  "ag": 4,
+  "pa": 6,
+  "av": 9,
+  "skills": [
+   "Ferocidad animal",
+   "Furia",
+   "Solitario (4+)",
+   "Golpe mortífero (+1)",
+   "Cola prensil"
+  ],
+  "prize": 150000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": "Grandullon - Skaven",
+  "primSec": "FM / AGP"
+ },
+ {
+  "race": "Underworld Denizens",
+  "type": "Journey Goblin",
+  "ma": 6,
+  "st": 2,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Solitario (4+)",
+   "Esquivar",
+   "Humanoide bala",
+   "Escurridizo"
+  ],
+  "prize": 40000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": "Goblin - Linea",
+  "primSec": "AMT / GFP"
+ },
+ {
+  "race": "Vampire",
+  "type": "Thrall",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [],
+  "prize": 40000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": "Human - Linea - Thrall",
+  "primSec": "G / AF"
+ },
+ {
+  "race": "Vampire",
+  "type": "Vampire Runner",
+  "ma": 8,
+  "st": 3,
+  "ag": 2,
+  "pa": 3,
+  "av": 8,
+  "skills": [
+   "Mirada hipnótica",
+   "Regeneración",
+   "Sed de sangre (2+)"
+  ],
+  "prize": 100000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": "Corredor - No Muerto - Vampire",
+  "primSec": "AG / FP"
+ },
+ {
+  "race": "Vampire",
+  "type": "Vampire Thrower",
+  "ma": 6,
+  "st": 4,
+  "ag": 2,
+  "pa": 2,
+  "av": 9,
+  "skills": [
+   "Pasar",
+   "Mirada hipnótica",
+   "Regeneración",
+   "Sed de sangre (2+)"
+  ],
+  "prize": 110000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": "Lanzador - No Muerto - Vampire",
+  "primSec": "AGP / F"
+ },
+ {
+  "race": "Vampire",
+  "type": "Vampire Blitzer",
+  "ma": 6,
+  "st": 4,
+  "ag": 2,
+  "pa": 4,
+  "av": 9,
+  "skills": [
+   "Imparable",
+   "Mirada hipnótica",
+   "Regeneración",
+   "Sed de sangre (3+)"
+  ],
+  "prize": 110000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": "Blitzer - No Muerto - Vampire",
+  "primSec": "AFG / -"
+ },
+ {
+  "race": "Vampire",
+  "type": "Vargheist",
+  "ma": 5,
+  "st": 5,
+  "ag": 4,
+  "pa": 6,
+  "av": 10,
+  "skills": [
+   "Garras",
+   "Furia",
+   "Sed de sangre (3+)",
+   "Regeneración",
+   "Solitario (4+)"
+  ],
+  "prize": 150000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": "Grandullon, No Muerto, Vampire",
+  "primSec": "F / AG"
+ },
+ {
+  "race": "Vampire",
+  "type": "Journey Thrall",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Solitario (4+)"
+  ],
+  "prize": 40000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": "Human - Linea - Thrall",
+  "primSec": "G / AF"
+ },
+ {
+  "race": "Elfos Silvanos",
+  "type": "Lineman",
+  "ma": 7,
+  "st": 3,
+  "ag": 2,
+  "pa": 4,
+  "av": 8,
+  "skills": [],
+  "prize": 70000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Elfos Silvanos",
+  "type": "Catcher",
+  "ma": 8,
+  "st": 2,
+  "ag": 2,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Atrapar",
+   "Esquivar"
+  ],
+  "prize": 90000,
+  "qty": 4,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Elfos Silvanos",
+  "type": "Thrower",
+  "ma": 7,
+  "st": 3,
+  "ag": 2,
+  "pa": 2,
+  "av": 8,
+  "skills": [
+   "Pasar"
+  ],
+  "prize": 95000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Elfos Silvanos",
+  "type": "Wardancer",
+  "ma": 8,
+  "st": 3,
+  "ag": 2,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Placar",
+   "Esquivar",
+   "Saltar"
+  ],
+  "prize": 125000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Elfos Silvanos",
+  "type": "Treeman",
+  "ma": 2,
+  "st": 6,
+  "ag": 5,
+  "pa": 5,
+  "av": 11,
+  "skills": [
+   "Solitario (4+)",
+   "Golpe mortífero (+1)",
+   "Mantenerse firme",
+   "Brazo fuerte",
+   "Echar raíces",
+   "Cabeza dura",
+   "Lanzar compañero"
+  ],
+  "prize": 120000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": null,
+  "primSec": null
+ },
+ {
+  "race": "Elfos Silvanos",
+  "type": "Journey Elf",
+  "ma": 7,
+  "st": 3,
+  "ag": 2,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Solitario (4+)"
+  ],
+  "prize": 70000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": null,
+  "primSec": null
+ }
+]

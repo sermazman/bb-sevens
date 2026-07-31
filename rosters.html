@@ -11,7 +11,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
   /* Ajustes propios de esta página, siguiendo la misma paleta de style.css */
-  .rw{max-width:1180px; margin:0 auto;}
+  .rw{max-width:1600px; margin:0 auto;}
 
   /* ---- Tabla de jugadores ---- */
   .roster-table{
@@ -22,12 +22,12 @@
   }
   .rt-row{
     display:grid;
-    grid-template-columns: 46px 1.3fr 1.05fr 46px 46px 50px 50px 50px 1.5fr 78px 34px;
-    gap:8px;
+    grid-template-columns: 50px 1.5fr 1.2fr 50px 50px 55px 55px 55px 80px 1.9fr 85px 36px;
+    gap:10px;
     align-items:center;
-    padding:10px 12px;
+    padding:11px 14px;
     border-bottom:1px solid var(--panel-line);
-    min-width:920px;
+    min-width:1080px;
   }
   .rt-row:last-child{border-bottom:none;}
   .rt-row.rt-head{
@@ -211,6 +211,7 @@
         <div>AG</div>
         <div>PA</div>
         <div>AV</div>
+        <div>Precio</div>
         <div>Habilidades</div>
         <div>Acceso</div>
         <div></div>
@@ -597,6 +598,7 @@ function renderPlayers(){
     const catEntry = findCatalogEntry(team.race, p.position);
     const accessText = catEntry && catEntry.primSec ? catEntry.primSec : '–';
     const accessTitle = catEntry && catEntry.primSec ? 'Acceso a habilidades según posición (Primaria / Secundaria)' : 'Sin dato de acceso para esta raza/posición en el catálogo';
+    const priceText = catEntry && catEntry.prize != null ? catEntry.prize.toLocaleString('es-ES') : '–';
     div.innerHTML = `
       <div><input type="text" class="mono" value="${p.num}" oninput="updateField(${p._uid}, 'num', this.value)"></div>
       <div><input type="text" value="${p.name}" placeholder="Nombre" oninput="updateField(${p._uid}, 'name', this.value)"></div>
@@ -611,6 +613,7 @@ function renderPlayers(){
       <div><input type="text" class="mono" value="${p.ag}" oninput="updateField(${p._uid}, 'ag', this.value)"></div>
       <div><input type="text" class="mono" value="${p.pa}" oninput="updateField(${p._uid}, 'pa', this.value)"></div>
       <div><input type="text" class="mono" value="${p.av}" oninput="updateField(${p._uid}, 'av', this.value)"></div>
+      <div><span class="mono access-hint" style="cursor:default;" title="Precio de esta posición según el catálogo">${priceText}</span></div>
       <div class="pc-skills-cell">
         <div class="skill-tags">${skillsHtml}</div>
         <div class="skill-add-row">

@@ -112,6 +112,22 @@
   .tcc-field select{width:auto; margin-bottom:0; padding:5px 7px; font-size:12px;}
   .tcc-preview{margin-left:auto;}
   .token-chip.token-preview-sm{width:42px; height:42px; font-size:15px; border-width:2px;}
+
+  /* ---- Panel Datos del equipo, subdividido ---- */
+  .team-data-grid{display:grid; grid-template-columns:1fr 1fr; gap:24px;}
+  @media (max-width:800px){ .team-data-grid{grid-template-columns:1fr;} }
+  .staff-col{border-left:1px solid var(--panel-line); padding-left:24px;}
+  @media (max-width:800px){ .staff-col{border-left:none; padding-left:0; border-top:1px solid var(--panel-line); padding-top:14px;} }
+  .staff-row{display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
+  .staff-row-label{display:flex; flex-direction:column; gap:2px; flex:1; min-width:140px;}
+  .staff-row-label span:first-child{font-size:13px;}
+  .stepper{display:flex; align-items:center; gap:8px; flex-shrink:0;}
+  .stepper button{
+    width:28px; height:28px; padding:0; font-size:16px; line-height:1;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .stepper-value{min-width:20px; text-align:center; font-size:15px; font-weight:700; color:var(--gold);}
+  .staff-row-total{min-width:80px; text-align:right; color:#a99b7f; font-size:13px; flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -184,16 +200,37 @@
 
   <div class="panel">
     <h2>Datos del equipo</h2>
-    <div class="row">
-      <div>
-        <label>Nombre del equipo</label>
-        <input type="text" id="teamNameInput" value="Nuevo Equipo" oninput="scheduleJsonRefresh()">
+    <div class="team-data-grid">
+      <div class="team-data-col">
+        <div class="row">
+          <div>
+            <label>Nombre del equipo</label>
+            <input type="text" id="teamNameInput" value="Nuevo Equipo" oninput="scheduleJsonRefresh()">
+          </div>
+          <div>
+            <label>Raza</label>
+            <select id="teamRaceInput" onchange="onTeamRaceChange(this.value)">
+              <option value="">-- Elige una raza --</option>
+            </select>
+          </div>
+        </div>
       </div>
-      <div>
-        <label>Raza</label>
-        <select id="teamRaceInput" onchange="onTeamRaceChange(this.value)">
-          <option value="">-- Elige una raza --</option>
-        </select>
+
+      <div class="team-data-col staff-col">
+        <h3 style="margin-top:0;">Staff de equipo</h3>
+        <div class="staff-row">
+          <div class="staff-row-label">
+            <span>Segundas Oportunidades</span>
+            <span class="small-note" id="rerollPriceHint" style="margin:0;"></span>
+          </div>
+          <div class="stepper">
+            <button type="button" onclick="changeRerolls(-1)">−</button>
+            <span class="mono stepper-value" id="rerollCount">0</span>
+            <button type="button" onclick="changeRerolls(1)">+</button>
+          </div>
+          <div class="mono staff-row-total" id="rerollTotalText">0 po</div>
+        </div>
+        <div class="small-note" style="margin-top:8px;">Aquí irá añadiéndose el resto del staff (animadoras, entrenadores asistentes, apotecario...).</div>
       </div>
     </div>
   </div>
@@ -223,7 +260,7 @@
 </div>
 
 <script>
-let team = { teamName: 'Nuevo Equipo', race: '', color: '#c0392b', textColor: 'auto', players: [] };
+let team = { teamName: 'Nuevo Equipo', race: '', color: '#c0392b', textColor: 'auto', rerolls: 0, players: [] };
 let uid = 1;
 
 const FALLBACK_RACES = ["Amazon","Black Orc","Bretonia","Chaos Chosen","Chaos Dwarf","Chaos Renegades","Dark Elf","Dwarf","Elfos Silvanos","Elven Union","Gnome","Goblin","Halfling","High Elf","Human","Imperial Nobility","Khorne","Lizardman","Necromantic","Norse","Nurgle","Ogre","Old World Alliance","Orcs","Shambling Undead","Skaven","Slann","Snotling","Tomb King","Underworld Denizens","Vampire"];
@@ -231,6 +268,28 @@ const FALLBACK_RACES = ["Amazon","Black Orc","Bretonia","Chaos Chosen","Chaos Dw
 let POSITIONS_CATALOG = [];
 let POSITIONS_BY_RACE = {};
 let CATALOG_LOOKUP = {};
+
+let STAFF_CATALOG = {
+  rerolls: { clave: 'reroll', label: 'Segunda Oportunidad', defaultPrice: 100000, byRace: {} }
+};
+
+function rerollPriceForRace(race){
+  const cfg = STAFF_CATALOG.rerolls;
+  if(cfg.byRace && cfg.byRace[race] != null) return cfg.byRace[race];
+  return cfg.defaultPrice;
+}
+
+async function loadStaffCatalog(){
+  try{
+    const res = await fetch('rosters/staff.json');
+    if(!res.ok) throw new Error('http ' + res.status);
+    const data = await res.json();
+    if(data.rerolls) STAFF_CATALOG.rerolls = Object.assign({}, STAFF_CATALOG.rerolls, data.rerolls);
+    renderStaffPanel();
+  } catch(err){
+    // Se queda con el valor por defecto embebido (100.000).
+  }
+}
 
 function normKey(s){ return (s || '').trim().toLowerCase(); }
 function catalogKey(race, type){ return normKey(race) + '||' + normKey(type); }
@@ -345,12 +404,13 @@ function stripTrailingClave(position, skillsArr){
 function newTeam(){
   const hasData = team.players && team.players.some(p => p.position || p.name);
   if(hasData && !confirm('Esto borra la plantilla actual sin guardar. ¿Continuar?')) return;
-  team = { teamName: 'Nuevo Equipo', race: '', color: '#c0392b', textColor: 'auto', players: buildEmptySlots() };
+  team = { teamName: 'Nuevo Equipo', race: '', color: '#c0392b', textColor: 'auto', rerolls: 0, players: buildEmptySlots() };
   document.getElementById('teamNameInput').value = team.teamName;
   populateRaceSelect(Object.keys(POSITIONS_BY_RACE).length ? Object.keys(POSITIONS_BY_RACE).sort() : FALLBACK_RACES);
   syncColorUI();
   updateRaceRequiredNote();
   renderPlayers();
+  renderStaffPanel();
 }
 
 function loadTeamData(data){
@@ -358,6 +418,7 @@ function loadTeamData(data){
   team.race = data.race || '';
   team.color = data.color || '#c0392b';
   team.textColor = data.textColor || 'auto';
+  team.rerolls = (data.staff && data.staff.rerolls && data.staff.rerolls.count) || 0;
 
   const slots = buildEmptySlots();
   const used = new Set();
@@ -388,6 +449,7 @@ function loadTeamData(data){
   syncColorUI();
   updateRaceRequiredNote();
   renderPlayers();
+  renderStaffPanel();
 }
 
 // ---------- Color de equipo / ficha de ejemplo ----------
@@ -472,6 +534,7 @@ function onTeamRaceChange(value){
   team.players = buildEmptySlots();
   updateRaceRequiredNote();
   renderPlayers();
+  renderStaffPanel();
   scheduleJsonRefresh();
 }
 
@@ -571,7 +634,28 @@ function computeTeamValue(){
     if(entry && entry.prize != null) total += entry.prize;
     else missing++;
   });
+  total += (team.rerolls || 0) * rerollPriceForRace(team.race);
   return { total, missing };
+}
+
+function changeRerolls(delta){
+  team.rerolls = Math.max(0, (team.rerolls || 0) + delta);
+  renderStaffPanel();
+  scheduleJsonRefresh();
+}
+
+function renderStaffPanel(){
+  const countEl = document.getElementById('rerollCount');
+  const priceHintEl = document.getElementById('rerollPriceHint');
+  const totalEl = document.getElementById('rerollTotalText');
+  if(!countEl) return;
+  const price = rerollPriceForRace(team.race);
+  countEl.textContent = team.rerolls || 0;
+  priceHintEl.textContent = price.toLocaleString('es-ES') + ' po / unidad (Sevens)';
+  totalEl.textContent = ((team.rerolls || 0) * price).toLocaleString('es-ES') + ' po';
+  const tv = computeTeamValue();
+  const tvEl = document.getElementById('teamValueBadge');
+  if(tvEl) tvEl.textContent = tv.total.toLocaleString('es-ES') + ' po' + (tv.missing ? ' (+' + tv.missing + ' sin precio)' : '');
 }
 
 function skillSelectOptionsHtml(){
@@ -650,11 +734,21 @@ function skillsWithClave(p){
 
 function buildExportData(){
   const filled = team.players.filter(p => p.position);
+  const rerollCount = team.rerolls || 0;
+  const rerollPrice = rerollPriceForRace(team.race);
   return {
     teamName: team.teamName,
     race: team.race,
     color: team.color || '#c0392b',
     textColor: team.textColor || 'auto',
+    staff: {
+      rerolls: {
+        clave: STAFF_CATALOG.rerolls.clave,
+        count: rerollCount,
+        pricePerUnit: rerollPrice,
+        total: rerollCount * rerollPrice
+      }
+    },
     players: filled.map(p => ({
       num: isNaN(parseInt(p.num)) ? p.num : parseInt(p.num),
       name: p.name,
@@ -711,6 +805,10 @@ function exportTeamPDF(){
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
   doc.text('Valor de equipo: ' + tv.total.toLocaleString('es-ES') + ' po', 14, 27);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  const rerollCount = team.rerolls || 0;
+  doc.text('Segundas Oportunidades: ' + rerollCount + ' (' + (rerollCount * rerollPriceForRace(team.race)).toLocaleString('es-ES') + ' po)', pageWidth - 14, 27, { align: 'right' });
 
   const rows = team.players.filter(p => p.position).map(p => [
     p.num, p.name, p.position, p.ma, p.st, p.ag, p.pa, p.av, skillsWithClave(p).join(', ')
@@ -804,6 +902,7 @@ newTeam();
 loadLibrary();
 loadSkillCatalog();
 loadPositionsCatalog();
+loadStaffCatalog();
 </script>
 </body>
 </html>

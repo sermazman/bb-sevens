@@ -1,0 +1,8 @@
+{
+  "rerolls": {
+    "clave": "reroll",
+    "label": "Segunda Oportunidad",
+    "defaultPrice": 100000,
+    "byRace": {}
+  }
+}

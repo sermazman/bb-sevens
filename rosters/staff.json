@@ -4,6 +4,10 @@
     "label": "Segunda Oportunidad",
     "basePrice": 50000,
     "sevensMultiplier": 2,
-    "byRace": {}
+    "byRace": { "Dwarf": 60000, "Elven Union": 50000 }
   }
 }
+" Amazon, Black Orc, Bretonia, Chaos Chosen, Chaos Dwarf, Chaos Renegades, Dark Elf, Dwarf, 
+Elfos Silvanos, Elven Union, Gnome, Goblin, Halfling, High Elf, Human, Imperial Nobility, 
+Khorne, Lizardman, Necromantic, Norse, Nurgle, Ogre, Old World Alliance, Orcs, Shambling Undead, 
+Skaven, Slann, Snotling, Tomb King, Underworld Denizens, Vampire

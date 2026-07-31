@@ -2412,10 +2412,17 @@ loadFieldOptions();
 
 function loadFieldOptions(){
   fetch('field/fields.json')
-    .then(res => res.ok ? res.json() : [])
-    .then(list => {
-      if(!Array.isArray(list)) return;
+    .then(res => {
+      if(!res.ok) throw new Error('field/fields.json no encontrado (código ' + res.status + ')');
+      return res.text();
+    })
+    .then(text => {
+      let list;
+      try{ list = JSON.parse(text); }
+      catch(e){ throw new Error('field/fields.json no es un JSON válido: ' + e.message); }
+      if(!Array.isArray(list)) throw new Error('field/fields.json debe ser una lista [ ... ]');
       const sel = document.getElementById('pitchBgSelect');
+      let added = 0;
       list.forEach(entry => {
         if(!entry || !entry.value || !entry.label) return;
         if(entry.value === '') return; // "Clásico" ya está como opción fija
@@ -2423,7 +2430,11 @@ function loadFieldOptions(){
         opt.value = entry.value;
         opt.textContent = entry.label;
         sel.appendChild(opt);
+        added++;
       });
+      if(added>0) log('🖼️ ' + added + ' campo(s) extra cargados desde field/fields.json.');
     })
-    .catch(()=>{ /* sin conexión a field/fields.json (normal si se abre el archivo local sin servidor) */ });
+    .catch(err => {
+      log('⚠️ No se pudieron cargar campos extra: ' + err.message);
+    });
 }

@@ -270,13 +270,20 @@ let POSITIONS_BY_RACE = {};
 let CATALOG_LOOKUP = {};
 
 let STAFF_CATALOG = {
-  rerolls: { clave: 'reroll', label: 'Segunda Oportunidad', defaultPrice: 100000, byRace: {} }
+  rerolls: { clave: 'reroll', label: 'Segunda Oportunidad', basePrice: 50000, sevensMultiplier: 2, byRace: {} }
 };
+
+function rerollBasePriceForRace(race){
+  const cfg = STAFF_CATALOG.rerolls;
+  if(cfg.byRace && cfg.byRace[race] != null) return cfg.byRace[race];
+  return cfg.basePrice;
+}
 
 function rerollPriceForRace(race){
   const cfg = STAFF_CATALOG.rerolls;
-  if(cfg.byRace && cfg.byRace[race] != null) return cfg.byRace[race];
-  return cfg.defaultPrice;
+  const base = rerollBasePriceForRace(race);
+  const mult = cfg.sevensMultiplier != null ? cfg.sevensMultiplier : 2;
+  return base * mult;
 }
 
 async function loadStaffCatalog(){
@@ -287,7 +294,7 @@ async function loadStaffCatalog(){
     if(data.rerolls) STAFF_CATALOG.rerolls = Object.assign({}, STAFF_CATALOG.rerolls, data.rerolls);
     renderStaffPanel();
   } catch(err){
-    // Se queda con el valor por defecto embebido (100.000).
+    // Se queda con el valor por defecto embebido (base 50.000 x2 = 100.000 en Sevens).
   }
 }
 
@@ -650,8 +657,9 @@ function renderStaffPanel(){
   const totalEl = document.getElementById('rerollTotalText');
   if(!countEl) return;
   const price = rerollPriceForRace(team.race);
+  const base = rerollBasePriceForRace(team.race);
   countEl.textContent = team.rerolls || 0;
-  priceHintEl.textContent = price.toLocaleString('es-ES') + ' po / unidad (Sevens)';
+  priceHintEl.textContent = price.toLocaleString('es-ES') + ' po/ud. (base ' + base.toLocaleString('es-ES') + ' ×2 Sevens)';
   totalEl.textContent = ((team.rerolls || 0) * price).toLocaleString('es-ES') + ' po';
   const tv = computeTeamValue();
   const tvEl = document.getElementById('teamValueBadge');

@@ -275,7 +275,11 @@ let STAFF_CATALOG = {
 
 function rerollBasePriceForRace(race){
   const cfg = STAFF_CATALOG.rerolls;
-  if(cfg.byRace && cfg.byRace[race] != null) return cfg.byRace[race];
+  if(cfg.byRace){
+    const targetKey = normKey(race);
+    const foundKey = Object.keys(cfg.byRace).find(k => normKey(k) === targetKey);
+    if(foundKey) return cfg.byRace[foundKey];
+  }
   return cfg.basePrice;
 }
 

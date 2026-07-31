@@ -162,7 +162,29 @@ button.full{width:100%; margin-top:6px;}
   background:#0e0d0b;
   border:1px solid var(--panel-line);
   border-radius:6px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
 }
+.staff-panel{
+  flex-shrink:0;
+  width:110px;
+  display:flex; flex-direction:column; gap:8px;
+  background:linear-gradient(180deg, var(--panel-2), var(--panel));
+  border:1px solid var(--panel-line);
+  border-radius:6px;
+  padding:10px;
+}
+.staff-team-name{
+  font-family:'Anton', sans-serif; font-size:13px; letter-spacing:0.5px;
+  text-align:center; color:var(--gold); text-transform:uppercase;
+  border-bottom:1px solid var(--panel-line); padding-bottom:6px; margin-bottom:2px;
+}
+.staff-item{display:flex; flex-direction:column; gap:4px; align-items:center;}
+.staff-label{font-size:11px; color:#a99b7f; text-transform:uppercase; letter-spacing:0.5px;}
+.staff-count{font-family:'JetBrains Mono'; font-weight:800; font-size:16px; color:var(--paper);}
+.staff-item .row button{padding:4px 8px; font-size:11px;}
 .pitch{
   display:grid;
   grid-template-columns: repeat(20, var(--cell));

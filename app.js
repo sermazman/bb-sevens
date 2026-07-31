@@ -22,6 +22,48 @@ let openingKickoffDone = false;
 let firstHalfKickingTeam = null;
 let pitchBackgroundUrl = null;
 let pitchBackgroundExact = false;
+let teamStaff = { A: null, B: null };
+let teamRerollsLeft = { A: 0, B: 0 };
+
+function renderStaffPanels(){
+  ['A','B'].forEach(team=>{
+    const panel = document.getElementById('staffPanel'+team);
+    if(!panel) return;
+    const staff = teamStaff[team];
+    if(!staff){
+      panel.style.display = 'none';
+      return;
+    }
+    panel.style.display = 'flex';
+    const nameEl = document.getElementById('staffTeamName'+team);
+    if(nameEl) nameEl.textContent = teamName(team);
+    const rerollCountEl = document.getElementById('staffRerollCount'+team);
+    if(rerollCountEl){
+      const max = (staff.rerolls && typeof staff.rerolls.count === 'number') ? staff.rerolls.count : 0;
+      rerollCountEl.textContent = teamRerollsLeft[team] + ' / ' + max;
+    }
+  });
+}
+
+function adjustReroll(team, delta){
+  const staff = teamStaff[team];
+  if(!staff || !staff.rerolls) return;
+  const max = typeof staff.rerolls.count === 'number' ? staff.rerolls.count : 0;
+  teamRerollsLeft[team] = Math.max(0, Math.min(max, (teamRerollsLeft[team] || 0) + delta));
+  log((delta<0 ? '🔄 Reroll usado' : '↩️ Reroll devuelto') + ' — ' + teamName(team) + ': ' + teamRerollsLeft[team] + '/' + max + '.');
+  renderStaffPanels();
+  broadcastState();
+}
+
+function resetRerollsForNewHalf(){
+  ['A','B'].forEach(team=>{
+    const staff = teamStaff[team];
+    if(staff && staff.rerolls && typeof staff.rerolls.count === 'number'){
+      teamRerollsLeft[team] = staff.rerolls.count;
+    }
+  });
+  renderStaffPanels();
+}
 
 function selectPitchBackground(path){
   document.getElementById('pitchBgInput').value = '';
@@ -191,7 +233,7 @@ function setupConnHandlers(){
 function snapshotState(){
   return {
     players, ball, phase, state, pendingTD, pendingDodge, pendingGfi, armorForPlayer, nextId,
-    koQueue, pendingKo, teamRace, customColorsEnabled, teamCustomColor, teamTextColor, openingKickoffDone, firstHalfKickingTeam, pitchBackgroundUrl, pitchBackgroundExact,
+    koQueue, pendingKo, teamRace, customColorsEnabled, teamCustomColor, teamTextColor, openingKickoffDone, firstHalfKickingTeam, pitchBackgroundUrl, pitchBackgroundExact, teamStaff, teamRerollsLeft,
     ballBounceActive, pendingCatch, pendingBallDrop, pendingDriveStart,
     pendingKickPlacement, kickoffBounceStep, kickoffKickingTeam, kickoffReceivingTeam, freeCatchTeam, placingBallFree,
     blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp, chainPushStack,
@@ -275,6 +317,8 @@ function applyRemoteState(payload){
   firstHalfKickingTeam = payload.firstHalfKickingTeam || null;
   document.getElementById('kickSelect').disabled = openingKickoffDone;
   setPitchBackground(payload.pitchBackgroundUrl || null, !!payload.pitchBackgroundExact);
+  teamStaff = payload.teamStaff || { A:null, B:null };
+  teamRerollsLeft = payload.teamRerollsLeft || { A:0, B:0 };
   if(payload.pitchBackgroundUrl && payload.pitchBackgroundExact){
     document.getElementById('pitchBgSelect').value = payload.pitchBackgroundUrl;
     document.getElementById('pitchBgInput').value = '';
@@ -457,6 +501,10 @@ function importTeamFile(team, inputEl){
     if(data.textColor){
       teamTextColor[team] = data.textColor;
     }
+    if(data.staff){
+      teamStaff[team] = data.staff;
+      teamRerollsLeft[team] = (data.staff.rerolls && typeof data.staff.rerolls.count === 'number') ? data.staff.rerolls.count : 0;
+    }
     data.players.forEach(pd=>{
       const ma = pd.ma || 6;
       players.push({
@@ -528,6 +576,7 @@ function renderRosters(){
     });
   });
   renderReserveZone();
+  renderStaffPanels();
 }
 
 function renderReserveZone(){
@@ -2261,6 +2310,7 @@ function addNewHalfButton(){
       log('🔄 Mitad 2: patea automáticamente ' + teamName(swapped) + ' (equipo receptor de la 1ª mitad).');
     }
     renderScoreboard();
+    resetRerollsForNewHalf();
     updateStatus('¡Comienza la Mitad 2! Colocad y pulsad "Iniciar Entrada".');
     broadcastState();
     startKoRecoveryFlow();

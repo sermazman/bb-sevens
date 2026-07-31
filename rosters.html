@@ -94,6 +94,10 @@
     display:inline-block; background:var(--gold); color:#1c1712; font-weight:800;
     border-radius:10px; padding:1px 8px; font-size:11px; margin-left:8px;
   }
+  .badge-value{
+    display:inline-block; background:#4a90c4; color:#fff; font-weight:800;
+    border-radius:10px; padding:1px 8px; font-size:11px; margin-left:8px;
+  }
   a.backlink{color:#a99b7f; text-decoration:none; font-size:12px;}
   a.backlink:hover{color:var(--gold);}
 
@@ -195,7 +199,7 @@
   </div>
 
   <div class="panel">
-    <h2>Jugadores <span class="badge-count" id="playerCount">0</span></h2>
+    <h2>Jugadores <span class="badge-count" id="playerCount">0/11</span><span class="badge-value" id="teamValueBadge">0 po</span></h2>
     <div class="small-note" id="raceRequiredNote" style="margin-bottom:8px;">Elige primero una raza arriba para poder asignar posiciones a los 11 huecos.</div>
     <div class="roster-table">
       <div class="rt-row rt-head">
@@ -478,6 +482,17 @@ function onPositionChange(_uid, value){
     renderPlayers();
     return;
   }
+  if(value !== p.position){
+    const entry = findCatalogEntry(team.race, value);
+    if(entry && entry.qty != null){
+      const currentCount = team.players.filter(pl => pl.position === value).length;
+      if(currentCount >= entry.qty){
+        alert('Ya tienes el máximo permitido de "' + value + '" para esta raza (' + entry.qty + ').');
+        renderPlayers();
+        return;
+      }
+    }
+  }
   const entry = findCatalogEntry(team.race, value);
   p.position = value;
   if(entry){
@@ -534,9 +549,28 @@ function removeSkill(_uid, idx){
   renderPlayers();
 }
 
-function positionOptionsFor(race, current){
+function positionOptionsFor(race, current, counts){
   const list = POSITIONS_BY_RACE[race] || [];
-  return list.map(p => `<option value="${p}" ${p === current ? 'selected' : ''}>${p}</option>`).join('');
+  return list.map(type => {
+    const entry = findCatalogEntry(race, type);
+    const qty = entry && entry.qty != null ? entry.qty : null;
+    const count = (counts && counts[type]) || 0;
+    const isSelf = type === current;
+    const atMax = !isSelf && qty != null && count >= qty;
+    const label = qty != null ? `${type} (${count}/${qty})` : type;
+    return `<option value="${type}" ${type === current ? 'selected' : ''} ${atMax ? 'disabled' : ''}>${label}</option>`;
+  }).join('');
+}
+
+function computeTeamValue(){
+  let total = 0, missing = 0;
+  team.players.forEach(p => {
+    if(!p.position) return;
+    const entry = findCatalogEntry(team.race, p.position);
+    if(entry && entry.prize != null) total += entry.prize;
+    else missing++;
+  });
+  return { total, missing };
 }
 
 function skillSelectOptionsHtml(){
@@ -549,6 +583,8 @@ function renderPlayers(){
   const el = document.getElementById('playersList');
   el.innerHTML = '';
   const raceChosen = !!team.race;
+  const counts = {};
+  team.players.forEach(pl => { if(pl.position) counts[pl.position] = (counts[pl.position] || 0) + 1; });
   team.players.forEach(p => {
     const div = document.createElement('div');
     div.className = 'rt-row rt-body' + (p.position ? '' : ' rt-row-empty');
@@ -567,7 +603,7 @@ function renderPlayers(){
       <div>
         <select onchange="onPositionChange(${p._uid}, this.value)" ${raceChosen ? '' : 'disabled'}>
           <option value="" ${!p.position ? 'selected' : ''}>${raceChosen ? '— vacío —' : 'Elige raza'}</option>
-          ${raceChosen ? positionOptionsFor(team.race, p.position) : ''}
+          ${raceChosen ? positionOptionsFor(team.race, p.position, counts) : ''}
         </select>
       </div>
       <div><input type="text" class="mono" value="${p.ma}" oninput="updateField(${p._uid}, 'ma', this.value)"></div>
@@ -591,6 +627,11 @@ function renderPlayers(){
   });
   const filled = team.players.filter(p => p.position).length;
   document.getElementById('playerCount').textContent = filled + '/11';
+  const tv = computeTeamValue();
+  const tvEl = document.getElementById('teamValueBadge');
+  if(tvEl){
+    tvEl.textContent = tv.total.toLocaleString('es-ES') + ' po' + (tv.missing ? ' (+' + tv.missing + ' sin precio)' : '');
+  }
   scheduleJsonRefresh();
 }
 
@@ -662,12 +703,18 @@ function exportTeamPDF(){
   doc.setFontSize(9);
   doc.text('Sevens Pitch · ' + new Date().toLocaleDateString('es-ES'), pageWidth - 14, 20, { align: 'right' });
 
+  const tv = computeTeamValue();
+  doc.setTextColor(30,26,20);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Valor de equipo: ' + tv.total.toLocaleString('es-ES') + ' po', 14, 27);
+
   const rows = team.players.filter(p => p.position).map(p => [
     p.num, p.name, p.position, p.ma, p.st, p.ag, p.pa, p.av, skillsWithClave(p).join(', ')
   ]);
 
   doc.autoTable({
-    startY: 30,
+    startY: 34,
     head: [['#','Nombre','Posición','MA','ST','AG','PA','AV','Habilidades']],
     body: rows,
     styles: { font: 'helvetica', fontSize: 9, cellPadding: 2.4, valign: 'middle', textColor: [30,26,20] },
@@ -685,7 +732,7 @@ function exportTeamPDF(){
     margin: { left: 14, right: 14 }
   });
 
-  const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 30;
+  const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 34;
   doc.setFontSize(8);
   doc.setTextColor(120,120,120);
   doc.text(rows.length + ' jugadores en plantilla', 14, finalY + 8);

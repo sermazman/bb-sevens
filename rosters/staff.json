@@ -2,7 +2,8 @@
   "rerolls": {
     "clave": "reroll",
     "label": "Segunda Oportunidad",
-    "defaultPrice": 100000,
+    "basePrice": 50000,
+    "sevensMultiplier": 2,
     "byRace": {}
   }
 }

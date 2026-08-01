@@ -35,8 +35,6 @@ function renderStaffPanels(){
       return;
     }
     panel.style.display = 'flex';
-    const nameEl = document.getElementById('staffTeamName'+team);
-    if(nameEl) nameEl.textContent = teamName(team);
     const rerollCountEl = document.getElementById('staffRerollCount'+team);
     if(rerollCountEl){
       const max = (staff.rerolls && typeof staff.rerolls.count === 'number') ? staff.rerolls.count : 0;
@@ -49,8 +47,8 @@ function adjustReroll(team, delta){
   const staff = teamStaff[team];
   if(!staff || !staff.rerolls) return;
   const max = typeof staff.rerolls.count === 'number' ? staff.rerolls.count : 0;
-  teamRerollsLeft[team] = Math.max(0, Math.min(max, (teamRerollsLeft[team] || 0) + delta));
-  log((delta<0 ? '🔄 Reroll usado' : '↩️ Reroll devuelto') + ' — ' + teamName(team) + ': ' + teamRerollsLeft[team] + '/' + max + '.');
+  teamRerollsLeft[team] = Math.max(0, (teamRerollsLeft[team] || 0) + delta);
+  log((delta<0 ? '🔄 Reroll usado' : '↩️ Reroll añadido') + ' — ' + teamName(team) + ': ' + teamRerollsLeft[team] + '/' + max + '.');
   renderStaffPanels();
   broadcastState();
 }

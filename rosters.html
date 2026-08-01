@@ -231,6 +231,7 @@
           <div class="mono staff-row-total" id="rerollTotalText">0 po</div>
         </div>
         <div class="small-note" style="margin-top:8px;">Aquí irá añadiéndose el resto del staff (animadoras, entrenadores asistentes, apotecario...).</div>
+        <div class="small-note" id="staffCatalogStatus" style="margin-top:4px;">Cargando catálogo de staff...</div>
       </div>
     </div>
   </div>
@@ -291,14 +292,20 @@ function rerollPriceForRace(race){
 }
 
 async function loadStaffCatalog(){
+  const statusEl = document.getElementById('staffCatalogStatus');
   try{
     const res = await fetch('rosters/staff.json');
     if(!res.ok) throw new Error('http ' + res.status);
     const data = await res.json();
     if(data.rerolls) STAFF_CATALOG.rerolls = Object.assign({}, STAFF_CATALOG.rerolls, data.rerolls);
+    console.info('[staff.json] cargado. byRace:', STAFF_CATALOG.rerolls.byRace);
+    const raceCount = Object.keys(STAFF_CATALOG.rerolls.byRace || {}).length;
+    if(statusEl) statusEl.textContent = 'Catálogo de staff cargado (' + raceCount + ' razas con precio propio de reroll).';
     renderStaffPanel();
   } catch(err){
-    // Se queda con el valor por defecto embebido (base 50.000 x2 = 100.000 en Sevens).
+    console.warn('[staff.json] no se pudo cargar, usando valores por defecto embebidos:', err.message);
+    if(statusEl) statusEl.textContent = 'No se pudo leer rosters/staff.json (' + err.message + '); usando precio genérico por defecto.';
+    renderStaffPanel();
   }
 }
 

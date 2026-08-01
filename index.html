@@ -175,27 +175,23 @@
     </div>
 
     <div class="pitch-wrap" id="pitchWrap">
-      <div class="staff-panel" id="staffPanelA" style="display:none; border-color:var(--team-a);">
-        <div class="staff-team-name" id="staffTeamNameA">Rojo</div>
-        <div class="staff-item">
-          <span class="staff-label">🔄 Rerolls</span>
-          <span class="staff-count" id="staffRerollCountA">0 / 0</span>
-          <div class="row">
-            <button onclick="adjustReroll('A', -1)">-1</button>
-            <button onclick="adjustReroll('A', 1)">+1</button>
-          </div>
+      <div class="staff-widget" id="staffPanelA" style="display:none; left:2px;">
+        <span class="staff-team-name-mini" id="staffTeamNameA">Rojo</span>
+        <span class="staff-reroll-icon">🔄</span>
+        <span class="staff-count" id="staffRerollCountA">0/0</span>
+        <div class="row">
+          <button onclick="adjustReroll('A', -1)">-1</button>
+          <button onclick="adjustReroll('A', 1)">+1</button>
         </div>
       </div>
       <div class="pitch" id="pitch" oncontextmenu="return handlePitchRightClick(event)"></div>
-      <div class="staff-panel" id="staffPanelB" style="display:none; border-color:var(--team-b);">
-        <div class="staff-team-name" id="staffTeamNameB">Azul</div>
-        <div class="staff-item">
-          <span class="staff-label">🔄 Rerolls</span>
-          <span class="staff-count" id="staffRerollCountB">0 / 0</span>
-          <div class="row">
-            <button onclick="adjustReroll('B', -1)">-1</button>
-            <button onclick="adjustReroll('B', 1)">+1</button>
-          </div>
+      <div class="staff-widget" id="staffPanelB" style="display:none; right:2px;">
+        <span class="staff-team-name-mini" id="staffTeamNameB">Azul</span>
+        <span class="staff-reroll-icon">🔄</span>
+        <span class="staff-count" id="staffRerollCountB">0/0</span>
+        <div class="row">
+          <button onclick="adjustReroll('B', -1)">-1</button>
+          <button onclick="adjustReroll('B', 1)">+1</button>
         </div>
       </div>
     </div>

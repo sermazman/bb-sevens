@@ -40,7 +40,7 @@ function renderStaffPanels(){
     const rerollCountEl = document.getElementById('staffRerollCount'+team);
     if(rerollCountEl){
       const max = (staff.rerolls && typeof staff.rerolls.count === 'number') ? staff.rerolls.count : 0;
-      rerollCountEl.textContent = teamRerollsLeft[team] + ' / ' + max;
+      rerollCountEl.textContent = teamRerollsLeft[team] + '/' + max;
     }
   });
 }

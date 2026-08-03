@@ -97,6 +97,7 @@
       <button class="full" id="despistadoBtn" onclick="toggleDespistado()">😵‍💫 Marcar Despistado</button>
       <button class="full" id="freePushBtn" onclick="toggleFreePush()">🔓 Activar todos los empujes</button>
       <button class="full" id="recoveryBtn" onclick="handleRecoveryButton()" style="display:none;">🧍 Levantar (marcar de pie)</button>
+      <button class="full" id="jumpUpBtn" onclick="jumpUpBlitzCheck()" style="display:none;">🤸 Levantar de un salto y placar</button>
       <button class="full danger" onclick="sendToBench()">Sacar del campo (al banquillo)</button>
       <button class="full danger" style="margin-top:14px;" onclick="resetActivations()">⚠️ Reiniciar activaciones (mismo turno)</button>
     </div>
@@ -458,6 +459,19 @@
     <div class="row" style="margin-top:12px;">
       <button onclick="resolveCatch(true)">✅ Recoge</button>
       <button class="danger" onclick="resolveCatch(false)">❌ Falla</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="jumpUpModal">
+  <div class="modal">
+    <h2>EN PIE DE UN SALTO</h2>
+    <p id="jumpUpText">Chequeo de agilidad para levantarse y placar.</p>
+    <div class="die-face" id="jumpUpDie" style="margin:0 auto 14px auto;">–</div>
+    <button class="primary full" onclick="rollJumpUpDie()">Tirar D6</button>
+    <div class="row" style="margin-top:12px;">
+      <button onclick="resolveJumpUp(true)">✅ Supera</button>
+      <button class="danger" onclick="resolveJumpUp(false)">❌ Falla</button>
     </div>
   </div>
 </div>

@@ -231,7 +231,7 @@ function setupConnHandlers(){
 function snapshotState(){
   return {
     players, ball, phase, state, pendingTD, pendingDodge, pendingGfi, armorForPlayer, nextId,
-    koQueue, pendingKo, teamRace, customColorsEnabled, teamCustomColor, teamTextColor, openingKickoffDone, firstHalfKickingTeam, pitchBackgroundUrl, pitchBackgroundExact, teamStaff, teamRerollsLeft,
+    koQueue, pendingKo, teamRace, customColorsEnabled, teamCustomColor, teamTextColor, openingKickoffDone, firstHalfKickingTeam, pitchBackgroundUrl, pitchBackgroundExact, teamStaff, teamRerollsLeft, kickoffPendingOOBAfterEvent,
     ballBounceActive, pendingCatch, pendingBallDrop, pendingDriveStart,
     pendingKickPlacement, kickoffBounceStep, kickoffKickingTeam, kickoffReceivingTeam, freeCatchTeam, placingBallFree,
     blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp, chainPushStack,
@@ -271,6 +271,10 @@ function snapshotState(){
     catchModalOpen: document.getElementById('catchModal').classList.contains('show'),
     catchText: document.getElementById('catchText').textContent,
     catchDieText: document.getElementById('catchDie').textContent,
+    pendingJumpUpCheck,
+    jumpUpModalOpen: document.getElementById('jumpUpModal').classList.contains('show'),
+    jumpUpText: document.getElementById('jumpUpText').textContent,
+    jumpUpDieText: document.getElementById('jumpUpDie').textContent,
     kickPlacementText: document.getElementById('kickPlacementText').textContent,
     kickoffStepText: document.getElementById('kickoffStepText').textContent,
     kickoffEventPanelVisible: document.getElementById('kickoffEventPanel').style.display==='block',
@@ -317,6 +321,7 @@ function applyRemoteState(payload){
   setPitchBackground(payload.pitchBackgroundUrl || null, !!payload.pitchBackgroundExact);
   teamStaff = payload.teamStaff || { A:null, B:null };
   teamRerollsLeft = payload.teamRerollsLeft || { A:0, B:0 };
+  kickoffPendingOOBAfterEvent = !!payload.kickoffPendingOOBAfterEvent;
   if(payload.pitchBackgroundUrl && payload.pitchBackgroundExact){
     document.getElementById('pitchBgSelect').value = payload.pitchBackgroundUrl;
     document.getElementById('pitchBgInput').value = '';
@@ -405,6 +410,10 @@ function applyRemoteState(payload){
 
   document.getElementById('catchText').textContent = payload.catchText || '';
   document.getElementById('catchDie').textContent = payload.catchDieText || '–';
+  pendingJumpUpCheck = payload.pendingJumpUpCheck;
+  document.getElementById('jumpUpText').textContent = payload.jumpUpText || '';
+  document.getElementById('jumpUpDie').textContent = payload.jumpUpDieText || '–';
+  document.getElementById('jumpUpModal').classList.toggle('show', !!payload.jumpUpModalOpen);
   document.getElementById('catchModal').classList.toggle('show', !!payload.catchModalOpen);
 
   document.getElementById('ballBouncePanel').style.display = payload.ballBounceActive ? 'block' : 'none';
@@ -457,7 +466,8 @@ function anyModalOpen(){
          document.getElementById('followUpModal').classList.contains('show') ||
          document.getElementById('catchModal').classList.contains('show') ||
          document.getElementById('resumeModal').classList.contains('show') ||
-         document.getElementById('losWarningModal').classList.contains('show');
+         document.getElementById('losWarningModal').classList.contains('show') ||
+         document.getElementById('jumpUpModal').classList.contains('show');
 }
 
 // ---------- Roster management ----------
@@ -618,10 +628,62 @@ function standUp(){
   if(selected===null) return;
   const p = players.find(x=>x.id===selected);
   if(!p || p.condition!=='tumbado') return;
+  const hasJumpUp = playerHasSkill(p, 'salto', 'jump up');
   p.condition = 'standing';
+  if(hasJumpUp){
+    log('🤸 ' + p.name + ' se levanta gratis (En pie de un salto).');
+  } else {
+    const before = p.remainingMove ?? p.ma;
+    p.remainingMove = Math.max(0, before - 3);
+    log('🧍 ' + p.name + ' se levanta (gasta 3 MA — le quedan ' + p.remainingMove + ').');
+  }
   renderPitch(); renderRosters(); renderSelInfo();
-  log('🧍 ' + p.name + ' se levanta.');
   broadcastState();
+}
+
+let pendingJumpUpCheck = null;
+
+function jumpUpBlitzCheck(){
+  if(selected===null) return;
+  const p = players.find(x=>x.id===selected);
+  if(!p || p.condition!=='tumbado' || !playerHasSkill(p, 'salto', 'jump up')) return;
+  const hasTarget = players.some(p2 => p2.onPitch && p2.team!==p.team && p2.condition==='standing' &&
+    Math.max(Math.abs(p2.row-p.row), Math.abs(p2.col-p.col))===1);
+  if(!hasTarget){ alert('No hay rivales en pie adyacentes.'); return; }
+  const target = parseAgTarget(p.ag) + 1;
+  pendingJumpUpCheck = p.id;
+  document.getElementById('jumpUpText').textContent = `${p.name} intenta levantarse de un salto y placar — necesita ${target}+ (AG${p.ag ?? '?'} +1). Tirad D6.`;
+  document.getElementById('jumpUpDie').textContent = '–';
+  document.getElementById('jumpUpModal').classList.add('show');
+  broadcastState();
+}
+
+function rollJumpUpDie(){
+  const r = Math.floor(Math.random()*6)+1;
+  document.getElementById('jumpUpDie').textContent = r;
+  log('🎲 En pie de un salto: tirada ' + r);
+  broadcastState();
+}
+
+function resolveJumpUp(success){
+  const p = players.find(x=>x.id===pendingJumpUpCheck);
+  document.getElementById('jumpUpModal').classList.remove('show');
+  pendingJumpUpCheck = null;
+  if(!p){ broadcastState(); return; }
+  if(success){
+    p.condition = 'standing';
+    log('🤸 ' + p.name + ' se levanta de un salto y encara el placaje.');
+    renderRosters(); renderPitch(); renderSelInfo();
+    broadcastState();
+    selected = p.id;
+    startBlockTargeting();
+  } else {
+    p.activated = true;
+    selected = null;
+    log('💥 ' + p.name + ' falla el chequeo — se queda Tumbado y termina su activación.');
+    renderRosters(); renderPitch(); renderSelInfo();
+    broadcastState();
+  }
 }
 
 function handleRecoveryButton(){
@@ -1090,8 +1152,17 @@ function tokenClicked(id){
     updateStatus(p.name + ' ya se ha activado este turno.');
     return;
   }
+  if(selected!==null && selected!==id){
+    const prev = players.find(x=>x.id===selected);
+    if(prev && prev.condition==='standing' && !prev.activated &&
+       (((prev.remainingMove ?? prev.ma) < prev.ma) || (prev.gfiUsed ?? 0) > 0)){
+      prev.activated = true;
+      log('⏹️ ' + prev.name + ' termina su activación (se movió y se cambió de jugador).');
+    }
+  }
   selected = (selected===id) ? null : id;
-  renderPitch(); renderSelInfo();
+  renderRosters(); renderPitch(); renderSelInfo();
+  broadcastState();
 }
 
 function selectPlayerLive(id){
@@ -1106,6 +1177,7 @@ function renderSelInfo(){
   const blitzBtn = document.getElementById('blitzBtn');
   const despBtn = document.getElementById('despistadoBtn');
   const freePushBtn = document.getElementById('freePushBtn');
+  const jumpUpBtn = document.getElementById('jumpUpBtn');
   if(selected===null){
     el.innerHTML = 'Ninguno';
     btn.style.display = 'none';
@@ -1113,6 +1185,7 @@ function renderSelInfo(){
     blitzBtn.style.display = 'none';
     despBtn.style.display = 'none';
     freePushBtn.style.display = 'none';
+    jumpUpBtn.style.display = 'none';
     return;
   }
   const p = players.find(x=>x.id===selected);
@@ -1123,6 +1196,7 @@ function renderSelInfo(){
     blitzBtn.style.display = 'none';
     despBtn.style.display = 'none';
     freePushBtn.style.display = 'none';
+    jumpUpBtn.style.display = 'none';
     return;
   }
   const condLabel = p.condition==='tumbado' ? ' · <span style="color:var(--bad)">TUMBADO</span>'
@@ -1164,6 +1238,8 @@ function renderSelInfo(){
   } else {
     btn.style.display = 'none';
   }
+
+  jumpUpBtn.style.display = (p.condition==='tumbado' && phase==='live' && p.team===state.active && playerHasSkill(p, 'salto', 'jump up')) ? 'block' : 'none';
 }
 
 function assignBall(){
@@ -1265,7 +1341,7 @@ function proceedToBlockDice(attacker, defender, isBlitzHit){
 }
 
 function blockFaceHtml(idx){
-  return `<img class="block-icon-img" src="${BLOCK_ICON_IMAGES[idx]}" alt="${BLOCK_FACES[idx]}" onerror="this.outerHTML='<div class=&quot;block-icon&quot;>${BLOCK_ICONS[idx]}</div>'"><div class="block-label">${BLOCK_FACES[idx]}</div>`;
+  return `<img class="block-icon-img" src="${BLOCK_ICON_IMAGES[idx]}" alt="${BLOCK_FACES[idx]}" title="${BLOCK_FACES[idx]}" onerror="this.outerHTML='<div class=&quot;block-icon&quot;>${BLOCK_ICONS[idx]}</div>'">`;
 }
 
 function rollBlockDiceModal(n){
@@ -1581,6 +1657,11 @@ function playerHasSkill(p, ...keywords){
   return keywords.some(k => lower.some(s => s.includes(k)));
 }
 
+function parseAgTarget(agStr){
+  const n = parseInt(agStr, 10);
+  return isNaN(n) ? 4 : n;
+}
+
 function finishPushSequence(info){
   if(!info) return;
   const attacker = players.find(x=>x.id===info.attackerId);
@@ -1736,6 +1817,7 @@ let kickoffBounceStep = 0;       // 0 inactive, 1 first scatter, 2 second scatte
 let kickoffKickingTeam = null;
 let kickoffReceivingTeam = null;
 let kickoffDistance = 1;
+let kickoffPendingOOBAfterEvent = false;
 let freeCatchTeam = null;
 
 function beginKickPlacement(kicking, receiving){
@@ -1789,6 +1871,11 @@ function rollKickoffEvent2D6(){
 
 function continueAfterKickoffEvent(){
   document.getElementById('kickoffEventPanel').style.display = 'none';
+  if(kickoffPendingOOBAfterEvent){
+    kickoffPendingOOBAfterEvent = false;
+    finishKickoffAsFreeCatch();
+    return;
+  }
   startKickoffBounce(2);
 }
 
@@ -1857,27 +1944,38 @@ function resolveKickoffBounce(r,c){
     finalC = ball.col + dc*dist;
   }
 
-  if(finalR<0 || finalR>=ROWS || finalC<0 || finalC>=COLS){
-    log('🌀 El balón sale del campo tras el rebote — recepción libre.');
-    renderPitch();
-    broadcastState();
-    finishKickoffAsFreeCatch();
-    return;
+  const outOfBounds = (finalR<0 || finalR>=ROWS || finalC<0 || finalC>=COLS);
+  let inKickerHalf = false;
+  if(!outOfBounds){
+    ball.row = finalR; ball.col = finalC;
+    inKickerHalf = kickoffKickingTeam==='A' ? (finalC>=1 && finalC<=LOS_A) : (finalC>=LOS_B && finalC<=COLS-2);
   }
-
-  ball.row = finalR; ball.col = finalC;
   renderPitch();
   broadcastState();
 
-  const inKickerHalf = kickoffKickingTeam==='A' ? (finalC>=1 && finalC<=LOS_A) : (finalC>=LOS_B && finalC<=COLS-2);
-  if(inKickerHalf){
-    log('🏈 El balón acaba en el campo de ' + teamName(kickoffKickingTeam) + ' — recepción libre.');
-    finishKickoffAsFreeCatch();
+  if(step===1){
+    if(outOfBounds){
+      log('🌀 El primer rebote sale del campo — se completa igualmente el evento de patada, y después recepción libre.');
+      kickoffPendingOOBAfterEvent = true;
+    } else if(inKickerHalf){
+      log('🏈 El primer rebote acaba en el campo de ' + teamName(kickoffKickingTeam) + ' — se completa el evento de patada, y después recepción libre.');
+      kickoffPendingOOBAfterEvent = true;
+    } else {
+      kickoffPendingOOBAfterEvent = false;
+    }
+    showKickoffEvent();
     return;
   }
 
-  if(step===1){
-    showKickoffEvent();
+  // segundo rebote
+  if(outOfBounds){
+    log('🌀 El balón sale del campo tras el rebote final — recepción libre.');
+    finishKickoffAsFreeCatch();
+    return;
+  }
+  if(inKickerHalf){
+    log('🏈 El balón acaba en el campo de ' + teamName(kickoffKickingTeam) + ' — recepción libre.');
+    finishKickoffAsFreeCatch();
     return;
   }
 

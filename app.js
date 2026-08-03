@@ -1057,6 +1057,18 @@ function tokenClicked(id){
     if(isValidBlockTarget(id)){ chooseBlockTarget(id); }
     return;
   }
+  if(selected!==null && phase==='live' && !anyModalOpen()){
+    const attacker = players.find(x=>x.id===selected);
+    const target = players.find(x=>x.id===id);
+    if(attacker && target && attacker.team===state.active && attacker.condition==='standing' &&
+       !attacker.activated && !attacker.blockedThisActivation &&
+       target.team!==attacker.team && target.onPitch && target.condition==='standing' &&
+       Math.max(Math.abs(attacker.row-target.row), Math.abs(attacker.col-target.col))===1){
+      blockTargeting = attacker.id;
+      chooseBlockTarget(id);
+      return;
+    }
+  }
   if(anyModalOpen()) return;
   const p = players.find(x=>x.id===id);
   if(!p) return;
@@ -1252,6 +1264,10 @@ function proceedToBlockDice(attacker, defender, isBlitzHit){
   broadcastState();
 }
 
+function blockFaceHtml(idx){
+  return `<img class="block-icon-img" src="${BLOCK_ICON_IMAGES[idx]}" alt="${BLOCK_FACES[idx]}" onerror="this.outerHTML='<div class=&quot;block-icon&quot;>${BLOCK_ICONS[idx]}</div>'"><div class="block-label">${BLOCK_FACES[idx]}</div>`;
+}
+
 function rollBlockDiceModal(n){
   const el = document.getElementById('blockDiceArea');
   el.innerHTML = '';
@@ -1260,12 +1276,12 @@ function rollBlockDiceModal(n){
   results.forEach(idx=>{
     const d = document.createElement('div');
     d.className = 'block-face';
-    d.innerHTML = BLOCK_FACES[idx].replace('\n','<br>');
+    d.innerHTML = blockFaceHtml(idx);
     el.appendChild(d);
   });
   document.getElementById('blockOutcomeRow').classList.add('active');
   blockDiceRolled = true;
-  log('🎲 Placaje x' + n + ': ' + results.map(i=>BLOCK_FACES[i].replace('\n',' ')).join(' / '));
+  log('🎲 Placaje x' + n + ': ' + results.map(i=>BLOCK_FACES[i]).join(' / '));
   broadcastState();
 }
 
@@ -2345,7 +2361,16 @@ document.getElementById('teamAName').addEventListener('input', ()=>{ renderScore
 document.getElementById('teamBName').addEventListener('input', ()=>{ renderScoreboard(); onKickChangeQuiet(); updateKickSelectLabels(); broadcastState(); });
 
 // ---------- Dice (free-standing rollers) ----------
-const BLOCK_FACES = ['ATACANTE\nCAE','AMBOS\nCAEN','EMPUJE','EMPUJE','TAMBALEO','DEFENSOR\nCAE (POW)'];
+const BLOCK_FACES = ['ATACANTE CAE','AMBOS CAEN','EMPUJÓN','EMPUJÓN','DESEQUILIBRADO','POW (DEFENSOR CAE)'];
+const BLOCK_ICONS = ['💀','💀💥','➡️','➡️','💢','💥'];
+const BLOCK_ICON_IMAGES = [
+  'icons/attacker-down.png',
+  'icons/both-down.png',
+  'icons/push.png',
+  'icons/push.png',
+  'icons/stumble.png',
+  'icons/pow.png'
+];
 
 function rollBlock(n){
   const el = document.getElementById('blockResult');
@@ -2353,10 +2378,10 @@ function rollBlock(n){
   let results=[];
   for(let i=0;i<n;i++){
     const idx = Math.floor(Math.random()*6);
-    results.push(BLOCK_FACES[idx].replace('\n',' '));
+    results.push(BLOCK_FACES[idx]);
     const d = document.createElement('div');
     d.className='block-face';
-    d.innerHTML = BLOCK_FACES[idx].replace('\n','<br>');
+    d.innerHTML = blockFaceHtml(idx);
     el.appendChild(d);
   }
   log('🎲 Bloqueo x'+n+': ' + results.join(' / '));

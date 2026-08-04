@@ -141,28 +141,30 @@
     <a class="backlink" href="index.html">← Volver al tablero</a>
   </header>
 
-  <div class="panel">
-    <h2>📁 Cargar / Guardar</h2>
-    <div class="top-actions">
-      <button onclick="document.getElementById('fileImport').click()">📁 Cargar JSON</button>
-      <input type="file" id="fileImport" accept="application/json" style="display:none" onchange="importFile(this)">
-      <button onclick="newTeam()">🆕 Plantilla en blanco</button>
-      <button class="primary" onclick="exportTeamJSON()">💾 Descargar JSON</button>
-      <button onclick="exportTeamPDF()">🖨 Descargar PDF</button>
-    </div>
-    <div class="small-note" style="margin-top:8px;">El JSON generado aquí es 100% compatible con el botón "Cargar JSON" del tablero principal (mismo formato: teamName / race / players[]).</div>
-  </div>
-
-  <div class="panel" id="libraryPanel">
-    <h2>📚 Librería de plantillas <span class="badge-count" id="libCount">0</span></h2>
-    <div class="row" style="align-items:flex-end;">
-      <div style="flex:1;">
-        <label>Selecciona una plantilla</label>
-        <select id="librarySelect"><option value="">Cargando plantillas...</option></select>
+  <div class="two-col-row">
+    <div class="panel">
+      <h2>📁 Cargar / Guardar</h2>
+      <div class="top-actions">
+        <button onclick="document.getElementById('fileImport').click()">📁 Cargar JSON</button>
+        <input type="file" id="fileImport" accept="application/json" style="display:none" onchange="importFile(this)">
+        <button onclick="newTeam()">🆕 Plantilla en blanco</button>
+        <button class="primary" onclick="exportTeamJSON()">💾 Descargar JSON</button>
+        <button onclick="exportTeamPDF()">🖨 Descargar PDF</button>
       </div>
-      <button class="primary" onclick="loadSelectedTemplate()" style="flex:0 0 auto; margin-bottom:8px;">📥 Cargar</button>
+      <div class="small-note" style="margin-top:8px;">El JSON generado aquí es 100% compatible con el botón "Cargar JSON" del tablero principal (mismo formato: teamName / race / players[]).</div>
     </div>
-    <div class="small-note" id="libraryStatus" style="margin-top:6px;"></div>
+
+    <div class="panel" id="libraryPanel">
+      <h2>📚 Librería de plantillas <span class="badge-count" id="libCount">0</span></h2>
+      <div class="row" style="align-items:flex-end;">
+        <div style="flex:1;">
+          <label>Selecciona una plantilla</label>
+          <select id="librarySelect"><option value="">Cargando plantillas...</option></select>
+        </div>
+        <button class="primary" onclick="loadSelectedTemplate()" style="flex:0 0 auto; margin-bottom:8px;">📥 Cargar</button>
+      </div>
+      <div class="small-note" id="libraryStatus" style="margin-top:6px;"></div>
+    </div>
   </div>
 
   <div class="two-col-row">

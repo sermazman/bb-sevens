@@ -589,17 +589,28 @@ function renderRosters(){
 
 function renderReserveZone(){
   ['A','B'].forEach(team=>{
-    const koEl = document.getElementById('koList'+team);
-    const injEl = document.getElementById('injuredList'+team);
+    const listEl = document.getElementById('casualtyList'+team);
     const header = document.getElementById('reserveHeader'+team);
     if(header) header.textContent = '🩹 ' + teamName(team) + ' — bajas';
-    if(!koEl || !injEl) return;
-    const kos = players.filter(p=>p.team===team && p.condition==='ko');
-    const injs = players.filter(p=>p.team===team && (p.condition==='injured' || p.condition==='injuredGrave' || p.condition==='dead'));
-    const chip = (p, extra) => `<div class="token-chip" style="background:${tokenColorFor(p)}; color:${textColorFor(p)}" title="${playerTooltipText(p, extra).replace(/"/g,'&quot;')}">${p.num}</div>`;
-    const injuryLabel = (p) => p.condition==='dead' ? 'MUERTO' : p.condition==='injuredGrave' ? 'HERIDA GRAVE' : 'HERIDO (LEVE)';
-    koEl.innerHTML = kos.length ? kos.map(p=>chip(p,'INCONSCIENTE')).join('') : '<span class="small-note">Ninguno</span>';
-    injEl.innerHTML = injs.length ? injs.map(p=>chip(p, injuryLabel(p))).join('') : '<span class="small-note">Ninguno</span>';
+    if(!listEl) return;
+    const casualties = players.filter(p=>p.team===team &&
+      (p.condition==='ko' || p.condition==='injured' || p.condition==='injuredGrave' || p.condition==='dead'));
+    if(!casualties.length){
+      listEl.innerHTML = '<span class="small-note">Ninguna</span>';
+      return;
+    }
+    listEl.innerHTML = casualties.map(p=>{
+      let badgeClass, badgeChar, extraLabel;
+      if(p.condition==='ko'){ badgeClass='ko'; badgeChar='★'; extraLabel='INCONSCIENTE'; }
+      else if(p.condition==='dead'){ badgeClass='dead'; badgeChar='✚'; extraLabel='MUERTO'; }
+      else if(p.condition==='injuredGrave'){ badgeClass='grave'; badgeChar='✚'; extraLabel='HERIDA GRAVE'; }
+      else { badgeClass='light'; badgeChar='✚'; extraLabel='HERIDO (LEVE)'; }
+      const title = playerTooltipText(p, extraLabel).replace(/"/g,'&quot;');
+      return `<div class="chip-wrap" title="${title}">
+        <div class="token-chip" style="background:${tokenColorFor(p)}; color:${textColorFor(p)}">${p.num}</div>
+        <div class="casualty-badge ${badgeClass}">${badgeChar}</div>
+      </div>`;
+    }).join('');
   });
 }
 
@@ -1492,7 +1503,13 @@ function currentPushTargets(mover, offsets, freePush){
     }
     return list;
   }
-  return offsets.map(o=>({ row: mover.row+o.dr, col: mover.col+o.dc }));
+  const raw = offsets.map(o=>({ row: mover.row+o.dr, col: mover.col+o.dc }));
+  const isOccupied = t => (t.row>=0 && t.row<ROWS && t.col>=0 && t.col<COLS) && !!occupiedBy(t.row, t.col);
+  const hasFreeOption = raw.some(t => !isOccupied(t));
+  if(hasFreeOption){
+    return raw.filter(t => !isOccupied(t));
+  }
+  return raw; // las 3 ocupadas: empuje en cadena forzoso, cualquiera es válida
 }
 
 function isValidPushCell(mover, r, c, offsets, freePush){

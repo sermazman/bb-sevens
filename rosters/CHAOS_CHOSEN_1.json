@@ -1,0 +1,119 @@
+{
+  "teamName": "CHAOS CHOSEN 1",
+  "race": "Chaos Chosen",
+  "color": "#4f4f4f",
+  "textColor": "#f7c336",
+  "staff": {
+    "rerolls": {
+      "clave": "reroll",
+      "count": 1,
+      "pricePerUnit": 100000,
+      "total": 100000
+    }
+  },
+  "players": [
+    {
+      "num": 1,
+      "name": "",
+      "position": "Chaos Chosen",
+      "ma": 5,
+      "st": 4,
+      "ag": "3+",
+      "pa": "5+",
+      "av": "10+",
+      "skills": [
+        "Llave de Brazo",
+        "Human - Defensor"
+      ]
+    },
+    {
+      "num": 2,
+      "name": "",
+      "position": "Chaos Chosen",
+      "ma": 5,
+      "st": 4,
+      "ag": "3+",
+      "pa": "5+",
+      "av": "10+",
+      "skills": [
+        "Llave de Brazo",
+        "Human - Defensor"
+      ]
+    },
+    {
+      "num": 3,
+      "name": "",
+      "position": "Beastman Lineman",
+      "ma": 6,
+      "st": 3,
+      "ag": "3+",
+      "pa": "3+",
+      "av": "9+",
+      "skills": [
+        "Cuernos",
+        "Cabeza dura",
+        "Beastman - Linea"
+      ]
+    },
+    {
+      "num": 4,
+      "name": "",
+      "position": "Beastman Lineman",
+      "ma": 6,
+      "st": 3,
+      "ag": "3+",
+      "pa": "3+",
+      "av": "9+",
+      "skills": [
+        "Cuernos",
+        "Cabeza dura",
+        "Beastman - Linea"
+      ]
+    },
+    {
+      "num": 5,
+      "name": "",
+      "position": "Beastman Lineman",
+      "ma": 6,
+      "st": 3,
+      "ag": "3+",
+      "pa": "3+",
+      "av": "9+",
+      "skills": [
+        "Cuernos",
+        "Cabeza dura",
+        "Beastman - Linea"
+      ]
+    },
+    {
+      "num": 6,
+      "name": "",
+      "position": "Beastman Lineman",
+      "ma": 6,
+      "st": 3,
+      "ag": "3+",
+      "pa": "3+",
+      "av": "9+",
+      "skills": [
+        "Cuernos",
+        "Cabeza dura",
+        "Beastman - Linea"
+      ]
+    },
+    {
+      "num": 7,
+      "name": "",
+      "position": "Beastman Lineman",
+      "ma": 6,
+      "st": 3,
+      "ag": "3+",
+      "pa": "3+",
+      "av": "9+",
+      "skills": [
+        "Cuernos",
+        "Cabeza dura",
+        "Beastman - Linea"
+      ]
+    }
+  ]
+}

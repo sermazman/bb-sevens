@@ -96,6 +96,14 @@
         <div class="label" id="sbNameA">Rojo</div>
         <div class="sb-race mono" id="sbRaceA"></div>
         <div class="score mono" id="scoreA">0</div>
+        <div class="sb-reroll" id="sbRerollA" style="display:none;">
+          <span class="sb-reroll-label">RR</span>
+          <span class="sb-reroll-count mono" id="sbRerollCountA">0/0</span>
+          <span class="sb-reroll-btns">
+            <button onclick="adjustReroll('A', -1)">-1</button>
+            <button onclick="adjustReroll('A', 1)">+1</button>
+          </span>
+        </div>
       </div>
       <div class="sb-mid">
         <div class="half mono">MITAD <span id="halfNum">1</span></div>
@@ -106,6 +114,14 @@
         <div class="label" id="sbNameB">Azul</div>
         <div class="sb-race mono" id="sbRaceB"></div>
         <div class="score mono" id="scoreB">0</div>
+        <div class="sb-reroll" id="sbRerollB" style="display:none;">
+          <span class="sb-reroll-label">RR</span>
+          <span class="sb-reroll-count mono" id="sbRerollCountB">0/0</span>
+          <span class="sb-reroll-btns">
+            <button onclick="adjustReroll('B', -1)">-1</button>
+            <button onclick="adjustReroll('B', 1)">+1</button>
+          </span>
+        </div>
       </div>
     </div>
 
@@ -163,23 +179,7 @@
     </div>
 
     <div class="pitch-wrap" id="pitchWrap">
-      <div class="staff-widget" id="staffPanelA" style="display:none; left:2px;">
-        <span class="staff-reroll-icon" id="staffIconA">🔄</span>
-        <span class="staff-count" id="staffRerollCountA">0/0</span>
-        <div class="row">
-          <button onclick="adjustReroll('A', -1)">-1</button>
-          <button onclick="adjustReroll('A', 1)">+1</button>
-        </div>
-      </div>
       <div class="pitch" id="pitch" oncontextmenu="return handlePitchRightClick(event)"></div>
-      <div class="staff-widget" id="staffPanelB" style="display:none; right:2px;">
-        <span class="staff-reroll-icon" id="staffIconB">🔄</span>
-        <span class="staff-count" id="staffRerollCountB">0/0</span>
-        <div class="row">
-          <button onclick="adjustReroll('B', -1)">-1</button>
-          <button onclick="adjustReroll('B', 1)">+1</button>
-        </div>
-      </div>
     </div>
 
     <div class="panel setup" id="setupPanel">

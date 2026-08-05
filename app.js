@@ -30,7 +30,7 @@ let teamRerollsLeft = { A: 0, B: 0 };
 
 function renderStaffPanels(){
   ['A','B'].forEach(team=>{
-    const panel = document.getElementById('staffPanel'+team);
+    const panel = document.getElementById('sbReroll'+team);
     if(!panel) return;
     const staff = teamStaff[team];
     if(!staff){
@@ -38,7 +38,7 @@ function renderStaffPanels(){
       return;
     }
     panel.style.display = 'flex';
-    const rerollCountEl = document.getElementById('staffRerollCount'+team);
+    const rerollCountEl = document.getElementById('sbRerollCount'+team);
     if(rerollCountEl){
       const max = (staff.rerolls && typeof staff.rerolls.count === 'number') ? staff.rerolls.count : 0;
       rerollCountEl.textContent = teamRerollsLeft[team] + '/' + max;

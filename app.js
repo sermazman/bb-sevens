@@ -150,6 +150,8 @@ function setTeamTextColor(team, mode){
   broadcastState();
 }
 let blitzUsedByTeam = { A: false, B: false };
+let secureBallUsedByTeam = { A: false, B: false };
+let pendingSecureBall = null;
 let blitzActivePlayer = null;
 let blockTargeting = null;   // attacker id currently choosing an adjacent target
 let activeBlock = null;      // { attackerId, defenderId, isBlitz }
@@ -237,7 +239,10 @@ function snapshotState(){
     koQueue, pendingKo, teamRace, customColorsEnabled, teamCustomColor, teamTextColor, openingKickoffDone, firstHalfKickingTeam, pitchBackgroundUrl, pitchBackgroundExact, teamStaff, teamRerollsLeft, kickoffPendingOOBAfterEvent,
     ballBounceActive, pendingCatch, pendingBallDrop, pendingDriveStart,
     pendingKickPlacement, kickoffBounceStep, kickoffKickingTeam, kickoffReceivingTeam, freeCatchTeam, placingBallFree,
-    blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp, chainPushStack,
+    blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp, chainPushStack, secureBallUsedByTeam, pendingSecureBall,
+    secureBallModalOpen: document.getElementById('secureBallModal').classList.contains('show'),
+    secureBallText: document.getElementById('secureBallText').textContent,
+    secureBallDieText: document.getElementById('secureBallDie').textContent,
     teamAName: document.getElementById('teamAName').value,
     teamBName: document.getElementById('teamBName').value,
     kickSelectValue: document.getElementById('kickSelect').value,
@@ -358,6 +363,11 @@ function applyRemoteState(payload){
   pendingPush = payload.pendingPush;
   pendingFollowUp = payload.pendingFollowUp;
   chainPushStack = payload.chainPushStack || [];
+  secureBallUsedByTeam = payload.secureBallUsedByTeam || { A:false, B:false };
+  pendingSecureBall = payload.pendingSecureBall;
+  document.getElementById('secureBallText').textContent = payload.secureBallText || '';
+  document.getElementById('secureBallDie').textContent = payload.secureBallDieText || '–';
+  document.getElementById('secureBallModal').classList.toggle('show', !!payload.secureBallModalOpen);
   nextId = payload.nextId;
   document.getElementById('teamAName').value = payload.teamAName;
   document.getElementById('teamBName').value = payload.teamBName;
@@ -506,7 +516,8 @@ function anyModalOpen(){
          document.getElementById('catchModal').classList.contains('show') ||
          document.getElementById('resumeModal').classList.contains('show') ||
          document.getElementById('losWarningModal').classList.contains('show') ||
-         document.getElementById('jumpUpModal').classList.contains('show');
+         document.getElementById('jumpUpModal').classList.contains('show') ||
+         document.getElementById('secureBallModal').classList.contains('show');
 }
 
 // ---------- Roster management ----------
@@ -1712,6 +1723,64 @@ function resolveFollowUp(doFollow){
   }
 }
 
+function isBigGuy(p){
+  const combined = ((p.position||'') + ' ' + (p.skills||[]).join(' ')).toLowerCase();
+  return combined.includes('grandullón') || combined.includes('grandullon') || combined.includes('big guy');
+}
+
+function secureTheBall(){
+  if(selected===null) return;
+  const p = players.find(x=>x.id===selected);
+  if(!p || p.condition!=='standing' || p.team!==state.active || p.activated) return;
+  if(isBigGuy(p)){ alert('Los jugadores con la clave Grandullón no pueden declarar Asegurar el Balón.'); return; }
+  if(secureBallUsedByTeam[p.team]){ alert('Ya se ha declarado Asegurar el Balón este turno de equipo.'); return; }
+  if(ball.carrierId!==null || ball.row===null){ alert('No hay ningún balón suelto en el campo.'); return; }
+  const enemyNear = players.some(p2 => p2.onPitch && p2.team!==p.team && p2.condition==='standing' &&
+    Math.max(Math.abs(p2.row-ball.row), Math.abs(p2.col-ball.col)) <= 2);
+  if(enemyNear){ alert('El balón está a 2 casillas o menos de un rival en pie (no Despistado) — no se puede declarar esta acción.'); return; }
+
+  secureBallUsedByTeam[p.team] = true;
+  p.row = ball.row; p.col = ball.col;
+  log('🔒 ' + p.name + ' declara Asegurar el Balón (movimiento gratuito hasta el balón suelto).');
+  renderRosters(); renderPitch();
+
+  pendingSecureBall = p.id;
+  document.getElementById('secureBallText').textContent = `${p.name} intenta Asegurar el Balón — necesita 2+ (solo falla con un 1). Tirad D6.`;
+  document.getElementById('secureBallDie').textContent = '–';
+  document.getElementById('secureBallModal').classList.add('show');
+  broadcastState();
+}
+
+function rollSecureBallDie(){
+  if(!pendingSecureBall) return;
+  const r = Math.floor(Math.random()*6)+1;
+  document.getElementById('secureBallDie').textContent = r;
+  log('🎲 Asegurar el Balón: tirada ' + r + ' → ' + (r>=2 ? 'CONSEGUIDO' : 'FALLADO'));
+  broadcastState();
+}
+
+function resolveSecureBall(success){
+  const p = players.find(x=>x.id===pendingSecureBall);
+  document.getElementById('secureBallModal').classList.remove('show');
+  pendingSecureBall = null;
+  if(!p){ broadcastState(); return; }
+  p.activated = true;
+  selected = null;
+  if(success){
+    ball.carrierId = p.id;
+    log('🔒 ' + p.name + ' asegura el balón. Su activación termina.');
+    renderRosters(); renderPitch(); renderSelInfo();
+    broadcastState();
+    checkTouchdown(p);
+  } else {
+    log('💥 ' + p.name + ' falla Asegurar el Balón — el balón rebota y el turno de equipo termina aquí.');
+    renderRosters(); renderPitch(); renderSelInfo();
+    broadcastState();
+    startBallBounce();
+    endTurn();
+  }
+}
+
 function playerHasSkill(p, ...keywords){
   if(!p || !p.skills) return false;
   const lower = p.skills.map(s => (s||'').toLowerCase());
@@ -1829,11 +1898,15 @@ function resolveBounce(r,c){
   }
 }
 
-function openCatchModal(p){
-  const target = parseAgTarget(p.ag);
+function openCatchModal(p, noModifiers){
+  const tz = noModifiers ? 0 : countOpponentTackleZones(p.row, p.col, p.team);
+  const target = parseAgTarget(p.ag) + tz;
   pendingCatch = { playerId: p.id, target };
   catchRerollUsed = false;
-  document.getElementById('catchText').textContent = `${p.name} intenta recoger el balón — necesita ${target}+ (AG${p.ag ?? '?'}, sin modificadores). Tirad D6.`;
+  const modText = noModifiers
+    ? `(AG${p.ag ?? '?'}, sin modificadores — rebote del saque inicial)`
+    : `(AG${p.ag ?? '?'} + ${tz} zona(s) de marcaje rival en su casilla)`;
+  document.getElementById('catchText').textContent = `${p.name} intenta recoger el balón — necesita ${target}+ ${modText}. Tirad D6.`;
   document.getElementById('catchDie').textContent = '–';
   document.getElementById('catchResultText').textContent = '';
   document.getElementById('catchResultText').className = 'check-result';
@@ -2056,7 +2129,7 @@ function resolveKickoffBounce(r,c){
   pendingDriveStart = kickoffReceivingTeam;
   const occ = occupiedBy(finalR, finalC);
   if(occ && occ.condition==='standing'){
-    openCatchModal(occ);
+    openCatchModal(occ, true);
   } else {
     log('🏈 El balón queda en el campo tras el saque.');
     checkDriveStartAfterBounce();
@@ -2484,6 +2557,7 @@ function beginTurn(team){
   state.turns[team]++;
   state.active = team;
   blitzUsedByTeam[team] = false;
+  secureBallUsedByTeam[team] = false;
   players.filter(p=>p.team===team).forEach(p=>{
     p.activated = false;
     p.remainingMove = p.ma;

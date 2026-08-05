@@ -502,14 +502,14 @@ function openAddPlayer(team){
   if(num === null) return;
   const name = prompt('Nombre (opcional):') || ('Jugador ' + num);
   const ma = parseFloat(prompt('Movimiento (MA):', '6')) || 6;
-  players.push({ id: nextId++, team, num, name, ma, remainingMove: ma, gfiUsed:0, condition:'standing', blockedThisActivation:false, freePushOverride:false, row:null, col:null, activated:false, onPitch:false });
+  players.push({ id: nextId++, team, num, name, ma, remainingMove: ma, gfiUsed:0, condition:'standing', blockedThisActivation:false, freePushOverride:false, dodgeSkillUsedThisTurn:false, row:null, col:null, activated:false, onPitch:false });
   renderRosters();
   broadcastState();
 }
 
 function quickFill(team){
   for(let i=1;i<=7;i++){
-    players.push({ id: nextId++, team, num:i, name:'Jugador '+i, ma:6, remainingMove:6, gfiUsed:0, condition:'standing', blockedThisActivation:false, freePushOverride:false, row:null, col:null, activated:false, onPitch:false });
+    players.push({ id: nextId++, team, num:i, name:'Jugador '+i, ma:6, remainingMove:6, gfiUsed:0, condition:'standing', blockedThisActivation:false, freePushOverride:false, dodgeSkillUsedThisTurn:false, row:null, col:null, activated:false, onPitch:false });
   }
   renderRosters();
   broadcastState();
@@ -545,7 +545,7 @@ function importTeamFile(team, inputEl){
         id: nextId++, team,
         num: pd.num ?? '?',
         name: pd.name || ('Jugador ' + (pd.num ?? '')),
-        ma, remainingMove: ma, gfiUsed:0, condition:'standing', blockedThisActivation:false, freePushOverride:false,
+        ma, remainingMove: ma, gfiUsed:0, condition:'standing', blockedThisActivation:false, freePushOverride:false, dodgeSkillUsedThisTurn:false,
         st: pd.st, ag: pd.ag, pa: pd.pa, av: pd.av,
         position: pd.position || null,
         skills: pd.skills || [],
@@ -2087,7 +2087,7 @@ function checkActionButtons(prefix, success, p){
 
   const usedFlag = prefix==='dodge' ? dodgeRerollUsed : gfiRerollUsed;
   if(!usedFlag){
-    const hasDodgeSkill = prefix==='dodge' && playerHasSkill(p, 'esquiva', 'dodge');
+    const hasDodgeSkill = prefix==='dodge' && playerHasSkill(p, 'esquiva', 'dodge') && !p.dodgeSkillUsedThisTurn;
     if(hasDodgeSkill){
       const btn = document.createElement('button');
       btn.textContent = '🔁 Usar Esquivar (repite gratis)';
@@ -2119,7 +2119,8 @@ function useCheckReroll(prefix, isSkill){
     log('🔄 ' + teamName(p.team) + ' gasta un reroll — quedan ' + teamRerollsLeft[p.team] + '.');
     renderStaffPanels();
   } else {
-    log('🔁 ' + p.name + ' repite gratis con su habilidad Esquivar.');
+    p.dodgeSkillUsedThisTurn = true;
+    log('🔁 ' + p.name + ' repite gratis con su habilidad Esquivar (ya no podrá volver a usarla este turno).');
   }
   pending.lastSuccess = undefined;
   document.getElementById(prefix+'ActionRow').style.display = 'none';
@@ -2452,6 +2453,7 @@ function beginTurn(team){
     p.remainingMove = p.ma;
     p.gfiUsed = 0;
     p.blockedThisActivation = false;
+    p.dodgeSkillUsedThisTurn = false;
   });
   renderScoreboard(); renderRosters(); renderPitch();
   updateStatus('Turno de ' + teamName(team));

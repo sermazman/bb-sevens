@@ -15,6 +15,8 @@ let phase = 'setup';   // 'setup' | 'live'
 let pendingTD = null;
 let pendingDodge = null; // { playerId, toR, toC }
 let pendingGfi = null;   // { playerId, toR, toC }
+let dodgeRerollUsed = false;
+let gfiRerollUsed = false;
 let armorForPlayer = null; // player id currently being armor-rolled
 let state = { half: 1, active: 'A', turns: { A: 0, B: 0 } };
 let teamRace = { A: '', B: '' };
@@ -243,9 +245,11 @@ function snapshotState(){
     dodgeModalOpen: document.getElementById('dodgeModal').classList.contains('show'),
     dodgeText: document.getElementById('dodgeText').textContent,
     dodgeDieText: document.getElementById('dodgeDie').textContent,
+    dodgeRerollUsed,
     gfiModalOpen: document.getElementById('gfiModal').classList.contains('show'),
     gfiText: document.getElementById('gfiText').textContent,
     gfiDieText: document.getElementById('gfiDie').textContent,
+    gfiRerollUsed,
     armorModalOpen: document.getElementById('armorModal').classList.contains('show'),
     armorText: document.getElementById('armorText').textContent,
     armorDie1: document.getElementById('armorDie1').textContent,
@@ -372,10 +376,32 @@ function applyRemoteState(payload){
   document.getElementById('dodgeText').textContent = payload.dodgeText || '';
   document.getElementById('dodgeDie').textContent = payload.dodgeDieText || '–';
   document.getElementById('dodgeModal').classList.toggle('show', !!payload.dodgeModalOpen);
+  dodgeRerollUsed = !!payload.dodgeRerollUsed;
+  if(pendingDodge && pendingDodge.lastSuccess !== undefined){
+    const dp = players.find(x=>x.id===pendingDodge.playerId);
+    checkActionButtons('dodge', pendingDodge.lastSuccess, dp);
+  } else {
+    document.getElementById('dodgeResultText').textContent = '';
+    document.getElementById('dodgeResultText').className = 'check-result';
+    document.getElementById('dodgeRollBtn').style.display = 'block';
+    document.getElementById('dodgeActionRow').style.display = 'none';
+    document.getElementById('dodgeActionRow').innerHTML = '';
+  }
 
   document.getElementById('gfiText').textContent = payload.gfiText || '';
   document.getElementById('gfiDie').textContent = payload.gfiDieText || '–';
   document.getElementById('gfiModal').classList.toggle('show', !!payload.gfiModalOpen);
+  gfiRerollUsed = !!payload.gfiRerollUsed;
+  if(pendingGfi && pendingGfi.lastSuccess !== undefined){
+    const gp = players.find(x=>x.id===pendingGfi.playerId);
+    checkActionButtons('gfi', pendingGfi.lastSuccess, gp);
+  } else {
+    document.getElementById('gfiResultText').textContent = '';
+    document.getElementById('gfiResultText').className = 'check-result';
+    document.getElementById('gfiRollBtn').style.display = 'block';
+    document.getElementById('gfiActionRow').style.display = 'none';
+    document.getElementById('gfiActionRow').innerHTML = '';
+  }
 
   document.getElementById('armorText').textContent = payload.armorText || '';
   document.getElementById('armorDie1').textContent = payload.armorDie1 || '–';
@@ -810,6 +836,7 @@ function startDrive(){
     const sel = document.getElementById('kickSelect');
     sel.disabled = true;
     document.getElementById('setupHint').textContent += ' (elección fija para el resto del partido)';
+    resetRerollsForNewHalf();
   }
   phase='live';
   placing=null; selected=null;
@@ -2033,20 +2060,105 @@ function assignFreeCatch(playerId){
 }
 
 // ---------- Dodge / Armor ----------
+function countOpponentTackleZones(r,c,team){
+  return players.filter(p2 => p2.onPitch && p2.team!==team && p2.condition==='standing' &&
+    Math.max(Math.abs(p2.row-r), Math.abs(p2.col-c))===1).length;
+}
+
+function checkActionButtons(prefix, success, p){
+  const resultEl = document.getElementById(prefix+'ResultText');
+  resultEl.textContent = success ? '✅ CONSEGUIDO' : '❌ FALLADO';
+  resultEl.className = 'check-result ' + (success ? 'ok' : 'fail');
+  document.getElementById(prefix+'RollBtn').style.display = 'none';
+  const actionRow = document.getElementById(prefix+'ActionRow');
+  actionRow.innerHTML = '';
+  actionRow.style.display = 'flex';
+
+  const resolveFn = prefix==='dodge' ? resolveDodge : resolveGfi;
+
+  if(success){
+    const btn = document.createElement('button');
+    btn.className = 'primary';
+    btn.textContent = '➡️ Continuar';
+    btn.onclick = ()=> resolveFn(true);
+    actionRow.appendChild(btn);
+    return;
+  }
+
+  const usedFlag = prefix==='dodge' ? dodgeRerollUsed : gfiRerollUsed;
+  if(!usedFlag){
+    const hasDodgeSkill = prefix==='dodge' && playerHasSkill(p, 'esquiva', 'dodge');
+    if(hasDodgeSkill){
+      const btn = document.createElement('button');
+      btn.textContent = '🔁 Usar Esquivar (repite gratis)';
+      btn.onclick = ()=> useCheckReroll(prefix, true);
+      actionRow.appendChild(btn);
+    } else if((teamRerollsLeft[p.team] || 0) > 0){
+      const btn = document.createElement('button');
+      btn.textContent = '🔄 Usar Reroll (quedan ' + teamRerollsLeft[p.team] + ')';
+      btn.onclick = ()=> useCheckReroll(prefix, false);
+      actionRow.appendChild(btn);
+    }
+  }
+
+  const acceptBtn = document.createElement('button');
+  acceptBtn.className = 'danger';
+  acceptBtn.textContent = '➡️ Continuar (fallado)';
+  acceptBtn.onclick = ()=> resolveFn(false);
+  actionRow.appendChild(acceptBtn);
+}
+
+function useCheckReroll(prefix, isSkill){
+  const pending = prefix==='dodge' ? pendingDodge : pendingGfi;
+  if(!pending) return;
+  const p = players.find(x=>x.id===pending.playerId);
+  if(!p) return;
+  if(prefix==='dodge') dodgeRerollUsed = true; else gfiRerollUsed = true;
+  if(!isSkill){
+    teamRerollsLeft[p.team] = Math.max(0, (teamRerollsLeft[p.team]||0) - 1);
+    log('🔄 ' + teamName(p.team) + ' gasta un reroll — quedan ' + teamRerollsLeft[p.team] + '.');
+    renderStaffPanels();
+  } else {
+    log('🔁 ' + p.name + ' repite gratis con su habilidad Esquivar.');
+  }
+  pending.lastSuccess = undefined;
+  document.getElementById(prefix+'ActionRow').style.display = 'none';
+  document.getElementById(prefix+'RollBtn').style.display = 'block';
+  document.getElementById(prefix+'ResultText').textContent = '';
+  document.getElementById(prefix+'ResultText').className = 'check-result';
+  document.getElementById(prefix+'Die').textContent = '–';
+  broadcastState();
+}
+
 function openDodgeModal(p, toR, toC, fromGfi){
-  pendingDodge = { playerId:p.id, toR, toC, fromGfi: !!fromGfi };
-  document.getElementById('dodgeText').textContent = fromGfi
-    ? `${p.name} ha superado "a por ellos" pero esa casilla también sale de una zona de marcaje rival. Tirad D6 de esquiva y aplicad el modificador de AG.`
-    : `${p.name} sale de una zona de marcaje rival. Tirad D6 y aplicad vuestros modificadores de AG.`;
+  const tz = countOpponentTackleZones(toR, toC, p.team);
+  const target = parseAgTarget(p.ag) + tz;
+  pendingDodge = { playerId:p.id, toR, toC, fromGfi: !!fromGfi, target };
+  dodgeRerollUsed = false;
+  const msg = (fromGfi
+    ? `${p.name} ha superado "a por ellos" pero esa casilla también sale de una zona de marcaje rival. `
+    : `${p.name} sale de una zona de marcaje rival. `)
+    + `Necesita ${target}+ (AG${p.ag ?? '?'} + ${tz} zona(s) de marcaje en destino). Tirad D6.`;
+  document.getElementById('dodgeText').textContent = msg;
   document.getElementById('dodgeDie').textContent = '–';
+  document.getElementById('dodgeResultText').textContent = '';
+  document.getElementById('dodgeResultText').className = 'check-result';
+  document.getElementById('dodgeRollBtn').style.display = 'block';
+  document.getElementById('dodgeActionRow').style.display = 'none';
+  document.getElementById('dodgeActionRow').innerHTML = '';
   document.getElementById('dodgeModal').classList.add('show');
   broadcastState();
 }
 
 function rollDodgeDie(){
+  if(!pendingDodge) return;
   const r = Math.floor(Math.random()*6)+1;
   document.getElementById('dodgeDie').textContent = r;
-  log('🎲 Esquiva: tirada ' + r);
+  const p = players.find(x=>x.id===pendingDodge.playerId);
+  const success = r===6 ? true : (r===1 ? false : r>=pendingDodge.target);
+  pendingDodge.lastSuccess = success;
+  log('🎲 Esquiva: tirada ' + r + ' (necesitaba ' + pendingDodge.target + '+) → ' + (success?'CONSEGUIDO':'FALLADO'));
+  checkActionButtons('dodge', success, p);
   broadcastState();
 }
 
@@ -2075,23 +2187,34 @@ function resolveDodge(success){
 
 function openGfiModal(p, toR, toC, chainDodge, blockDefenderId){
   pendingGfi = { playerId:p.id, toR, toC, chainDodge: !!chainDodge, blockDefenderId: blockDefenderId || null };
+  gfiRerollUsed = false;
   const attempt = (p.gfiUsed ?? 0) + 1;
-  let msg = `${p.name} intenta "a por ellos" — casilla extra ${attempt}/${maxGfiFor(p)}. Tirad D6.`;
+  let msg = `${p.name} intenta "a por ellos" — casilla extra ${attempt}/${maxGfiFor(p)}. Necesita 2+ (solo falla con un 1). Tirad D6.`;
   if(blockDefenderId){
-    msg = `${p.name} ya no le queda MA para el placaje del Blitz — tirad D6 "a por ellos" para intentarlo igualmente.`;
+    msg = `${p.name} ya no le queda MA para el placaje del Blitz — tirad D6 "a por ellos" para intentarlo igualmente (necesita 2+).`;
   } else if(chainDodge){
     msg += ' Esa casilla también sale de una zona de marcaje: si supera esto, tocará esquivar justo después.';
   }
   document.getElementById('gfiText').textContent = msg;
   document.getElementById('gfiDie').textContent = '–';
+  document.getElementById('gfiResultText').textContent = '';
+  document.getElementById('gfiResultText').className = 'check-result';
+  document.getElementById('gfiRollBtn').style.display = 'block';
+  document.getElementById('gfiActionRow').style.display = 'none';
+  document.getElementById('gfiActionRow').innerHTML = '';
   document.getElementById('gfiModal').classList.add('show');
   broadcastState();
 }
 
 function rollGfiDie(){
+  if(!pendingGfi) return;
   const r = Math.floor(Math.random()*6)+1;
   document.getElementById('gfiDie').textContent = r;
-  log('🎲 A por ellos: tirada ' + r);
+  const p = players.find(x=>x.id===pendingGfi.playerId);
+  const success = r>=2;
+  pendingGfi.lastSuccess = success;
+  log('🎲 A por ellos: tirada ' + r + ' → ' + (success?'CONSEGUIDO':'FALLADO'));
+  checkActionButtons('gfi', success, p);
   broadcastState();
 }
 

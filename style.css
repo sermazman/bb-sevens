@@ -301,6 +301,9 @@ button.full{width:100%; margin-top:6px;}
   background:#100e0c; border:1px solid var(--panel-line); border-radius:6px;
   padding:12px; margin-top:8px; min-height:52px;
 }
+.check-result{font-family:'Anton', sans-serif; font-size:20px; letter-spacing:1px; margin-bottom:10px; min-height:26px;}
+.check-result.ok{color:#5aa469;}
+.check-result.fail{color:var(--bad);}
 .die-face{
   font-family:'JetBrains Mono'; font-weight:800; font-size:22px;
   width:42px; height:42px; border-radius:6px; background:var(--paper); color:#1c1712;

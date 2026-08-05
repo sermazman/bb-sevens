@@ -308,12 +308,10 @@
   <div class="modal">
     <h2>¡ESQUIVA!</h2>
     <p id="dodgeText">Sale de una zona de marcaje.</p>
-    <div class="die-face" id="dodgeDie" style="margin:0 auto 14px auto;">–</div>
-    <button class="primary full" onclick="rollDodgeDie()">Tirar D6</button>
-    <div class="row" style="margin-top:12px;">
-      <button onclick="resolveDodge(true)">✅ Superada</button>
-      <button class="danger" onclick="resolveDodge(false)">❌ Fallada</button>
-    </div>
+    <div class="die-face" id="dodgeDie" style="margin:0 auto 10px auto;">–</div>
+    <div id="dodgeResultText" class="check-result"></div>
+    <button class="primary full" id="dodgeRollBtn" onclick="rollDodgeDie()">Tirar D6</button>
+    <div class="row" id="dodgeActionRow" style="margin-top:12px; display:none;"></div>
   </div>
 </div>
 
@@ -321,12 +319,10 @@
   <div class="modal">
     <h2>¡A POR ELLOS!</h2>
     <p id="gfiText">Casilla extra de movimiento.</p>
-    <div class="die-face" id="gfiDie" style="margin:0 auto 14px auto;">–</div>
-    <button class="primary full" onclick="rollGfiDie()">Tirar D6</button>
-    <div class="row" style="margin-top:12px;">
-      <button onclick="resolveGfi(true)">✅ Sigue en pie</button>
-      <button class="danger" onclick="resolveGfi(false)">❌ Se cae</button>
-    </div>
+    <div class="die-face" id="gfiDie" style="margin:0 auto 10px auto;">–</div>
+    <div id="gfiResultText" class="check-result"></div>
+    <button class="primary full" id="gfiRollBtn" onclick="rollGfiDie()">Tirar D6</button>
+    <div class="row" id="gfiActionRow" style="margin-top:12px; display:none;"></div>
   </div>
 </div>
 

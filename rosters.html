@@ -145,13 +145,13 @@
     <div class="panel">
       <h2>📁 Cargar / Guardar</h2>
       <div class="top-actions">
-        <button onclick="document.getElementById('fileImport').click()">📁 Cargar JSON</button>
+        <button onclick="document.getElementById('fileImport').click()">📁 Cargar Equipo</button>
         <input type="file" id="fileImport" accept="application/json" style="display:none" onchange="importFile(this)">
         <button onclick="newTeam()">🆕 Plantilla en blanco</button>
-        <button class="primary" onclick="exportTeamJSON()">💾 Descargar JSON</button>
+        <button class="primary" onclick="exportTeamJSON()">💾 Descargar Equipo</button>
         <button onclick="exportTeamPDF()">🖨 Descargar PDF</button>
       </div>
-      <div class="small-note" style="margin-top:8px;">El JSON generado aquí es 100% compatible con el botón "Cargar JSON" del tablero principal (mismo formato: teamName / race / players[]).</div>
+      <div class="small-note" style="margin-top:8px;">El archivo de equipo generado aquí es 100% compatible con el botón "Cargar Equipo" del tablero principal (mismo formato: teamName / race / players[]).</div>
     </div>
 
     <div class="panel" id="libraryPanel">
@@ -536,8 +536,8 @@ function importFile(inputEl){
   reader.onload = (e) => {
     let data;
     try{ data = JSON.parse(e.target.result); }
-    catch(err){ alert('El archivo no es un JSON válido.'); return; }
-    if(!data.players || !Array.isArray(data.players)){ alert('El JSON debe tener un array "players".'); return; }
+    catch(err){ alert('El archivo no es un Equipo válido.'); return; }
+    if(!data.players || !Array.isArray(data.players)){ alert('El archivo de Equipo debe tener jugadores.'); return; }
     loadTeamData(data);
   };
   reader.readAsText(file);
@@ -909,7 +909,7 @@ async function loadFromLibrary(fname){
     const res = await fetch('rosters/' + fname);
     if(!res.ok) throw new Error('http ' + res.status);
     const data = await res.json();
-    if(!data.players || !Array.isArray(data.players)){ throw new Error('el JSON no tiene un array "players"'); }
+    if(!data.players || !Array.isArray(data.players)){ throw new Error('el archivo de Equipo no tiene jugadores'); }
     loadTeamData(data);
     status.textContent = 'Cargado: ' + fname;
   } catch(err){

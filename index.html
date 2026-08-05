@@ -71,39 +71,26 @@
 </header>
 </div>
 
-<div class="app">
+<div class="app app-v2">
 
-  <div>
-    <div class="panel setup" id="setupPanel">
-      <h2>🏈 Fase de colocación</h2>
-      <label>Equipo que patea (inicia la entrada)</label>
-      <select id="kickSelect" onchange="onKickChange()">
-        <option value="A">Rojo</option>
-        <option value="B">Azul</option>
-      </select>
-      <div class="small-note" id="setupHint">Recibe: Azul</div>
-      <div class="small-note">Click en un jugador del banquillo (o en una ficha ya colocada, para reposicionarla) y luego en una casilla resaltada dentro de vuestra mitad.</div>
-      <button class="full primary" onclick="startDrive()" style="margin-top:10px;">▶ Iniciar Entrada</button>
-    </div>
-
-    <div class="panel">
-      <h2>Jugador seleccionado</h2>
-      <div id="selInfo" class="mono" style="font-size:13px; color:#cfc3a8;">Ninguno</div>
-      <button class="full" style="margin-top:10px;" onclick="assignBall()">🏈 Asignar balón a este jugador</button>
-      <button class="full" onclick="startPlaceBallFree()">📍 Colocar balón suelto en el campo</button>
-      <button class="full" id="blockBtn" onclick="startBlockTargeting()" style="display:none;">⚔️ Placar</button>
-      <button class="full" id="blitzBtn" onclick="declareBlitz()" style="display:none;">⚡ Blitz</button>
-      <button class="full danger" onclick="knockDown()">👊 Derribar (tirar armadura)</button>
-      <button class="full" id="despistadoBtn" onclick="toggleDespistado()">😵‍💫 Marcar Despistado</button>
-      <button class="full" id="freePushBtn" onclick="toggleFreePush()">🔓 Activar todos los empujes</button>
-      <button class="full" id="recoveryBtn" onclick="handleRecoveryButton()" style="display:none;">🧍 Levantar (marcar de pie)</button>
-      <button class="full" id="jumpUpBtn" onclick="jumpUpBlitzCheck()" style="display:none;">🤸 Levantar de un salto y placar</button>
-      <button class="full danger" onclick="sendToBench()">Sacar del campo (al banquillo)</button>
-      <button class="full danger" style="margin-top:14px;" onclick="resetActivations()">⚠️ Reiniciar activaciones (mismo turno)</button>
+  <div class="side-bench-col" id="benchColA">
+    <div class="team-wide-panel a">
+      <input class="team-name-input" id="teamAName" type="text" value="Equipo Rojo" style="border-color:var(--team-a); width:100%;">
+      <h3>Plantilla en banquillo</h3>
+      <div class="roster-list" id="rosterA"></div>
+      <div class="row" style="margin-top:8px;">
+        <button onclick="openAddPlayer('A')">+ Añadir</button>
+        <button onclick="quickFill('A')">7 rápidos</button>
+      </div>
+      <div class="row" style="margin-top:6px;">
+        <button onclick="document.getElementById('fileImportA').click()">📁 Cargar Equipo</button>
+        <button onclick="exportTeam('A')">💾 Guardar Equipo</button>
+      </div>
+      <input type="file" id="fileImportA" accept="application/json" style="display:none" onchange="importTeamFile('A', this)">
     </div>
   </div>
 
-  <div>
+  <div class="center-col">
     <div class="scoreboard">
       <div class="sb-team">
         <div class="label" id="sbNameA">Rojo</div>
@@ -195,6 +182,20 @@
       </div>
     </div>
 
+    <div class="panel setup" id="setupPanel">
+      <h2>🏈 Fase de colocación</h2>
+      <div class="row" style="align-items:center; gap:10px;">
+        <label style="margin:0; white-space:nowrap;">Equipo que patea:</label>
+        <select id="kickSelect" onchange="onKickChange()">
+          <option value="A">Rojo</option>
+          <option value="B">Azul</option>
+        </select>
+        <button class="full primary" onclick="startDrive()" style="margin:0;">▶ Iniciar Entrada</button>
+      </div>
+      <div class="small-note" id="setupHint">Recibe: Azul</div>
+      <div class="small-note">Click en un jugador del banquillo (o en una ficha ya colocada, para reposicionarla) y luego en una casilla resaltada dentro de vuestra mitad.</div>
+    </div>
+
     <div class="reserve-zone">
       <div class="reserve-team">
         <h2 style="color:var(--team-a); display:inline;" id="reserveHeaderA">🩹 Rojo — bajas</h2>
@@ -215,82 +216,69 @@
     </div>
     <div class="small-note">Movimiento casilla a casilla. Al agotar el MA podéis seguir hasta 2 casillas más "a por ellos" (3 si el jugador tiene la habilidad "Esprintar"), 1D6 por casilla, os la jugáis. Click derecho para terminar la activación. Pasa el ratón sobre una ficha del campo para ver su MA restante. Seleccionad vuestro jugador y click directo en un rival adyacente para placar al momento (funciona en cualquier punto de un Blitz: al inicio, a mitad de movimiento, o al final). Al fallar una esquiva o "a por ellos": armadura (2D6) → si no rompe, TUMBADO; si rompe, tirada de heridas (2D6) y elegís Aturdido / Inconsciente / Herido leve / Herida grave / Muerto. Un empujón fuera del campo va directo a heridas, sin armadura (y si sale Aturdido, simplemente vuelve al banquillo).</div>
 
-    <div class="teams-wide">
-      <div class="team-wide-panel a">
-        <div class="row" style="align-items:center; gap:8px;">
-          <input class="team-name-input" id="teamAName" type="text" value="Equipo Rojo" style="border-color:var(--team-a); flex:1;">
-        </div>
-        <h3>Plantilla en banquillo</h3>
-        <div class="roster-list" id="rosterA"></div>
-        <div class="row" style="margin-top:8px;">
-          <button onclick="openAddPlayer('A')">+ Añadir jugador</button>
-          <button onclick="quickFill('A')">7 rápidos</button>
-        </div>
-        <div class="row" style="margin-top:6px;">
-          <button onclick="document.getElementById('fileImportA').click()">📁 Cargar JSON</button>
-          <button onclick="exportTeam('A')">💾 Guardar JSON</button>
-        </div>
-        <input type="file" id="fileImportA" accept="application/json" style="display:none" onchange="importTeamFile('A', this)">
-      </div>
-
-      <div class="team-wide-panel b">
-        <div class="row" style="align-items:center; gap:8px;">
-          <input class="team-name-input" id="teamBName" type="text" value="Equipo Azul" style="border-color:var(--team-b); flex:1;">
-        </div>
-        <h3>Plantilla en banquillo</h3>
-        <div class="roster-list" id="rosterB"></div>
-        <div class="row" style="margin-top:8px;">
-          <button onclick="openAddPlayer('B')">+ Añadir jugador</button>
-          <button onclick="quickFill('B')">7 rápidos</button>
-        </div>
-        <div class="row" style="margin-top:6px;">
-          <button onclick="document.getElementById('fileImportB').click()">📁 Cargar JSON</button>
-          <button onclick="exportTeam('B')">💾 Guardar JSON</button>
-        </div>
-        <input type="file" id="fileImportB" accept="application/json" style="display:none" onchange="importTeamFile('B', this)">
+    <div class="panel" id="selPlayerPanel">
+      <h2>Jugador seleccionado</h2>
+      <div id="selInfo" class="mono" style="font-size:13px; color:#cfc3a8; margin-bottom:10px;">Ninguno</div>
+      <div class="sel-btn-row">
+        <button onclick="assignBall()">🏈 Asignar balón</button>
+        <button onclick="startPlaceBallFree()">📍 Colocar balón suelto</button>
+        <button id="blockBtn" onclick="startBlockTargeting()" style="display:none;">⚔️ Placar</button>
+        <button id="blitzBtn" onclick="declareBlitz()" style="display:none;">⚡ Blitz</button>
+        <button class="danger" onclick="knockDown()">👊 Derribar (armadura)</button>
+        <button id="despistadoBtn" onclick="toggleDespistado()">😵‍💫 Marcar Despistado</button>
+        <button id="freePushBtn" onclick="toggleFreePush()">🔓 Activar todos los empujes</button>
+        <button id="recoveryBtn" onclick="handleRecoveryButton()" style="display:none;">🧍 Levantar</button>
+        <button id="jumpUpBtn" onclick="jumpUpBlitzCheck()" style="display:none;">🤸 Levantar de un salto y placar</button>
+        <button class="danger" onclick="sendToBench()">Sacar del campo</button>
+        <button class="danger" onclick="resetActivations()">⚠️ Reiniciar activaciones</button>
       </div>
     </div>
-    <div class="small-note" style="margin-top:6px;">Si el JSON no trae ST/AG/PA/AV/habilidades, se muestran como "–" — rellénalas a mano si os ayuda a llevar la partida.</div>
+
+    <div class="tools-row">
+      <div class="panel">
+        <h2>Dado de bloqueo</h2>
+        <div class="row">
+          <button onclick="rollBlock(1)">1 dado</button>
+          <button onclick="rollBlock(2)">2 dados</button>
+          <button onclick="rollBlock(3)">3 dados</button>
+        </div>
+        <div class="block-face-list" id="blockResult"></div>
+        <div class="small-note">Elegid vosotros qué resultado aplicar según quién elige (atacante/defensor).</div>
+      </div>
+
+      <div class="panel">
+        <h2>Dados genéricos</h2>
+        <label>Etiqueta (opcional)</label>
+        <input type="text" id="d6label" placeholder="ej. Esquivar, Recoger, Armadura...">
+        <div class="row">
+          <button onclick="rollGeneric(6,1)">Tirar 1d6</button>
+          <button onclick="rollGeneric(6,2)">Tirar 2d6</button>
+          <button onclick="rollGeneric(8,1)">Tirar 1d8</button>
+        </div>
+        <div class="block-face-list" id="genericResult"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Historial</h2>
+        <div class="hist" id="hist"></div>
+      </div>
+    </div>
   </div>
 
-  <div>
-    <div class="panel">
-      <h2>Dado de bloqueo</h2>
-      <div class="row">
-        <button onclick="rollBlock(1)">1 dado</button>
-        <button onclick="rollBlock(2)">2 dados</button>
-        <button onclick="rollBlock(3)">3 dados</button>
+  <div class="side-bench-col" id="benchColB">
+    <div class="team-wide-panel b">
+      <input class="team-name-input" id="teamBName" type="text" value="Equipo Azul" style="border-color:var(--team-b); width:100%;">
+      <h3>Plantilla en banquillo</h3>
+      <div class="roster-list" id="rosterB"></div>
+      <div class="row" style="margin-top:8px;">
+        <button onclick="openAddPlayer('B')">+ Añadir</button>
+        <button onclick="quickFill('B')">7 rápidos</button>
       </div>
-      <div class="block-face-list" id="blockResult"></div>
-      <div class="small-note">Elegid vosotros qué resultado aplicar según quién elige (atacante/defensor).</div>
-    </div>
-
-    <div class="panel">
-      <h2>Dados genéricos</h2>
-      <label>Etiqueta (opcional)</label>
-      <input type="text" id="d6label" placeholder="ej. Esquivar, Recoger, Armadura...">
-      <div class="row">
-        <button onclick="rollGeneric(6,1)">Tirar 1d6</button>
-        <button onclick="rollGeneric(6,2)">Tirar 2d6</button>
-        <button onclick="rollGeneric(8,1)">Tirar 1d8</button>
+      <div class="row" style="margin-top:6px;">
+        <button onclick="document.getElementById('fileImportB').click()">📁 Cargar Equipo</button>
+        <button onclick="exportTeam('B')">💾 Guardar Equipo</button>
       </div>
-      <div class="block-face-list" id="genericResult"></div>
-    </div>
-
-    <div class="panel">
-      <h2>Pase</h2>
-      <label>Habilidad de Pase objetivo (PA)</label>
-      <input type="number" id="paTarget" value="3" min="1" max="6">
-      <button class="full primary" onclick="rollPass()">Tirar pase</button>
-      <div class="die-result" id="passOut">
-        <div class="die-face">–</div>
-        <div style="font-size:12px; color:#a99b7f;">6 siempre acierta, 1 siempre fumble</div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <h2>Historial</h2>
-      <div class="hist" id="hist"></div>
+      <input type="file" id="fileImportB" accept="application/json" style="display:none" onchange="importTeamFile('B', this)">
     </div>
   </div>
 
@@ -444,12 +432,10 @@
   <div class="modal">
     <h2>RECOGER BALÓN</h2>
     <p id="catchText">Intento de recogida.</p>
-    <div class="die-face" id="catchDie" style="margin:0 auto 14px auto;">–</div>
-    <button class="primary full" onclick="rollCatchDie()">Tirar D6</button>
-    <div class="row" style="margin-top:12px;">
-      <button onclick="resolveCatch(true)">✅ Recoge</button>
-      <button class="danger" onclick="resolveCatch(false)">❌ Falla</button>
-    </div>
+    <div class="die-face" id="catchDie" style="margin:0 auto 10px auto;">–</div>
+    <div id="catchResultText" class="check-result"></div>
+    <button class="primary full" id="catchRollBtn" onclick="rollCatchDie()">Tirar D6</button>
+    <div class="row" id="catchActionRow" style="margin-top:12px; display:none;"></div>
   </div>
 </div>
 

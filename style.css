@@ -75,14 +75,26 @@ header.top .sub{font-size:12px; letter-spacing:2px; text-transform:uppercase; co
 
 /* ---- Layout ---- */
 .app{
-  max-width:1400px;
+  max-width:1500px;
   margin:0 auto;
   display:grid;
-  grid-template-columns: 250px minmax(0,1fr) 280px;
+  grid-template-columns: 235px minmax(0,1fr) 235px;
   gap:16px;
 }
 @media (max-width: 1100px){
   .app{grid-template-columns: 1fr;}
+}
+.side-bench-col{min-width:0;}
+.center-col{min-width:0;}
+.sel-btn-row{display:flex; flex-wrap:wrap; gap:8px; margin-top:4px;}
+.sel-btn-row button{width:auto; margin-top:0;}
+.tools-row{
+  display:grid;
+  grid-template-columns: 1fr 1fr 1.3fr;
+  gap:16px;
+  margin-top:14px;
+}
+@media (max-width: 900px){ .tools-row{grid-template-columns:1fr;} }
 }
 
 .panel{

@@ -17,6 +17,7 @@ let pendingDodge = null; // { playerId, toR, toC }
 let pendingGfi = null;   // { playerId, toR, toC }
 let dodgeRerollUsed = false;
 let gfiRerollUsed = false;
+let catchRerollUsed = false;
 let armorForPlayer = null; // player id currently being armor-rolled
 let state = { half: 1, active: 'A', turns: { A: 0, B: 0 } };
 let teamRace = { A: '', B: '' };
@@ -250,6 +251,7 @@ function snapshotState(){
     gfiText: document.getElementById('gfiText').textContent,
     gfiDieText: document.getElementById('gfiDie').textContent,
     gfiRerollUsed,
+    catchRerollUsed,
     armorModalOpen: document.getElementById('armorModal').classList.contains('show'),
     armorText: document.getElementById('armorText').textContent,
     armorDie1: document.getElementById('armorDie1').textContent,
@@ -436,6 +438,17 @@ function applyRemoteState(payload){
 
   document.getElementById('catchText').textContent = payload.catchText || '';
   document.getElementById('catchDie').textContent = payload.catchDieText || '–';
+  catchRerollUsed = !!payload.catchRerollUsed;
+  if(pendingCatch && pendingCatch.lastSuccess !== undefined){
+    const cp = players.find(x=>x.id===pendingCatch.playerId);
+    checkActionButtons('catch', pendingCatch.lastSuccess, cp);
+  } else {
+    document.getElementById('catchResultText').textContent = '';
+    document.getElementById('catchResultText').className = 'check-result';
+    document.getElementById('catchRollBtn').style.display = 'block';
+    document.getElementById('catchActionRow').style.display = 'none';
+    document.getElementById('catchActionRow').innerHTML = '';
+  }
   pendingJumpUpCheck = payload.pendingJumpUpCheck;
   document.getElementById('jumpUpText').textContent = payload.jumpUpText || '';
   document.getElementById('jumpUpDie').textContent = payload.jumpUpDieText || '–';
@@ -502,14 +515,14 @@ function openAddPlayer(team){
   if(num === null) return;
   const name = prompt('Nombre (opcional):') || ('Jugador ' + num);
   const ma = parseFloat(prompt('Movimiento (MA):', '6')) || 6;
-  players.push({ id: nextId++, team, num, name, ma, remainingMove: ma, gfiUsed:0, condition:'standing', blockedThisActivation:false, freePushOverride:false, dodgeSkillUsedThisTurn:false, row:null, col:null, activated:false, onPitch:false });
+  players.push({ id: nextId++, team, num, name, ma, remainingMove: ma, gfiUsed:0, condition:'standing', blockedThisActivation:false, freePushOverride:false, dodgeSkillUsedThisTurn:false, catchSkillUsedThisTurn:false, row:null, col:null, activated:false, onPitch:false });
   renderRosters();
   broadcastState();
 }
 
 function quickFill(team){
   for(let i=1;i<=7;i++){
-    players.push({ id: nextId++, team, num:i, name:'Jugador '+i, ma:6, remainingMove:6, gfiUsed:0, condition:'standing', blockedThisActivation:false, freePushOverride:false, dodgeSkillUsedThisTurn:false, row:null, col:null, activated:false, onPitch:false });
+    players.push({ id: nextId++, team, num:i, name:'Jugador '+i, ma:6, remainingMove:6, gfiUsed:0, condition:'standing', blockedThisActivation:false, freePushOverride:false, dodgeSkillUsedThisTurn:false, catchSkillUsedThisTurn:false, row:null, col:null, activated:false, onPitch:false });
   }
   renderRosters();
   broadcastState();
@@ -545,7 +558,7 @@ function importTeamFile(team, inputEl){
         id: nextId++, team,
         num: pd.num ?? '?',
         name: pd.name || ('Jugador ' + (pd.num ?? '')),
-        ma, remainingMove: ma, gfiUsed:0, condition:'standing', blockedThisActivation:false, freePushOverride:false, dodgeSkillUsedThisTurn:false,
+        ma, remainingMove: ma, gfiUsed:0, condition:'standing', blockedThisActivation:false, freePushOverride:false, dodgeSkillUsedThisTurn:false, catchSkillUsedThisTurn:false,
         st: pd.st, ag: pd.ag, pa: pd.pa, av: pd.av,
         position: pd.position || null,
         skills: pd.skills || [],
@@ -1531,12 +1544,16 @@ function currentPushTargets(mover, offsets, freePush){
     return list;
   }
   const raw = offsets.map(o=>({ row: mover.row+o.dr, col: mover.col+o.dc }));
-  const isOccupied = t => (t.row>=0 && t.row<ROWS && t.col>=0 && t.col<COLS) && !!occupiedBy(t.row, t.col);
-  const hasFreeOption = raw.some(t => !isOccupied(t));
-  if(hasFreeOption){
-    return raw.filter(t => !isOccupied(t));
-  }
-  return raw; // las 3 ocupadas: empuje en cadena forzoso, cualquiera es válida
+  const classify = t => {
+    if(t.row<0 || t.row>=ROWS || t.col<0 || t.col>=COLS) return 'offboard';
+    return occupiedBy(t.row, t.col) ? 'occupied' : 'free';
+  };
+  const withClass = raw.map(t => ({ row:t.row, col:t.col, kind: classify(t) }));
+  const free = withClass.filter(t => t.kind==='free');
+  if(free.length) return free;
+  const offboard = withClass.filter(t => t.kind==='offboard');
+  if(offboard.length) return offboard;
+  return withClass; // las 3 ocupadas: empuje en cadena forzoso, cualquiera es válida
 }
 
 function isValidPushCell(mover, r, c, offsets, freePush){
@@ -1813,22 +1830,35 @@ function resolveBounce(r,c){
 }
 
 function openCatchModal(p){
-  pendingCatch = p.id;
-  document.getElementById('catchText').textContent = `${p.name} intenta recoger el balón. Tirad D6 (AG ${p.ag ?? '-'}) y decidid.`;
+  const target = parseAgTarget(p.ag);
+  pendingCatch = { playerId: p.id, target };
+  catchRerollUsed = false;
+  document.getElementById('catchText').textContent = `${p.name} intenta recoger el balón — necesita ${target}+ (AG${p.ag ?? '?'}, sin modificadores). Tirad D6.`;
   document.getElementById('catchDie').textContent = '–';
+  document.getElementById('catchResultText').textContent = '';
+  document.getElementById('catchResultText').className = 'check-result';
+  document.getElementById('catchRollBtn').style.display = 'block';
+  document.getElementById('catchActionRow').style.display = 'none';
+  document.getElementById('catchActionRow').innerHTML = '';
   document.getElementById('catchModal').classList.add('show');
   broadcastState();
 }
 
 function rollCatchDie(){
+  if(!pendingCatch) return;
   const r = Math.floor(Math.random()*6)+1;
   document.getElementById('catchDie').textContent = r;
-  log('🎲 Recoger balón: tirada ' + r);
+  const p = players.find(x=>x.id===pendingCatch.playerId);
+  const success = r===6 ? true : (r===1 ? false : r>=pendingCatch.target);
+  pendingCatch.lastSuccess = success;
+  log('🎲 Recoger balón: tirada ' + r + ' (necesitaba ' + pendingCatch.target + '+) → ' + (success?'CONSEGUIDO':'FALLADO'));
+  checkActionButtons('catch', success, p);
   broadcastState();
 }
 
 function resolveCatch(success){
-  const p = players.find(x=>x.id===pendingCatch);
+  if(!pendingCatch){ broadcastState(); return; }
+  const p = players.find(x=>x.id===pendingCatch.playerId);
   document.getElementById('catchModal').classList.remove('show');
   pendingCatch = null;
   if(p && success){
@@ -2074,7 +2104,7 @@ function checkActionButtons(prefix, success, p){
   actionRow.innerHTML = '';
   actionRow.style.display = 'flex';
 
-  const resolveFn = prefix==='dodge' ? resolveDodge : resolveGfi;
+  const resolveFn = prefix==='dodge' ? resolveDodge : prefix==='gfi' ? resolveGfi : resolveCatch;
 
   if(success){
     const btn = document.createElement('button');
@@ -2085,12 +2115,13 @@ function checkActionButtons(prefix, success, p){
     return;
   }
 
-  const usedFlag = prefix==='dodge' ? dodgeRerollUsed : gfiRerollUsed;
+  const usedFlag = prefix==='dodge' ? dodgeRerollUsed : prefix==='gfi' ? gfiRerollUsed : catchRerollUsed;
   if(!usedFlag){
-    const hasDodgeSkill = prefix==='dodge' && playerHasSkill(p, 'esquiva', 'dodge') && !p.dodgeSkillUsedThisTurn;
-    if(hasDodgeSkill){
+    const hasFreeSkillReroll = (prefix==='dodge' && playerHasSkill(p, 'esquiva', 'dodge') && !p.dodgeSkillUsedThisTurn) ||
+                                (prefix==='catch' && playerHasSkill(p, 'recepción', 'recepcion', 'catch') && !p.catchSkillUsedThisTurn);
+    if(hasFreeSkillReroll){
       const btn = document.createElement('button');
-      btn.textContent = '🔁 Usar Esquivar (repite gratis)';
+      btn.textContent = prefix==='dodge' ? '🔁 Usar Esquivar (repite gratis)' : '🔁 Usar Recepción (repite gratis)';
       btn.onclick = ()=> useCheckReroll(prefix, true);
       actionRow.appendChild(btn);
     } else if((teamRerollsLeft[p.team] || 0) > 0){
@@ -2109,18 +2140,23 @@ function checkActionButtons(prefix, success, p){
 }
 
 function useCheckReroll(prefix, isSkill){
-  const pending = prefix==='dodge' ? pendingDodge : pendingGfi;
+  const pending = prefix==='dodge' ? pendingDodge : prefix==='gfi' ? pendingGfi : pendingCatch;
   if(!pending) return;
   const p = players.find(x=>x.id===pending.playerId);
   if(!p) return;
-  if(prefix==='dodge') dodgeRerollUsed = true; else gfiRerollUsed = true;
+  if(prefix==='dodge') dodgeRerollUsed = true;
+  else if(prefix==='gfi') gfiRerollUsed = true;
+  else catchRerollUsed = true;
   if(!isSkill){
     teamRerollsLeft[p.team] = Math.max(0, (teamRerollsLeft[p.team]||0) - 1);
     log('🔄 ' + teamName(p.team) + ' gasta un reroll — quedan ' + teamRerollsLeft[p.team] + '.');
     renderStaffPanels();
-  } else {
+  } else if(prefix==='dodge'){
     p.dodgeSkillUsedThisTurn = true;
     log('🔁 ' + p.name + ' repite gratis con su habilidad Esquivar (ya no podrá volver a usarla este turno).');
+  } else {
+    p.catchSkillUsedThisTurn = true;
+    log('🔁 ' + p.name + ' repite gratis con su habilidad Recepción (ya no podrá volver a usarla este turno).');
   }
   pending.lastSuccess = undefined;
   document.getElementById(prefix+'ActionRow').style.display = 'none';
@@ -2454,6 +2490,7 @@ function beginTurn(team){
     p.gfiUsed = 0;
     p.blockedThisActivation = false;
     p.dodgeSkillUsedThisTurn = false;
+    p.catchSkillUsedThisTurn = false;
   });
   renderScoreboard(); renderRosters(); renderPitch();
   updateStatus('Turno de ' + teamName(team));
@@ -2643,18 +2680,6 @@ function rollGeneric(sides, count){
   });
   const sumText = count>1 ? ' (suma ' + results.reduce((a,b)=>a+b,0) + ')' : '';
   log('🎲 ' + count + 'd' + sides + (label?(' ('+label+')'):'') + ': ' + results.join(', ') + sumText);
-}
-
-function rollPass(){
-  const target = parseInt(document.getElementById('paTarget').value)||3;
-  const r = Math.floor(Math.random()*6)+1;
-  let result, color;
-  if(r===6){ result='PRECISO'; color='var(--good)'; }
-  else if(r===1){ result='FUMBLE'; color='var(--bad)'; }
-  else if(r>=target){ result='PRECISO'; color='var(--good)'; }
-  else { result='IMPRECISO'; color='var(--gold)'; }
-  document.getElementById('passOut').innerHTML = `<div class="die-face">${r}</div><div style="font-size:13px;">Objetivo ${target}+ → <b style="color:${color}">${result}</b></div>`;
-  log('🎲 Pase (obj. '+target+'+): tirada ' + r + ' → ' + result);
 }
 
 // ---------- Save / Load ----------

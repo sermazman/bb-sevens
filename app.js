@@ -640,8 +640,8 @@ function renderRosters(){
 function renderReserveZone(){
   ['A','B'].forEach(team=>{
     const listEl = document.getElementById('casualtyList'+team);
-    const header = document.getElementById('reserveHeader'+team);
-    if(header) header.textContent = '🩹 ' + teamName(team) + ' — bajas';
+    const label = document.getElementById('bajasLabel'+team);
+    if(label) label.style.color = tokenColorFor({ team });
     if(!listEl) return;
     const casualties = players.filter(p=>p.team===team &&
       (p.condition==='ko' || p.condition==='injured' || p.condition==='injuredGrave' || p.condition==='dead'));
@@ -1233,7 +1233,8 @@ function selectPlayerLive(id){
 }
 
 function renderSelInfo(){
-  const el = document.getElementById('selInfo');
+  const elLeft = document.getElementById('selInfoLeft');
+  const elRight = document.getElementById('selInfoRight');
   const btn = document.getElementById('recoveryBtn');
   const blockBtn = document.getElementById('blockBtn');
   const blitzBtn = document.getElementById('blitzBtn');
@@ -1241,7 +1242,8 @@ function renderSelInfo(){
   const freePushBtn = document.getElementById('freePushBtn');
   const jumpUpBtn = document.getElementById('jumpUpBtn');
   if(selected===null){
-    el.innerHTML = 'Ninguno';
+    elLeft.innerHTML = 'Ninguno';
+    elRight.innerHTML = '';
     btn.style.display = 'none';
     blockBtn.style.display = 'none';
     blitzBtn.style.display = 'none';
@@ -1252,7 +1254,8 @@ function renderSelInfo(){
   }
   const p = players.find(x=>x.id===selected);
   if(!p){
-    el.innerHTML = 'Ninguno';
+    elLeft.innerHTML = 'Ninguno';
+    elRight.innerHTML = '';
     btn.style.display = 'none';
     blockBtn.style.display = 'none';
     blitzBtn.style.display = 'none';
@@ -1267,12 +1270,13 @@ function renderSelInfo(){
   const blitzLabel = (blitzActivePlayer===p.id) ? ' · <span style="color:var(--gold)">⚡ BLITZ EN CURSO</span>' : '';
   const freePushLabel = p.freePushOverride ? ' · <span style="color:var(--gold)">🔓 EMPUJE LIBRE</span>' : '';
   const skillsText = (p.skills && p.skills.length) ? p.skills.join(', ') : 'Sin habilidades';
-  el.innerHTML = `
+  elLeft.innerHTML = `
     <div style="font-weight:700; font-size:14px; margin-bottom:4px;">${p.name} <span style="color:#a99b7f; font-weight:400;">#${p.num} · ${teamName(p.team)}</span></div>
     <div style="color:#a99b7f; font-size:11.5px; margin-bottom:4px;">${p.position || 'Sin posición'}</div>
-    <div class="mono" style="margin-bottom:4px;">MA ${p.ma} (restante ${p.remainingMove ?? p.ma}) · ST ${p.st ?? '-'} · AG ${p.ag ?? '-'} · PA ${p.pa ?? '-'} · AV ${p.av ?? '-'}</div>
-    <div style="font-size:11.5px; font-style:italic; color:#8a7d64; margin-bottom:4px;">${skillsText}</div>
     <div>${(p.gfiUsed??0)>0?'A por ellos '+p.gfiUsed+'/'+maxGfiFor(p):''}${condLabel}${blitzLabel}${freePushLabel}${ball.carrierId===p.id?' · 🏈 lleva el balón':''}</div>`;
+  elRight.innerHTML = `
+    <div style="font-size:13px; margin-bottom:4px;">MA ${p.ma} (restante ${p.remainingMove ?? p.ma}) · ST ${p.st ?? '-'} · AG ${p.ag ?? '-'} · PA ${p.pa ?? '-'} · AV ${p.av ?? '-'}</div>
+    <div style="font-size:11.5px; font-style:italic; color:#8a7d64;">${skillsText}</div>`;
 
   const canAct = phase==='live' && p.team===state.active && !p.activated && p.condition==='standing';
   blockBtn.style.display = (canAct && !p.blockedThisActivation) ? 'block' : 'none';

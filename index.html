@@ -187,7 +187,15 @@
     </div>
 
     <div class="pitch-wrap" id="pitchWrap">
+      <div class="bajas-col" id="bajasColA">
+        <div class="bajas-label" id="bajasLabelA">BAJAS</div>
+        <div id="casualtyListA" class="bajas-chips"><span class="small-note">Ninguna</span></div>
+      </div>
       <div class="pitch" id="pitch" oncontextmenu="return handlePitchRightClick(event)"></div>
+      <div class="bajas-col" id="bajasColB">
+        <div class="bajas-label" id="bajasLabelB">BAJAS</div>
+        <div id="casualtyListB" class="bajas-chips"><span class="small-note">Ninguna</span></div>
+      </div>
     </div>
 
     <div class="panel setup" id="setupPanel">
@@ -204,17 +212,6 @@
       <div class="small-note">Click en un jugador del banquillo (o en una ficha ya colocada, para reposicionarla) y luego en una casilla resaltada dentro de vuestra mitad.</div>
     </div>
 
-    <div class="reserve-zone">
-      <div class="reserve-team">
-        <h2 style="color:var(--team-a); display:inline;" id="reserveHeaderA">🩹 Rojo — bajas</h2>
-        <div id="casualtyListA" class="reserve-tags" style="display:inline-flex; vertical-align:middle; margin-left:8px;"><span class="small-note">Ninguna</span></div>
-      </div>
-      <div class="reserve-team">
-        <h2 style="color:var(--team-b); display:inline;" id="reserveHeaderB">🩹 Azul — bajas</h2>
-        <div id="casualtyListB" class="reserve-tags" style="display:inline-flex; vertical-align:middle; margin-left:8px;"><span class="small-note">Ninguna</span></div>
-      </div>
-    </div>
-
     <div class="legend">
       <span style="background:var(--turf-2)"></span>Campo central
       <span style="background:var(--turf-wide)"></span>Zona lateral
@@ -225,7 +222,10 @@
 
     <div class="panel" id="selPlayerPanel">
       <h2>Jugador seleccionado</h2>
-      <div id="selInfo" class="mono" style="font-size:13px; color:#cfc3a8; margin-bottom:10px;">Ninguno</div>
+      <div class="sel-info-grid">
+        <div id="selInfoLeft" class="mono">Ninguno</div>
+        <div id="selInfoRight" class="mono"></div>
+      </div>
       <div class="sel-btn-row">
         <button onclick="assignBall()">🏈 Asignar balón</button>
         <button onclick="startPlaceBallFree()">📍 Colocar balón suelto</button>

@@ -86,6 +86,15 @@ header.top .sub{font-size:12px; letter-spacing:2px; text-transform:uppercase; co
 }
 .side-bench-col{min-width:0;}
 .center-col{min-width:0;}
+.sel-info-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:16px;
+  margin-bottom:10px;
+  font-size:13px;
+  color:#cfc3a8;
+}
+@media (max-width: 700px){ .sel-info-grid{grid-template-columns:1fr;} }
 .sel-btn-row{display:flex; flex-wrap:wrap; gap:8px; margin-top:4px;}
 .sel-btn-row button{width:auto; margin-top:0;}
 .tools-row{
@@ -172,14 +181,16 @@ button.full{width:100%; margin-top:6px;}
 .pitch-wrap{
   overflow-x:auto;
   overflow-y:visible;
-  padding:42px;
+  padding:16px;
   background:#0e0d0b;
   border:1px solid var(--panel-line);
   border-radius:6px;
   position:relative;
-  width:max-content;
-  max-width:100%;
-  margin:0 auto;
+  width:100%;
+  display:flex;
+  align-items:stretch;
+  justify-content:center;
+  gap:8px;
 }
 .sb-reroll{
   display:flex; flex-direction:column; align-items:center; gap:2px;
@@ -191,13 +202,37 @@ button.full{width:100%; margin-top:6px;}
 .sb-reroll-count{font-size:13px; font-weight:800; color:var(--gold);}
 .sb-reroll-btns{display:flex; gap:3px;}
 .sb-reroll-btns button{padding:2px 6px; font-size:9px; min-width:0; margin:0;}
+.bajas-col{
+  flex:1;
+  min-width:90px;
+  max-width:170px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:8px 6px;
+  gap:8px;
+}
+.bajas-label{
+  font-family:'Anton', sans-serif;
+  font-size:13px;
+  letter-spacing:2px;
+  text-transform:uppercase;
+}
+.bajas-chips{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+  width:100%;
+}
 .pitch{
   display:grid;
   grid-template-columns: repeat(20, var(--cell));
   grid-template-rows: repeat(11, var(--cell));
   gap:1px;
   width:max-content;
-  margin:0 auto;
+  margin:0;
+  flex-shrink:0;
   position:relative;
 }
 .cell{
@@ -351,26 +386,6 @@ button.full{width:100%; margin-top:6px;}
 
 .small-note{font-size:11px; color:#8a7d64; margin-top:4px;}
 
-/* ---- Reserve strip (KO / injured, placeholder for phase 3) ---- */
-.reserve-zone{
-  background:linear-gradient(180deg, var(--panel-2), var(--panel));
-  border:1px solid var(--bad);
-  border-radius:6px;
-  padding:10px 16px;
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap:18px;
-  margin-top:14px;
-  align-items:center;
-}
-@media (max-width: 700px){ .reserve-zone{grid-template-columns:1fr;} }
-.reserve-team h2{font-size:13px; margin:0; white-space:nowrap;}
-.reserve-zone .small-note{margin:0;}
-.reserve-tags{display:flex; flex-wrap:wrap; gap:8px; margin:4px 0 2px 0;}
-.reserve-tag{
-  background:#100e0c; border:1px solid var(--panel-line); border-radius:4px;
-  padding:3px 8px; font-size:11px; color:var(--paper); white-space:nowrap;
-}
 .chip-wrap{position:relative; flex-shrink:0;}
 .casualty-badge{
   position:absolute; top:-5px; right:-5px;

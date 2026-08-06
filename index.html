@@ -78,12 +78,15 @@
       <input class="team-name-input" id="teamAName" type="text" value="Equipo Rojo" style="border-color:var(--team-a); width:100%;">
       <h3>Plantilla en banquillo</h3>
       <div class="roster-list" id="rosterA"></div>
-      <div class="row" style="margin-top:8px;">
+      <div class="bench-divider"></div>
+      <h3 id="bajasHeaderA">Bajas</h3>
+      <div id="casualtyListA" class="bajas-tags"><span class="small-note">Ninguna</span></div>
+      <div class="bench-divider"></div>
+      <div class="row">
         <button onclick="openAddPlayer('A')">+ Añadir</button>
         <button onclick="quickFill('A')">7 rápidos</button>
       </div>
-      <div class="bench-divider"></div>
-      <div class="row">
+      <div class="row" style="margin-top:6px;">
         <button onclick="document.getElementById('fileImportA').click()">📁 Cargar Equipo</button>
         <button onclick="exportTeam('A')">💾 Guardar Equipo</button>
       </div>
@@ -92,9 +95,6 @@
         <button onclick="presetPositions('A')">📋 Posiciones predefinidas</button>
       </div>
       <input type="file" id="fileImportA" accept="application/json" style="display:none" onchange="importTeamFile('A', this)">
-      <div class="bench-divider"></div>
-      <h3 id="bajasHeaderA">Bajas</h3>
-      <div id="casualtyListA" class="bajas-tags"><span class="small-note">Ninguna</span></div>
     </div>
   </div>
 
@@ -279,12 +279,15 @@
       <input class="team-name-input" id="teamBName" type="text" value="Equipo Azul" style="border-color:var(--team-b); width:100%;">
       <h3>Plantilla en banquillo</h3>
       <div class="roster-list" id="rosterB"></div>
-      <div class="row" style="margin-top:8px;">
+      <div class="bench-divider"></div>
+      <h3 id="bajasHeaderB">Bajas</h3>
+      <div id="casualtyListB" class="bajas-tags"><span class="small-note">Ninguna</span></div>
+      <div class="bench-divider"></div>
+      <div class="row">
         <button onclick="openAddPlayer('B')">+ Añadir</button>
         <button onclick="quickFill('B')">7 rápidos</button>
       </div>
-      <div class="bench-divider"></div>
-      <div class="row">
+      <div class="row" style="margin-top:6px;">
         <button onclick="document.getElementById('fileImportB').click()">📁 Cargar Equipo</button>
         <button onclick="exportTeam('B')">💾 Guardar Equipo</button>
       </div>
@@ -293,9 +296,6 @@
         <button onclick="presetPositions('B')">📋 Posiciones predefinidas</button>
       </div>
       <input type="file" id="fileImportB" accept="application/json" style="display:none" onchange="importTeamFile('B', this)">
-      <div class="bench-divider"></div>
-      <h3 id="bajasHeaderB">Bajas</h3>
-      <div id="casualtyListB" class="bajas-tags"><span class="small-note">Ninguna</span></div>
     </div>
   </div>
 

@@ -162,6 +162,7 @@
   }
   .fcell.los-row{box-shadow: inset 0 3px 0 var(--chalk);}
   .fcell.los-row.lateral{box-shadow: inset 0 3px 0 var(--chalk), inset 0 0 0 1px rgba(216,169,75,0.5);}
+  .fcell.central-los{box-shadow: inset 0 3px 0 var(--chalk), inset 0 0 0 2px rgba(216,169,75,0.65);}
   .fcell.lateral{background:#2a4726;}
   .fcell.endzone{
     background:repeating-linear-gradient(135deg, var(--endzone-a), var(--endzone-a) 4px, #6b2727 4px, #6b2727 8px);
@@ -313,6 +314,14 @@
     </div>
   </div>
 
+</div>
+
+<div class="modal-back" id="formationWarnModal">
+  <div class="modal">
+    <h2 id="formationWarnTitle">⚠️ Aviso</h2>
+    <p id="formationWarnText">Texto del aviso.</p>
+    <button class="primary full" onclick="closeFormationWarnModal()">Entendido</button>
+  </div>
 </div>
 
 <script>
@@ -807,6 +816,15 @@ function renderPlayers(){
 // ---------- Colocación predefinida (mini-campo 11 x 7) ----------
 let selectedFormationNum = null;
 
+function showFormationModal(title, text){
+  document.getElementById('formationWarnTitle').textContent = title;
+  document.getElementById('formationWarnText').textContent = text;
+  document.getElementById('formationWarnModal').classList.add('show');
+}
+function closeFormationWarnModal(){
+  document.getElementById('formationWarnModal').classList.remove('show');
+}
+
 function formationTokenHtml(p){
   const bg = team.color || '#c0392b';
   const txt = (!team.textColor || team.textColor === 'auto') ? autoTextColor(bg) : team.textColor;
@@ -832,8 +850,9 @@ function renderFormation(){
       const isEndzone = row === 6;
       const isLos = row === 0;
       const isLateral = !isEndzone && (col <= 1 || col >= 9);
+      const isCentralLos = isLos && col >= 2 && col <= 8;
       const cell = document.createElement('div');
-      cell.className = 'fcell' + (isEndzone ? ' endzone' : '') + (isLos ? ' los-row' : '') + (isLateral ? ' lateral' : '');
+      cell.className = 'fcell' + (isEndzone ? ' endzone' : '') + (isLos ? ' los-row' : '') + (isLateral ? ' lateral' : '') + (isCentralLos ? ' central-los' : '');
       if(!isEndzone) cell.setAttribute('onclick', `onFormationCellClick(${row}, ${col})`);
       const occupant = team.players.find(p => p.formation && p.formation.row === row && p.formation.col === col);
       if(occupant) cell.innerHTML = formationTokenHtml(occupant);
@@ -861,6 +880,12 @@ function onFormationCellClick(row, col){
   const p = team.players.find(pl => pl.position && pl.num == selectedFormationNum);
   if(!p) return;
 
+  const currentlyPlaced = team.players.filter(pl => pl.formation).length;
+  if(currentlyPlaced >= 7){
+    showFormationModal('Máximo 7 jugadores en el campo', 'En Sevens solo pueden estar 7 jugadores colocados a la vez, aunque la plantilla tenga hasta 11. Quita a alguien del campo antes de añadir otro.');
+    return;
+  }
+
   const isLateral = row < 6 && (col <= 1 || col >= 9);
   if(isLateral){
     const side = col <= 1 ? 'izquierdo' : 'derecho';
@@ -869,7 +894,7 @@ function onFormationCellClick(row, col){
       (col <= 1 ? pl.formation.col <= 1 : pl.formation.col >= 9)
     );
     if(alreadyThere){
-      alert('Ya hay un jugador en el lateral ' + side + ' del campo (máximo 1 en esas 2 columnas).');
+      showFormationModal('Máximo 1 jugador por lateral', 'Ya hay un jugador colocado en el lateral ' + side + ' del campo (las 2 columnas de ese lado). Solo se permite 1 ahí.');
       return;
     }
   }
@@ -881,22 +906,34 @@ function onFormationCellClick(row, col){
   selectedFormationNum = null;
   renderFormation();
   scheduleJsonRefresh();
+
+  const nowPlaced = team.players.filter(pl => pl.formation).length;
+  if(nowPlaced === 7){
+    const centralLos = team.players.filter(pl => pl.formation && pl.formation.row === 0 && pl.formation.col >= 2 && pl.formation.col <= 8).length;
+    if(centralLos < 3){
+      showFormationModal('Línea de scrimmage incompleta', 'Ya tienes 7 jugadores en el campo, pero solo hay ' + centralLos + ' en la zona central de la línea de scrimmage (mínimo 3, las 7 casillas centrales). Reorganiza antes de dar por buena la colocación.');
+    }
+  }
 }
 
 function updateFormationValidation(){
   const el = document.getElementById('formationValidation');
   if(!el) return;
-  const losPlayers = team.players.filter(p => p.formation && p.formation.row === 0);
+  const placedTotal = team.players.filter(p => p.formation).length;
+  const centralLos = team.players.filter(p => p.formation && p.formation.row === 0 && p.formation.col >= 2 && p.formation.col <= 8).length;
   const fieldPlayers = team.players.filter(p => p.formation && p.formation.row < 6);
   const leftCount = fieldPlayers.filter(p => p.formation.col <= 1).length;
   const rightCount = fieldPlayers.filter(p => p.formation.col >= 9).length;
-  const msgs = [];
-  if(losPlayers.length < 3) msgs.push('❗ Mínimo 3 jugadores en la línea de scrimmage (' + losPlayers.length + '/3).');
-  if(leftCount > 1) msgs.push('❗ Máximo 1 jugador en las 2 columnas del lateral izquierdo.');
-  if(rightCount > 1) msgs.push('❗ Máximo 1 jugador en las 2 columnas del lateral derecho.');
-  el.innerHTML = msgs.length
-    ? msgs.map(m => `<div style="color:var(--bad);">${m}</div>`).join('')
-    : '<div style="color:var(--good);">✔ Colocación válida.</div>';
+
+  const errors = [];
+  if(centralLos < 3) errors.push('❗ Mínimo 3 en el centro de la línea de scrimmage (' + centralLos + '/3).');
+  if(leftCount > 1) errors.push('❗ Máximo 1 jugador en el lateral izquierdo.');
+  if(rightCount > 1) errors.push('❗ Máximo 1 jugador en el lateral derecho.');
+
+  let html = '<div class="mono" style="color:#a99b7f;">Jugadores en el campo: ' + placedTotal + '/7</div>';
+  html += errors.map(m => `<div style="color:var(--bad);">${m}</div>`).join('');
+  if(!errors.length) html += '<div style="color:var(--good);">✔ Colocación válida.</div>';
+  el.innerHTML = html;
 }
 
 function clearFormation(){

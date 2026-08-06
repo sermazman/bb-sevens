@@ -27,6 +27,7 @@ let pitchBackgroundUrl = null;
 let pitchBackgroundExact = false;
 let teamStaff = { A: null, B: null };
 let teamRerollsLeft = { A: 0, B: 0 };
+let teamFormation = { A: [], B: [] };
 
 function renderStaffPanels(){
   ['A','B'].forEach(team=>{
@@ -565,6 +566,7 @@ function importTeamFile(team, inputEl){
       teamStaff[team] = data.staff;
       teamRerollsLeft[team] = (data.staff.rerolls && typeof data.staff.rerolls.count === 'number') ? data.staff.rerolls.count : 0;
     }
+    teamFormation[team] = Array.isArray(data.formation) ? data.formation : [];
     data.players.forEach(pd=>{
       const ma = pd.ma || 6;
       players.push({
@@ -600,9 +602,45 @@ function clearTeam(team){
 }
 
 function presetPositions(team){
-  // TODO: colocación automática de jugadores en posiciones predefinidas de saque/recepción.
-  // Placeholder a la espera de definir las reglas exactas de colocación.
-  alert('Posiciones predefinidas: aún por implementar. Próximamente colocará el equipo automáticamente.');
+  const formation = teamFormation[team];
+  if(!formation || !formation.length){
+    alert('Este equipo no tiene una colocación predefinida guardada.\nGuárdala primero en el editor de plantillas (rosters.html) y vuelve a cargar el JSON del equipo.');
+    return;
+  }
+  const teamPlayers = players.filter(p=>p.team===team);
+  if(!teamPlayers.length){ alert('No hay jugadores en ' + teamName(team) + '.'); return; }
+
+  // Quitar del campo a los jugadores de este equipo que ya estuvieran colocados
+  teamPlayers.forEach(p=>{
+    if(p.onPitch){
+      p.onPitch = false; p.row = null; p.col = null; p.condition = 'standing';
+      if(ball.carrierId === p.id) ball.carrierId = null;
+    }
+  });
+
+  // La colocación se guarda en rosters.html en relativo a la mitad propia:
+  //   col (0-10) = ancho del campo, coincide 1:1 con las ROWS (11) del tablero
+  //   row (0-5)  = profundidad desde la línea de scrimmage (0) hacia la propia end zone (5)
+  // Se traduce a columnas absolutas del tablero según equipo:
+  //   A: LOS_A hacia atrás (columnas 1-6)   B: LOS_B hacia atrás (columnas 13-18), en espejo
+  let placedCount = 0;
+  const skipped = [];
+  formation.forEach(entry=>{
+    if(entry.row==null || entry.col==null || entry.row<0 || entry.row>5 || entry.col<0 || entry.col>10) return;
+    const p = teamPlayers.find(pl=>String(pl.num)===String(entry.num));
+    if(!p){ skipped.push(entry.num); return; }
+    const boardRow = entry.col;
+    const boardCol = team==='A' ? (LOS_A - entry.row) : (LOS_B + entry.row);
+    if(occupiedBy(boardRow, boardCol)){ skipped.push(entry.num); return; }
+    p.onPitch = true; p.row = boardRow; p.col = boardCol; p.condition = 'standing';
+    placedCount++;
+  });
+
+  selected = null;
+  renderRosters(); renderPitch(); renderScoreboard(); renderSelInfo();
+  log('📋 Colocación predefinida aplicada a ' + teamName(team) + ': ' + placedCount + ' jugador' + (placedCount===1?'':'es') + ' colocado' + (placedCount===1?'':'s') + '.' + (skipped.length ? ' (' + skipped.length + ' no se pudieron colocar: ' + skipped.join(', ') + ')' : ''));
+  updateStatus('Colocación predefinida aplicada a ' + teamName(team) + '.');
+  broadcastState();
 }
 
 function exportTeam(team){

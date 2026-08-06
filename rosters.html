@@ -128,6 +128,46 @@
   }
   .stepper-value{min-width:20px; text-align:center; font-size:15px; font-weight:700; color:var(--gold);}
   .staff-row-total{min-width:80px; text-align:right; color:#a99b7f; font-size:13px; flex-shrink:0;}
+
+  /* ---- División tabla de jugadores / colocación predefinida ---- */
+  .roster-split{display:grid; grid-template-columns: 1fr 400px; gap:16px; align-items:start;}
+  @media (max-width:1200px){ .roster-split{grid-template-columns:1fr;} }
+  .roster-table-wrap{min-width:0;}
+
+  .formation-col{
+    background:#100e0c; border:1px solid var(--panel-line); border-radius:6px; padding:12px;
+  }
+  .formation-col h3{font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--gold); margin:0 0 6px 0;}
+  .formation-bench{
+    display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; min-height:34px;
+    padding:6px; background:#1c1917; border:1px dashed var(--panel-line); border-radius:4px;
+  }
+  .formation-token{
+    width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono', monospace; font-weight:800; font-size:12px;
+    border:2px solid rgba(0,0,0,0.4); box-shadow:0 2px 3px rgba(0,0,0,0.5); cursor:pointer; flex-shrink:0;
+  }
+  .formation-token.selected{outline:2px solid var(--gold); outline-offset:2px;}
+  .formation-grid{
+    display:grid;
+    grid-template-columns: repeat(11, 1fr);
+    grid-template-rows: repeat(7, 30px);
+    gap:2px;
+    background:var(--turf-1);
+    border:1px solid var(--panel-line); border-radius:4px; padding:4px;
+  }
+  .fcell{
+    background:var(--turf-2); position:relative; border-radius:2px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .fcell.los-row{box-shadow: inset 0 3px 0 var(--chalk);}
+  .fcell.los-row.lateral{box-shadow: inset 0 3px 0 var(--chalk), inset 0 0 0 1px rgba(216,169,75,0.5);}
+  .fcell.lateral{background:#2a4726;}
+  .fcell.endzone{
+    background:repeating-linear-gradient(135deg, var(--endzone-a), var(--endzone-a) 4px, #6b2727 4px, #6b2727 8px);
+    cursor:default;
+  }
+  .fcell .formation-token{position:absolute; inset:1px; width:auto; height:auto; cursor:pointer;}
 </style>
 </head>
 <body>
@@ -241,22 +281,35 @@
   <div class="panel">
     <h2>Jugadores <span class="badge-count" id="playerCount">0/11</span><span class="badge-value" id="teamValueBadge">0 po</span></h2>
     <div class="small-note" id="raceRequiredNote" style="margin-bottom:8px;">Elige primero una raza arriba para poder asignar posiciones a los 11 huecos.</div>
-    <div class="roster-table">
-      <div class="rt-row rt-head">
-        <div>Núm.</div>
-        <div>Nombre</div>
-        <div>Posición</div>
-        <div>MA</div>
-        <div>ST</div>
-        <div>AG</div>
-        <div>PA</div>
-        <div>AV</div>
-        <div>Precio</div>
-        <div>Habilidades</div>
-        <div>Acceso</div>
-        <div></div>
+    <div class="roster-split">
+      <div class="roster-table-wrap">
+        <div class="roster-table">
+          <div class="rt-row rt-head">
+            <div>Núm.</div>
+            <div>Nombre</div>
+            <div>Posición</div>
+            <div>MA</div>
+            <div>ST</div>
+            <div>AG</div>
+            <div>PA</div>
+            <div>AV</div>
+            <div>Precio</div>
+            <div>Habilidades</div>
+            <div>Acceso</div>
+            <div></div>
+          </div>
+          <div id="playersList"></div>
+        </div>
       </div>
-      <div id="playersList"></div>
+
+      <div class="formation-col">
+        <h3>🏟 Colocación predefinida</h3>
+        <div class="small-note" style="margin-bottom:8px;">Clic en un jugador de abajo y luego en una casilla del campo. Clic en una ficha ya colocada para quitarla.</div>
+        <div class="formation-bench" id="formationBench"></div>
+        <div class="formation-grid" id="formationGrid"></div>
+        <div class="small-note" id="formationValidation" style="margin-top:8px;"></div>
+        <button onclick="clearFormation()" style="margin-top:8px; width:100%;">🔄 Vaciar colocación</button>
+      </div>
     </div>
   </div>
 
@@ -408,7 +461,7 @@ async function loadSkillCatalog(){
 function buildEmptySlots(){
   const slots = [];
   for(let i = 1; i <= 11; i++){
-    slots.push({ _uid: uid++, num: i, name: '', position: '', ma: '', st: '', ag: '', pa: '', av: '', skills: [] });
+    slots.push({ _uid: uid++, num: i, name: '', position: '', ma: '', st: '', ag: '', pa: '', av: '', skills: [], formation: null });
   }
   return slots;
 }
@@ -459,9 +512,16 @@ function loadTeamData(data){
       ag: pd.ag ?? '',
       pa: pd.pa ?? '',
       av: pd.av ?? '',
-      skills: stripTrailingClave(pd.position || '', rawSkills)
+      skills: stripTrailingClave(pd.position || '', rawSkills),
+      formation: null
     };
   });
+  if(Array.isArray(data.formation)){
+    data.formation.forEach(f => {
+      const slot = slots.find(s => s.position && String(s.num) === String(f.num));
+      if(slot && f.col != null && f.row != null) slot.formation = { col: f.col, row: f.row };
+    });
+  }
   team.players = slots;
 
   document.getElementById('teamNameInput').value = team.teamName;
@@ -562,7 +622,7 @@ function onPositionChange(_uid, value){
   const p = findPlayer(_uid);
   if(!p) return;
   if(!value){
-    p.position = ''; p.ma = ''; p.st = ''; p.ag = ''; p.pa = ''; p.av = ''; p.skills = [];
+    p.position = ''; p.ma = ''; p.st = ''; p.ag = ''; p.pa = ''; p.av = ''; p.skills = []; p.formation = null;
     renderPlayers();
     return;
   }
@@ -594,7 +654,7 @@ function clearSlot(_uid){
   const p = findPlayer(_uid);
   if(!p) return;
   if(!confirm('¿Vaciar este hueco de jugador?')) return;
-  p.name = ''; p.position = ''; p.ma = ''; p.st = ''; p.ag = ''; p.pa = ''; p.av = ''; p.skills = [];
+  p.name = ''; p.position = ''; p.ma = ''; p.st = ''; p.ag = ''; p.pa = ''; p.av = ''; p.skills = []; p.formation = null;
   renderPlayers();
 }
 
@@ -740,6 +800,111 @@ function renderPlayers(){
   if(tvEl){
     tvEl.textContent = tv.total.toLocaleString('es-ES') + ' po' + (tv.missing ? ' (+' + tv.missing + ' sin precio)' : '');
   }
+  renderFormation();
+  scheduleJsonRefresh();
+}
+
+// ---------- Colocación predefinida (mini-campo 11 x 7) ----------
+let selectedFormationNum = null;
+
+function formationTokenHtml(p){
+  const bg = team.color || '#c0392b';
+  const txt = (!team.textColor || team.textColor === 'auto') ? autoTextColor(bg) : team.textColor;
+  const cls = 'formation-token' + (selectedFormationNum === p.num ? ' selected' : '');
+  const label = p.name ? (p.name + ' (' + p.position + ')') : p.position;
+  return `<div class="${cls}" style="background:${bg}; color:${txt};" title="#${p.num} ${label}" onclick="event.stopPropagation(); onFormationTokenClick(${p.num})">${p.num}</div>`;
+}
+
+function renderFormation(){
+  const bench = document.getElementById('formationBench');
+  const grid = document.getElementById('formationGrid');
+  if(!bench || !grid) return;
+
+  const placedNums = new Set(team.players.filter(p => p.position && p.formation).map(p => p.num));
+  const benchPlayers = team.players.filter(p => p.position && !p.formation);
+  bench.innerHTML = benchPlayers.length
+    ? benchPlayers.map(p => formationTokenHtml(p)).join('')
+    : '<span class="small-note">Todos los jugadores colocados en el campo.</span>';
+
+  grid.innerHTML = '';
+  for(let row = 0; row < 7; row++){
+    for(let col = 0; col < 11; col++){
+      const isEndzone = row === 6;
+      const isLos = row === 0;
+      const isLateral = !isEndzone && (col <= 1 || col >= 9);
+      const cell = document.createElement('div');
+      cell.className = 'fcell' + (isEndzone ? ' endzone' : '') + (isLos ? ' los-row' : '') + (isLateral ? ' lateral' : '');
+      if(!isEndzone) cell.setAttribute('onclick', `onFormationCellClick(${row}, ${col})`);
+      const occupant = team.players.find(p => p.formation && p.formation.row === row && p.formation.col === col);
+      if(occupant) cell.innerHTML = formationTokenHtml(occupant);
+      grid.appendChild(cell);
+    }
+  }
+  updateFormationValidation();
+}
+
+function onFormationTokenClick(num){
+  const p = team.players.find(pl => pl.position && pl.num == num);
+  if(!p) return;
+  if(p.formation){
+    p.formation = null;
+    selectedFormationNum = null;
+  } else {
+    selectedFormationNum = (selectedFormationNum === num) ? null : num;
+  }
+  renderFormation();
+  scheduleJsonRefresh();
+}
+
+function onFormationCellClick(row, col){
+  if(selectedFormationNum == null) return;
+  const p = team.players.find(pl => pl.position && pl.num == selectedFormationNum);
+  if(!p) return;
+
+  const isLateral = row < 6 && (col <= 1 || col >= 9);
+  if(isLateral){
+    const side = col <= 1 ? 'izquierdo' : 'derecho';
+    const alreadyThere = team.players.some(pl =>
+      pl !== p && pl.formation && pl.formation.row < 6 &&
+      (col <= 1 ? pl.formation.col <= 1 : pl.formation.col >= 9)
+    );
+    if(alreadyThere){
+      alert('Ya hay un jugador en el lateral ' + side + ' del campo (máximo 1 en esas 2 columnas).');
+      return;
+    }
+  }
+
+  const occupying = team.players.find(pl => pl.formation && pl.formation.row === row && pl.formation.col === col);
+  if(occupying && occupying !== p) occupying.formation = null;
+
+  p.formation = { row, col };
+  selectedFormationNum = null;
+  renderFormation();
+  scheduleJsonRefresh();
+}
+
+function updateFormationValidation(){
+  const el = document.getElementById('formationValidation');
+  if(!el) return;
+  const losPlayers = team.players.filter(p => p.formation && p.formation.row === 0);
+  const fieldPlayers = team.players.filter(p => p.formation && p.formation.row < 6);
+  const leftCount = fieldPlayers.filter(p => p.formation.col <= 1).length;
+  const rightCount = fieldPlayers.filter(p => p.formation.col >= 9).length;
+  const msgs = [];
+  if(losPlayers.length < 3) msgs.push('❗ Mínimo 3 jugadores en la línea de scrimmage (' + losPlayers.length + '/3).');
+  if(leftCount > 1) msgs.push('❗ Máximo 1 jugador en las 2 columnas del lateral izquierdo.');
+  if(rightCount > 1) msgs.push('❗ Máximo 1 jugador en las 2 columnas del lateral derecho.');
+  el.innerHTML = msgs.length
+    ? msgs.map(m => `<div style="color:var(--bad);">${m}</div>`).join('')
+    : '<div style="color:var(--good);">✔ Colocación válida.</div>';
+}
+
+function clearFormation(){
+  if(!team.players.some(p => p.formation)) return;
+  if(!confirm('¿Vaciar toda la colocación predefinida?')) return;
+  team.players.forEach(p => { p.formation = null; });
+  selectedFormationNum = null;
+  renderFormation();
   scheduleJsonRefresh();
 }
 
@@ -777,6 +942,11 @@ function buildExportData(){
       ma: isNaN(parseFloat(p.ma)) ? p.ma : parseFloat(p.ma),
       st: p.st, ag: p.ag, pa: p.pa, av: p.av,
       skills: skillsWithClave(p)
+    })),
+    formation: filled.filter(p => p.formation).map(p => ({
+      num: isNaN(parseInt(p.num)) ? p.num : parseInt(p.num),
+      col: p.formation.col,
+      row: p.formation.row
     }))
   };
 }

@@ -82,11 +82,19 @@
         <button onclick="openAddPlayer('A')">+ Añadir</button>
         <button onclick="quickFill('A')">7 rápidos</button>
       </div>
-      <div class="row" style="margin-top:6px;">
+      <div class="bench-divider"></div>
+      <div class="row">
         <button onclick="document.getElementById('fileImportA').click()">📁 Cargar Equipo</button>
         <button onclick="exportTeam('A')">💾 Guardar Equipo</button>
       </div>
+      <div class="row" style="margin-top:6px;">
+        <button class="danger" onclick="clearTeam('A')">🗑️ Borrar Equipo</button>
+        <button onclick="presetPositions('A')">📋 Posiciones predefinidas</button>
+      </div>
       <input type="file" id="fileImportA" accept="application/json" style="display:none" onchange="importTeamFile('A', this)">
+      <div class="bench-divider"></div>
+      <h3 id="bajasHeaderA">Bajas</h3>
+      <div id="casualtyListA" class="bajas-tags"><span class="small-note">Ninguna</span></div>
     </div>
   </div>
 
@@ -187,15 +195,7 @@
     </div>
 
     <div class="pitch-wrap" id="pitchWrap">
-      <div class="bajas-col" id="bajasColA">
-        <div class="bajas-label" id="bajasLabelA">BAJAS</div>
-        <div id="casualtyListA" class="bajas-chips"><span class="small-note">Ninguna</span></div>
-      </div>
       <div class="pitch" id="pitch" oncontextmenu="return handlePitchRightClick(event)"></div>
-      <div class="bajas-col" id="bajasColB">
-        <div class="bajas-label" id="bajasLabelB">BAJAS</div>
-        <div id="casualtyListB" class="bajas-chips"><span class="small-note">Ninguna</span></div>
-      </div>
     </div>
 
     <div class="panel setup" id="setupPanel">
@@ -283,11 +283,19 @@
         <button onclick="openAddPlayer('B')">+ Añadir</button>
         <button onclick="quickFill('B')">7 rápidos</button>
       </div>
-      <div class="row" style="margin-top:6px;">
+      <div class="bench-divider"></div>
+      <div class="row">
         <button onclick="document.getElementById('fileImportB').click()">📁 Cargar Equipo</button>
         <button onclick="exportTeam('B')">💾 Guardar Equipo</button>
       </div>
+      <div class="row" style="margin-top:6px;">
+        <button class="danger" onclick="clearTeam('B')">🗑️ Borrar Equipo</button>
+        <button onclick="presetPositions('B')">📋 Posiciones predefinidas</button>
+      </div>
       <input type="file" id="fileImportB" accept="application/json" style="display:none" onchange="importTeamFile('B', this)">
+      <div class="bench-divider"></div>
+      <h3 id="bajasHeaderB">Bajas</h3>
+      <div id="casualtyListB" class="bajas-tags"><span class="small-note">Ninguna</span></div>
     </div>
   </div>
 

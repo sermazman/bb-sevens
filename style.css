@@ -75,7 +75,7 @@ header.top .sub{font-size:12px; letter-spacing:2px; text-transform:uppercase; co
 
 /* ---- Layout ---- */
 .app{
-  max-width:1820px;
+  max-width:1560px;
   margin:0 auto;
   display:grid;
   grid-template-columns: 335px minmax(0,1fr) 335px;
@@ -181,16 +181,14 @@ button.full{width:100%; margin-top:6px;}
 .pitch-wrap{
   overflow-x:auto;
   overflow-y:visible;
-  padding:16px;
+  padding:42px;
   background:#0e0d0b;
   border:1px solid var(--panel-line);
   border-radius:6px;
   position:relative;
-  width:100%;
-  display:flex;
-  align-items:stretch;
-  justify-content:center;
-  gap:8px;
+  width:max-content;
+  max-width:100%;
+  margin:0 auto;
 }
 .sb-reroll{
   display:flex; flex-direction:column; align-items:center; gap:2px;
@@ -202,31 +200,30 @@ button.full{width:100%; margin-top:6px;}
 .sb-reroll-count{font-size:13px; font-weight:800; color:var(--gold);}
 .sb-reroll-btns{display:flex; gap:3px;}
 .sb-reroll-btns button{padding:2px 6px; font-size:9px; min-width:0; margin:0;}
-.bajas-col{
-  flex:0 0 110px;
-  width:110px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  padding:10px 6px;
-  gap:8px;
-  background:rgba(255,255,255,0.02);
-  border:1px solid var(--panel-line);
-  border-radius:6px;
-  align-self:stretch;
+.bench-divider{
+  border-top:2px solid var(--gold);
+  margin:14px 0 10px 0;
+  opacity:0.7;
 }
-.bajas-label{
+#bajasHeaderA, #bajasHeaderB{
   font-family:'Anton', sans-serif;
   font-size:13px;
-  letter-spacing:2px;
+  letter-spacing:1px;
   text-transform:uppercase;
+  margin:0 0 8px 0;
 }
-.bajas-chips{
+.bajas-group-label{
+  font-size:10px;
+  color:#a99b7f;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  margin:8px 0 4px 0;
+}
+.bajas-group-label:first-child{margin-top:0;}
+.bajas-group-row{
   display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:10px;
-  width:100%;
+  flex-wrap:wrap;
+  gap:8px;
 }
 .pitch{
   display:grid;
@@ -234,8 +231,7 @@ button.full{width:100%; margin-top:6px;}
   grid-template-rows: repeat(11, var(--cell));
   gap:1px;
   width:max-content;
-  margin:0;
-  flex-shrink:0;
+  margin:0 auto;
   position:relative;
 }
 .cell{

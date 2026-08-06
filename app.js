@@ -152,6 +152,7 @@ function setTeamTextColor(team, mode){
 let blitzUsedByTeam = { A: false, B: false };
 let secureBallUsedByTeam = { A: false, B: false };
 let pendingSecureBall = null;
+let secureBallActivePlayer = null;
 let blitzActivePlayer = null;
 let blockTargeting = null;   // attacker id currently choosing an adjacent target
 let activeBlock = null;      // { attackerId, defenderId, isBlitz }
@@ -239,7 +240,7 @@ function snapshotState(){
     koQueue, pendingKo, teamRace, customColorsEnabled, teamCustomColor, teamTextColor, openingKickoffDone, firstHalfKickingTeam, pitchBackgroundUrl, pitchBackgroundExact, teamStaff, teamRerollsLeft, kickoffPendingOOBAfterEvent,
     ballBounceActive, pendingCatch, pendingBallDrop, pendingDriveStart,
     pendingKickPlacement, kickoffBounceStep, kickoffKickingTeam, kickoffReceivingTeam, freeCatchTeam, placingBallFree,
-    blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp, chainPushStack, secureBallUsedByTeam, pendingSecureBall,
+    blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp, chainPushStack, secureBallUsedByTeam, pendingSecureBall, secureBallActivePlayer,
     secureBallModalOpen: document.getElementById('secureBallModal').classList.contains('show'),
     secureBallText: document.getElementById('secureBallText').textContent,
     secureBallDieText: document.getElementById('secureBallDie').textContent,
@@ -364,6 +365,7 @@ function applyRemoteState(payload){
   pendingFollowUp = payload.pendingFollowUp;
   chainPushStack = payload.chainPushStack || [];
   secureBallUsedByTeam = payload.secureBallUsedByTeam || { A:false, B:false };
+  secureBallActivePlayer = payload.secureBallActivePlayer;
   pendingSecureBall = payload.pendingSecureBall;
   document.getElementById('secureBallText').textContent = payload.secureBallText || '';
   document.getElementById('secureBallDie').textContent = payload.secureBallDieText || '–';
@@ -585,6 +587,24 @@ function importTeamFile(team, inputEl){
   inputEl.value = '';
 }
 
+function clearTeam(team){
+  const count = players.filter(p=>p.team===team).length;
+  if(count===0){ alert('Ese equipo ya está vacío.'); return; }
+  if(!confirm(`¿Borrar los ${count} jugadores de ${teamName(team)}? Esta acción no se puede deshacer.`)) return;
+  players = players.filter(p=>p.team!==team);
+  if(selected!==null && !players.some(p=>p.id===selected)) selected = null;
+  if(ball.carrierId!==null && !players.some(p=>p.id===ball.carrierId)) ball.carrierId = null;
+  log('🗑️ Plantilla de ' + teamName(team) + ' borrada por completo.');
+  renderRosters(); renderPitch(); renderSelInfo();
+  broadcastState();
+}
+
+function presetPositions(team){
+  // TODO: colocación automática de jugadores en posiciones predefinidas de saque/recepción.
+  // Placeholder a la espera de definir las reglas exactas de colocación.
+  alert('Posiciones predefinidas: aún por implementar. Próximamente colocará el equipo automáticamente.');
+}
+
 function exportTeam(team){
   const list = players.filter(p=>p.team===team).map(p=>({
     num:p.num, name:p.name, ma:p.ma,
@@ -640,27 +660,36 @@ function renderRosters(){
 function renderReserveZone(){
   ['A','B'].forEach(team=>{
     const listEl = document.getElementById('casualtyList'+team);
-    const label = document.getElementById('bajasLabel'+team);
-    if(label) label.style.color = tokenColorFor({ team });
+    const header = document.getElementById('bajasHeader'+team);
+    if(header) header.style.color = tokenColorFor({ team });
     if(!listEl) return;
-    const casualties = players.filter(p=>p.team===team &&
-      (p.condition==='ko' || p.condition==='injured' || p.condition==='injuredGrave' || p.condition==='dead'));
-    if(!casualties.length){
-      listEl.innerHTML = '<span class="small-note">Ninguna</span>';
-      return;
-    }
-    listEl.innerHTML = casualties.map(p=>{
-      let badgeClass, badgeChar, extraLabel;
-      if(p.condition==='ko'){ badgeClass='ko'; badgeChar='★'; extraLabel='INCONSCIENTE'; }
-      else if(p.condition==='dead'){ badgeClass='dead'; badgeChar='✚'; extraLabel='MUERTO'; }
-      else if(p.condition==='injuredGrave'){ badgeClass='grave'; badgeChar='✚'; extraLabel='HERIDA GRAVE'; }
-      else { badgeClass='light'; badgeChar='✚'; extraLabel='HERIDO (LEVE)'; }
+
+    const chip = (p, badgeClass, badgeChar, extraLabel) => {
       const title = playerTooltipText(p, extraLabel).replace(/"/g,'&quot;');
       return `<div class="chip-wrap" title="${title}">
         <div class="token-chip" style="background:${tokenColorFor(p)}; color:${textColorFor(p)}">${p.num}</div>
         <div class="casualty-badge ${badgeClass}">${badgeChar}</div>
       </div>`;
-    }).join('');
+    };
+
+    const groups = [
+      { cond:'ko', badgeClass:'ko', badgeChar:'★', label:'Inconscientes', extraLabel:'INCONSCIENTE' },
+      { cond:'injured', badgeClass:'light', badgeChar:'✚', label:'Heridos leves', extraLabel:'HERIDO (LEVE)' },
+      { cond:'injuredGrave', badgeClass:'grave', badgeChar:'✚', label:'Heridas graves', extraLabel:'HERIDA GRAVE' },
+      { cond:'dead', badgeClass:'dead', badgeChar:'✚', label:'Muertos', extraLabel:'MUERTO' }
+    ];
+
+    let html = '';
+    let any = false;
+    groups.forEach(g=>{
+      const list = players.filter(p=>p.team===team && p.condition===g.cond);
+      if(!list.length) return;
+      any = true;
+      html += `<div class="bajas-group-label">${g.label}</div><div class="bajas-group-row">`
+        + list.map(p=>chip(p, g.badgeClass, g.badgeChar, g.extraLabel)).join('')
+        + `</div>`;
+    });
+    listEl.innerHTML = any ? html : '<span class="small-note">Ninguna</span>';
   });
 }
 
@@ -1163,7 +1192,12 @@ function completeStep(p, r, c, consume){
   renderRosters(); renderPitch(); renderSelInfo();
   broadcastState();
   if(ball.carrierId===null && ball.row===r && ball.col===c && p.condition==='standing'){
-    openCatchModal(p);
+    if(secureBallActivePlayer===p.id){
+      secureBallActivePlayer = null;
+      openSecureBallRoll(p);
+    } else {
+      openCatchModal(p);
+    }
   }
 }
 
@@ -1744,10 +1778,14 @@ function secureTheBall(){
   if(enemyNear){ alert('El balón está a 2 casillas o menos de un rival en pie (no Despistado) — no se puede declarar esta acción.'); return; }
 
   secureBallUsedByTeam[p.team] = true;
-  p.row = ball.row; p.col = ball.col;
-  log('🔒 ' + p.name + ' declara Asegurar el Balón (movimiento gratuito hasta el balón suelto).');
-  renderRosters(); renderPitch();
+  secureBallActivePlayer = p.id;
+  log('🔒 ' + p.name + ' declara Asegurar el Balón — moved hasta el balón casilla a casilla.');
+  renderRosters(); renderPitch(); renderSelInfo();
+  updateStatus('Mueve a ' + p.name + ' hasta el balón suelto. Al llegar, se hará la tirada de Asegurar el Balón.');
+  broadcastState();
+}
 
+function openSecureBallRoll(p){
   pendingSecureBall = p.id;
   document.getElementById('secureBallText').textContent = `${p.name} intenta Asegurar el Balón — necesita 2+ (solo falla con un 1). Tirad D6.`;
   document.getElementById('secureBallDie').textContent = '–';
@@ -2562,6 +2600,7 @@ function beginTurn(team){
   state.active = team;
   blitzUsedByTeam[team] = false;
   secureBallUsedByTeam[team] = false;
+  secureBallActivePlayer = null;
   players.filter(p=>p.team===team).forEach(p=>{
     p.activated = false;
     p.remainingMove = p.ma;

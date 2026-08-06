@@ -1,0 +1,138 @@
+{
+  "teamName": "Mariburg Ravens",
+  "race": "Elven Union",
+  "color": "#6e2bbf",
+  "textColor": "auto",
+  "staff": {
+    "rerolls": {
+      "clave": "reroll",
+      "count": 0,
+      "pricePerUnit": 100000,
+      "total": 0
+    }
+  },
+  "players": [
+    {
+      "num": 1,
+      "name": "Finrod Steelwind",
+      "position": "Blitzer",
+      "ma": 7,
+      "st": 3,
+      "ag": "2+",
+      "pa": "3+",
+      "av": "9+",
+      "skills": [
+        "Placar",
+        "Echarse a un lado"
+      ]
+    },
+    {
+      "num": 2,
+      "name": "Caelen Stormrunner",
+      "position": "Blitzer",
+      "ma": 7,
+      "st": 3,
+      "ag": "2+",
+      "pa": "3+",
+      "av": "9+",
+      "skills": [
+        "Placar",
+        "Echarse a un lado"
+      ]
+    },
+    {
+      "num": 3,
+      "name": "Eldrin Goldfield",
+      "position": "Thrower",
+      "ma": 6,
+      "st": 3,
+      "ag": "2+",
+      "pa": "2+",
+      "av": "8+",
+      "skills": [
+        "Pasar"
+      ]
+    },
+    {
+      "num": 4,
+      "name": "Theron Ironwood",
+      "position": "Lineman",
+      "ma": 6,
+      "st": 3,
+      "ag": "2+",
+      "pa": "4+",
+      "av": "8+",
+      "skills": []
+    },
+    {
+      "num": 5,
+      "name": "Idril Winddancer",
+      "position": "Lineman",
+      "ma": 6,
+      "st": 3,
+      "ag": "2+",
+      "pa": "4+",
+      "av": "8+",
+      "skills": []
+    },
+    {
+      "num": 6,
+      "name": "Haldir Highjump",
+      "position": "Lineman",
+      "ma": 6,
+      "st": 3,
+      "ag": "2+",
+      "pa": "4+",
+      "av": "8+",
+      "skills": []
+    },
+    {
+      "num": 7,
+      "name": "Lysander Starfall",
+      "position": "Lineman",
+      "ma": 6,
+      "st": 3,
+      "ag": "2+",
+      "pa": "4+",
+      "av": "8+",
+      "skills": []
+    }
+  ],
+  "formation": [
+    {
+      "num": 1,
+      "col": 1,
+      "row": 0
+    },
+    {
+      "num": 2,
+      "col": 9,
+      "row": 0
+    },
+    {
+      "num": 3,
+      "col": 5,
+      "row": 0
+    },
+    {
+      "num": 4,
+      "col": 4,
+      "row": 0
+    },
+    {
+      "num": 5,
+      "col": 6,
+      "row": 0
+    },
+    {
+      "num": 6,
+      "col": 2,
+      "row": 1
+    },
+    {
+      "num": 7,
+      "col": 8,
+      "row": 1
+    }
+  ]
+}

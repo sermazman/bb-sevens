@@ -203,8 +203,8 @@ button.full{width:100%; margin-top:6px;}
 .sb-reroll-btns{display:flex; gap:3px;}
 .sb-reroll-btns button{padding:2px 6px; font-size:9px; min-width:0; margin:0;}
 .bajas-col{
-  flex:0 0 140px;
-  width:140px;
+  flex:0 0 110px;
+  width:110px;
   display:flex;
   flex-direction:column;
   align-items:center;

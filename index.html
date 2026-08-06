@@ -93,16 +93,20 @@
   <div class="center-col">
     <div class="scoreboard">
       <div class="sb-team">
-        <div class="label" id="sbNameA">Rojo</div>
-        <div class="sb-race mono" id="sbRaceA"></div>
-        <div class="score mono" id="scoreA">0</div>
-        <div class="sb-reroll" id="sbRerollA" style="display:none;">
-          <span class="sb-reroll-label">RR</span>
-          <span class="sb-reroll-count mono" id="sbRerollCountA">0/0</span>
-          <span class="sb-reroll-btns">
-            <button onclick="adjustReroll('A', -1)">-1</button>
-            <button onclick="adjustReroll('A', 1)">+1</button>
-          </span>
+        <div class="sb-team-inner">
+          <div class="sb-reroll" id="sbRerollA" style="display:none;">
+            <span class="sb-reroll-label">RR</span>
+            <span class="sb-reroll-count mono" id="sbRerollCountA">0/0</span>
+            <span class="sb-reroll-btns">
+              <button onclick="adjustReroll('A', -1)">-1</button>
+              <button onclick="adjustReroll('A', 1)">+1</button>
+            </span>
+          </div>
+          <div class="sb-team-main">
+            <div class="label" id="sbNameA">Rojo</div>
+            <div class="sb-race mono" id="sbRaceA"></div>
+            <div class="score mono" id="scoreA">0</div>
+          </div>
         </div>
       </div>
       <div class="sb-mid">
@@ -111,16 +115,20 @@
         <div class="active-flag mono" id="activeFlag">COLOCACIÓN</div>
       </div>
       <div class="sb-team">
-        <div class="label" id="sbNameB">Azul</div>
-        <div class="sb-race mono" id="sbRaceB"></div>
-        <div class="score mono" id="scoreB">0</div>
-        <div class="sb-reroll" id="sbRerollB" style="display:none;">
-          <span class="sb-reroll-label">RR</span>
-          <span class="sb-reroll-count mono" id="sbRerollCountB">0/0</span>
-          <span class="sb-reroll-btns">
-            <button onclick="adjustReroll('B', -1)">-1</button>
-            <button onclick="adjustReroll('B', 1)">+1</button>
-          </span>
+        <div class="sb-team-inner">
+          <div class="sb-team-main">
+            <div class="label" id="sbNameB">Azul</div>
+            <div class="sb-race mono" id="sbRaceB"></div>
+            <div class="score mono" id="scoreB">0</div>
+          </div>
+          <div class="sb-reroll" id="sbRerollB" style="display:none;">
+            <span class="sb-reroll-label">RR</span>
+            <span class="sb-reroll-count mono" id="sbRerollCountB">0/0</span>
+            <span class="sb-reroll-btns">
+              <button onclick="adjustReroll('B', -1)">-1</button>
+              <button onclick="adjustReroll('B', 1)">+1</button>
+            </span>
+          </div>
         </div>
       </div>
     </div>

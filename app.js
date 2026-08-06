@@ -601,14 +601,23 @@ function clearTeam(team){
   broadcastState();
 }
 
+function showInfoModal(title, text){
+  document.getElementById('infoModalTitle').textContent = title;
+  document.getElementById('infoModalText').textContent = text;
+  document.getElementById('infoModal').classList.add('show');
+}
+function closeInfoModal(){
+  document.getElementById('infoModal').classList.remove('show');
+}
+
 function presetPositions(team){
   const formation = teamFormation[team];
   if(!formation || !formation.length){
-    alert('Este equipo no tiene una colocación predefinida guardada.\nGuárdala primero en el editor de plantillas (rosters.html) y vuelve a cargar el JSON del equipo.');
+    showInfoModal('Sin colocación predefinida', 'Este equipo no tiene una colocación predefinida guardada. Guárdala primero en el editor de plantillas (rosters.html) y vuelve a cargar el JSON del equipo.');
     return;
   }
   const teamPlayers = players.filter(p=>p.team===team);
-  if(!teamPlayers.length){ alert('No hay jugadores en ' + teamName(team) + '.'); return; }
+  if(!teamPlayers.length){ showInfoModal('Sin jugadores', 'No hay jugadores en ' + teamName(team) + '.'); return; }
 
   // Quitar del campo a los jugadores de este equipo que ya estuvieran colocados
   teamPlayers.forEach(p=>{

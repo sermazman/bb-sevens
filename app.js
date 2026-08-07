@@ -720,22 +720,21 @@ function renderReserveZone(){
     };
 
     const groups = [
-      { cond:'ko', badgeClass:'ko', badgeChar:'★', label:'Inconscientes', extraLabel:'INCONSCIENTE' },
-      { cond:'injured', badgeClass:'light', badgeChar:'✚', label:'Heridos leves', extraLabel:'HERIDO (LEVE)' },
-      { cond:'injuredGrave', badgeClass:'grave', badgeChar:'✚', label:'Heridas graves', extraLabel:'HERIDA GRAVE' },
-      { cond:'dead', badgeClass:'dead', badgeChar:'✚', label:'Muertos', extraLabel:'MUERTO' }
+      { cond:'ko', badgeClass:'ko', badgeChar:'★', extraLabel:'INCONSCIENTE' },
+      { cond:'injured', badgeClass:'light', badgeChar:'✚', extraLabel:'HERIDO (LEVE)' },
+      { cond:'injuredGrave', badgeClass:'grave', badgeChar:'✚', extraLabel:'HERIDA GRAVE' },
+      { cond:'dead', badgeClass:'dead', badgeChar:'✚', extraLabel:'MUERTO' }
     ];
 
-    let html = '';
+    let chipsHtml = '';
     let any = false;
     groups.forEach(g=>{
       const list = players.filter(p=>p.team===team && p.condition===g.cond);
       if(!list.length) return;
       any = true;
-      html += `<div class="bajas-group-label">${g.label}</div><div class="bajas-group-row">`
-        + list.map(p=>chip(p, g.badgeClass, g.badgeChar, g.extraLabel)).join('')
-        + `</div>`;
+      chipsHtml += list.map(p=>chip(p, g.badgeClass, g.badgeChar, g.extraLabel)).join('');
     });
+    const html = `<div class="bajas-group-row">${chipsHtml}</div>`;
     listEl.innerHTML = any ? html : '<span class="small-note">Ninguna</span>';
   });
 }

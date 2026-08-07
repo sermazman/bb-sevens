@@ -274,6 +274,10 @@ function snapshotState(){
     blockText: document.getElementById('blockText').textContent,
     blockDiceAreaHtml: document.getElementById('blockDiceArea').innerHTML,
     blockOutcomeRowVisible: document.getElementById('blockOutcomeRow').classList.contains('active'),
+    blockFreePushBtnText: document.getElementById('blockFreePushBtn').textContent,
+    blockFreePushBtnActive: document.getElementById('blockFreePushBtn').classList.contains('active-toggle'),
+    blockStrengthInfoText: document.getElementById('blockStrengthInfo').textContent,
+    blockDiceRecommended: activeBlock && activeBlock.diceInfo ? activeBlock.diceInfo.diceCount : null,
     blockDiceRolled,
     followUpModalOpen: document.getElementById('followUpModal').classList.contains('show'),
     followUpText: document.getElementById('followUpText').textContent,
@@ -439,6 +443,12 @@ function applyRemoteState(payload){
   document.getElementById('blockText').textContent = payload.blockText || '';
   document.getElementById('blockDiceArea').innerHTML = payload.blockDiceAreaHtml || '';
   document.getElementById('blockOutcomeRow').classList.toggle('active', !!payload.blockOutcomeRowVisible);
+  document.getElementById('blockFreePushBtn').textContent = payload.blockFreePushBtnText || '🔓 Activar todos los empujes (para este placaje)';
+  document.getElementById('blockFreePushBtn').classList.toggle('active-toggle', !!payload.blockFreePushBtnActive);
+  document.getElementById('blockStrengthInfo').textContent = payload.blockStrengthInfoText || '';
+  [1,2,3].forEach(n=>{
+    document.getElementById('blockDiceBtn'+n).classList.toggle('active-toggle', n===payload.blockDiceRecommended);
+  });
   blockDiceRolled = !!payload.blockDiceRolled;
   document.getElementById('blockModal').classList.toggle('show', !!payload.blockModalOpen);
 
@@ -1482,13 +1492,75 @@ function executeBlockHit(attacker, defender, isBlitz){
   }
 }
 
+function countAssists(supporterTeam, targetId){
+  const target = players.find(x=>x.id===targetId);
+  if(!target) return 0;
+  const enemyTeam = supporterTeam==='A' ? 'B' : 'A';
+  return players.filter(p2=>{
+    if(!(p2.onPitch && p2.team===supporterTeam && p2.condition==='standing')) return false;
+    const distToTarget = Math.max(Math.abs(p2.row-target.row), Math.abs(p2.col-target.col));
+    if(distToTarget!==1) return false;
+    const markedByOtherEnemy = players.some(e => e.onPitch && e.team===enemyTeam && e.condition==='standing' && e.id!==targetId &&
+      Math.max(Math.abs(e.row-p2.row), Math.abs(e.col-p2.col))===1);
+    return !markedByOtherEnemy;
+  }).length;
+}
+
+function computeBlockDiceInfo(attacker, defender){
+  const baseAtk = parseInt(attacker.st, 10) || 0;
+  const baseDef = parseInt(defender.st, 10) || 0;
+  const offAssists = countAssists(attacker.team, defender.id);
+  const defAssists = countAssists(defender.team, attacker.id);
+  const stAtk = baseAtk + offAssists;
+  const stDef = baseDef + defAssists;
+  let diceCount, chooser;
+  if(stAtk === stDef){ diceCount = 1; chooser = null; }
+  else if(stAtk > stDef){ diceCount = (stAtk >= stDef*2) ? 3 : 2; chooser = 'attacker'; }
+  else { diceCount = (stDef >= stAtk*2) ? 3 : 2; chooser = 'defender'; }
+  return { baseAtk, baseDef, offAssists, defAssists, stAtk, stDef, diceCount, chooser };
+}
+
 function proceedToBlockDice(attacker, defender, isBlitzHit){
   activeBlock = { attackerId: attacker.id, defenderId: defender.id, isBlitz: !!isBlitzHit };
   blockDiceRolled = false;
   document.getElementById('blockText').textContent = `${attacker.name} placa a ${defender.name} (${teamName(defender.team)}).`;
+
+  const info = computeBlockDiceInfo(attacker, defender);
+  activeBlock.diceInfo = info;
+  const assistTxt = (info.offAssists>0 || info.defAssists>0)
+    ? ` (${attacker.name.split(' ')[0]} FU${info.baseAtk}${info.offAssists>0?'+'+info.offAssists+' apoyo':''} · ${defender.name.split(' ')[0]} FU${info.baseDef}${info.defAssists>0?'+'+info.defAssists+' apoyo':''})`
+    : '';
+  const chooserTxt = info.chooser==='attacker' ? 'elige el ATACANTE' : info.chooser==='defender' ? 'elige el DEFENSOR' : 'sin elección (1 dado)';
+  document.getElementById('blockStrengthInfo').textContent =
+    `Fuerza ${info.stAtk} vs ${info.stDef}${assistTxt} → ${info.diceCount} dado${info.diceCount>1?'s':''} recomendado${info.diceCount>1?'s':''}, ${chooserTxt}.`;
+
+  [1,2,3].forEach(n=>{
+    document.getElementById('blockDiceBtn'+n).classList.toggle('active-toggle', n===info.diceCount);
+  });
+
   document.getElementById('blockDiceArea').innerHTML = '';
   document.getElementById('blockOutcomeRow').classList.remove('active');
+  document.getElementById('blockFreePushBtn').textContent = attacker.freePushOverride
+    ? '🔒 Desactivar empuje libre (para este placaje)'
+    : '🔓 Activar todos los empujes (para este placaje)';
+  document.getElementById('blockFreePushBtn').classList.toggle('active-toggle', !!attacker.freePushOverride);
   document.getElementById('blockModal').classList.add('show');
+  broadcastState();
+}
+
+function toggleFreePushForActiveBlock(){
+  if(!activeBlock) return;
+  const attacker = players.find(x=>x.id===activeBlock.attackerId);
+  if(!attacker) return;
+  attacker.freePushOverride = !attacker.freePushOverride;
+  document.getElementById('blockFreePushBtn').textContent = attacker.freePushOverride
+    ? '🔒 Desactivar empuje libre (para este placaje)'
+    : '🔓 Activar todos los empujes (para este placaje)';
+  document.getElementById('blockFreePushBtn').classList.toggle('active-toggle', !!attacker.freePushOverride);
+  log(attacker.freePushOverride
+    ? '🔓 ' + attacker.name + ': empuje libre activado para este placaje.'
+    : '🔒 ' + attacker.name + ': empuje libre desactivado para este placaje.');
+  renderSelInfo();
   broadcastState();
 }
 

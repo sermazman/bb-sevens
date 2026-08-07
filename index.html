@@ -399,13 +399,15 @@
   <div class="modal">
     <h2>PLACAJE</h2>
     <p id="blockText">Resolviendo un placaje.</p>
+    <div class="mono" id="blockStrengthInfo" style="color:var(--gold); font-size:12.5px; margin-bottom:8px;"></div>
     <div class="row">
-      <button onclick="rollBlockDiceModal(1)">1 dado</button>
-      <button onclick="rollBlockDiceModal(2)">2 dados</button>
-      <button onclick="rollBlockDiceModal(3)">3 dados</button>
+      <button id="blockDiceBtn1" onclick="rollBlockDiceModal(1)">1 dado</button>
+      <button id="blockDiceBtn2" onclick="rollBlockDiceModal(2)">2 dados</button>
+      <button id="blockDiceBtn3" onclick="rollBlockDiceModal(3)">3 dados</button>
     </div>
     <div class="block-face-list" id="blockDiceArea"></div>
     <div id="blockOutcomeRow" class="disabled-block" style="margin-top:12px;">
+      <button class="full" id="blockFreePushBtn" onclick="toggleFreePushForActiveBlock()" style="margin-bottom:10px;">🔓 Activar todos los empujes (para este placaje)</button>
       <div class="small-note" style="margin-bottom:6px;">Elegid el resultado aplicado (tirad los dados primero):</div>
       <div class="row">
         <button onclick="applyBlockOutcome('attackerDown')">Atacante cae</button>

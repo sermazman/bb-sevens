@@ -102,7 +102,7 @@
     <div class="scoreboard">
       <div class="sb-team">
         <div class="sb-team-inner">
-          <div class="sb-reroll" id="sbRerollA" style="display:none;">
+          <div class="sb-reroll" id="sbRerollA" style="display:flex;">
             <span class="sb-reroll-label">RR</span>
             <span class="sb-reroll-count mono" id="sbRerollCountA">0/0</span>
             <span class="sb-reroll-btns">
@@ -119,7 +119,7 @@
       </div>
       <div class="sb-mid">
         <div class="half mono">MITAD <span id="halfNum">1</span></div>
-        <div class="turns mono">🔴 <span id="turnA">0</span>/6 &nbsp; 🔵 <span id="turnB">0</span>/6</div>
+        <div class="turns mono"><span class="turn-dot" id="turnDotA"></span> <span id="turnA">0</span>/6 &nbsp; <span class="turn-dot" id="turnDotB"></span> <span id="turnB">0</span>/6</div>
         <div class="active-flag mono" id="activeFlag">COLOCACIÓN</div>
       </div>
       <div class="sb-team">
@@ -129,7 +129,7 @@
             <div class="sb-race mono" id="sbRaceB"></div>
             <div class="score mono" id="scoreB">0</div>
           </div>
-          <div class="sb-reroll" id="sbRerollB" style="display:none;">
+          <div class="sb-reroll" id="sbRerollB" style="display:flex;">
             <span class="sb-reroll-label">RR</span>
             <span class="sb-reroll-count mono" id="sbRerollCountB">0/0</span>
             <span class="sb-reroll-btns">

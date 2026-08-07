@@ -33,26 +33,22 @@ function renderStaffPanels(){
   ['A','B'].forEach(team=>{
     const panel = document.getElementById('sbReroll'+team);
     if(!panel) return;
-    const staff = teamStaff[team];
-    if(!staff){
-      panel.style.display = 'none';
-      return;
-    }
     panel.style.display = 'flex';
     const rerollCountEl = document.getElementById('sbRerollCount'+team);
     if(rerollCountEl){
-      const max = (staff.rerolls && typeof staff.rerolls.count === 'number') ? staff.rerolls.count : 0;
-      rerollCountEl.textContent = teamRerollsLeft[team] + '/' + max;
+      const staff = teamStaff[team];
+      const max = (staff && staff.rerolls && typeof staff.rerolls.count === 'number') ? staff.rerolls.count : null;
+      rerollCountEl.textContent = max!==null ? (teamRerollsLeft[team] + '/' + max) : String(teamRerollsLeft[team] || 0);
     }
   });
 }
 
 function adjustReroll(team, delta){
-  const staff = teamStaff[team];
-  if(!staff || !staff.rerolls) return;
-  const max = typeof staff.rerolls.count === 'number' ? staff.rerolls.count : 0;
   teamRerollsLeft[team] = Math.max(0, (teamRerollsLeft[team] || 0) + delta);
-  log((delta<0 ? '🔄 Reroll usado' : '↩️ Reroll añadido') + ' — ' + teamName(team) + ': ' + teamRerollsLeft[team] + '/' + max + '.');
+  const staff = teamStaff[team];
+  const max = (staff && staff.rerolls && typeof staff.rerolls.count === 'number') ? staff.rerolls.count : null;
+  const suffix = max!==null ? ('/' + max) : '';
+  log((delta<0 ? '🔄 Reroll usado' : '↩️ Reroll añadido') + ' — ' + teamName(team) + ': ' + teamRerollsLeft[team] + suffix + '.');
   renderStaffPanels();
   broadcastState();
 }
@@ -137,7 +133,7 @@ function setCustomColors(v){
   customColorsEnabled = v;
   document.getElementById('colorsOnBtn').classList.toggle('active', v);
   document.getElementById('colorsOffBtn').classList.toggle('active', !v);
-  renderRosters(); renderPitch();
+  renderRosters(); renderPitch(); applyTeamColorAccents();
   broadcastState();
 }
 function setTeamColor(team, hex){
@@ -536,7 +532,7 @@ function openAddPlayer(team){
 
 function quickFill(team){
   for(let i=1;i<=7;i++){
-    players.push({ id: nextId++, team, num:i, name:'Jugador '+i, ma:6, remainingMove:6, gfiUsed:0, condition:'standing', blockedThisActivation:false, freePushOverride:false, dodgeSkillUsedThisTurn:false, catchSkillUsedThisTurn:false, row:null, col:null, activated:false, onPitch:false });
+    players.push({ id: nextId++, team, num:i, name:'Jugador '+i, ma:6, st:3, ag:'3+', pa:'4+', av:'9+', remainingMove:6, gfiUsed:0, condition:'standing', blockedThisActivation:false, freePushOverride:false, dodgeSkillUsedThisTurn:false, catchSkillUsedThisTurn:false, row:null, col:null, activated:false, onPitch:false });
   }
   renderRosters();
   broadcastState();
@@ -591,13 +587,23 @@ function importTeamFile(team, inputEl){
 
 function clearTeam(team){
   const count = players.filter(p=>p.team===team).length;
-  if(count===0){ alert('Ese equipo ya está vacío.'); return; }
-  if(!confirm(`¿Borrar los ${count} jugadores de ${teamName(team)}? Esta acción no se puede deshacer.`)) return;
+  if(count===0 && !teamCustomColor[team] && !teamStaff[team] && teamRace[team]==='' ){ alert('Ese equipo ya está vacío.'); return; }
+  const oldName = teamName(team);
+  if(!confirm(`¿Borrar los ${count} jugadores de ${oldName} y restablecer nombre/colores/raza a los valores por defecto? Esta acción no se puede deshacer.`)) return;
   players = players.filter(p=>p.team!==team);
   if(selected!==null && !players.some(p=>p.id===selected)) selected = null;
   if(ball.carrierId!==null && !players.some(p=>p.id===ball.carrierId)) ball.carrierId = null;
-  log('🗑️ Plantilla de ' + teamName(team) + ' borrada por completo.');
-  renderRosters(); renderPitch(); renderSelInfo();
+
+  const defaultName = team==='A' ? 'Equipo Rojo' : 'Equipo Azul';
+  document.getElementById('team'+team+'Name').value = defaultName;
+  teamRace[team] = '';
+  teamCustomColor[team] = null;
+  teamTextColor[team] = 'auto';
+  teamStaff[team] = null;
+  teamRerollsLeft[team] = 0;
+
+  log('🗑️ ' + oldName + ' borrado por completo (jugadores, nombre, colores, raza y staff restablecidos).');
+  renderRosters(); renderPitch(); renderSelInfo(); renderScoreboard(); updateKickSelectLabels();
   broadcastState();
 }
 
@@ -2779,6 +2785,17 @@ function resetActivations(){
   broadcastState();
 }
 
+function applyTeamColorAccents(){
+  const dotA = document.getElementById('turnDotA');
+  const dotB = document.getElementById('turnDotB');
+  if(dotA) dotA.style.background = tokenColorFor({ team:'A' });
+  if(dotB) dotB.style.background = tokenColorFor({ team:'B' });
+  const benchA = document.querySelector('#benchColA .team-wide-panel');
+  const benchB = document.querySelector('#benchColB .team-wide-panel');
+  if(benchA) benchA.style.borderColor = tokenColorFor({ team:'A' });
+  if(benchB) benchB.style.borderColor = tokenColorFor({ team:'B' });
+}
+
 function renderScoreboard(){
   document.getElementById('sbNameA').textContent = teamName('A');
   document.getElementById('sbNameB').textContent = teamName('B');
@@ -2787,6 +2804,7 @@ function renderScoreboard(){
   document.getElementById('halfNum').textContent = state.half;
   document.getElementById('turnA').textContent = Math.min(state.turns.A,6);
   document.getElementById('turnB').textContent = Math.min(state.turns.B,6);
+  applyTeamColorAccents();
   const flag = document.getElementById('activeFlag');
   if(phase==='setup'){
     flag.textContent = 'COLOCACIÓN';

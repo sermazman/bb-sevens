@@ -171,6 +171,9 @@ button.full{width:100%; margin-top:6px;}
 .sb-mid{text-align:center; padding:0 10px;}
 .sb-mid .half{font-size:10px; letter-spacing:2px; text-transform:uppercase; color:#a99b7f;}
 .sb-mid .turns{font-family:'JetBrains Mono'; font-size:13px; margin-top:2px;}
+.turn-dot{display:inline-block; width:9px; height:9px; border-radius:50%; vertical-align:middle;}
+#turnDotA{background:var(--team-a);}
+#turnDotB{background:var(--team-b);}
 .active-flag{
   display:inline-block; margin-top:4px; font-size:10px; letter-spacing:1px;
   background:var(--gold); color:#1c1712; padding:2px 7px; border-radius:10px; font-weight:700;

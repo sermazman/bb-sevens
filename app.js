@@ -276,7 +276,7 @@ function snapshotState(){
     blockOutcomeRowVisible: document.getElementById('blockOutcomeRow').classList.contains('active'),
     blockFreePushBtnText: document.getElementById('blockFreePushBtn').textContent,
     blockFreePushBtnActive: document.getElementById('blockFreePushBtn').classList.contains('active-toggle'),
-    blockStrengthInfoText: document.getElementById('blockStrengthInfo').textContent,
+    blockStrengthInfoText: document.getElementById('blockStrengthInfo').innerHTML,
     blockDiceRecommended: activeBlock && activeBlock.diceInfo ? activeBlock.diceInfo.diceCount : null,
     blockDiceRolled,
     followUpModalOpen: document.getElementById('followUpModal').classList.contains('show'),
@@ -445,7 +445,7 @@ function applyRemoteState(payload){
   document.getElementById('blockOutcomeRow').classList.toggle('active', !!payload.blockOutcomeRowVisible);
   document.getElementById('blockFreePushBtn').textContent = payload.blockFreePushBtnText || '🔓 Activar todos los empujes (para este placaje)';
   document.getElementById('blockFreePushBtn').classList.toggle('active-toggle', !!payload.blockFreePushBtnActive);
-  document.getElementById('blockStrengthInfo').textContent = payload.blockStrengthInfoText || '';
+  document.getElementById('blockStrengthInfo').innerHTML = payload.blockStrengthInfoText || '';
   [1,2,3].forEach(n=>{
     document.getElementById('blockDiceBtn'+n).classList.toggle('active-toggle', n===payload.blockDiceRecommended);
   });
@@ -1492,32 +1492,42 @@ function executeBlockHit(attacker, defender, isBlitz){
   }
 }
 
-function countAssists(supporterTeam, targetId){
+function getAssistingPlayers(supporterTeam, targetId, excludeId){
   const target = players.find(x=>x.id===targetId);
-  if(!target) return 0;
+  if(!target) return [];
   const enemyTeam = supporterTeam==='A' ? 'B' : 'A';
   return players.filter(p2=>{
+    if(p2.id===excludeId) return false;
     if(!(p2.onPitch && p2.team===supporterTeam && p2.condition==='standing')) return false;
     const distToTarget = Math.max(Math.abs(p2.row-target.row), Math.abs(p2.col-target.col));
     if(distToTarget!==1) return false;
     const markedByOtherEnemy = players.some(e => e.onPitch && e.team===enemyTeam && e.condition==='standing' && e.id!==targetId &&
       Math.max(Math.abs(e.row-p2.row), Math.abs(e.col-p2.col))===1);
     return !markedByOtherEnemy;
-  }).length;
+  });
+}
+
+function joinNames(list){
+  const names = list.map(p=>p.name);
+  if(names.length===0) return '';
+  if(names.length===1) return names[0];
+  return names.slice(0,-1).join(', ') + ' y ' + names[names.length-1];
 }
 
 function computeBlockDiceInfo(attacker, defender){
   const baseAtk = parseInt(attacker.st, 10) || 0;
   const baseDef = parseInt(defender.st, 10) || 0;
-  const offAssists = countAssists(attacker.team, defender.id);
-  const defAssists = countAssists(defender.team, attacker.id);
+  const offAssisters = getAssistingPlayers(attacker.team, defender.id, attacker.id);
+  const defAssisters = getAssistingPlayers(defender.team, attacker.id, defender.id);
+  const offAssists = offAssisters.length;
+  const defAssists = defAssisters.length;
   const stAtk = baseAtk + offAssists;
   const stDef = baseDef + defAssists;
   let diceCount, chooser;
   if(stAtk === stDef){ diceCount = 1; chooser = null; }
   else if(stAtk > stDef){ diceCount = (stAtk >= stDef*2) ? 3 : 2; chooser = 'attacker'; }
   else { diceCount = (stDef >= stAtk*2) ? 3 : 2; chooser = 'defender'; }
-  return { baseAtk, baseDef, offAssists, defAssists, stAtk, stDef, diceCount, chooser };
+  return { baseAtk, baseDef, offAssisters, defAssisters, offAssists, defAssists, stAtk, stDef, diceCount, chooser };
 }
 
 function proceedToBlockDice(attacker, defender, isBlitzHit){
@@ -1527,12 +1537,15 @@ function proceedToBlockDice(attacker, defender, isBlitzHit){
 
   const info = computeBlockDiceInfo(attacker, defender);
   activeBlock.diceInfo = info;
-  const assistTxt = (info.offAssists>0 || info.defAssists>0)
-    ? ` (${attacker.name.split(' ')[0]} FU${info.baseAtk}${info.offAssists>0?'+'+info.offAssists+' apoyo':''} · ${defender.name.split(' ')[0]} FU${info.baseDef}${info.defAssists>0?'+'+info.defAssists+' apoyo':''})`
-    : '';
+  const atkLine = 'Atacante ' + attacker.name + ' con FU' + info.baseAtk
+    + (info.offAssists>0 ? ' + apoyos ofensivos ' + joinNames(info.offAssisters) : '')
+    + ' = FU' + info.stAtk;
+  const defLine = 'Defensor ' + defender.name + ' con FU' + info.baseDef
+    + (info.defAssists>0 ? ' + apoyos defensivos ' + joinNames(info.defAssisters) : '')
+    + ' = FU' + info.stDef;
   const chooserTxt = info.chooser==='attacker' ? 'elige el ATACANTE' : info.chooser==='defender' ? 'elige el DEFENSOR' : 'sin elección (1 dado)';
-  document.getElementById('blockStrengthInfo').textContent =
-    `Fuerza ${info.stAtk} vs ${info.stDef}${assistTxt} → ${info.diceCount} dado${info.diceCount>1?'s':''} recomendado${info.diceCount>1?'s':''}, ${chooserTxt}.`;
+  const diceLine = '→ ' + info.diceCount + ' dado' + (info.diceCount>1?'s':'') + ' recomendado' + (info.diceCount>1?'s':'') + ', ' + chooserTxt + '.';
+  document.getElementById('blockStrengthInfo').innerHTML = atkLine + '<br>' + defLine + '<br>' + diceLine;
 
   [1,2,3].forEach(n=>{
     document.getElementById('blockDiceBtn'+n).classList.toggle('active-toggle', n===info.diceCount);
@@ -2878,12 +2891,23 @@ function renderScoreboard(){
   document.getElementById('turnB').textContent = Math.min(state.turns.B,6);
   applyTeamColorAccents();
   const flag = document.getElementById('activeFlag');
+  const endTurnBtn = document.getElementById('endTurnBtn');
   if(phase==='setup'){
     flag.textContent = 'COLOCACIÓN';
     flag.classList.add('setup-flag');
+    flag.style.background = '';
+    flag.style.color = '';
+    if(endTurnBtn){ endTurnBtn.style.background = ''; endTurnBtn.style.color = ''; }
   } else {
     flag.textContent = 'TURNO ' + teamName(state.active).toUpperCase();
     flag.classList.remove('setup-flag');
+    const activeColor = tokenColorFor({ team: state.active });
+    flag.style.background = activeColor;
+    flag.style.color = textColorFor({ team: state.active });
+    if(endTurnBtn){
+      endTurnBtn.style.background = activeColor;
+      endTurnBtn.style.color = textColorFor({ team: state.active });
+    }
   }
 }
 

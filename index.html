@@ -433,6 +433,28 @@
   </div>
 </div>
 
+<div class="modal-back" id="actionMenuModal">
+  <div class="modal">
+    <h2>ACCIÓN DEL JUGADOR</h2>
+    <p class="small-note">Elige qué hace este jugador (aún no se ha movido esta activación).</p>
+    <div class="sel-btn-row" style="justify-content:center; margin-top:10px;">
+      <button onclick="actionMenuBlitz()">⚡ Blitz</button>
+      <button onclick="actionMenuSecureBall()">🔒 Asegurar Balón</button>
+      <button onclick="actionMenuFoul()">🥊 Falta</button>
+      <button class="danger" onclick="actionMenuEndActivation()">⏹ Fin Activación</button>
+    </div>
+    <button class="full" style="margin-top:14px;" onclick="closeActionMenu()">Cancelar</button>
+  </div>
+</div>
+
+<div class="modal-back" id="matchEndModal">
+  <div class="modal">
+    <h2>🏁 FIN DEL PARTIDO</h2>
+    <p id="matchEndText">Resultado final.</p>
+    <button class="primary full" onclick="document.getElementById('matchEndModal').classList.remove('show')">Cerrar</button>
+  </div>
+</div>
+
 <div class="modal-back" id="resumeModal">
   <div class="modal">
     <h2>PARTIDA GUARDADA</h2>

@@ -239,6 +239,10 @@ function snapshotState(){
     pendingKickPlacement, kickoffBounceStep, kickoffKickingTeam, kickoffReceivingTeam, freeCatchTeam, placingBallFree,
     blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp, chainPushStack, secureBallUsedByTeam, pendingSecureBall, secureBallActivePlayer,
     secureBallModalOpen: document.getElementById('secureBallModal').classList.contains('show'),
+    matchEndModalOpen: document.getElementById('matchEndModal').classList.contains('show'),
+    matchEndText: document.getElementById('matchEndText').textContent,
+    actionMenuModalOpen: document.getElementById('actionMenuModal').classList.contains('show'),
+    pendingActionMenuPlayer,
     secureBallText: document.getElementById('secureBallText').textContent,
     secureBallDieText: document.getElementById('secureBallDie').textContent,
     teamAName: document.getElementById('teamAName').value,
@@ -371,6 +375,10 @@ function applyRemoteState(payload){
   document.getElementById('secureBallText').textContent = payload.secureBallText || '';
   document.getElementById('secureBallDie').textContent = payload.secureBallDieText || '–';
   document.getElementById('secureBallModal').classList.toggle('show', !!payload.secureBallModalOpen);
+  document.getElementById('matchEndText').textContent = payload.matchEndText || '';
+  document.getElementById('matchEndModal').classList.toggle('show', !!payload.matchEndModalOpen);
+  pendingActionMenuPlayer = payload.pendingActionMenuPlayer;
+  document.getElementById('actionMenuModal').classList.toggle('show', !!payload.actionMenuModalOpen);
   nextId = payload.nextId;
   document.getElementById('teamAName').value = payload.teamAName;
   document.getElementById('teamBName').value = payload.teamBName;
@@ -526,7 +534,9 @@ function anyModalOpen(){
          document.getElementById('resumeModal').classList.contains('show') ||
          document.getElementById('losWarningModal').classList.contains('show') ||
          document.getElementById('jumpUpModal').classList.contains('show') ||
-         document.getElementById('secureBallModal').classList.contains('show');
+         document.getElementById('secureBallModal').classList.contains('show') ||
+         document.getElementById('matchEndModal').classList.contains('show') ||
+         document.getElementById('actionMenuModal').classList.contains('show');
 }
 
 // ---------- Roster management ----------
@@ -1161,9 +1171,53 @@ function renderPushGhosts(pitch){
 function handlePitchRightClick(e){
   e.preventDefault();
   if(phase==='live' && selected!==null && !anyModalOpen()){
-    endActivation(selected);
+    const p = players.find(x=>x.id===selected);
+    const hasMoved = p && ((p.remainingMove ?? p.ma) !== p.ma || (p.gfiUsed ?? 0) > 0);
+    if(p && p.team===state.active && !p.activated && p.condition==='standing' && !p.blockedThisActivation && !hasMoved){
+      openActionMenu(p.id);
+    } else {
+      endActivation(selected);
+    }
   }
   return false;
+}
+
+let pendingActionMenuPlayer = null;
+
+function openActionMenu(id){
+  pendingActionMenuPlayer = id;
+  document.getElementById('actionMenuModal').classList.add('show');
+  broadcastState();
+}
+
+function closeActionMenu(){
+  document.getElementById('actionMenuModal').classList.remove('show');
+  pendingActionMenuPlayer = null;
+  broadcastState();
+}
+
+function actionMenuBlitz(){
+  const id = pendingActionMenuPlayer;
+  closeActionMenu();
+  selected = id;
+  declareBlitz();
+}
+
+function actionMenuSecureBall(){
+  const id = pendingActionMenuPlayer;
+  closeActionMenu();
+  selected = id;
+  secureTheBall();
+}
+
+function actionMenuFoul(){
+  alert('La acción de Falta aún no está implementada — próximamente.');
+}
+
+function actionMenuEndActivation(){
+  const id = pendingActionMenuPlayer;
+  closeActionMenu();
+  endActivation(id);
 }
 
 function endActivation(id){
@@ -1525,8 +1579,8 @@ function computeBlockDiceInfo(attacker, defender){
   const stDef = baseDef + defAssists;
   let diceCount, chooser;
   if(stAtk === stDef){ diceCount = 1; chooser = null; }
-  else if(stAtk > stDef){ diceCount = (stAtk >= stDef*2) ? 3 : 2; chooser = 'attacker'; }
-  else { diceCount = (stDef >= stAtk*2) ? 3 : 2; chooser = 'defender'; }
+  else if(stAtk > stDef){ diceCount = (stAtk > stDef*2) ? 3 : 2; chooser = 'attacker'; }
+  else { diceCount = (stDef > stAtk*2) ? 3 : 2; chooser = 'defender'; }
   return { baseAtk, baseDef, offAssisters, defAssisters, offAssists, defAssists, stAtk, stDef, diceCount, chooser };
 }
 
@@ -2079,12 +2133,13 @@ function resolveBounce(r,c){
 
 function openCatchModal(p, noModifiers){
   const tz = noModifiers ? 0 : countOpponentTackleZones(p.row, p.col, p.team);
-  const target = parseAgTarget(p.ag) + tz;
+  const baseTarget = noModifiers ? parseAgTarget(p.ag) : Math.max(2, parseAgTarget(p.ag) - 1);
+  const target = baseTarget + tz;
   pendingCatch = { playerId: p.id, target };
   catchRerollUsed = false;
   const modText = noModifiers
     ? `(AG${p.ag ?? '?'}, sin modificadores — rebote del saque inicial)`
-    : `(AG${p.ag ?? '?'} + ${tz} zona(s) de marcaje rival en su casilla)`;
+    : `(AG${p.ag ?? '?'} -1 por recoger balón rebotado + ${tz} zona(s) de marcaje rival en su casilla)`;
   document.getElementById('catchText').textContent = `${p.name} intenta recoger el balón — necesita ${target}+ ${modText}. Tirad D6.`;
   document.getElementById('catchDie').textContent = '–';
   document.getElementById('catchResultText').textContent = '';
@@ -2826,6 +2881,12 @@ function endTurn(){
   if(isHalfComplete(finishing)){
     resetBoardForNewDrive();
     phase='setup';
+    if(state.half >= 2){
+      showMatchEndModal();
+      renderScoreboard(); renderRosters(); renderPitch();
+      broadcastState();
+      return;
+    }
     showSetupPanel();
     addNewHalfButton();
     updateStatus('¡Mitad terminada! Colocad y pulsad "Empezar Mitad 2".');
@@ -2835,6 +2896,19 @@ function endTurn(){
   }
   const other = finishing==='A' ? 'B':'A';
   beginTurn(other);
+}
+
+function showMatchEndModal(){
+  const scoreA = parseInt(document.getElementById('scoreA').textContent, 10) || 0;
+  const scoreB = parseInt(document.getElementById('scoreB').textContent, 10) || 0;
+  let resultText;
+  if(scoreA > scoreB) resultText = '🏆 ¡' + teamName('A') + ' gana ' + scoreA + ' - ' + scoreB + '!';
+  else if(scoreB > scoreA) resultText = '🏆 ¡' + teamName('B') + ' gana ' + scoreB + ' - ' + scoreA + '!';
+  else resultText = '🤝 ¡Empate a ' + scoreA + '!';
+  document.getElementById('matchEndText').textContent = resultText;
+  document.getElementById('matchEndModal').classList.add('show');
+  log('🏁 Fin del partido — ' + resultText);
+  broadcastState();
 }
 
 function addNewHalfButton(){

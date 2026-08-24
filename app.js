@@ -109,6 +109,7 @@ function setPitchBackground(url, exactFit){
   }
 }
 let teamCustomColor = { A: null, B: null };
+let teamNameLocked = { A: false, B: false };
 let teamTextColor = { A: 'auto', B: 'auto' };
 let customColorsEnabled = true;
 function tokenColorFor(p){
@@ -246,6 +247,7 @@ function snapshotState(){
     secureBallText: document.getElementById('secureBallText').textContent,
     secureBallDieText: document.getElementById('secureBallDie').textContent,
     teamAName: document.getElementById('teamAName').value,
+    teamNameLocked,
     teamBName: document.getElementById('teamBName').value,
     kickSelectValue: document.getElementById('kickSelect').value,
     showHalfBtn: !!document.getElementById('newHalfBtn'),
@@ -382,6 +384,9 @@ function applyRemoteState(payload){
   nextId = payload.nextId;
   document.getElementById('teamAName').value = payload.teamAName;
   document.getElementById('teamBName').value = payload.teamBName;
+  teamNameLocked = payload.teamNameLocked || { A:false, B:false };
+  document.getElementById('teamAName').readOnly = !!teamNameLocked.A;
+  document.getElementById('teamBName').readOnly = !!teamNameLocked.B;
   document.getElementById('kickSelect').value = payload.kickSelectValue;
 
   if(phase==='setup'){ showSetupPanel(); } else { document.getElementById('setupPanel').style.display='none'; }
@@ -568,7 +573,11 @@ function importTeamFile(team, inputEl){
     catch(err){ alert('El archivo no es un JSON válido.'); return; }
     if(!data.players || !Array.isArray(data.players)){ alert('El JSON debe tener un array "players".'); return; }
     if(data.teamName){
-      document.getElementById(team==='A' ? 'teamAName':'teamBName').value = data.teamName;
+      const nameInput = document.getElementById(team==='A' ? 'teamAName':'teamBName');
+      nameInput.value = data.teamName;
+      nameInput.readOnly = true;
+      nameInput.title = 'Nombre bloqueado — viene del JSON del equipo. Usad "Borrar Equipo" para poder cambiarlo.';
+      teamNameLocked[team] = true;
     }
     teamRace[team] = data.race || '';
     if(data.color){
@@ -615,7 +624,11 @@ function clearTeam(team){
   if(ball.carrierId!==null && !players.some(p=>p.id===ball.carrierId)) ball.carrierId = null;
 
   const defaultName = team==='A' ? 'Equipo Rojo' : 'Equipo Azul';
-  document.getElementById('team'+team+'Name').value = defaultName;
+  const nameInput = document.getElementById('team'+team+'Name');
+  nameInput.value = defaultName;
+  nameInput.readOnly = false;
+  nameInput.title = '';
+  teamNameLocked[team] = false;
   teamRace[team] = '';
   teamCustomColor[team] = null;
   teamTextColor[team] = 'auto';
@@ -2953,6 +2966,10 @@ function applyTeamColorAccents(){
   const benchB = document.querySelector('#benchColB .team-wide-panel');
   if(benchA) benchA.style.borderColor = tokenColorFor({ team:'A' });
   if(benchB) benchB.style.borderColor = tokenColorFor({ team:'B' });
+  const nameA = document.getElementById('teamAName');
+  const nameB = document.getElementById('teamBName');
+  if(nameA) nameA.style.borderColor = tokenColorFor({ team:'A' });
+  if(nameB) nameB.style.borderColor = tokenColorFor({ team:'B' });
 }
 
 function renderScoreboard(){

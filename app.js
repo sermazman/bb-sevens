@@ -549,14 +549,14 @@ function openAddPlayer(team){
   if(num === null) return;
   const name = prompt('Nombre (opcional):') || ('Jugador ' + num);
   const ma = parseFloat(prompt('Movimiento (MA):', '6')) || 6;
-  players.push({ id: nextId++, team, num, name, ma, remainingMove: ma, gfiUsed:0, condition:'standing', blockedThisActivation:false, freePushOverride:false, dodgeSkillUsedThisTurn:false, catchSkillUsedThisTurn:false, row:null, col:null, activated:false, onPitch:false });
+  players.push({ id: nextId++, team, num, name, ma, remainingMove: ma, gfiUsed:0, condition:'standing', blockedThisActivation:false, freePushOverride:false, dodgeSkillUsedThisTurn:false, catchSkillUsedThisTurn:false, justStoodThisActivation:false, row:null, col:null, activated:false, onPitch:false });
   renderRosters();
   broadcastState();
 }
 
 function quickFill(team){
   for(let i=1;i<=7;i++){
-    players.push({ id: nextId++, team, num:i, name:'Jugador '+i, ma:6, st:3, ag:'3+', pa:'4+', av:'9+', remainingMove:6, gfiUsed:0, condition:'standing', blockedThisActivation:false, freePushOverride:false, dodgeSkillUsedThisTurn:false, catchSkillUsedThisTurn:false, row:null, col:null, activated:false, onPitch:false });
+    players.push({ id: nextId++, team, num:i, name:'Jugador '+i, ma:6, st:3, ag:'3+', pa:'4+', av:'9+', remainingMove:6, gfiUsed:0, condition:'standing', blockedThisActivation:false, freePushOverride:false, dodgeSkillUsedThisTurn:false, catchSkillUsedThisTurn:false, justStoodThisActivation:false, row:null, col:null, activated:false, onPitch:false });
   }
   renderRosters();
   broadcastState();
@@ -597,7 +597,7 @@ function importTeamFile(team, inputEl){
         id: nextId++, team,
         num: pd.num ?? '?',
         name: pd.name || ('Jugador ' + (pd.num ?? '')),
-        ma, remainingMove: ma, gfiUsed:0, condition:'standing', blockedThisActivation:false, freePushOverride:false, dodgeSkillUsedThisTurn:false, catchSkillUsedThisTurn:false,
+        ma, remainingMove: ma, gfiUsed:0, condition:'standing', blockedThisActivation:false, freePushOverride:false, dodgeSkillUsedThisTurn:false, catchSkillUsedThisTurn:false, justStoodThisActivation:false,
         st: pd.st, ag: pd.ag, pa: pd.pa, av: pd.av,
         position: pd.position || null,
         skills: pd.skills || [],
@@ -804,6 +804,7 @@ function standUp(){
   if(!p || p.condition!=='tumbado') return;
   const hasJumpUp = playerHasSkill(p, 'salto', 'jump up');
   p.condition = 'standing';
+  p.justStoodThisActivation = true;
   if(hasJumpUp){
     log('🤸 ' + p.name + ' se levanta gratis (En pie de un salto).');
   } else {
@@ -1189,7 +1190,7 @@ function handleTokenRightClick(id){
   if(!p || p.team!==state.active) return;
   if(p.activated && p.condition!=='tumbado' && p.condition!=='aturdido' && p.condition!=='despistado') return;
   selected = id;
-  const hasMoved = (p.remainingMove ?? p.ma) !== p.ma || (p.gfiUsed ?? 0) > 0;
+  const hasMoved = ((p.remainingMove ?? p.ma) !== p.ma || (p.gfiUsed ?? 0) > 0) && !p.justStoodThisActivation;
   if(!p.activated && p.condition==='standing' && !p.blockedThisActivation && !hasMoved){
     openActionMenu(id);
   } else if(!p.activated && p.condition==='tumbado'){
@@ -1394,6 +1395,7 @@ function completeStep(p, r, c, consume){
   if(consume==='gfi'){ p.gfiUsed = (p.gfiUsed ?? 0) + 1; }
   else if(consume==='normal'){ p.remainingMove = Math.max(0, (p.remainingMove ?? p.ma) - 1); }
   // consume==='none' → already accounted for by a prior chained check
+  p.justStoodThisActivation = false;
   if(ball.carrierId===p.id){ checkTouchdown(p); }
   if(moveMode(p)===null || pendingTD){
     p.activated = true;
@@ -2907,6 +2909,7 @@ function beginTurn(team){
     p.gfiUsed = 0;
     p.blockedThisActivation = false;
     p.dodgeSkillUsedThisTurn = false;
+    p.justStoodThisActivation = false;
     p.catchSkillUsedThisTurn = false;
   });
   renderScoreboard(); renderRosters(); renderPitch();

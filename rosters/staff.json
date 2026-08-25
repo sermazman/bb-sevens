@@ -4,6 +4,6 @@
     "label": "Segunda Oportunidad",
     "basePrice": 50000,
     "sevensMultiplier": 2,
-    "byRace": { "Dwarf": 60000, "Elven Union": 50000 }
+    "byRace": {  }
   }
 }

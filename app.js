@@ -242,7 +242,6 @@ function snapshotState(){
     secureBallModalOpen: document.getElementById('secureBallModal').classList.contains('show'),
     matchEndModalOpen: document.getElementById('matchEndModal').classList.contains('show'),
     matchEndText: document.getElementById('matchEndText').textContent,
-    actionMenuModalOpen: document.getElementById('actionMenuModal').classList.contains('show'),
     pendingActionMenuPlayer,
     secureBallText: document.getElementById('secureBallText').textContent,
     secureBallDieText: document.getElementById('secureBallDie').textContent,
@@ -380,7 +379,6 @@ function applyRemoteState(payload){
   document.getElementById('matchEndText').textContent = payload.matchEndText || '';
   document.getElementById('matchEndModal').classList.toggle('show', !!payload.matchEndModalOpen);
   pendingActionMenuPlayer = payload.pendingActionMenuPlayer;
-  document.getElementById('actionMenuModal').classList.toggle('show', !!payload.actionMenuModalOpen);
   nextId = payload.nextId;
   document.getElementById('teamAName').value = payload.teamAName;
   document.getElementById('teamBName').value = payload.teamBName;
@@ -508,6 +506,7 @@ function applyRemoteState(payload){
   document.getElementById('freeCatchText').textContent = payload.freeCatchText || '';
 
   renderRosters(); renderPitch(); renderScoreboard(); renderSelInfo(); updateKickSelectLabels();
+  renderActionMenu();
   if(payload.statusMsg) updateStatus(payload.statusMsg);
   applyingRemote = false;
 }
@@ -541,7 +540,7 @@ function anyModalOpen(){
          document.getElementById('jumpUpModal').classList.contains('show') ||
          document.getElementById('secureBallModal').classList.contains('show') ||
          document.getElementById('matchEndModal').classList.contains('show') ||
-         document.getElementById('actionMenuModal').classList.contains('show');
+         pendingActionMenuPlayer !== null;
 }
 
 // ---------- Roster management ----------
@@ -1111,6 +1110,7 @@ function renderPitch(){
         const freeCatchClass = (freeCatchTeam===occ.team && occ.onPitch && occ.condition==='standing') ? ' free-catch-target' : '';
         const showActivated = occ.activated && phase==='live' && occ.team===state.active;
         t.className = 'token' + (occ.id===selected?' selected':'') + (showActivated?' activated':'') + condClass + targetClass + freeCatchClass;
+        t.dataset.playerId = occ.id;
         t.style.background = tokenColorFor(occ);
         t.style.color = textColorFor(occ);
         t.textContent = occ.num;
@@ -1130,6 +1130,7 @@ function renderPitch(){
           t.appendChild(dot);
         }
         t.onclick=(e)=>{ e.stopPropagation(); tokenClicked(occ.id); };
+        t.oncontextmenu=(e)=>{ e.preventDefault(); e.stopPropagation(); handleTokenRightClick(occ.id); return false; };
         cell.appendChild(t);
       }
 
@@ -1184,30 +1185,84 @@ function renderPushGhosts(pitch){
 function handlePitchRightClick(e){
   e.preventDefault();
   if(phase==='live' && selected!==null && !anyModalOpen()){
-    const p = players.find(x=>x.id===selected);
-    const hasMoved = p && ((p.remainingMove ?? p.ma) !== p.ma || (p.gfiUsed ?? 0) > 0);
-    if(p && p.team===state.active && !p.activated && p.condition==='standing' && !p.blockedThisActivation && !hasMoved){
-      openActionMenu(p.id);
-    } else {
-      endActivation(selected);
-    }
+    handleTokenRightClick(selected);
   }
   return false;
 }
 
+function handleTokenRightClick(id){
+  if(phase!=='live' || anyModalOpen()) return;
+  const p = players.find(x=>x.id===id);
+  if(!p || p.team!==state.active) return;
+  if(p.activated && p.condition!=='tumbado' && p.condition!=='aturdido' && p.condition!=='despistado') return;
+  selected = id;
+  const hasMoved = (p.remainingMove ?? p.ma) !== p.ma || (p.gfiUsed ?? 0) > 0;
+  if(!p.activated && p.condition==='standing' && !p.blockedThisActivation && !hasMoved){
+    openActionMenu(id);
+  } else {
+    endActivation(id);
+  }
+}
+
 let pendingActionMenuPlayer = null;
+
+// Lista de opciones del menú radial. Añadir una opción nueva es añadir una línea aquí.
+const ACTION_MENU_OPTIONS = [
+  { icon:'⚡', label:'Blitz', fn:'actionMenuBlitz' },
+  { icon:'🔒', label:'Asegurar', fn:'actionMenuSecureBall' },
+  { icon:'🥊', label:'Falta', fn:'actionMenuFoul' },
+  { icon:'⏹', label:'Fin', fn:'actionMenuEndActivation', danger:true }
+];
 
 function openActionMenu(id){
   pendingActionMenuPlayer = id;
-  document.getElementById('actionMenuModal').classList.add('show');
+  renderActionMenu();
   broadcastState();
 }
 
+function renderActionMenu(){
+  const old = document.getElementById('radialMenuContainer');
+  if(old) old.remove();
+  if(pendingActionMenuPlayer===null) return;
+  const tokenEl = document.querySelector('.token[data-player-id="'+pendingActionMenuPlayer+'"]');
+  if(!tokenEl) return;
+  const rect = tokenEl.getBoundingClientRect();
+  const cx = rect.left + rect.width/2;
+  const cy = rect.top + rect.height/2;
+  const radius = 66;
+  const n = ACTION_MENU_OPTIONS.length;
+  const container = document.createElement('div');
+  container.id = 'radialMenuContainer';
+  ACTION_MENU_OPTIONS.forEach((opt, i)=>{
+    const angle = (2*Math.PI/n)*i - Math.PI/2;
+    let x = cx + radius*Math.cos(angle);
+    let y = cy + radius*Math.sin(angle);
+    x = Math.max(30, Math.min(window.innerWidth-30, x));
+    y = Math.max(30, Math.min(window.innerHeight-30, y));
+    const btn = document.createElement('div');
+    btn.className = 'radial-menu-btn' + (opt.danger ? ' danger' : '');
+    btn.style.left = (x-28)+'px';
+    btn.style.top = (y-28)+'px';
+    btn.innerHTML = `<div class="rm-icon">${opt.icon}</div><div class="rm-label">${opt.label}</div>`;
+    btn.onclick = (e)=>{ e.stopPropagation(); window[opt.fn](); };
+    container.appendChild(btn);
+  });
+  document.body.appendChild(container);
+}
+
 function closeActionMenu(){
-  document.getElementById('actionMenuModal').classList.remove('show');
+  const el = document.getElementById('radialMenuContainer');
+  if(el) el.remove();
   pendingActionMenuPlayer = null;
   broadcastState();
 }
+
+document.addEventListener('click', (e)=>{
+  const menu = document.getElementById('radialMenuContainer');
+  if(menu && !menu.contains(e.target)){
+    closeActionMenu();
+  }
+});
 
 function actionMenuBlitz(){
   const id = pendingActionMenuPlayer;

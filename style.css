@@ -386,6 +386,25 @@ button.full{width:100%; margin-top:6px;}
 .modal h2{font-size:30px; color:var(--gold);}
 .modal p{font-size:14px; color:#cfc3a8; margin:10px 0 18px 0;}
 
+.radial-menu-btn{
+  position:fixed;
+  width:56px; height:56px;
+  border-radius:50%;
+  background:linear-gradient(180deg, var(--panel-2), var(--panel));
+  border:2px solid var(--gold);
+  color:var(--paper);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  cursor:pointer;
+  box-shadow:0 4px 12px rgba(0,0,0,0.7);
+  z-index:300;
+  text-align:center;
+  animation:pulseTarget 1.2s ease-in-out infinite;
+}
+.radial-menu-btn:hover{background:var(--gold); color:#1c1712;}
+.radial-menu-btn.danger{border-color:var(--bad);}
+.radial-menu-btn.danger:hover{background:var(--bad); color:#fff;}
+.radial-menu-btn .rm-icon{font-size:18px; line-height:1;}
+.radial-menu-btn .rm-label{font-size:7.5px; margin-top:2px; text-transform:uppercase; letter-spacing:0.3px;}
 .small-note{font-size:11px; color:#8a7d64; margin-top:4px;}
 
 .chip-wrap{position:relative; flex-shrink:0;}

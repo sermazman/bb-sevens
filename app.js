@@ -1206,18 +1206,24 @@ function handleTokenRightClick(id){
 
 let pendingActionMenuPlayer = null;
 
-// Lista de opciones del menú radial. Añadir una opción nueva es añadir una línea aquí.
-const ACTION_MENU_OPTIONS = [
-  { icon:'⚡', label:'Blitz', fn:'actionMenuBlitz' },
-  { icon:'🔒', label:'Asegurar', fn:'actionMenuSecureBall' },
-  { icon:'🥊', label:'Falta', fn:'actionMenuFoul' },
-  { icon:'⏹', label:'Fin', fn:'actionMenuEndActivation', danger:true }
-];
+// La lista de opciones se calcula al vuelo en getActionMenuOptionsFor() según el estado del jugador/partida.
+// Añadir una opción nueva es añadir una línea de push() ahí — el racimo se reparte solo.
 
 function openActionMenu(id){
   pendingActionMenuPlayer = id;
   renderActionMenu();
   broadcastState();
+}
+
+function getActionMenuOptionsFor(p){
+  const opts = [];
+  if(!blitzUsedByTeam[p.team]) opts.push({ icon:'⚡', label:'Blitz', fn:'actionMenuBlitz' });
+  if(ball.carrierId===null && ball.row!==null && !secureBallUsedByTeam[p.team] && !isBigGuy(p)){
+    opts.push({ icon:'🔒', label:'Asegurar', fn:'actionMenuSecureBall' });
+  }
+  opts.push({ icon:'🥊', label:'Falta', fn:'actionMenuFoul' });
+  opts.push({ icon:'⏹', label:'Fin', fn:'actionMenuEndActivation', danger:true });
+  return opts;
 }
 
 function renderActionMenu(){
@@ -1226,14 +1232,17 @@ function renderActionMenu(){
   if(pendingActionMenuPlayer===null) return;
   const tokenEl = document.querySelector('.token[data-player-id="'+pendingActionMenuPlayer+'"]');
   if(!tokenEl) return;
+  const p = players.find(x=>x.id===pendingActionMenuPlayer);
+  if(!p) return;
   const rect = tokenEl.getBoundingClientRect();
   const cx = rect.left + rect.width/2;
   const cy = rect.top + rect.height/2;
   const radius = 66;
-  const n = ACTION_MENU_OPTIONS.length;
+  const options = getActionMenuOptionsFor(p);
+  const n = options.length;
   const container = document.createElement('div');
   container.id = 'radialMenuContainer';
-  ACTION_MENU_OPTIONS.forEach((opt, i)=>{
+  options.forEach((opt, i)=>{
     const angle = (2*Math.PI/n)*i - Math.PI/2;
     let x = cx + radius*Math.cos(angle);
     let y = cy + radius*Math.sin(angle);
@@ -1380,7 +1389,7 @@ function completeStep(p, r, c, consume){
       secureBallActivePlayer = null;
       openSecureBallRoll(p);
     } else {
-      openCatchModal(p);
+      openCatchModal(p, false, true);
     }
   }
 }
@@ -1745,16 +1754,39 @@ function applyBlockOutcome(kind){
   }
 
   if(kind==='bothDown'){
-    attacker.condition = 'tumbado';
-    defender.condition = 'tumbado';
-    attacker.activated = true;
-    selected = null;
-    log('👊 Ambos caen: ' + attacker.name + ' y ' + defender.name + '.');
-    queueBallDropIfCarrier(attacker.id, attacker.row, attacker.col);
-    queueBallDropIfCarrier(defender.id, defender.row, defender.col);
+    const atkHasTackle = playerHasSkill(attacker, 'placar', 'tackle');
+    const defHasTackle = playerHasSkill(defender, 'placar', 'tackle');
+    const attackerFalls = !atkHasTackle;
+    const defenderFalls = !defHasTackle;
+
+    const fallenNames = [];
+    if(attackerFalls){ attacker.condition = 'tumbado'; fallenNames.push(attacker.name); queueBallDropIfCarrier(attacker.id, attacker.row, attacker.col); }
+    if(defenderFalls){ defender.condition = 'tumbado'; fallenNames.push(defender.name); queueBallDropIfCarrier(defender.id, defender.row, defender.col); }
+
+    if(!attackerFalls && isBlitz){
+      selected = attacker.id;
+      updateStatus(attacker.name + ' puede seguir moviéndose (Blitz).');
+    } else {
+      attacker.activated = true;
+      selected = null;
+    }
+
+    if(fallenNames.length===0){
+      log('🤝 Ambos caen, pero ' + attacker.name + ' y ' + defender.name + ' tienen Placar — ninguno cae.');
+    } else {
+      const tackleWho = atkHasTackle ? attacker.name : (defHasTackle ? defender.name : null);
+      const tackleNote = tackleWho ? ' (Placar evita la caída de ' + tackleWho + ')' : '';
+      log('👊 Ambos caen: ' + fallenNames.join(' y ') + '.' + tackleNote);
+    }
     renderRosters(); renderPitch(); renderSelInfo();
     broadcastState();
-    pendingArmorQueue = [defender.id, attacker.id];
+
+    if(fallenNames.length===0) return;
+
+    const armorQueue = [];
+    if(defenderFalls) armorQueue.push(defender.id);
+    if(attackerFalls) armorQueue.push(attacker.id);
+    pendingArmorQueue = armorQueue;
     processNextArmorInQueue();
     return;
   }
@@ -2016,7 +2048,7 @@ function resolveFollowUp(doFollow){
   finishPushSequence(info);
   if(landedOnBall){
     const attacker = players.find(x=>x.id===info.attackerId);
-    if(attacker) openCatchModal(attacker);
+    if(attacker) openCatchModal(attacker, false, true);
   }
 }
 
@@ -2199,15 +2231,14 @@ function resolveBounce(r,c){
   }
 }
 
-function openCatchModal(p, noModifiers){
-  const tz = noModifiers ? 0 : countOpponentTackleZones(p.row, p.col, p.team);
-  const baseTarget = noModifiers ? parseAgTarget(p.ag) : Math.max(2, parseAgTarget(p.ag) - 1);
-  const target = baseTarget + tz;
-  pendingCatch = { playerId: p.id, target };
+function openCatchModal(p, noModifiers, voluntary){
+  const markers = noModifiers ? 0 : countOpponentTackleZones(p.row, p.col, p.team);
+  const target = noModifiers ? parseAgTarget(p.ag) : parseAgTarget(p.ag) + markers;
+  pendingCatch = { playerId: p.id, target, voluntary: !!voluntary };
   catchRerollUsed = false;
   const modText = noModifiers
     ? `(AG${p.ag ?? '?'}, sin modificadores — rebote del saque inicial)`
-    : `(AG${p.ag ?? '?'} -1 por recoger balón rebotado + ${tz} zona(s) de marcaje rival en su casilla)`;
+    : `(AG${p.ag ?? '?'} -1 por cada rival marcándole${markers>0 ? ' — '+markers+' marcaje(s)' : ''})`;
   document.getElementById('catchText').textContent = `${p.name} intenta recoger el balón — necesita ${target}+ ${modText}. Tirad D6.`;
   document.getElementById('catchDie').textContent = '–';
   document.getElementById('catchResultText').textContent = '';
@@ -2234,6 +2265,7 @@ function rollCatchDie(){
 function resolveCatch(success){
   if(!pendingCatch){ broadcastState(); return; }
   const p = players.find(x=>x.id===pendingCatch.playerId);
+  const wasVoluntary = !!pendingCatch.voluntary;
   document.getElementById('catchModal').classList.remove('show');
   pendingCatch = null;
   if(p && success){
@@ -2244,9 +2276,10 @@ function resolveCatch(success){
     checkTouchdown(p);
     if(!pendingTD) checkDriveStartAfterBounce();
   } else if(p){
-    log('🏈 ' + p.name + ' falla la recogida — el balón sigue botando.');
+    log('🏈 ' + p.name + ' falla la recogida — el balón sigue botando.' + (wasVoluntary ? ' Cambio de turno.' : ''));
     broadcastState();
     startBallBounce();
+    if(wasVoluntary) endTurn();
   } else {
     broadcastState();
   }
@@ -2492,11 +2525,13 @@ function checkActionButtons(prefix, success, p){
 
   const usedFlag = prefix==='dodge' ? dodgeRerollUsed : prefix==='gfi' ? gfiRerollUsed : catchRerollUsed;
   if(!usedFlag){
-    const hasFreeSkillReroll = (prefix==='dodge' && playerHasSkill(p, 'esquiva', 'dodge') && !p.dodgeSkillUsedThisTurn) ||
-                                (prefix==='catch' && playerHasSkill(p, 'recepción', 'recepcion', 'catch') && !p.catchSkillUsedThisTurn);
+    const hasDodgeSkill = prefix==='dodge' && playerHasSkill(p, 'esquiva', 'dodge') && !p.dodgeSkillUsedThisTurn;
+    const hasCatchSkill = prefix==='catch' && !p.catchSkillUsedThisTurn && playerHasSkill(p, 'manos seguras', 'sure hands');
+    const skillLabel = 'Manos Seguras';
+    const hasFreeSkillReroll = hasDodgeSkill || hasCatchSkill;
     if(hasFreeSkillReroll){
       const btn = document.createElement('button');
-      btn.textContent = prefix==='dodge' ? '🔁 Usar Esquivar (repite gratis)' : '🔁 Usar Recepción (repite gratis)';
+      btn.textContent = prefix==='dodge' ? '🔁 Usar Esquivar (repite gratis)' : ('🔁 Usar ' + skillLabel + ' (repite gratis)');
       btn.onclick = ()=> useCheckReroll(prefix, true);
       actionRow.appendChild(btn);
     } else if((teamRerollsLeft[p.team] || 0) > 0){
@@ -2531,7 +2566,7 @@ function useCheckReroll(prefix, isSkill){
     log('🔁 ' + p.name + ' repite gratis con su habilidad Esquivar (ya no podrá volver a usarla este turno).');
   } else {
     p.catchSkillUsedThisTurn = true;
-    log('🔁 ' + p.name + ' repite gratis con su habilidad Recepción (ya no podrá volver a usarla este turno).');
+    log('🔁 ' + p.name + ' repite gratis con su habilidad Manos Seguras (ya no podrá volver a usarla este turno).');
   }
   pending.lastSuccess = undefined;
   document.getElementById(prefix+'ActionRow').style.display = 'none';

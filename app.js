@@ -860,13 +860,6 @@ function resolveJumpUp(success){
   }
 }
 
-function handleRecoveryButton(){
-  if(selected===null) return;
-  const p = players.find(x=>x.id===selected);
-  if(!p) return;
-  if(p.condition==='tumbado'){ standUp(); }
-}
-
 function knockDown(){
   if(selected===null){ alert('Selecciona primero un jugador en el campo.'); return; }
   const p = players.find(x=>x.id===selected);
@@ -1199,6 +1192,8 @@ function handleTokenRightClick(id){
   const hasMoved = (p.remainingMove ?? p.ma) !== p.ma || (p.gfiUsed ?? 0) > 0;
   if(!p.activated && p.condition==='standing' && !p.blockedThisActivation && !hasMoved){
     openActionMenu(id);
+  } else if(!p.activated && p.condition==='tumbado'){
+    openActionMenu(id);
   } else {
     endActivation(id);
   }
@@ -1216,6 +1211,14 @@ function openActionMenu(id){
 }
 
 function getActionMenuOptionsFor(p){
+  if(p.condition==='tumbado'){
+    const opts = [{ icon:'🧍', label:'Levantar', fn:'actionMenuStandUp' }];
+    if(playerHasSkill(p, 'salto', 'jump up')){
+      opts.push({ icon:'🤸', label:'Salto+Placar', fn:'actionMenuJumpUp' });
+    }
+    opts.push({ icon:'⏹', label:'Fin', fn:'actionMenuEndActivation', danger:true });
+    return opts;
+  }
   const opts = [];
   if(!blitzUsedByTeam[p.team]) opts.push({ icon:'⚡', label:'Blitz', fn:'actionMenuBlitz' });
   if(ball.carrierId===null && ball.row!==null && !secureBallUsedByTeam[p.team] && !isBigGuy(p)){
@@ -1295,6 +1298,20 @@ function actionMenuEndActivation(){
   const id = pendingActionMenuPlayer;
   closeActionMenu();
   endActivation(id);
+}
+
+function actionMenuStandUp(){
+  const id = pendingActionMenuPlayer;
+  closeActionMenu();
+  selected = id;
+  standUp();
+}
+
+function actionMenuJumpUp(){
+  const id = pendingActionMenuPlayer;
+  closeActionMenu();
+  selected = id;
+  jumpUpBlitzCheck();
 }
 
 function endActivation(id){
@@ -1462,7 +1479,6 @@ function selectPlayerLive(id){
 function renderSelInfo(){
   const elLeft = document.getElementById('selInfoLeft');
   const elRight = document.getElementById('selInfoRight');
-  const btn = document.getElementById('recoveryBtn');
   const blockBtn = document.getElementById('blockBtn');
   const blitzBtn = document.getElementById('blitzBtn');
   const despBtn = document.getElementById('despistadoBtn');
@@ -1471,7 +1487,6 @@ function renderSelInfo(){
   if(selected===null){
     elLeft.innerHTML = 'Ninguno';
     elRight.innerHTML = '';
-    btn.style.display = 'none';
     blockBtn.style.display = 'none';
     blitzBtn.style.display = 'none';
     despBtn.style.display = 'none';
@@ -1483,7 +1498,6 @@ function renderSelInfo(){
   if(!p){
     elLeft.innerHTML = 'Ninguno';
     elRight.innerHTML = '';
-    btn.style.display = 'none';
     blockBtn.style.display = 'none';
     blitzBtn.style.display = 'none';
     despBtn.style.display = 'none';
@@ -1521,15 +1535,6 @@ function renderSelInfo(){
     despBtn.style.display = 'block';
   } else {
     despBtn.style.display = 'none';
-  }
-
-  if(p.condition==='aturdido'){
-    btn.style.display = 'none';
-  } else if(p.condition==='tumbado'){
-    btn.textContent = '🧍 Levantar (marcar de pie)';
-    btn.style.display = 'block';
-  } else {
-    btn.style.display = 'none';
   }
 
   jumpUpBtn.style.display = (p.condition==='tumbado' && phase==='live' && p.team===state.active && playerHasSkill(p, 'salto', 'jump up')) ? 'block' : 'none';

@@ -278,11 +278,16 @@ function snapshotState(){
     blockModalOpen: document.getElementById('blockModal').classList.contains('show'),
     blockText: document.getElementById('blockText').textContent,
     blockDiceAreaHtml: document.getElementById('blockDiceArea').innerHTML,
+    currentBlockDiceIndices,
     blockOutcomeRowVisible: document.getElementById('blockOutcomeRow').classList.contains('active'),
     blockFreePushBtnText: document.getElementById('blockFreePushBtn').textContent,
     blockFreePushBtnActive: document.getElementById('blockFreePushBtn').classList.contains('active-toggle'),
     blockStrengthInfoText: document.getElementById('blockStrengthInfo').innerHTML,
     blockDiceRecommended: activeBlock && activeBlock.diceInfo ? activeBlock.diceInfo.diceCount : null,
+    blockChooserBannerText: document.getElementById('blockChooserBanner').textContent,
+    blockChooserBannerBg: document.getElementById('blockChooserBanner').style.background,
+    blockChooserBannerColor: document.getElementById('blockChooserBanner').style.color,
+    blockChooserBannerBorder: document.getElementById('blockChooserBanner').style.borderColor,
     blockDiceRolled,
     followUpModalOpen: document.getElementById('followUpModal').classList.contains('show'),
     followUpText: document.getElementById('followUpText').textContent,
@@ -452,15 +457,22 @@ function applyRemoteState(payload){
   }
 
   document.getElementById('blockText').textContent = payload.blockText || '';
-  document.getElementById('blockDiceArea').innerHTML = payload.blockDiceAreaHtml || '';
+  currentBlockDiceIndices = payload.currentBlockDiceIndices || [];
+  renderBlockDice(currentBlockDiceIndices);
   document.getElementById('blockOutcomeRow').classList.toggle('active', !!payload.blockOutcomeRowVisible);
   document.getElementById('blockFreePushBtn').textContent = payload.blockFreePushBtnText || '🔓 Activar todos los empujes (para este placaje)';
   document.getElementById('blockFreePushBtn').classList.toggle('active-toggle', !!payload.blockFreePushBtnActive);
   document.getElementById('blockStrengthInfo').innerHTML = payload.blockStrengthInfoText || '';
+  const chooserBannerEl = document.getElementById('blockChooserBanner');
+  chooserBannerEl.textContent = payload.blockChooserBannerText || 'ELIGE: —';
+  chooserBannerEl.style.background = payload.blockChooserBannerBg || '';
+  chooserBannerEl.style.color = payload.blockChooserBannerColor || '';
+  chooserBannerEl.style.borderColor = payload.blockChooserBannerBorder || '';
   [1,2,3].forEach(n=>{
     document.getElementById('blockDiceBtn'+n).classList.toggle('active-toggle', n===payload.blockDiceRecommended);
   });
   blockDiceRolled = !!payload.blockDiceRolled;
+  document.getElementById('blockDiceHint').style.display = blockDiceRolled ? 'block' : 'none';
   document.getElementById('blockModal').classList.toggle('show', !!payload.blockModalOpen);
 
   document.getElementById('followUpText').textContent = payload.followUpText || '';
@@ -1669,7 +1681,8 @@ function startBlockTargeting(){
   const hasTarget = players.some(p2 => p2.onPitch && p2.team!==p.team && p2.condition==='standing' &&
     Math.max(Math.abs(p2.row-p.row), Math.abs(p2.col-p.col))===1);
   if(!hasTarget){ alert('No hay rivales en pie adyacentes.'); return; }
-  document.getElementById('blockDiceArea').innerHTML = '';
+  document.getElementById('blockDiceArea').innerHTML = ''; currentBlockDiceIndices = [];
+  document.getElementById('blockDiceHint').style.display = 'none';
   document.getElementById('blockOutcomeRow').classList.remove('active');
   blockDiceRolled = false;
   blockTargeting = p.id;
@@ -1763,11 +1776,30 @@ function proceedToBlockDice(attacker, defender, isBlitzHit){
   const diceLine = '→ ' + info.diceCount + ' dado' + (info.diceCount>1?'s':'') + ' recomendado' + (info.diceCount>1?'s':'') + ', ' + chooserTxt + '.';
   document.getElementById('blockStrengthInfo').innerHTML = atkLine + '<br>' + defLine + '<br>' + diceLine;
 
+  const chooserBanner = document.getElementById('blockChooserBanner');
+  if(info.chooser==='attacker'){
+    chooserBanner.textContent = '🎯 ELIGE EL ATACANTE — ' + attacker.name;
+    chooserBanner.style.background = tokenColorFor(attacker);
+    chooserBanner.style.color = textColorFor(attacker);
+    chooserBanner.style.borderColor = tokenColorFor(attacker);
+  } else if(info.chooser==='defender'){
+    chooserBanner.textContent = '🎯 ELIGE EL DEFENSOR — ' + defender.name;
+    chooserBanner.style.background = tokenColorFor(defender);
+    chooserBanner.style.color = textColorFor(defender);
+    chooserBanner.style.borderColor = tokenColorFor(defender);
+  } else {
+    chooserBanner.textContent = '🎯 SIN ELECCIÓN (1 dado)';
+    chooserBanner.style.background = '';
+    chooserBanner.style.color = '';
+    chooserBanner.style.borderColor = '';
+  }
+
   [1,2,3].forEach(n=>{
     document.getElementById('blockDiceBtn'+n).classList.toggle('active-toggle', n===info.diceCount);
   });
 
-  document.getElementById('blockDiceArea').innerHTML = '';
+  document.getElementById('blockDiceArea').innerHTML = ''; currentBlockDiceIndices = [];
+  document.getElementById('blockDiceHint').style.display = 'none';
   document.getElementById('blockOutcomeRow').classList.remove('active');
   document.getElementById('blockFreePushBtn').textContent = attacker.freePushOverride
     ? '🔒 Desactivar empuje libre (para este placaje)'
@@ -1797,18 +1829,27 @@ function blockFaceHtml(idx){
   return `<img class="block-icon-img" src="${BLOCK_ICON_IMAGES[idx]}" alt="${BLOCK_FACES[idx]}" title="${BLOCK_FACES[idx]}" onerror="this.outerHTML='<div class=&quot;block-icon&quot;>${BLOCK_ICONS[idx]}</div>'">`;
 }
 
-function rollBlockDiceModal(n){
+let currentBlockDiceIndices = [];
+
+function renderBlockDice(indices){
   const el = document.getElementById('blockDiceArea');
   el.innerHTML = '';
-  const results = [];
-  for(let i=0;i<n;i++){ results.push(Math.floor(Math.random()*6)); }
-  results.forEach(idx=>{
+  indices.forEach(idx=>{
     const d = document.createElement('div');
-    d.className = 'block-face';
+    d.className = 'block-face clickable-die';
     d.innerHTML = blockFaceHtml(idx);
+    d.onclick = ()=> applyBlockOutcome(BLOCK_OUTCOME_KINDS[idx]);
     el.appendChild(d);
   });
+}
+
+function rollBlockDiceModal(n){
+  const results = [];
+  for(let i=0;i<n;i++){ results.push(Math.floor(Math.random()*6)); }
+  currentBlockDiceIndices = results;
+  renderBlockDice(results);
   document.getElementById('blockOutcomeRow').classList.add('active');
+  document.getElementById('blockDiceHint').style.display = 'block';
   blockDiceRolled = true;
   log('🎲 Placaje x' + n + ': ' + results.map(i=>BLOCK_FACES[i]).join(' / '));
   broadcastState();
@@ -3200,6 +3241,7 @@ document.getElementById('teamBName').addEventListener('input', ()=>{ renderScore
 // ---------- Dice (free-standing rollers) ----------
 const BLOCK_FACES = ['ATACANTE CAE','AMBOS CAEN','EMPUJÓN','EMPUJÓN','DESEQUILIBRADO','POW (DEFENSOR CAE)'];
 const BLOCK_ICONS = ['💀','💀💥','➡️','➡️','💢','💥'];
+const BLOCK_OUTCOME_KINDS = ['attackerDown','bothDown','push','push','stumble','pow'];
 const BLOCK_ICON_IMAGES = [
   'icons/attacker-down.png',
   'icons/both-down.png',

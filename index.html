@@ -187,7 +187,7 @@
 
     <div class="panel" id="ballBouncePanel" style="display:none; border-color:#4a7a9c;">
       <h2 style="color:#7db8e8;">🏈 Balón botando</h2>
-      <div class="small-note">Elegid la casilla numerada (1-8) según el resultado del D8: 1-2-3 arriba, 4-balón-5 en medio, 6-7-8 abajo.</div>
+      <div class="small-note">Elegid la casilla numerada (1-8) según el resultado del D8: 1-2-3 arriba, 4-balón-5 en medio, 6-7-8 abajo. Si la dirección cae fuera del campo, aparecerá una casilla fantasma pegada al borde — el balón vuelve a botar desde ahí con una nueva tirada de dirección.</div>
       <div class="row" style="margin-top:8px;">
         <button onclick="rollBounceDirDie()">Tirar 1D8 (dirección)</button>
         <div class="die-face" id="bounceDirDie">–</div>
@@ -403,22 +403,11 @@
       <button id="blockDiceBtn2" onclick="rollBlockDiceModal(2)">2 dados</button>
       <button id="blockDiceBtn3" onclick="rollBlockDiceModal(3)">3 dados</button>
     </div>
+    <div class="small-note" id="blockDiceHint" style="display:none; margin-top:8px;">Click en el dado con el resultado que queréis aplicar:</div>
     <div class="block-face-list" id="blockDiceArea"></div>
     <div id="blockOutcomeRow" class="disabled-block" style="margin-top:12px;">
       <button class="full" id="blockFreePushBtn" onclick="toggleFreePushForActiveBlock()" style="margin-bottom:10px;">🔓 Activar todos los empujes (para este placaje)</button>
-      <div class="small-note" style="margin-bottom:6px;">Elegid el resultado aplicado (tirad los dados primero):</div>
-      <div class="row">
-        <button onclick="applyBlockOutcome('attackerDown')">Atacante cae</button>
-        <button onclick="applyBlockOutcome('bothDown')">Ambos caen</button>
-      </div>
-      <div class="row" style="margin-top:6px;">
-        <button onclick="applyBlockOutcome('push')">Empujón</button>
-        <button onclick="applyBlockOutcome('stumble')">Desequilibrado</button>
-        <button class="danger" onclick="applyBlockOutcome('pow')">POW (defensor cae)</button>
-      </div>
-      <div class="row" style="margin-top:6px;">
-        <button onclick="applyBlockOutcome('none')">Ninguno cae (ambos con Placar)</button>
-      </div>
+      <div id="blockChooserBanner" class="chooser-banner">ELIGE: —</div>
     </div>
   </div>
 </div>

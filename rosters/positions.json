@@ -13,7 +13,7 @@
   "prize": 50000,
   "qty": 16,
   "bigGuy": false,
-  "clave": "Human - Línea",
+  "clave": "Human - Linea",
   "primSec": "G / AF"
  },
  {
@@ -82,7 +82,7 @@
   "pa": 4,
   "av": 8,
   "skills": [
-   "Solitario (4+)",
+   "Solitario (5+)",
    "Esquivar"
   ],
   "prize": 50000,
@@ -90,6 +90,87 @@
   "bigGuy": false,
   "clave": "Human - Linea",
   "primSec": "G / AF"
+ },
+ {
+  "race": "Black Orc",
+  "type": "Goblin Bruiser",
+  "ma": 6,
+  "st": 2,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Esquivar",
+   "Humanoide bala",
+   "Escurridizo",
+   "Cabeza dura"
+  ],
+  "prize": 45000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": "Goblin - Linea",
+  "primSec": "AT / FGP"
+ },
+ {
+  "race": "Black Orc",
+  "type": "Black Orc",
+  "ma": 4,
+  "st": 4,
+  "ag": 4,
+  "pa": 5,
+  "av": 10,
+  "skills": [
+   "Luchador",
+   "Apartar"
+  ],
+  "prize": 90000,
+  "qty": 6,
+  "bigGuy": false,
+  "clave": "Orc - Defensor",
+  "primSec": "FG / AT"
+ },
+ {
+  "race": "Black Orc",
+  "type": "Trained Troll",
+  "ma": 4,
+  "st": 5,
+  "ag": 5,
+  "pa": 5,
+  "av": 10,
+  "skills": [
+   "Golpe mortífero",
+   "Lanzar compañero",
+   "Proyectil de vómito",
+   "Realmente estúpido",
+   "Siempre hambriento",
+   "Regeneración"
+  ],
+  "prize": 115000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": "Troll - Grandullon",
+  "primSec": "F / AGP"
+ },
+ {
+  "race": "Black Orc",
+  "type": "Journey Goblin",
+  "ma": 6,
+  "st": 2,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Solitario (4+)",
+   "Esquivar",
+   "Humanoide bala",
+   "Escurridizo",
+   "Cabeza dura"
+  ],
+  "prize": 45000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": "Goblin - Linea",
+  "primSec": "AT / FGP"
  },
  {
   "race": "Bretonia",
@@ -105,7 +186,7 @@
   "prize": 50000,
   "qty": 16,
   "bigGuy": false,
-  "clave": "Human - Línea",
+  "clave": "Human - Linea",
   "primSec": "G / AF"
  },
  {
@@ -174,95 +255,14 @@
   "pa": 4,
   "av": 8,
   "skills": [
-   "Solitario (4+)",
+   "Solitario (5+)",
    "Forcejear"
   ],
   "prize": 50000,
   "qty": 16,
   "bigGuy": false,
-  "clave": "Human - Línea",
+  "clave": "Human - Linea",
   "primSec": "G / AF"
- },
- {
-  "race": "Black Orc",
-  "type": "Goblin Bruiser",
-  "ma": 6,
-  "st": 2,
-  "ag": 3,
-  "pa": 4,
-  "av": 8,
-  "skills": [
-   "Esquivar",
-   "Humanoide bala",
-   "Escurridizo",
-   "Cabeza dura"
-  ],
-  "prize": 45000,
-  "qty": 16,
-  "bigGuy": false,
-  "clave": "Goblin - Línea",
-  "primSec": "AT / FGP"
- },
- {
-  "race": "Black Orc",
-  "type": "Black Orc",
-  "ma": 4,
-  "st": 4,
-  "ag": 4,
-  "pa": 5,
-  "av": 10,
-  "skills": [
-   "Luchador",
-   "Apartar"
-  ],
-  "prize": 90000,
-  "qty": 6,
-  "bigGuy": false,
-  "clave": "Orc - Defensor",
-  "primSec": "FG / AT"
- },
- {
-  "race": "Black Orc",
-  "type": "Trained Troll",
-  "ma": 4,
-  "st": 5,
-  "ag": 5,
-  "pa": 5,
-  "av": 10,
-  "skills": [
-   "Golpe mortífero (+1)",
-   "Lanzar compañero",
-   "Proyectil de vómito",
-   "Realmente estúpido",
-   "Siempre hambriento",
-   "Regeneración"
-  ],
-  "prize": 115000,
-  "qty": 1,
-  "bigGuy": true,
-  "clave": "Troll - Grandullon",
-  "primSec": "F / AGP"
- },
- {
-  "race": "Black Orc",
-  "type": "Journey Goblin",
-  "ma": 6,
-  "st": 2,
-  "ag": 3,
-  "pa": 4,
-  "av": 8,
-  "skills": [
-   "Solitario (4+)",
-   "Esquivar",
-   "Humanoide bala",
-   "Escurridizo",
-   "Cabeza dura"
-  ],
-  "prize": 45000,
-  "qty": 11,
-  "bigGuy": false,
-  "clave": "Goblin - Línea",
-  "primSec": "AT / FGP"
  },
  {
   "race": "Chaos Chosen",
@@ -310,7 +310,7 @@
   "skills": [
    "Siempre hambriento",
    "Solitario (4+)",
-   "Golpe mortífero (+1)",
+   "Golpe mortífero",
    "Proyectil de vómito",
    "Realmente estúpido",
    "Regeneración",
@@ -333,7 +333,7 @@
   "skills": [
    "Estúpido",
    "Solitario (4+)",
-   "Golpe mortífero (+1)",
+   "Golpe mortífero",
    "Cabeza dura",
    "Lanzar Compañero"
   ],
@@ -355,7 +355,7 @@
    "Solitario (4+)",
    "Furia",
    "Cuernos",
-   "Golpe mortífero (+1)",
+   "Golpe mortífero",
    "Cabeza dura",
    "Ira descontrolada"
   ],
@@ -374,7 +374,7 @@
   "pa": 3,
   "av": 9,
   "skills": [
-   "Solitario (4+)",
+   "Solitario (5+)",
    "Cuernos"
   ],
   "prize": 55000,
@@ -485,7 +485,7 @@
    "Solitario (4+)",
    "Furia",
    "Cuernos",
-   "Golpe mortífero (+1)",
+   "Golpe mortífero",
    "Cabeza dura",
    "Ira descontrolada"
   ],
@@ -504,7 +504,7 @@
   "pa": 4,
   "av": 8,
   "skills": [
-   "Solitario (4+)"
+   "Solitario (5+)"
   ],
   "prize": 40000,
   "qty": 16,
@@ -628,7 +628,7 @@
   "skills": [
    "Siempre hambriento",
    "Solitario (4+)",
-   "Golpe mortífero (+1)",
+   "Golpe mortífero",
    "Proyectil de vómito",
    "Realmente estúpido",
    "Regeneración",
@@ -651,7 +651,7 @@
   "skills": [
    "Estúpido",
    "Solitario (4+)",
-   "Golpe mortífero (+1)",
+   "Golpe mortífero",
    "Cabeza dura",
    "Lanzar Compañero"
   ],
@@ -673,7 +673,7 @@
    "Solitario (4+)",
    "Furia",
    "Cuernos",
-   "Golpe mortífero (+1)",
+   "Golpe mortífero",
    "Cabeza dura",
    "Ira descontrolada"
   ],
@@ -695,7 +695,7 @@
    "Ferocidad animal",
    "Furia",
    "Solitario (4+)",
-   "Golpe mortífero (+1)",
+   "Golpe mortífero",
    "Cola prensil"
   ],
   "prize": 150000,
@@ -713,7 +713,7 @@
   "pa": 4,
   "av": 9,
   "skills": [
-   "Solitario (4+)"
+   "Solitario (5+)"
   ],
   "prize": 50000,
   "qty": 11,
@@ -816,7 +816,7 @@
   "pa": 4,
   "av": 9,
   "skills": [
-   "Solitario (4+)"
+   "Solitario (5+)"
   ],
   "prize": 70000,
   "qty": 11,
@@ -900,7 +900,7 @@
   "prize": 95000,
   "qty": 2,
   "bigGuy": false,
-  "clave": "Dwarf - Epecial",
+  "clave": "Dwarf - Especial",
   "primSec": "FG / T"
  },
  {
@@ -953,14 +953,16 @@
   "ma": 6,
   "st": 3,
   "ag": 2,
-  "pa": 4,
+  "pa": 3,
   "av": 8,
-  "skills": [],
-  "prize": 60000,
+  "skills": [
+   "Dejada"
+  ],
+  "prize": 65000,
   "qty": 16,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Elf - Linea",
+  "primSec": "AG / F"
  },
  {
   "race": "Elven Union",
@@ -971,13 +973,14 @@
   "pa": 2,
   "av": 8,
   "skills": [
-   "Pasar"
+   "Pasar",
+   "Pase a lo loco"
   ],
   "prize": 75000,
   "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Elf - Lanzador",
+  "primSec": "AGP / F"
  },
  {
   "race": "Elven Union",
@@ -989,13 +992,14 @@
   "av": 8,
   "skills": [
    "Atrapar",
-   "Nervios de acero"
+   "Nervios de acero",
+   "Recepción heroica"
   ],
   "prize": 100000,
   "qty": 4,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Elf - Receptor",
+  "primSec": "AG / F"
  },
  {
   "race": "Elven Union",
@@ -1012,8 +1016,8 @@
   "prize": 115000,
   "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Elf - Blitzer",
+  "primSec": "AG / FP"
  },
  {
   "race": "Elven Union",
@@ -1021,16 +1025,16 @@
   "ma": 6,
   "st": 3,
   "ag": 2,
-  "pa": 4,
+  "pa": 3,
   "av": 8,
   "skills": [
-   "Solitario (4+)"
+   "Solitario (5+) Dejada"
   ],
-  "prize": 60000,
+  "prize": 65000,
   "qty": 11,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Elf - Linea",
+  "primSec": "AG / F"
  },
  {
   "race": "Goblin",
@@ -1180,7 +1184,7 @@
   "skills": [
    "Siempre hambriento",
    "Solitario (3+)",
-   "Golpe mortífero (+1)",
+   "Golpe mortífero",
    "Proyectil de vómito",
    "Realmente estúpido",
    "Regeneración",
@@ -1201,7 +1205,7 @@
   "pa": 4,
   "av": 8,
   "skills": [
-   "Solitario (4+)",
+   "Solitario (5+)",
    "Esquivar",
    "Humanoide bala",
    "Escurridizo"
@@ -1301,7 +1305,7 @@
   "pa": 5,
   "av": 11,
   "skills": [
-   "Golpe mortífero (+1)",
+   "Golpe mortífero",
    "Mantenerse firme",
    "Brazo fuerte",
    "Echar raíces",
@@ -1324,7 +1328,7 @@
   "pa": 4,
   "av": 7,
   "skills": [
-   "Solitario (4+)",
+   "Solitario (5+)",
    "En pie de un salto",
    "Humanoide bala",
    "Escurridizo",
@@ -1404,7 +1408,7 @@
   "pa": 5,
   "av": 11,
   "skills": [
-   "Golpe mortífero (+1)",
+   "Golpe mortífero",
    "Mantenerse firme",
    "Brazo fuerte",
    "Echar raíces",
@@ -1427,7 +1431,7 @@
   "pa": 4,
   "av": 7,
   "skills": [
-   "Solitario (4+)",
+   "Solitario (5+)",
    "Esquivar",
    "Humanoide bala",
    "Escurridizo"
@@ -1444,67 +1448,70 @@
   "ma": 6,
   "st": 3,
   "ag": 2,
-  "pa": 4,
+  "pa": 3,
   "av": 9,
   "skills": [],
   "prize": 65000,
   "qty": 16,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Elf - Linea",
+  "primSec": "AG / F"
  },
  {
   "race": "High Elf",
   "type": "White Lion",
-  "ma": 6,
+  "ma": 7,
   "st": 3,
   "ag": 2,
   "pa": 3,
   "av": 9,
   "skills": [
-   "Partenubes",
-   "Pasar",
-   "Pase seguro"
+   "Forcejear",
+   "Garras"
   ],
-  "prize": 100000,
+  "prize": 110000,
   "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Elf - Blitzer",
+  "primSec": "AG / PF"
  },
  {
   "race": "High Elf",
   "type": "Phoenix Warrior",
-  "ma": 8,
+  "ma": 6,
   "st": 3,
   "ag": 2,
-  "pa": 5,
+  "pa": 2,
   "av": 9,
   "skills": [
-   "Atrapar"
+   "Pasar",
+   "Partenubes",
+   "Pase seguro"
   ],
   "prize": 90000,
   "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Elf - Lanzador",
+  "primSec": "AGP / F"
  },
  {
   "race": "High Elf",
   "type": "Dragon Prince",
-  "ma": 7,
+  "ma": 8,
   "st": 3,
   "ag": 2,
-  "pa": 4,
+  "pa": 1,
   "av": 9,
   "skills": [
+   "El balon es mio",
+   "Equilibrio firme",
    "Placar"
   ],
-  "prize": 100000,
+  "prize": 110000,
   "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Elf - Corredor - Blitzer",
+  "primSec": "AG / F"
  },
  {
   "race": "High Elf",
@@ -1512,16 +1519,16 @@
   "ma": 6,
   "st": 3,
   "ag": 2,
-  "pa": 4,
+  "pa": 3,
   "av": 9,
   "skills": [
-   "Solitario (4+)"
+   "Solitario (5+)"
   ],
   "prize": 65000,
   "qty": 11,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Elf - Linea",
+  "primSec": "AG / F"
  },
  {
   "race": "Human",
@@ -1535,61 +1542,8 @@
   "prize": 50000,
   "qty": 16,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
- },
- {
-  "race": "Human",
-  "type": "Catcher",
-  "ma": 8,
-  "st": 2,
-  "ag": 3,
-  "pa": 5,
-  "av": 8,
-  "skills": [
-   "Atrapar",
-   "Esquivar"
-  ],
-  "prize": 65000,
-  "qty": 4,
-  "bigGuy": false,
-  "clave": null,
-  "primSec": null
- },
- {
-  "race": "Human",
-  "type": "Thrower",
-  "ma": 6,
-  "st": 3,
-  "ag": 3,
-  "pa": 2,
-  "av": 9,
-  "skills": [
-   "Pasar",
-   "Manos seguras"
-  ],
-  "prize": 80000,
-  "qty": 2,
-  "bigGuy": false,
-  "clave": null,
-  "primSec": null
- },
- {
-  "race": "Human",
-  "type": "Blitzer",
-  "ma": 7,
-  "st": 3,
-  "ag": 3,
-  "pa": 4,
-  "av": 9,
-  "skills": [
-   "Placar"
-  ],
-  "prize": 85000,
-  "qty": 4,
-  "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Linea",
+  "primSec": "G / AFT"
  },
  {
   "race": "Human",
@@ -1607,8 +1561,62 @@
   "prize": 30000,
   "qty": 3,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Halfling - Linea",
+  "primSec": "A / FGT"
+ },
+ {
+  "race": "Human",
+  "type": "Catcher",
+  "ma": 8,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Atrapar",
+   "Esquivar"
+  ],
+  "prize": 75000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": "Human - Receptor",
+  "primSec": "AG / FPT"
+ },
+ {
+  "race": "Human",
+  "type": "Thrower",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 3,
+  "av": 9,
+  "skills": [
+   "Pasar",
+   "Manos seguras"
+  ],
+  "prize": 75000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": "Human - Lanzador",
+  "primSec": "GP / AFT"
+ },
+ {
+  "race": "Human",
+  "type": "Blitzer",
+  "ma": 7,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 9,
+  "skills": [
+   "Placar",
+   "Placaje defensivo"
+  ],
+  "prize": 85000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": "Human - Blitzer",
+  "primSec": "FG / AT"
  },
  {
   "race": "Human",
@@ -1620,16 +1628,16 @@
   "av": 10,
   "skills": [
    "Estúpido",
-   "Solitario (4+)",
-   "Golpe mortífero (+1)",
+   "Solitario (3+)",
+   "Golpe mortífero",
    "Cabeza dura",
    "Lanzar Compañero"
   ],
   "prize": 140000,
   "qty": 1,
   "bigGuy": true,
-  "clave": null,
-  "primSec": null
+  "clave": "Ogro - Grandullon",
+  "primSec": "F / AG"
  },
  {
   "race": "Human",
@@ -1640,13 +1648,13 @@
   "pa": 4,
   "av": 9,
   "skills": [
-   "Solitario (4+)"
+   "Solitario (5+)"
   ],
   "prize": 50000,
   "qty": 11,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Linea",
+  "primSec": "G / AFT"
  },
  {
   "race": "Imperial Nobility",
@@ -1732,7 +1740,7 @@
   "skills": [
    "Estúpido",
    "Solitario (3+)",
-   "Golpe mortífero (+1)",
+   "Golpe mortífero",
    "Cabeza dura",
    "Lanzar Compañero"
   ],
@@ -1751,7 +1759,7 @@
   "pa": 4,
   "av": 8,
   "skills": [
-   "Solitario (4+)",
+   "Solitario (5+)",
    "Zafarse"
   ],
   "prize": 45000,
@@ -1824,7 +1832,7 @@
    "Garras",
    "Furia",
    "Solitario (4+)",
-   "Golpe Mortífero (+1)",
+   "Golpe mortífero",
    "Ira descontrolada"
   ],
   "prize": 160000,
@@ -1842,7 +1850,7 @@
   "pa": 4,
   "av": 8,
   "skills": [
-   "Solitario (4+)",
+   "Solitario (5+)",
    "Furia"
   ],
   "prize": 50000,
@@ -1918,7 +1926,7 @@
   "skills": [
    "Estúpido",
    "Solitario (4+)",
-   "Golpe mortífero (+1)",
+   "Golpe mortífero",
    "Cola prensil",
    "Cabeza dura"
   ],
@@ -1937,7 +1945,7 @@
   "pa": 4,
   "av": 8,
   "skills": [
-   "Solitario (4+)",
+   "Solitario (5+)",
    "Esquivar",
    "Escurridizo"
   ],
@@ -2066,7 +2074,7 @@
   "pa": 0,
   "av": 9,
   "skills": [
-   "Solitario (4+)",
+   "Solitario (5+)",
    "Regeneración"
   ],
   "prize": 40000,
@@ -2086,13 +2094,14 @@
   "skills": [
    "Placar",
    "Borracho",
-   "Cabeza dura"
+   "Cabeza dura",
+   "Tembloroso"
   ],
   "prize": 50000,
   "qty": 16,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Linea",
+  "primSec": "G / AFP"
  },
  {
   "race": "Norse",
@@ -2100,20 +2109,20 @@
   "ma": 5,
   "st": 1,
   "ag": 3,
-  "pa": 0,
+  "pa": null,
   "av": 6,
   "skills": [
    "Esquivar",
-   "Sin manos",
-   "Recógeme",
    "Escurridizo",
-   "Canijo"
+   "Canijo",
+   "El balón ni verlo",
+   "Levantar compañero"
   ],
   "prize": 20000,
   "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Animal especial",
+  "primSec": "- / A"
  },
  {
   "race": "Norse",
@@ -2131,12 +2140,12 @@
   "prize": 90000,
   "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Blitzer",
+  "primSec": "FG / AP"
  },
  {
   "race": "Norse",
-  "type": "Valkyry",
+  "type": "Valkyrie",
   "ma": 7,
   "st": 3,
   "ag": 3,
@@ -2151,25 +2160,26 @@
   "prize": 95000,
   "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Lanzador - Receptor",
+  "primSec": "AGP / F"
  },
  {
   "race": "Norse",
-  "type": "Ulfwerener",
+  "type": "Ulfwerner",
   "ma": 6,
   "st": 4,
   "ag": 4,
-  "pa": 0,
+  "pa": 6,
   "av": 9,
   "skills": [
-   "Furia"
+   "Furia",
+   "Tembloroso"
   ],
   "prize": 105000,
   "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Defensor",
+  "primSec": "FG / A"
  },
  {
   "race": "Norse",
@@ -2177,7 +2187,7 @@
   "ma": 5,
   "st": 5,
   "ag": 4,
-  "pa": 0,
+  "pa": 6,
   "av": 9,
   "skills": [
    "Garras",
@@ -2189,8 +2199,8 @@
   "prize": 140000,
   "qty": 1,
   "bigGuy": true,
-  "clave": null,
-  "primSec": null
+  "clave": "Yhetee - Grandullon",
+  "primSec": "F / AG"
  },
  {
   "race": "Norse",
@@ -2201,16 +2211,17 @@
   "pa": 4,
   "av": 8,
   "skills": [
-   "Soltario (4+)",
+   "Solitario (5+)",
    "Placar",
    "Borracho",
-   "Cabeza dura"
+   "Cabeza dura",
+   "Tembloroso"
   ],
   "prize": 50000,
   "qty": 16,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Linea",
+  "primSec": "G / AFP"
  },
  {
   "race": "Nurgle",
@@ -2281,7 +2292,7 @@
    "Presencia perturbadora",
    "Apariencia asquerosa",
    "Solitario (4+)",
-   "Golpe mortífero (+1)",
+   "Golpe mortífero",
    "Infectado",
    "Realmente estúpido",
    "Regeneración",
@@ -2302,7 +2313,7 @@
   "pa": 6,
   "av": 9,
   "skills": [
-   "Soltario (4+)",
+   "Solitario (5+)",
    "Descomposición",
    "Infectado"
   ],
@@ -2343,7 +2354,7 @@
   "av": 10,
   "skills": [
    "Estúpido",
-   "Golpe mortífero (+1)",
+   "Golpe mortífero",
    "Cabeza dura",
    "Lanzar Compañero"
   ],
@@ -2364,7 +2375,7 @@
   "skills": [
    "Estúpido",
    "Patear compañero",
-   "Golpe mortífero (+1)",
+   "Golpe mortífero",
    "Cabeza dura"
   ],
   "prize": 145000,
@@ -2382,7 +2393,7 @@
   "pa": 5,
   "av": 6,
   "skills": [
-   "Solitario (4+)",
+   "Solitario (5+)",
    "Esquivar",
    "Humanoide bala",
    "Echarse a un lado",
@@ -2576,7 +2587,7 @@
   "skills": [
    "Estúpido",
    "Solitario (4+)",
-   "Golpe mortífero (+1)",
+   "Golpe mortífero",
    "Cabeza dura",
    "Lanzar Compañero"
   ],
@@ -2595,7 +2606,7 @@
   "pa": 5,
   "av": 11,
   "skills": [
-   "Golpe mortífero (+1)",
+   "Golpe mortífero",
    "Solitario (4+)",
    "Mantenerse firme",
    "Brazo fuerte",
@@ -2619,7 +2630,7 @@
   "pa": 4,
   "av": 9,
   "skills": [
-   "Solitario (4+)"
+   "Solitario (5+)"
   ],
   "prize": 50000,
   "qty": 11,
@@ -2635,14 +2646,12 @@
   "ag": 3,
   "pa": 4,
   "av": 10,
-  "skills": [
-   "Animosidad (Orc Linemen)"
-  ],
+  "skills": [],
   "prize": 50000,
   "qty": 16,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Linea - Orc",
+  "primSec": "FG / AT"
  },
  {
   "race": "Orcs",
@@ -2650,7 +2659,7 @@
   "ma": 6,
   "st": 2,
   "ag": 3,
-  "pa": 4,
+  "pa": 3,
   "av": 8,
   "skills": [
    "Esquivar",
@@ -2660,8 +2669,8 @@
   "prize": 40000,
   "qty": 4,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Linea - Goblin",
+  "primSec": "AT / GFP"
  },
  {
   "race": "Orcs",
@@ -2672,32 +2681,14 @@
   "pa": 3,
   "av": 9,
   "skills": [
-   "Animosidad (todo el equipo)",
    "Pasar",
    "Manos seguras"
   ],
-  "prize": 65000,
+  "prize": 75000,
   "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
- },
- {
-  "race": "Orcs",
-  "type": "Big Un",
-  "ma": 5,
-  "st": 4,
-  "ag": 4,
-  "pa": 0,
-  "av": 10,
-  "skills": [
-   "Animosidad (Big Un Blockers)"
-  ],
-  "prize": 90000,
-  "qty": 4,
-  "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Lanzador - Orc",
+  "primSec": "GP / AFT"
  },
  {
   "race": "Orcs",
@@ -2708,27 +2699,47 @@
   "pa": 4,
   "av": 10,
   "skills": [
-   "Animosidad (todo el equipo)",
-   "Placar"
+   "Placar",
+   "Abrirse paso"
   ],
-  "prize": 80000,
-  "qty": 4,
+  "prize": 85000,
+  "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Blitzer - Orc",
+  "primSec": "FG / AT"
  },
  {
   "race": "Orcs",
-  "type": "Untrained Troll",
+  "type": "Big Un Blocker",
+  "ma": 5,
+  "st": 4,
+  "ag": 4,
+  "pa": 6,
+  "av": 10,
+  "skills": [
+   "Cabeza Dura",
+   "Golper Mortífero",
+   "Provocar",
+   "Tembloroso"
+  ],
+  "prize": 95000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": "Defensor - Orc",
+  "primSec": "FG / AT"
+ },
+ {
+  "race": "Orcs",
+  "type": "Troll",
   "ma": 4,
   "st": 5,
   "ag": 5,
   "pa": 5,
   "av": 10,
   "skills": [
+   "Golpe mortífero",
    "Siempre hambriento",
    "Solitario (4+)",
-   "Golpe mortífero (+1)",
    "Proyectil de vómito",
    "Realmente estúpido",
    "Regeneración",
@@ -2737,8 +2748,8 @@
   "prize": 115000,
   "qty": 1,
   "bigGuy": true,
-  "clave": null,
-  "primSec": null
+  "clave": "Grandullon - Orc",
+  "primSec": "F / AGP"
  },
  {
   "race": "Orcs",
@@ -2749,14 +2760,13 @@
   "pa": 4,
   "av": 10,
   "skills": [
-   "Solitario (4+)",
-   "Animosidad (Orc Linemen)"
+   "Solitario (5+)"
   ],
   "prize": 50000,
   "qty": 11,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Linea - Orc",
+  "primSec": "FG / AT"
  },
  {
   "race": "Shambling Undead",
@@ -2837,7 +2847,7 @@
   "pa": 0,
   "av": 10,
   "skills": [
-   "Golpe mortífero (+1)",
+   "Golpe mortífero",
    "Regeneración"
   ],
   "prize": 125000,
@@ -2889,7 +2899,7 @@
   "pa": 0,
   "av": 9,
   "skills": [
-   "Solitario (4+)",
+   "Solitario (5+)",
    "Regeneración"
   ],
   "prize": 40000,
@@ -2966,7 +2976,7 @@
   "skills": [
    "Estúpido",
    "Solitario (4+)",
-   "Golpe mortífero (+1)",
+   "Golpe mortífero",
    "Cola prensil",
    "Cabeza dura"
   ],
@@ -2985,7 +2995,7 @@
   "pa": 4,
   "av": 9,
   "skills": [
-   "Solitario (4+)",
+   "Solitario (5+)",
    "Pogo saltarín",
    "Piernas muy largas"
   ],
@@ -3007,7 +3017,7 @@
   "prize": 50000,
   "qty": 16,
   "bigGuy": false,
-  "clave": "Skaven - LÍnea",
+  "clave": "Skaven - Linea",
   "primSec": "GT / AFM"
  },
  {
@@ -3076,7 +3086,7 @@
    "Ferocidad animal",
    "Furia",
    "Solitario (4+)",
-   "Golpe mortífero (+1)",
+   "Golpe mortífero",
    "Cola prensil"
   ],
   "prize": 150000,
@@ -3094,12 +3104,12 @@
   "pa": 4,
   "av": 8,
   "skills": [
-   "Solitario (4+)"
+   "Solitario (5+)"
   ],
   "prize": 50000,
   "qty": 11,
   "bigGuy": false,
-  "clave": "Skaven - LÍnea",
+  "clave": "Skaven - Linea",
   "primSec": "GT / AFM"
  },
  {
@@ -3186,7 +3196,7 @@
   "pa": 6,
   "av": 8,
   "skills": [
-   "Solitario (4+)",
+   "Solitario (5+)",
    "Regeneración",
    "Cabeza dura"
   ],
@@ -3293,7 +3303,7 @@
   "skills": [
    "Juego sucio (+1)",
    "Imparable",
-   "Golpe mortífero (+1)",
+   "Golpe mortífero",
    "Realmente estúpido",
    "Arma secreta",
    "Mantenerse firme"
@@ -3315,7 +3325,7 @@
   "skills": [
    "Siempre hambriento",
    "Solitario (3+)",
-   "Golpe mortífero (+1)",
+   "Golpe mortífero",
    "Proyectil de vómito",
    "Realmente estúpido",
    "Regeneración",
@@ -3336,7 +3346,7 @@
   "pa": 5,
   "av": 6,
   "skills": [
-   "Solitario (4+)",
+   "Solitario (5+)",
    "Esquivar",
    "Humanoide bala",
    "Echarse a un lado",
@@ -3500,7 +3510,7 @@
    "Ferocidad animal",
    "Furia",
    "Solitario (4+)",
-   "Golpe mortífero (+1)",
+   "Golpe mortífero",
    "Cola prensil"
   ],
   "prize": 150000,
@@ -3518,7 +3528,7 @@
   "pa": 4,
   "av": 8,
   "skills": [
-   "Solitario (4+)",
+   "Solitario (5+)",
    "Esquivar",
    "Humanoide bala",
    "Escurridizo"
@@ -3621,7 +3631,7 @@
   "prize": 150000,
   "qty": 1,
   "bigGuy": true,
-  "clave": "Grandullon, No Muerto, Vampire",
+  "clave": "Grandullon - No Muerto - Vampire",
   "primSec": "F / AG"
  },
  {
@@ -3633,7 +3643,7 @@
   "pa": 4,
   "av": 8,
   "skills": [
-   "Solitario (4+)"
+   "Solitario (5+)"
   ],
   "prize": 40000,
   "qty": 11,
@@ -3720,7 +3730,7 @@
   "av": 11,
   "skills": [
    "Solitario (4+)",
-   "Golpe mortífero (+1)",
+   "Golpe mortífero",
    "Mantenerse firme",
    "Brazo fuerte",
    "Echar raíces",
@@ -3742,7 +3752,7 @@
   "pa": 4,
   "av": 8,
   "skills": [
-   "Solitario (4+)"
+   "Solitario (5+)"
   ],
   "prize": 70000,
   "qty": 11,

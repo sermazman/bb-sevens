@@ -1141,6 +1141,7 @@ function renderPitch(){
   }
 
   renderPushGhosts(pitch);
+  renderBounceGhosts(pitch);
   renderEndzoneLabels(pitch);
 }
 
@@ -1174,6 +1175,83 @@ function renderPushGhosts(pitch){
     ghost.onclick = (e)=>{ e.stopPropagation(); pushOutOfBounds(); };
     pitch.appendChild(ghost);
   });
+}
+
+function renderBounceGhosts(pitch){
+  if(!ballBounceActive) return;
+  const pos = ballPosition();
+  if(!pos) return;
+  for(let dr=-1; dr<=1; dr++){
+    for(let dc=-1; dc<=1; dc++){
+      if(dr===0 && dc===0) continue;
+      const r = pos.row+dr, c = pos.col+dc;
+      if(r>=0 && r<ROWS && c>=0 && c<COLS) continue; // en el campo, ya es una casilla normal
+      const ghost = document.createElement('div');
+      ghost.className = 'ghost-push-target';
+      ghost.style.top = (r*35) + 'px';
+      ghost.style.left = (c*35) + 'px';
+      ghost.title = 'El balón sale de banda (devolución automática)';
+      ghost.onclick = (e)=>{ e.stopPropagation(); bounceOutOfBounds(r, c); };
+      pitch.appendChild(ghost);
+    }
+  }
+}
+
+function bounceOutOfBounds(exitR, exitC){
+  if(!ballBounceActive) return;
+  const pos = ballPosition();
+  ballBounceActive = false;
+  document.getElementById('ballBouncePanel').style.display = 'none';
+  log('🌀 El balón sale del campo — se resuelve la devolución automáticamente.');
+  renderPitch();
+  broadcastState();
+  resolveThrowIn(exitR, exitC, pos.row, pos.col, 0);
+}
+
+function resolveThrowIn(exitR, exitC, fromR, fromC, depth){
+  if(depth > 6){
+    log('🏈 La devolución se detiene en el campo tras varios intentos.');
+    ball.row = fromR; ball.col = fromC;
+    renderPitch(); broadcastState();
+    checkDriveStartAfterBounce();
+    return;
+  }
+  const isCorner = (exitR<0 || exitR>=ROWS) && (exitC<0 || exitC>=COLS);
+  const dieMax = isCorner ? 3 : 6;
+  const dirRoll = Math.floor(Math.random()*dieMax)+1;
+  const offsets = computePushOffsets(exitR, exitC, fromR, fromC);
+  const idx = isCorner ? (dirRoll-1) : Math.floor((dirRoll-1)/2);
+  const chosen = offsets[idx];
+  const distRoll = Math.floor(Math.random()*6)+1;
+  const distance = distRoll + 2; // reglas Sevens: 1D6+2 (en vez de 2D6)
+  const landR = fromR + chosen.dr*distance;
+  const landC = fromC + chosen.dc*distance;
+
+  log('🎲 Devolución' + (isCorner ? ' de esquina (1D3)' : ' (1D6)') + ': tirada ' + dirRoll + ' → dirección ' + (idx+1) + '/3. Distancia 1D6+2: ' + distRoll + '+2 = ' + distance + ' casillas.');
+
+  if(landR<0 || landR>=ROWS || landC<0 || landC>=COLS){
+    log('🌀 La devolución vuelve a salir del campo — se repite el procedimiento.');
+    const clampR = Math.max(0, Math.min(ROWS-1, landR));
+    const clampC = Math.max(0, Math.min(COLS-1, landC));
+    resolveThrowIn(landR, landC, clampR, clampC, depth+1);
+    return;
+  }
+
+  ball.row = landR; ball.col = landC;
+  renderPitch();
+  broadcastState();
+
+  const occ = occupiedBy(landR, landC);
+  if(occ && occ.condition==='standing'){
+    log('🏈 La devolución aterriza sobre ' + occ.name + '.');
+    openCatchModal(occ, false, false, 1, 'devolución');
+  } else if(occ){
+    log('🏈 La devolución aterriza sobre ' + occ.name + ' (' + occ.condition + ') y sigue botando.');
+    startBallBounce();
+  } else {
+    log('🏈 La devolución queda suelta en el campo.');
+    checkDriveStartAfterBounce();
+  }
 }
 
 function handlePitchRightClick(e){
@@ -2231,21 +2309,28 @@ function resolveBounce(r,c){
     return;
   }
   if(occ.condition==='standing'){
-    openCatchModal(occ);
+    openCatchModal(occ, false, false, 1, 'rebote');
   } else {
     log('🏈 El balón bota sobre ' + occ.name + ' (' + occ.condition + ') y sigue botando.');
     startBallBounce();
   }
 }
 
-function openCatchModal(p, noModifiers, voluntary){
+function openCatchModal(p, noModifiers, voluntary, extraPenalty, extraReason){
   const markers = noModifiers ? 0 : countOpponentTackleZones(p.row, p.col, p.team);
-  const target = noModifiers ? parseAgTarget(p.ag) : parseAgTarget(p.ag) + markers;
+  const extra = noModifiers ? 0 : (extraPenalty || 0);
+  const target = noModifiers ? parseAgTarget(p.ag) : parseAgTarget(p.ag) + markers + extra;
   pendingCatch = { playerId: p.id, target, voluntary: !!voluntary };
   catchRerollUsed = false;
-  const modText = noModifiers
-    ? `(AG${p.ag ?? '?'}, sin modificadores — rebote del saque inicial)`
-    : `(AG${p.ag ?? '?'} -1 por cada rival marcándole${markers>0 ? ' — '+markers+' marcaje(s)' : ''})`;
+  let modText;
+  if(noModifiers){
+    modText = `(AG${p.ag ?? '?'}, sin modificadores — rebote del saque inicial)`;
+  } else {
+    const parts = [];
+    if(markers>0) parts.push('-1 por cada rival marcándole (' + markers + ')');
+    if(extra>0) parts.push('-1 por ser ' + (extraReason || 'recogida especial'));
+    modText = `(AG${p.ag ?? '?'}${parts.length ? ' ' + parts.join(' ') : ', sin modificadores'})`;
+  }
   document.getElementById('catchText').textContent = `${p.name} intenta recoger el balón — necesita ${target}+ ${modText}. Tirad D6.`;
   document.getElementById('catchDie').textContent = '–';
   document.getElementById('catchResultText').textContent = '';

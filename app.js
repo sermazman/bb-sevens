@@ -1172,7 +1172,7 @@ function renderPushGhosts(pitch){
     ghost.style.top = (t.row*35) + 'px';
     ghost.style.left = (t.col*35) + 'px';
     ghost.title = 'Empujar fuera del campo';
-    ghost.onclick = (e)=>{ e.stopPropagation(); pushOutOfBounds(); };
+    ghost.onclick = (e)=>{ e.stopPropagation(); pushOutOfBounds(t.row, t.col); };
     pitch.appendChild(ghost);
   });
 }
@@ -2061,7 +2061,7 @@ function resolvePush(r,c){
   }
 }
 
-function pushOutOfBounds(){
+function pushOutOfBounds(exitR, exitC){
   if(!pendingPush) return;
   const info = pendingPush;
   pendingPush = null;
@@ -2070,7 +2070,7 @@ function pushOutOfBounds(){
   if(!mover){ chainPushStack=[]; renderPitch(); broadcastState(); return; }
 
   const fromR = mover.row, fromC = mover.col;
-  queueBallDropIfCarrier(mover.id, fromR, fromC);
+  queueBallDropIfCarrier(mover.id, fromR, fromC, exitR, exitC);
   mover.onPitch = false; mover.row = null; mover.col = null;
   log('🌀 ' + mover.name + ' sale del campo empujado' + (chainPushStack.length ? ' (empuje en cadena)' : '') + ' — tirada de heridas directa (sin armadura).');
 
@@ -2905,9 +2905,13 @@ function chooseInjury(kind){
   broadcastState();
 }
 
-function queueBallDropIfCarrier(playerId, r, c){
+function queueBallDropIfCarrier(playerId, r, c, exitR, exitC){
   if(ball.carrierId === playerId){
-    pendingBallDrop = { playerId, r, c };
+    pendingBallDrop = {
+      playerId, r, c,
+      exitR: (exitR!==undefined ? exitR : null),
+      exitC: (exitC!==undefined ? exitC : null)
+    };
   }
 }
 
@@ -2924,10 +2928,15 @@ function closeArmorModal(){
     pendingBallDrop = null;
     ball.carrierId = null;
     ball.row = info.r; ball.col = info.c;
-    log('🏈 Se le cae el balón.');
     renderPitch();
     broadcastState();
-    startBallBounce();
+    if(info.exitR!==null && info.exitR!==undefined && info.exitC!==null && info.exitC!==undefined){
+      log('🏈 El balón sale del campo junto con su portador — el Público lo devuelve.');
+      resolveThrowIn(info.exitR, info.exitC, info.r, info.c, 0);
+    } else {
+      log('🏈 Se le cae el balón.');
+      startBallBounce();
+    }
   }
 }
 

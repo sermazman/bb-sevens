@@ -103,8 +103,8 @@ header.top .sub{font-size:12px; letter-spacing:2px; text-transform:uppercase; co
   gap:16px;
   margin-top:14px;
 }
+.tools-row-2{grid-template-columns: 1fr 1fr;}
 @media (max-width: 900px){ .tools-row{grid-template-columns:1fr;} }
-}
 
 .panel{
   background:linear-gradient(180deg, var(--panel-2), var(--panel));
@@ -372,7 +372,7 @@ button.full{width:100%; margin-top:6px;}
 .block-icon{font-size:22px; line-height:1; margin-bottom:3px;}
 .block-icon-img{width:26px; height:26px; display:block; margin:0 auto 3px auto; object-fit:contain;}
 .block-label{font-size:9px;}
-.hist{font-size:11.5px; color:#a99b7f; margin-top:8px; max-height:180px; overflow-y:auto;}
+.hist{font-size:11.5px; color:#a99b7f; margin-top:8px; max-height:260px; overflow-y:auto;}
 .hist div{padding:2px 0; border-bottom:1px dashed var(--panel-line);}
 
 .legend{font-size:11px; color:#8a7d64; margin-top:8px; line-height:1.5;}

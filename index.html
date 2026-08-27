@@ -186,7 +186,7 @@
     </div>
 
     <div class="panel" id="ballBouncePanel" style="display:none; border-color:#4a7a9c;">
-      <h2 style="color:#7db8e8;">🏈 Balón botando</h2>
+      <h2 style="color:#7db8e8;">🏈 Balón rebotado</h2>
       <div class="small-note">Elegid la casilla numerada (1-8) según el resultado del D8: 1-2-3 arriba, 4-balón-5 en medio, 6-7-8 abajo. Si la dirección cae fuera del campo, aparecerá una casilla fantasma pegada al borde — el balón vuelve a botar desde ahí con una nueva tirada de dirección.</div>
       <div class="row" style="margin-top:8px;">
         <button onclick="rollBounceDirDie()">Tirar 1D8 (dirección)</button>
@@ -478,12 +478,10 @@
   <div class="modal">
     <h2>🔒 ASEGURAR BALÓN</h2>
     <p id="secureBallText">Chequeo para recuperar el balón suelto.</p>
-    <div class="die-face" id="secureBallDie" style="margin:0 auto 14px auto;">–</div>
-    <button class="primary full" onclick="rollSecureBallDie()">Tirar D6</button>
-    <div class="row" style="margin-top:12px;">
-      <button onclick="resolveSecureBall(true)">✅ Consigue (2+)</button>
-      <button class="danger" onclick="resolveSecureBall(false)">❌ Falla (1) — termina el turno</button>
-    </div>
+    <div class="die-face" id="secureBallDie" style="margin:0 auto 10px auto;">–</div>
+    <div id="secureBallResultText" class="check-result"></div>
+    <button class="primary full" id="secureBallRollBtn" onclick="rollSecureBallDie()">Tirar D6</button>
+    <div class="row" id="secureBallActionRow" style="margin-top:12px; display:none;"></div>
   </div>
 </div>
 

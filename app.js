@@ -18,6 +18,7 @@ let pendingGfi = null;   // { playerId, toR, toC }
 let dodgeRerollUsed = false;
 let gfiRerollUsed = false;
 let catchRerollUsed = false;
+let secureBallRerollUsed = false;
 let armorForPlayer = null; // player id currently being armor-rolled
 let state = { half: 1, active: 'A', turns: { A: 0, B: 0 } };
 let teamRace = { A: '', B: '' };
@@ -260,6 +261,7 @@ function snapshotState(){
     gfiDieText: document.getElementById('gfiDie').textContent,
     gfiRerollUsed,
     catchRerollUsed,
+    secureBallRerollUsed,
     armorModalOpen: document.getElementById('armorModal').classList.contains('show'),
     armorText: document.getElementById('armorText').textContent,
     armorDie1: document.getElementById('armorDie1').textContent,
@@ -381,6 +383,17 @@ function applyRemoteState(payload){
   document.getElementById('secureBallText').textContent = payload.secureBallText || '';
   document.getElementById('secureBallDie').textContent = payload.secureBallDieText || '–';
   document.getElementById('secureBallModal').classList.toggle('show', !!payload.secureBallModalOpen);
+  secureBallRerollUsed = !!payload.secureBallRerollUsed;
+  if(pendingSecureBall && pendingSecureBall.lastSuccess !== undefined){
+    const sbp = players.find(x=>x.id===pendingSecureBall.playerId);
+    checkActionButtons('secureball', pendingSecureBall.lastSuccess, sbp);
+  } else {
+    document.getElementById('secureBallResultText').textContent = '';
+    document.getElementById('secureBallResultText').className = 'check-result';
+    document.getElementById('secureBallRollBtn').style.display = 'block';
+    document.getElementById('secureBallActionRow').style.display = 'none';
+    document.getElementById('secureBallActionRow').innerHTML = '';
+  }
   document.getElementById('matchEndText').textContent = payload.matchEndText || '';
   document.getElementById('matchEndModal').classList.toggle('show', !!payload.matchEndModalOpen);
   pendingActionMenuPlayer = payload.pendingActionMenuPlayer;
@@ -2073,10 +2086,22 @@ function resolvePush(r,c){
   const hitLooseBall = (ball.carrierId===null && ball.row===original.toR && ball.col===original.toC);
   if(!hitLooseBall && originalPlayer){ checkTouchdown(originalPlayer); }
 
+  let effectiveFallKind = null;
+  if(rootInfo.kind==='pow'){
+    effectiveFallKind = 'pow';
+  } else if(rootInfo.kind==='stumble'){
+    if(originalPlayer && playerHasSkill(originalPlayer, 'esquiva', 'dodge')){
+      log('🤸 ' + originalPlayer.name + ' tiene Esquiva — el Desequilibrado se trata como un simple empujón, no cae.');
+    } else {
+      effectiveFallKind = 'pow';
+      log('💥 ' + (originalPlayer ? originalPlayer.name : 'El jugador') + ' no tiene Esquiva — el Desequilibrado se trata como un POW.');
+    }
+  }
+
   pendingFollowUp = {
     attackerId: rootInfo.attackerId, defenderId: original.playerId,
     vacatedR: original.fromR, vacatedC: original.fromC,
-    fallKind: (rootInfo.kind==='stumble' || rootInfo.kind==='pow') ? rootInfo.kind : null,
+    fallKind: effectiveFallKind,
     isBlitz: rootInfo.isBlitz
   };
 
@@ -2203,9 +2228,15 @@ function secureTheBall(){
 }
 
 function openSecureBallRoll(p){
-  pendingSecureBall = p.id;
+  pendingSecureBall = { playerId: p.id };
+  secureBallRerollUsed = false;
   document.getElementById('secureBallText').textContent = `${p.name} intenta Asegurar el Balón — necesita 2+ (solo falla con un 1). Tirad D6.`;
   document.getElementById('secureBallDie').textContent = '–';
+  document.getElementById('secureBallResultText').textContent = '';
+  document.getElementById('secureBallResultText').className = 'check-result';
+  document.getElementById('secureBallRollBtn').style.display = 'block';
+  document.getElementById('secureBallActionRow').style.display = 'none';
+  document.getElementById('secureBallActionRow').innerHTML = '';
   document.getElementById('secureBallModal').classList.add('show');
   broadcastState();
 }
@@ -2214,12 +2245,16 @@ function rollSecureBallDie(){
   if(!pendingSecureBall) return;
   const r = Math.floor(Math.random()*6)+1;
   document.getElementById('secureBallDie').textContent = r;
-  log('🎲 Asegurar el Balón: tirada ' + r + ' → ' + (r>=2 ? 'CONSEGUIDO' : 'FALLADO'));
+  const p = players.find(x=>x.id===pendingSecureBall.playerId);
+  const success = r>=2;
+  pendingSecureBall.lastSuccess = success;
+  log('🎲 Asegurar el Balón: tirada ' + r + ' → ' + (success?'CONSEGUIDO':'FALLADO'));
+  checkActionButtons('secureball', success, p);
   broadcastState();
 }
 
 function resolveSecureBall(success){
-  const p = players.find(x=>x.id===pendingSecureBall);
+  const p = players.find(x=>x.id===(pendingSecureBall && pendingSecureBall.playerId));
   document.getElementById('secureBallModal').classList.remove('show');
   pendingSecureBall = null;
   if(!p){ broadcastState(); return; }
@@ -2491,6 +2526,13 @@ function continueAfterKickoffEvent(){
     finishKickoffAsFreeCatch();
     return;
   }
+  const occ = occupiedBy(ball.row, ball.col);
+  if(occ && occ.condition==='standing'){
+    log('🏈 El balón cae sobre ' + occ.name + ' tras el primer rebote — intenta atraparlo antes del rebote final.');
+    pendingDriveStart = kickoffReceivingTeam;
+    openCatchModal(occ);
+    return;
+  }
   startKickoffBounce(2);
 }
 
@@ -2645,7 +2687,7 @@ function checkActionButtons(prefix, success, p){
   actionRow.innerHTML = '';
   actionRow.style.display = 'flex';
 
-  const resolveFn = prefix==='dodge' ? resolveDodge : prefix==='gfi' ? resolveGfi : resolveCatch;
+  const resolveFn = prefix==='dodge' ? resolveDodge : prefix==='gfi' ? resolveGfi : prefix==='secureball' ? resolveSecureBall : resolveCatch;
 
   if(success){
     const btn = document.createElement('button');
@@ -2656,10 +2698,11 @@ function checkActionButtons(prefix, success, p){
     return;
   }
 
-  const usedFlag = prefix==='dodge' ? dodgeRerollUsed : prefix==='gfi' ? gfiRerollUsed : catchRerollUsed;
+  const usedFlag = prefix==='dodge' ? dodgeRerollUsed : prefix==='gfi' ? gfiRerollUsed : prefix==='secureball' ? secureBallRerollUsed : catchRerollUsed;
   if(!usedFlag){
     const hasDodgeSkill = prefix==='dodge' && playerHasSkill(p, 'esquiva', 'dodge') && !p.dodgeSkillUsedThisTurn;
     const hasCatchSkill = prefix==='catch' && !p.catchSkillUsedThisTurn && playerHasSkill(p, 'manos seguras', 'sure hands');
+    // Nota: Manos Seguras NUNCA ofrece repetición gratis para Asegurar Balón — solo para recoger el balón del suelo.
     const skillLabel = 'Manos Seguras';
     const hasFreeSkillReroll = hasDodgeSkill || hasCatchSkill;
     if(hasFreeSkillReroll){
@@ -2683,12 +2726,13 @@ function checkActionButtons(prefix, success, p){
 }
 
 function useCheckReroll(prefix, isSkill){
-  const pending = prefix==='dodge' ? pendingDodge : prefix==='gfi' ? pendingGfi : pendingCatch;
+  const pending = prefix==='dodge' ? pendingDodge : prefix==='gfi' ? pendingGfi : prefix==='secureball' ? pendingSecureBall : pendingCatch;
   if(!pending) return;
   const p = players.find(x=>x.id===pending.playerId);
   if(!p) return;
   if(prefix==='dodge') dodgeRerollUsed = true;
   else if(prefix==='gfi') gfiRerollUsed = true;
+  else if(prefix==='secureball') secureBallRerollUsed = true;
   else catchRerollUsed = true;
   if(!isSkill){
     teamRerollsLeft[p.team] = Math.max(0, (teamRerollsLeft[p.team]||0) - 1);

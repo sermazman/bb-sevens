@@ -1314,6 +1314,15 @@ function openActionMenu(id){
   broadcastState();
 }
 
+function canSecureBall(p){
+  if(isBigGuy(p)) return false;
+  if(secureBallUsedByTeam[p.team]) return false;
+  if(ball.carrierId!==null || ball.row===null) return false;
+  const enemyNear = players.some(p2 => p2.onPitch && p2.team!==p.team && p2.condition==='standing' &&
+    Math.max(Math.abs(p2.row-ball.row), Math.abs(p2.col-ball.col)) <= 2);
+  return !enemyNear;
+}
+
 function getActionMenuOptionsFor(p){
   if(p.condition==='tumbado'){
     const opts = [{ icon:'🧍', label:'Levantar', fn:'actionMenuStandUp' }];
@@ -1325,7 +1334,7 @@ function getActionMenuOptionsFor(p){
   }
   const opts = [];
   if(!blitzUsedByTeam[p.team]) opts.push({ icon:'⚡', label:'Blitz', fn:'actionMenuBlitz' });
-  if(ball.carrierId===null && ball.row!==null && !secureBallUsedByTeam[p.team] && !isBigGuy(p)){
+  if(canSecureBall(p)){
     opts.push({ icon:'🔒', label:'Asegurar', fn:'actionMenuSecureBall' });
   }
   opts.push({ icon:'🥊', label:'Falta', fn:'actionMenuFoul' });

@@ -160,7 +160,7 @@
   "pa": 4,
   "av": 8,
   "skills": [
-   "Solitario (4+)",
+   "Solitario (5+)",
    "Esquivar",
    "Humanoide bala",
    "Escurridizo",
@@ -395,12 +395,12 @@
   "prize": 40000,
   "qty": 16,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Goblin - Linea",
+  "primSec": "T / AFG"
  },
  {
   "race": "Chaos Dwarf",
-  "type": "Hobgoblin Sneaky Stabba",
+  "type": "Sneaky Stabba",
   "ma": 6,
   "st": 3,
   "ag": 3,
@@ -410,11 +410,11 @@
    "Perseguir",
    "Puñal"
   ],
-  "prize": 70000,
+  "prize": 60000,
   "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Especial - Goblin",
+  "primSec": "GT / AF"
  },
  {
   "race": "Chaos Dwarf",
@@ -432,12 +432,12 @@
   "prize": 70000,
   "qty": 4,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Defensor - Dwarf",
+  "primSec": "FG / AMT"
  },
  {
   "race": "Chaos Dwarf",
-  "type": "Chaos Dwarf Flamesmith",
+  "type": "Flamesmith",
   "ma": 5,
   "st": 3,
   "ag": 4,
@@ -445,18 +445,19 @@
   "av": 10,
   "skills": [
    "Luchador",
-   "Aliento de fuego",
-   "Presencia perturbadora Cabeza dura"
+   "Exhalar fuego",
+   "Presencia perturbadora",
+   "Cabeza dura"
   ],
   "prize": 80000,
   "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Dwarf - Especial",
+  "primSec": "FG / AMT"
  },
  {
   "race": "Chaos Dwarf",
-  "type": "Bull Centaur Blitzer",
+  "type": "Bull Centaur",
   "ma": 6,
   "st": 4,
   "ag": 4,
@@ -465,13 +466,14 @@
   "skills": [
    "Esprintar",
    "Pies firmes",
-   "Cabeza dura"
+   "Cabeza dura",
+   "Tembloroso"
   ],
   "prize": 130000,
   "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Blitzer - Dwarf",
+  "primSec": "FG / AMT"
  },
  {
   "race": "Chaos Dwarf",
@@ -479,7 +481,7 @@
   "ma": 5,
   "st": 5,
   "ag": 4,
-  "pa": 0,
+  "pa": 6,
   "av": 9,
   "skills": [
    "Solitario (4+)",
@@ -492,8 +494,8 @@
   "prize": 150000,
   "qty": 1,
   "bigGuy": true,
-  "clave": null,
-  "primSec": null
+  "clave": "Grandullon - Minotaur",
+  "primSec": "FM / AG"
  },
  {
   "race": "Chaos Dwarf",
@@ -509,42 +511,25 @@
   "prize": 40000,
   "qty": 16,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Goblin - Linea",
+  "primSec": "T / AFG"
  },
  {
   "race": "Chaos Renegades",
-  "type": "Linemen Renegade",
+  "type": "Human Renegade",
   "ma": 6,
   "st": 3,
   "ag": 3,
   "pa": 4,
   "av": 9,
-  "skills": [],
+  "skills": [
+   "Animosidad (todo el equipo)"
+  ],
   "prize": 50000,
   "qty": 12,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
- },
- {
-  "race": "Chaos Renegades",
-  "type": "Thrower Renegade",
-  "ma": 6,
-  "st": 3,
-  "ag": 3,
-  "pa": 3,
-  "av": 9,
-  "skills": [
-   "Animosidad (todo el equipo)",
-   "Pasar",
-   "Proteger el cuero"
-  ],
-  "prize": 75000,
-  "qty": 1,
-  "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Linea",
+  "primSec": "GMT / AF"
  },
  {
   "race": "Chaos Renegades",
@@ -563,25 +548,8 @@
   "prize": 40000,
   "qty": 1,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
- },
- {
-  "race": "Chaos Renegades",
-  "type": "Skaven Renegade",
-  "ma": 7,
-  "st": 3,
-  "ag": 3,
-  "pa": 4,
-  "av": 8,
-  "skills": [
-   "Animosidad (todo el equipo)"
-  ],
-  "prize": 50000,
-  "qty": 1,
-  "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Goblin - Linea",
+  "primSec": "AMT / GP"
  },
  {
   "race": "Chaos Renegades",
@@ -597,8 +565,25 @@
   "prize": 50000,
   "qty": 1,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Orc - Linea",
+  "primSec": "GMT / AF"
+ },
+ {
+  "race": "Chaos Renegades",
+  "type": "Skaven Renegade",
+  "ma": 7,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Animosidad (todo el equipo)"
+  ],
+  "prize": 50000,
+  "qty": 1,
+  "bigGuy": false,
+  "clave": "Linea - Skaven",
+  "primSec": "GMT / AF"
  },
  {
   "race": "Chaos Renegades",
@@ -611,15 +596,34 @@
   "skills": [
    "Animosidad (todo el equipo)"
   ],
-  "prize": 75000,
+  "prize": 65000,
   "qty": 1,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Elf - Linea",
+  "primSec": "AGMT / F"
  },
  {
   "race": "Chaos Renegades",
-  "type": "Troll Renegade",
+  "type": "Human Thrower Renegade",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 3,
+  "av": 9,
+  "skills": [
+   "Animosidad (todo el equipo)",
+   "Pasar",
+   "Manos seguras"
+  ],
+  "prize": 75000,
+  "qty": 1,
+  "bigGuy": false,
+  "clave": "Human - Lanzador",
+  "primSec": "GMPT / AF"
+ },
+ {
+  "race": "Chaos Renegades",
+  "type": "Troll",
   "ma": 4,
   "st": 5,
   "ag": 5,
@@ -637,12 +641,12 @@
   "prize": 115000,
   "qty": 1,
   "bigGuy": true,
-  "clave": null,
-  "primSec": null
+  "clave": "Troll - Grandullon",
+  "primSec": "F / AGMP"
  },
  {
   "race": "Chaos Renegades",
-  "type": "Ogre Renegade",
+  "type": "Ogre",
   "ma": 5,
   "st": 5,
   "ag": 4,
@@ -658,16 +662,16 @@
   "prize": 140000,
   "qty": 1,
   "bigGuy": true,
-  "clave": null,
-  "primSec": null
+  "clave": "Ogre - Grandullon",
+  "primSec": "F / AGM"
  },
  {
   "race": "Chaos Renegades",
-  "type": "Minotaur Renegade",
+  "type": "Minotaur",
   "ma": 5,
   "st": 5,
   "ag": 4,
-  "pa": 0,
+  "pa": 6,
   "av": 9,
   "skills": [
    "Solitario (4+)",
@@ -680,16 +684,16 @@
   "prize": 150000,
   "qty": 1,
   "bigGuy": true,
-  "clave": null,
-  "primSec": null
+  "clave": "Minotaur - Grandullon",
+  "primSec": "F / AGM"
  },
  {
   "race": "Chaos Renegades",
-  "type": "Rat Ogre Renegade",
+  "type": "Rat Ogre",
   "ma": 6,
   "st": 5,
   "ag": 4,
-  "pa": 0,
+  "pa": 6,
   "av": 9,
   "skills": [
    "Ferocidad animal",
@@ -701,25 +705,26 @@
   "prize": 150000,
   "qty": 1,
   "bigGuy": true,
-  "clave": null,
-  "primSec": null
+  "clave": "Skaven - Grandullon",
+  "primSec": "F / AGM"
  },
  {
   "race": "Chaos Renegades",
-  "type": "Journey Lineman",
+  "type": "Journey Human Renegade",
   "ma": 6,
   "st": 3,
   "ag": 3,
   "pa": 4,
   "av": 9,
   "skills": [
-   "Solitario (5+)"
+   "Solitario (5+)",
+   "Animosidad (todo el equipo)"
   ],
   "prize": 50000,
   "qty": 11,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Linea",
+  "primSec": "GMT / AF"
  },
  {
   "race": "Dark Elf",
@@ -727,14 +732,14 @@
   "ma": 6,
   "st": 3,
   "ag": 2,
-  "pa": 4,
+  "pa": 3,
   "av": 9,
   "skills": [],
-  "prize": 70000,
+  "prize": 65000,
   "qty": 16,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Elf - Linea",
+  "primSec": "AG / FT"
  },
  {
   "race": "Dark Elf",
@@ -745,13 +750,14 @@
   "pa": 3,
   "av": 8,
   "skills": [
-   "Pase precipitado"
+   "Pase precipitado",
+   "Patada despeje"
   ],
   "prize": 80000,
   "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Corredor - Elf",
+  "primSec": "AGP / FT"
  },
  {
   "race": "Dark Elf",
@@ -759,17 +765,18 @@
   "ma": 7,
   "st": 3,
   "ag": 2,
-  "pa": 5,
+  "pa": 4,
   "av": 8,
   "skills": [
    "Perseguir",
-   "Puñal"
+   "Apuñalar",
+   "Atacar y huir"
   ],
-  "prize": 85000,
+  "prize": 90000,
   "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Elf - Especial",
+  "primSec": "AT / FG"
  },
  {
   "race": "Dark Elf",
@@ -777,16 +784,16 @@
   "ma": 7,
   "st": 3,
   "ag": 2,
-  "pa": 4,
+  "pa": 3,
   "av": 9,
   "skills": [
    "Placar"
   ],
-  "prize": 100000,
-  "qty": 4,
+  "prize": 105000,
+  "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Elf - Blitzer",
+  "primSec": "AG / FPT"
  },
  {
   "race": "Dark Elf",
@@ -794,7 +801,7 @@
   "ma": 7,
   "st": 3,
   "ag": 2,
-  "pa": 5,
+  "pa": 4,
   "av": 8,
   "skills": [
    "Esquivar",
@@ -804,8 +811,8 @@
   "prize": 110000,
   "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Elf - Especial",
+  "primSec": "AG / FT"
  },
  {
   "race": "Dark Elf",
@@ -813,16 +820,16 @@
   "ma": 6,
   "st": 3,
   "ag": 2,
-  "pa": 4,
+  "pa": 3,
   "av": 9,
   "skills": [
    "Solitario (5+)"
   ],
-  "prize": 70000,
+  "prize": 65000,
   "qty": 11,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Elf - Linea",
+  "primSec": "AG / FT"
  },
  {
   "race": "Dwarf",
@@ -936,7 +943,7 @@
   "pa": 5,
   "av": 10,
   "skills": [
-   "Solitario (4+)",
+   "Solitario (5+)",
    "Placar",
    "Romper defensas",
    "Cabeza dura"
@@ -1770,7 +1777,7 @@
  },
  {
   "race": "Khorne",
-  "type": "Bloodborn Marauder Lineman",
+  "type": "Bloodborn Marauder",
   "ma": 6,
   "st": 3,
   "ag": 3,
@@ -1782,12 +1789,12 @@
   "prize": 50000,
   "qty": 16,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Linea",
+  "primSec": "GM / AFT"
  },
  {
   "race": "Khorne",
-  "type": "Khorngors",
+  "type": "Khorngor",
   "ma": 6,
   "st": 3,
   "ag": 3,
@@ -1795,17 +1802,19 @@
   "av": 9,
   "skills": [
    "Cuernos",
-   "Imparable"
+   "Imparable",
+   "Cabeza dura",
+   "En pie de un salto"
   ],
   "prize": 70000,
-  "qty": 4,
+  "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Beastman - Corredor",
+  "primSec": "FGM / APT"
  },
  {
   "race": "Khorne",
-  "type": "Bloodseekers",
+  "type": "Bloodseeker",
   "ma": 5,
   "st": 4,
   "ag": 4,
@@ -1814,11 +1823,11 @@
   "skills": [
    "Furia"
   ],
-  "prize": 110000,
+  "prize": 105000,
   "qty": 4,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Defensor",
+  "primSec": "FGM / AT"
  },
  {
   "race": "Khorne",
@@ -1826,7 +1835,7 @@
   "ma": 5,
   "st": 5,
   "ag": 4,
-  "pa": 0,
+  "pa": 6,
   "av": 9,
   "skills": [
    "Garras",
@@ -1838,8 +1847,8 @@
   "prize": 160000,
   "qty": 1,
   "bigGuy": true,
-  "clave": null,
-  "primSec": null
+  "clave": "Grandullon - Spawn",
+  "primSec": "FM / AG"
  },
  {
   "race": "Khorne",
@@ -1856,8 +1865,8 @@
   "prize": 50000,
   "qty": 11,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Linea",
+  "primSec": "GM / AFT"
  },
  {
   "race": "Lizardman",
@@ -1957,41 +1966,44 @@
  },
  {
   "race": "Necromantic",
-  "type": "Zombie",
+  "type": "Zombie Lineman",
   "ma": 4,
   "st": 3,
   "ag": 4,
-  "pa": 0,
+  "pa": 6,
   "av": 9,
   "skills": [
-   "Regeneración"
+   "Regeneración",
+   "Piquete de ojos",
+   "Tembloroso"
   ],
   "prize": 40000,
   "qty": 16,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Linea - No Muerto - Zombie",
+  "primSec": "GT / AF"
  },
  {
   "race": "Necromantic",
-  "type": "Ghoul",
+  "type": "Ghoul Runner",
   "ma": 7,
   "st": 3,
   "ag": 3,
-  "pa": 4,
+  "pa": 3,
   "av": 8,
   "skills": [
-   "Esquivar"
+   "Esquivar",
+   "Regeneración"
   ],
   "prize": 75000,
   "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Corredor - Ghoul - No Muerto",
+  "primSec": "AG / FPT"
  },
  {
   "race": "Necromantic",
-  "type": "Wraiths",
+  "type": "Wraith",
   "ma": 6,
   "st": 3,
   "ag": 3,
@@ -2000,15 +2012,15 @@
   "skills": [
    "Placar",
    "Apariencia asquerosa",
-   "Sin manos",
    "Regeneración",
-   "Echarse a un lado"
+   "Echarse a un lado",
+   "El balon ni verlo"
   ],
-  "prize": 95000,
+  "prize": 85000,
   "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Defensor - No Muerto - Wraith",
+  "primSec": "FG / AT"
  },
  {
   "race": "Necromantic",
@@ -2016,18 +2028,19 @@
   "ma": 4,
   "st": 4,
   "ag": 4,
-  "pa": 0,
+  "pa": 6,
   "av": 10,
   "skills": [
    "Regeneración",
    "Mantenerse firme",
-   "Cabeza dura"
+   "Cabeza dura",
+   "Tembloroso"
   ],
-  "prize": 115000,
+  "prize": 110000,
   "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Defensor - No Muerto - Constructo",
+  "primSec": "FG / AT"
  },
  {
   "race": "Necromantic",
@@ -2035,18 +2048,18 @@
   "ma": 8,
   "st": 3,
   "ag": 3,
-  "pa": 4,
+  "pa": 3,
   "av": 9,
   "skills": [
    "Garras",
    "Furia",
    "Regeneración"
   ],
-  "prize": 125000,
+  "prize": 120000,
   "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Blitzer - No Muerto - Werewolf",
+  "primSec": "AG / FPT"
  },
  {
   "race": "Necromantic",
@@ -2057,13 +2070,15 @@
   "pa": 0,
   "av": 9,
   "skills": [
-   "Regeneración"
+   "Regeneración",
+   "Piquete de ojos",
+   "Tembloroso"
   ],
   "prize": 40000,
   "qty": 16,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Linea - No Muerto - Zombie",
+  "primSec": "GT / AF"
  },
  {
   "race": "Necromantic",
@@ -2071,17 +2086,19 @@
   "ma": 4,
   "st": 3,
   "ag": 4,
-  "pa": 0,
+  "pa": 6,
   "av": 9,
   "skills": [
    "Solitario (5+)",
-   "Regeneración"
+   "Regeneración",
+   "Piquete de ojos",
+   "Tembloroso"
   ],
   "prize": 40000,
   "qty": 11,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Linea - No Muerto - Zombie",
+  "primSec": "GT / AF"
  },
  {
   "race": "Norse",
@@ -2235,11 +2252,11 @@
    "Descomposición",
    "Infectado"
   ],
-  "prize": 35000,
+  "prize": 40000,
   "qty": 16,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Linea",
+  "primSec": "GMT / AF"
  },
  {
   "race": "Nurgle",
@@ -2250,15 +2267,17 @@
   "pa": 4,
   "av": 9,
   "skills": [
+   "Cabeza dura",
    "Cuernos",
+   "Equilibrio firme",
    "Infectado",
    "Regeneración"
   ],
-  "prize": 75000,
-  "qty": 4,
+  "prize": 70000,
+  "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Beastman - Corredor",
+  "primSec": "FGM / APT"
  },
  {
   "race": "Nurgle",
@@ -2272,13 +2291,15 @@
    "Presencia perturbadora",
    "Apariencia asquerosa",
    "Infectado",
-   "Regeneración"
+   "Regeneración",
+   "Mantenerse firme",
+   "Tembloroso"
   ],
-  "prize": 115000,
+  "prize": 110000,
   "qty": 4,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Defensor - Human",
+  "primSec": "FGM / AT"
  },
  {
   "race": "Nurgle",
@@ -2286,7 +2307,7 @@
   "ma": 4,
   "st": 5,
   "ag": 5,
-  "pa": 0,
+  "pa": 6,
   "av": 10,
   "skills": [
    "Presencia perturbadora",
@@ -2296,20 +2317,21 @@
    "Infectado",
    "Realmente estúpido",
    "Regeneración",
-   "Tentáculos"
+   "Tentáculos",
+   "Levantar compañero"
   ],
   "prize": 140000,
   "qty": 1,
   "bigGuy": true,
-  "clave": null,
-  "primSec": null
+  "clave": "Grandullon - Spawn",
+  "primSec": "F / GMT"
  },
  {
   "race": "Nurgle",
   "type": "Journey Rotter",
   "ma": 5,
   "st": 3,
-  "ag": 3,
+  "ag": 4,
   "pa": 6,
   "av": 9,
   "skills": [
@@ -2317,19 +2339,19 @@
    "Descomposición",
    "Infectado"
   ],
-  "prize": 35000,
+  "prize": 40000,
   "qty": 11,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Linea",
+  "primSec": "GMT / AF"
  },
  {
   "race": "Ogre",
-  "type": "Gnoblar",
+  "type": "Gnoblar Linemen",
   "ma": 5,
   "st": 1,
   "ag": 3,
-  "pa": 5,
+  "pa": 4,
   "av": 6,
   "skills": [
    "Esquivar",
@@ -2341,12 +2363,12 @@
   "prize": 15000,
   "qty": 16,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Gnoblar - Linea",
+  "primSec": "AT / G"
  },
  {
   "race": "Ogre",
-  "type": "Ogre",
+  "type": "Ogre Blocker",
   "ma": 5,
   "st": 5,
   "ag": 4,
@@ -2361,12 +2383,12 @@
   "prize": 140000,
   "qty": 5,
   "bigGuy": true,
-  "clave": null,
-  "primSec": null
+  "clave": "Defensor - Grandullon - Ogre",
+  "primSec": "F / AGPT"
  },
  {
   "race": "Ogre",
-  "type": "Runt Punter",
+  "type": "Ogre Runt Punter",
   "ma": 5,
   "st": 5,
   "ag": 4,
@@ -2374,15 +2396,15 @@
   "av": 10,
   "skills": [
    "Estúpido",
-   "Patear compañero",
+   "Chutar compañero",
    "Golpe mortífero",
    "Cabeza dura"
   ],
   "prize": 145000,
   "qty": 1,
   "bigGuy": true,
-  "clave": null,
-  "primSec": null
+  "clave": "Grandullon - Lanzador - Ogre",
+  "primSec": "FP / AGT"
  },
  {
   "race": "Ogre",
@@ -2390,7 +2412,7 @@
   "ma": 5,
   "st": 1,
   "ag": 3,
-  "pa": 5,
+  "pa": 4,
   "av": 6,
   "skills": [
    "Solitario (5+)",
@@ -2403,12 +2425,12 @@
   "prize": 15000,
   "qty": 11,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Gnoblar - Linea",
+  "primSec": "AT / G"
  },
  {
   "race": "Old World Alliance",
-  "type": "Lineman",
+  "type": "Human Lineman",
   "ma": 6,
   "st": 3,
   "ag": 3,
@@ -2418,64 +2440,8 @@
   "prize": 50000,
   "qty": 12,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
- },
- {
-  "race": "Old World Alliance",
-  "type": "Catcher",
-  "ma": 8,
-  "st": 2,
-  "ag": 3,
-  "pa": 5,
-  "av": 8,
-  "skills": [
-   "Animosidad (todos los Enanos y Halflings)",
-   "Atrapar",
-   "Esquivar"
-  ],
-  "prize": 65000,
-  "qty": 1,
-  "bigGuy": false,
-  "clave": null,
-  "primSec": null
- },
- {
-  "race": "Old World Alliance",
-  "type": "Thrower",
-  "ma": 6,
-  "st": 3,
-  "ag": 3,
-  "pa": 3,
-  "av": 9,
-  "skills": [
-   "Animosidad (todos los Enanos y Halflings)",
-   "Pasar",
-   "Manos seguras"
-  ],
-  "prize": 80000,
-  "qty": 1,
-  "bigGuy": false,
-  "clave": null,
-  "primSec": null
- },
- {
-  "race": "Old World Alliance",
-  "type": "Blitzer",
-  "ma": 7,
-  "st": 3,
-  "ag": 3,
-  "pa": 4,
-  "av": 9,
-  "skills": [
-   "Animosidad (todos los Enanos y Halflings)",
-   "Placar"
-  ],
-  "prize": 90000,
-  "qty": 1,
-  "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Linea",
+  "primSec": "G / AF"
  },
  {
   "race": "Old World Alliance",
@@ -2486,36 +2452,70 @@
   "pa": 4,
   "av": 7,
   "skills": [
-   "Animosidad (todos los Enanos y Humanos)",
    "Esquivar",
    "Humanoide bala",
    "Escurridizo"
   ],
   "prize": 30000,
-  "qty": 2,
+  "qty": 3,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Halfling - Linea",
+  "primSec": "A / FG"
  },
  {
   "race": "Old World Alliance",
-  "type": "Dwarf Blocker",
+  "type": "Human Catcher",
+  "ma": 8,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Atrapar",
+   "Esquivar"
+  ],
+  "prize": 75000,
+  "qty": 1,
+  "bigGuy": false,
+  "clave": "Human - Receptor",
+  "primSec": "AG / FP"
+ },
+ {
+  "race": "Old World Alliance",
+  "type": "Dwarf Lineman",
   "ma": 4,
   "st": 3,
   "ag": 4,
   "pa": 5,
   "av": 10,
   "skills": [
-   "Llave de brazo",
-   "Luchador",
-   "Solitario (3+)",
-   "Cabeza dura"
+   "Cabeza dura",
+   "Placar",
+   "Romper defensas"
+  ],
+  "prize": 70000,
+  "qty": 3,
+  "bigGuy": false,
+  "clave": "Dwarf - Linea",
+  "primSec": "GT / F"
+ },
+ {
+  "race": "Old World Alliance",
+  "type": "Human Thrower",
+  "ma": 6,
+  "st": 3,
+  "ag": 3,
+  "pa": 3,
+  "av": 9,
+  "skills": [
+   "Pasar",
+   "Manos seguras"
   ],
   "prize": 75000,
-  "qty": 2,
+  "qty": 1,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Lanzador",
+  "primSec": "GP / AF"
  },
  {
   "race": "Old World Alliance",
@@ -2526,55 +2526,74 @@
   "pa": 4,
   "av": 9,
   "skills": [
-   "Solitario (3+)",
+   "Esprintar",
    "Manos seguras",
    "Cabeza dura"
+  ],
+  "prize": 80000,
+  "qty": 1,
+  "bigGuy": false,
+  "clave": "Corredor - Dwarf",
+  "primSec": "GP / AF"
+ },
+ {
+  "race": "Old World Alliance",
+  "type": "Human Blitzer",
+  "ma": 7,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 9,
+  "skills": [
+   "Placar",
+   "Placaje defensivo"
   ],
   "prize": 85000,
   "qty": 1,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Blitzer - Human",
+  "primSec": "FG / A"
  },
  {
   "race": "Old World Alliance",
   "type": "Dwarf Blitzer",
   "ma": 5,
   "st": 3,
-  "ag": 3,
+  "ag": 4,
   "pa": 4,
   "av": 10,
   "skills": [
    "Placar",
-   "Solitario (3+)",
-   "Cabeza dura"
+   "Cabeza dura",
+   "Placaje defensivo",
+   "Placaje heroico"
   ],
-  "prize": 80000,
+  "prize": 100000,
   "qty": 1,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Blitzer - Dwarf",
+  "primSec": "FG / P"
  },
  {
   "race": "Old World Alliance",
-  "type": "Dwarf Troll Slayer",
+  "type": "Troll Slayer",
   "ma": 5,
   "st": 3,
   "ag": 4,
-  "pa": 0,
+  "pa": 5,
   "av": 9,
   "skills": [
    "Placar",
    "Furia",
    "Agallas",
-   "Solitario (3+)",
-   "Cabeza dura"
+   "Cabeza dura",
+   "Odio (Troll)"
   ],
   "prize": 95000,
   "qty": 1,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Dwarf - Especial",
+  "primSec": "FG / A"
  },
  {
   "race": "Old World Alliance",
@@ -2586,7 +2605,7 @@
   "av": 10,
   "skills": [
    "Estúpido",
-   "Solitario (4+)",
+   "Solitario (3+)",
    "Golpe mortífero",
    "Cabeza dura",
    "Lanzar Compañero"
@@ -2594,12 +2613,12 @@
   "prize": 140000,
   "qty": 1,
   "bigGuy": true,
-  "clave": null,
-  "primSec": null
+  "clave": "Grandullon - Ogre",
+  "primSec": "F / AG"
  },
  {
   "race": "Old World Alliance",
-  "type": "Forest Treeman",
+  "type": "Altern Forest Treeman",
   "ma": 2,
   "st": 6,
   "ag": 5,
@@ -2607,7 +2626,6 @@
   "av": 11,
   "skills": [
    "Golpe mortífero",
-   "Solitario (4+)",
    "Mantenerse firme",
    "Brazo fuerte",
    "Echar raíces",
@@ -2618,8 +2636,8 @@
   "prize": 120000,
   "qty": 1,
   "bigGuy": true,
-  "clave": null,
-  "primSec": null
+  "clave": "Grandullon - Treeman",
+  "primSec": "F / AGP"
  },
  {
   "race": "Old World Alliance",
@@ -2635,8 +2653,8 @@
   "prize": 50000,
   "qty": 11,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Linea",
+  "primSec": "G / AF"
  },
  {
   "race": "Orcs",
@@ -2770,7 +2788,7 @@
  },
  {
   "race": "Shambling Undead",
-  "type": "Skeleton",
+  "type": "Skeleton Lineman",
   "ma": 5,
   "st": 3,
   "ag": 4,
@@ -2783,46 +2801,49 @@
   "prize": 40000,
   "qty": 16,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Linea - No muerto - Skeleton",
+  "primSec": "G / AFT"
  },
  {
   "race": "Shambling Undead",
-  "type": "Zombie",
+  "type": "Zombie Lineman",
   "ma": 4,
   "st": 3,
   "ag": 4,
-  "pa": 0,
+  "pa": 6,
   "av": 9,
   "skills": [
-   "Regeneración"
+   "Regeneración",
+   "Tembloroso",
+   "Piquete de ojos"
   ],
   "prize": 40000,
   "qty": 16,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Linea - No muerto - Zombie",
+  "primSec": "GT / AF"
  },
  {
   "race": "Shambling Undead",
-  "type": "Ghoul",
+  "type": "Ghoul Runner",
   "ma": 7,
   "st": 3,
   "ag": 3,
-  "pa": 4,
+  "pa": 3,
   "av": 8,
   "skills": [
-   "Esquivar"
+   "Esquivar",
+   "Regeneracion"
   ],
   "prize": 75000,
-  "qty": 4,
+  "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Corredor - Ghoul - No Muerto",
+  "primSec": "AG / FPT"
  },
  {
   "race": "Shambling Undead",
-  "type": "Wight",
+  "type": "Wight Blitzer",
   "ma": 6,
   "st": 3,
   "ag": 3,
@@ -2830,13 +2851,15 @@
   "av": 9,
   "skills": [
    "Placar",
-   "Regeneración"
+   "Regeneración",
+   "Pacaje defensivo",
+   "Cabeza dura"
   ],
-  "prize": 90000,
+  "prize": 95000,
   "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Blitzer - Human - No muerto - Skeleton",
+  "primSec": "FG / AT"
  },
  {
   "race": "Shambling Undead",
@@ -2844,7 +2867,7 @@
   "ma": 3,
   "st": 5,
   "ag": 5,
-  "pa": 0,
+  "pa": 6,
   "av": 10,
   "skills": [
    "Golpe mortífero",
@@ -2853,8 +2876,8 @@
   "prize": 125000,
   "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Defensor - Grandullon - Human - No muerto",
+  "primSec": "F / AG"
  },
  {
   "race": "Shambling Undead",
@@ -2862,14 +2885,18 @@
   "ma": 4,
   "st": 3,
   "ag": 4,
-  "pa": 0,
+  "pa": 6,
   "av": 9,
-  "skills": [],
+  "skills": [
+   "Regeneración",
+   "Tembloroso",
+   "Piquete de ojos"
+  ],
   "prize": 40000,
   "qty": 16,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Linea - No muerto - Zombie",
+  "primSec": "GT / AF"
  },
  {
   "race": "Shambling Undead",
@@ -2880,15 +2907,15 @@
   "pa": 6,
   "av": 8,
   "skills": [
-   "Solitario (4+)",
+   "Solitario (5+)",
    "Regeneración",
    "Cabeza dura"
   ],
   "prize": 40000,
   "qty": 11,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Linea - No muerto - Skeleton",
+  "primSec": "G / AFT"
  },
  {
   "race": "Shambling Undead",
@@ -2896,7 +2923,7 @@
   "ma": 4,
   "st": 3,
   "ag": 4,
-  "pa": 0,
+  "pa": 6,
   "av": 9,
   "skills": [
    "Solitario (5+)",
@@ -2905,8 +2932,8 @@
   "prize": 40000,
   "qty": 11,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Linea - No muerto - Zombie",
+  "primSec": "GT / AF"
  },
  {
   "race": "Slann",
@@ -3114,7 +3141,7 @@
  },
  {
   "race": "Tomb King",
-  "type": "Skeleton",
+  "type": "Skeleton Lineman",
   "ma": 5,
   "st": 3,
   "ag": 4,
@@ -3127,47 +3154,47 @@
   "prize": 40000,
   "qty": 16,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Linea - No Muerto - Skeleton",
+  "primSec": "G / AFT"
  },
  {
   "race": "Tomb King",
-  "type": "Anointed Throwers",
+  "type": "Tomb King Thrower",
   "ma": 6,
   "st": 3,
   "ag": 4,
   "pa": 3,
-  "av": 8,
+  "av": 9,
   "skills": [
    "Pasar",
    "Regeneración",
    "Manos seguras",
    "Cabeza dura"
   ],
-  "prize": 70000,
+  "prize": 65000,
   "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Lanzador - No Muerto - Skeleton",
+  "primSec": "GP / AFT"
  },
  {
   "race": "Tomb King",
-  "type": "Anointed Blitzers",
+  "type": "Tomb King Blitzers",
   "ma": 6,
   "st": 3,
   "ag": 4,
-  "pa": 6,
+  "pa": 5,
   "av": 9,
   "skills": [
    "Placar",
    "Regeneración",
    "Cabeza dura"
   ],
-  "prize": 90000,
+  "prize": 85000,
   "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Blitzer - No Muerto - Skeleton",
+  "primSec": "FG / AT"
  },
  {
   "race": "Tomb King",
@@ -3175,17 +3202,18 @@
   "ma": 4,
   "st": 5,
   "ag": 5,
-  "pa": 0,
+  "pa": 6,
   "av": 10,
   "skills": [
    "Descomposición",
-   "Regeneración"
+   "Regeneración",
+   "Luchador"
   ],
-  "prize": 100000,
+  "prize": 115000,
   "qty": 4,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Defensor - Grandullon - Human - No Muerto",
+  "primSec": "F / AG"
  },
  {
   "race": "Tomb King",
@@ -3203,8 +3231,8 @@
   "prize": 40000,
   "qty": 11,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Human - Linea - No Muerto - Skeleton",
+  "primSec": "G / AFT"
  },
  {
   "race": "Snotling",
@@ -3489,7 +3517,7 @@
    "Lanzar Compañero",
    "Proyectil Vómito",
    "Regeneración",
-   "SIempre hambriento",
+   "Siempre hambriento",
    "Solitario (4+)"
   ],
   "prize": 115000,
@@ -3657,32 +3685,14 @@
   "ma": 7,
   "st": 3,
   "ag": 2,
-  "pa": 4,
+  "pa": 3,
   "av": 8,
   "skills": [],
-  "prize": 70000,
+  "prize": 65000,
   "qty": 16,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
- },
- {
-  "race": "Elfos Silvanos",
-  "type": "Catcher",
-  "ma": 8,
-  "st": 2,
-  "ag": 2,
-  "pa": 4,
-  "av": 8,
-  "skills": [
-   "Atrapar",
-   "Esquivar"
-  ],
-  "prize": 90000,
-  "qty": 4,
-  "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Elf - Linea",
+  "primSec": "AG /"
  },
  {
   "race": "Elfos Silvanos",
@@ -3693,13 +3703,33 @@
   "pa": 2,
   "av": 8,
   "skills": [
-   "Pasar"
+   "Pasar",
+   "Proteger el cuero"
   ],
-  "prize": 95000,
+  "prize": 85000,
   "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Elf - Lanzador",
+  "primSec": "AGP / F"
+ },
+ {
+  "race": "Elfos Silvanos",
+  "type": "Catcher",
+  "ma": 8,
+  "st": 2,
+  "ag": 2,
+  "pa": 3,
+  "av": 8,
+  "skills": [
+   "Atrapar",
+   "Esquivar",
+   "Esprintar"
+  ],
+  "prize": 90000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": "Elf - Receptor",
+  "primSec": "AG / FP"
  },
  {
   "race": "Elfos Silvanos",
@@ -3707,18 +3737,18 @@
   "ma": 8,
   "st": 3,
   "ag": 2,
-  "pa": 4,
+  "pa": 3,
   "av": 8,
   "skills": [
    "Placar",
    "Esquivar",
    "Saltar"
   ],
-  "prize": 125000,
+  "prize": 130000,
   "qty": 2,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Elf - Blitzer",
+  "primSec": "AG / FP"
  },
  {
   "race": "Elfos Silvanos",
@@ -3740,8 +3770,8 @@
   "prize": 120000,
   "qty": 1,
   "bigGuy": true,
-  "clave": null,
-  "primSec": null
+  "clave": "Grandullon - Treeman",
+  "primSec": "F / AGP"
  },
  {
   "race": "Elfos Silvanos",
@@ -3749,15 +3779,15 @@
   "ma": 7,
   "st": 3,
   "ag": 2,
-  "pa": 4,
+  "pa": 3,
   "av": 8,
   "skills": [
    "Solitario (5+)"
   ],
-  "prize": 70000,
+  "prize": 65000,
   "qty": 11,
   "bigGuy": false,
-  "clave": null,
-  "primSec": null
+  "clave": "Elf - Linea",
+  "primSec": "AG /"
  }
 ]

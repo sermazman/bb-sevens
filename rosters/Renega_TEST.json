@@ -1,0 +1,191 @@
+{
+  "teamName": "Renega TEST",
+  "race": "Chaos Renegades",
+  "color": "#543e74",
+  "textColor": "#ff0000",
+  "staff": {
+    "rerolls": {
+      "clave": "reroll",
+      "count": 1,
+      "pricePerUnit": 100000,
+      "total": 100000
+    }
+  },
+  "players": [
+    {
+      "num": 1,
+      "name": "",
+      "position": "Human Thrower Renegade",
+      "ma": 6,
+      "st": 3,
+      "ag": "3+",
+      "pa": "3+",
+      "av": "9+",
+      "skills": [
+        "Animosidad (todo el equipo)",
+        "Pasar",
+        "Manos seguras",
+        "Human - Lanzador"
+      ]
+    },
+    {
+      "num": 2,
+      "name": "",
+      "position": "Troll",
+      "ma": 4,
+      "st": 5,
+      "ag": "5+",
+      "pa": "5+",
+      "av": "10+",
+      "skills": [
+        "Siempre hambriento",
+        "Solitario (4+)",
+        "Golpe mortífero",
+        "Proyectil de vómito",
+        "Realmente estúpido",
+        "Regeneración",
+        "Lanzar compañero",
+        "Troll - Grandullon"
+      ]
+    },
+    {
+      "num": 3,
+      "name": "",
+      "position": "Ogre",
+      "ma": 5,
+      "st": 5,
+      "ag": "4+",
+      "pa": "5+",
+      "av": "10+",
+      "skills": [
+        "Estúpido",
+        "Solitario (4+)",
+        "Golpe mortífero",
+        "Cabeza dura",
+        "Lanzar Compañero",
+        "Ogre - Grandullon"
+      ]
+    },
+    {
+      "num": 4,
+      "name": "",
+      "position": "Minotaur",
+      "ma": 5,
+      "st": 5,
+      "ag": "4+",
+      "pa": "6+",
+      "av": "9+",
+      "skills": [
+        "Solitario (4+)",
+        "Furia",
+        "Cuernos",
+        "Golpe mortífero",
+        "Cabeza dura",
+        "Ira descontrolada",
+        "Minotaur - Grandullon"
+      ]
+    },
+    {
+      "num": 5,
+      "name": "",
+      "position": "Rat Ogre",
+      "ma": 6,
+      "st": 5,
+      "ag": "4+",
+      "pa": "6+",
+      "av": "9+",
+      "skills": [
+        "Ferocidad animal",
+        "Furia",
+        "Solitario (4+)",
+        "Golpe mortífero",
+        "Cola prensil",
+        "Skaven - Grandullon"
+      ]
+    },
+    {
+      "num": 6,
+      "name": "",
+      "position": "Skaven Renegade",
+      "ma": 7,
+      "st": 3,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "8+",
+      "skills": [
+        "Animosidad (todo el equipo)",
+        "Esquivar",
+        "En pie de un salto",
+        "Linea - Skaven"
+      ]
+    },
+    {
+      "num": 7,
+      "name": "",
+      "position": "Orc Renegade",
+      "ma": 5,
+      "st": 3,
+      "ag": "3+",
+      "pa": "5+",
+      "av": "10+",
+      "skills": [
+        "Animosidad (todo el equipo)",
+        "Placar",
+        "Esprintar",
+        "Orc - Linea"
+      ]
+    },
+    {
+      "num": 8,
+      "name": "",
+      "position": "Human Renegade",
+      "ma": 6,
+      "st": 3,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "9+",
+      "skills": [
+        "Animosidad (todo el equipo)",
+        "Echar raices",
+        "Human - Linea"
+      ]
+    }
+  ],
+  "formation": [
+    {
+      "num": 1,
+      "col": 2,
+      "row": 1
+    },
+    {
+      "num": 2,
+      "col": 2,
+      "row": 0
+    },
+    {
+      "num": 3,
+      "col": 3,
+      "row": 0
+    },
+    {
+      "num": 4,
+      "col": 6,
+      "row": 0
+    },
+    {
+      "num": 5,
+      "col": 6,
+      "row": 1
+    },
+    {
+      "num": 6,
+      "col": 7,
+      "row": 3
+    },
+    {
+      "num": 7,
+      "col": 7,
+      "row": 0
+    }
+  ]
+}

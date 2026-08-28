@@ -1,3 +1,7 @@
+Revisar Furia, que tiene que seguir siempre y no preguntar si quiere hacer movimiento impulso, no se si esta implementada o no. Preguntar antes.
+Darle de Furia toda la Habilidad para implementarla
+REALIZADO:     FECHA:
+
 Vamos con otro actualización para dejar muy fino la ruleta que nos encanta como se gestiona ahora y nos ha abierto la mente a otras mejoras para poder actualizar.
 
 Tenemos que crear la Ruleta "tumbados" para que salga en los jugadores que están tumbados, por que?, por que El solo levantarse ya implica movimiento y para los Rasgos que hemos programado, solo esto de levantarse ya tiene que Activar el rasgo y hacer su chequeo. En estos rasgos que hemos programado si se decide levantarse tiene que pasar el chequeo de su Rasgo.
@@ -24,3 +28,5 @@ Nuevos botones
 - HL - Pone al jugador Herido Leve
 - HG - Pone al jugador Herido Grave
 - MUERTO - Pone al jugador Muerto
+
+REALIZADO:    FECHA:

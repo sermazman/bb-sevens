@@ -398,7 +398,7 @@ function applyRemoteState(payload){
   secureBallRerollUsed = !!payload.secureBallRerollUsed;
   if(pendingSecureBall && pendingSecureBall.lastSuccess !== undefined){
     const sbp = players.find(x=>x.id===pendingSecureBall.playerId);
-    checkActionButtons('secureball', pendingSecureBall.lastSuccess, sbp);
+    checkActionButtons('secureBall', pendingSecureBall.lastSuccess, sbp);
   } else {
     document.getElementById('secureBallResultText').textContent = '';
     document.getElementById('secureBallResultText').className = 'check-result';
@@ -1741,7 +1741,7 @@ function declareBlitz(){
   blitzUsedByTeam[p.team] = true;
   blitzActivePlayer = p.id;
   log('⚡ ' + p.name + ' declara BLITZ.');
-  renderSelInfo();
+  renderPitch(); renderSelInfo();
   broadcastState();
 }
 
@@ -2335,7 +2335,7 @@ function rollSecureBallDie(){
   const success = r>=2;
   pendingSecureBall.lastSuccess = success;
   log('🎲 Asegurar el Balón: tirada ' + r + ' → ' + (success?'CONSEGUIDO':'FALLADO'));
-  checkActionButtons('secureball', success, p);
+  checkActionButtons('secureBall', success, p);
   broadcastState();
 }
 
@@ -2958,7 +2958,7 @@ function checkActionButtons(prefix, success, p){
   actionRow.innerHTML = '';
   actionRow.style.display = 'flex';
 
-  const resolveFn = prefix==='dodge' ? resolveDodge : prefix==='gfi' ? resolveGfi : prefix==='secureball' ? resolveSecureBall : resolveCatch;
+  const resolveFn = prefix==='dodge' ? resolveDodge : prefix==='gfi' ? resolveGfi : prefix==='secureBall' ? resolveSecureBall : resolveCatch;
 
   if(success){
     const btn = document.createElement('button');
@@ -2969,7 +2969,7 @@ function checkActionButtons(prefix, success, p){
     return;
   }
 
-  const usedFlag = prefix==='dodge' ? dodgeRerollUsed : prefix==='gfi' ? gfiRerollUsed : prefix==='secureball' ? secureBallRerollUsed : catchRerollUsed;
+  const usedFlag = prefix==='dodge' ? dodgeRerollUsed : prefix==='gfi' ? gfiRerollUsed : prefix==='secureBall' ? secureBallRerollUsed : catchRerollUsed;
   if(!usedFlag){
     const hasDodgeSkill = prefix==='dodge' && playerHasSkill(p, 'esquiva', 'dodge') && !p.dodgeSkillUsedThisTurn;
     const hasCatchSkill = prefix==='catch' && !p.catchSkillUsedThisTurn && playerHasSkill(p, 'manos seguras', 'sure hands');
@@ -2997,13 +2997,13 @@ function checkActionButtons(prefix, success, p){
 }
 
 function useCheckReroll(prefix, isSkill){
-  const pending = prefix==='dodge' ? pendingDodge : prefix==='gfi' ? pendingGfi : prefix==='secureball' ? pendingSecureBall : pendingCatch;
+  const pending = prefix==='dodge' ? pendingDodge : prefix==='gfi' ? pendingGfi : prefix==='secureBall' ? pendingSecureBall : pendingCatch;
   if(!pending) return;
   const p = players.find(x=>x.id===pending.playerId);
   if(!p) return;
   if(prefix==='dodge') dodgeRerollUsed = true;
   else if(prefix==='gfi') gfiRerollUsed = true;
-  else if(prefix==='secureball') secureBallRerollUsed = true;
+  else if(prefix==='secureBall') secureBallRerollUsed = true;
   else catchRerollUsed = true;
   if(!isSkill){
     teamRerollsLeft[p.team] = Math.max(0, (teamRerollsLeft[p.team]||0) - 1);
@@ -3694,3 +3694,115 @@ function loadFieldOptions(){
       log('⚠️ No se pudieron cargar campos extra: ' + err.message);
     });
 }
+
+// ---------- Cancelar la tirada/acción pendiente de un modal concreto ----------
+function cancelActiveModal(modalId){
+  document.getElementById(modalId).classList.remove('show');
+  switch(modalId){
+    case 'dodgeModal':
+      pendingDodge = null; dodgeRerollUsed = false;
+      log('❌ Chequeo de Esquivar cancelado manualmente.');
+      break;
+    case 'gfiModal':
+      pendingGfi = null; gfiRerollUsed = false;
+      log('❌ Chequeo de "A por ellos" cancelado manualmente.');
+      break;
+    case 'catchModal':
+      pendingCatch = null; catchRerollUsed = false;
+      log('❌ Chequeo de recogida de balón cancelado manualmente.');
+      break;
+    case 'secureBallModal':
+      pendingSecureBall = null; secureBallRerollUsed = false;
+      log('❌ Asegurar Balón cancelado manualmente.');
+      break;
+    case 'blockModal':
+      activeBlock = null; blockTargeting = null; blockDiceRolled = false; currentBlockDiceIndices = [];
+      log('❌ Placaje cancelado manualmente.');
+      break;
+    case 'traitCheckModal':
+      pendingTraitCheck = null;
+      log('❌ Chequeo de rasgo cancelado manualmente.');
+      break;
+    case 'armorModal':
+      armorForPlayer = null; pendingArmorQueue = [];
+      log('❌ Tirada de armadura cancelada manualmente.');
+      break;
+    case 'jumpUpModal':
+      pendingJumpUpCheck = null;
+      log('❌ Levantarse de un salto y placar cancelado manualmente.');
+      break;
+    case 'followUpModal':
+      pendingFollowUp = null;
+      log('❌ Movimiento de impulso cancelado manualmente.');
+      break;
+    default:
+      // Modales puramente informativos (aviso de línea, fin de partida, partida guardada, touchdown, KO...): basta con cerrarlos.
+      break;
+  }
+  renderPitch(); renderRosters(); renderSelInfo();
+  broadcastState();
+}
+
+// ---------- Botón de cerrar + arrastre para TODOS los modales ----------
+function setupModalEnhancements(){
+  document.querySelectorAll('.modal-back').forEach(back=>{
+    const modal = back.querySelector('.modal');
+    if(!modal || modal.dataset.enhanced) return;
+    modal.dataset.enhanced = '1';
+
+    const closeBtn = document.createElement('div');
+    closeBtn.className = 'modal-close-btn';
+    closeBtn.textContent = '✕';
+    closeBtn.title = 'Cancelar esta tirada/acción';
+    closeBtn.onclick = (e)=>{ e.stopPropagation(); cancelActiveModal(back.id); };
+    modal.appendChild(closeBtn);
+
+    const handle = document.createElement('div');
+    handle.className = 'modal-drag-handle';
+    handle.title = 'Mantener pulsado y arrastrar para mover';
+    modal.appendChild(handle);
+
+    let dragging = false, offsetX = 0, offsetY = 0;
+
+    const startDrag = (clientX, clientY)=>{
+      const rect = modal.getBoundingClientRect();
+      offsetX = clientX - rect.left;
+      offsetY = clientY - rect.top;
+      modal.style.position = 'fixed';
+      modal.style.margin = '0';
+      modal.style.left = rect.left + 'px';
+      modal.style.top = rect.top + 'px';
+      dragging = true;
+    };
+    const moveDrag = (clientX, clientY)=>{
+      if(!dragging) return;
+      const maxLeft = window.innerWidth - modal.offsetWidth - 4;
+      const maxTop = window.innerHeight - modal.offsetHeight - 4;
+      modal.style.left = Math.max(4, Math.min(maxLeft, clientX - offsetX)) + 'px';
+      modal.style.top = Math.max(4, Math.min(maxTop, clientY - offsetY)) + 'px';
+    };
+    const stopDrag = ()=>{ dragging = false; };
+
+    handle.addEventListener('mousedown', (e)=>{ e.preventDefault(); e.stopPropagation(); startDrag(e.clientX, e.clientY); });
+    document.addEventListener('mousemove', (e)=>{ if(dragging) moveDrag(e.clientX, e.clientY); });
+    document.addEventListener('mouseup', stopDrag);
+
+    handle.addEventListener('touchstart', (e)=>{ e.stopPropagation(); const t=e.touches[0]; startDrag(t.clientX, t.clientY); }, { passive:true });
+    document.addEventListener('touchmove', (e)=>{ if(dragging){ const t=e.touches[0]; moveDrag(t.clientX, t.clientY); } }, { passive:true });
+    document.addEventListener('touchend', stopDrag);
+
+    // En cuanto este modal se cierra (por cualquier vía: cancelar, resolver la acción, etc.),
+    // se olvida la posición arrastrada para que la próxima vez vuelva a salir centrado.
+    const posObserver = new MutationObserver(()=>{
+      if(!back.classList.contains('show')){
+        modal.style.position = '';
+        modal.style.left = '';
+        modal.style.top = '';
+        modal.style.margin = '';
+      }
+    });
+    posObserver.observe(back, { attributes:true, attributeFilter:['class'] });
+  });
+}
+document.addEventListener('DOMContentLoaded', setupModalEnhancements);
+if(document.readyState==='complete' || document.readyState==='interactive'){ setupModalEnhancements(); }

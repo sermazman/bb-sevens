@@ -387,9 +387,26 @@ button.full{width:100%; margin-top:6px;}
 .modal{
   background:var(--panel); border:2px solid var(--gold); border-radius:8px;
   padding:28px 34px; text-align:center; max-width:340px;
+  position:relative;
 }
 .modal h2{font-size:30px; color:var(--gold);}
 .modal p{font-size:14px; color:#cfc3a8; margin:10px 0 18px 0;}
+.modal-close-btn{
+  position:absolute; top:8px; right:10px;
+  width:26px; height:26px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,0.08); color:#cfc3a8;
+  font-size:15px; cursor:pointer; user-select:none;
+  transition:background .15s ease, color .15s ease;
+}
+.modal-close-btn:hover{background:var(--bad); color:#fff;}
+.modal-drag-handle{
+  position:absolute; top:10px; left:10px;
+  width:16px; height:16px; border-radius:50%;
+  background:#888; cursor:move; user-select:none;
+  box-shadow:0 0 0 3px rgba(255,255,255,0.06);
+}
+.modal-drag-handle:hover{background:#aaa;}
 
 .radial-menu-btn{
   position:fixed;

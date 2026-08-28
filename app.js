@@ -252,6 +252,7 @@ function snapshotState(){
     traitCheckTitleText: document.getElementById('traitCheckTitle').textContent,
     traitCheckText: document.getElementById('traitCheckText').textContent,
     traitCheckDieText: document.getElementById('traitCheckDie').textContent,
+    traitCheckMathText: document.getElementById('traitCheckMathText').textContent,
     traitCheckResultText: document.getElementById('traitCheckResultText').textContent,
     traitCheckResultClass: document.getElementById('traitCheckResultText').className,
     traitCheckRollBtnVisible: document.getElementById('traitCheckRollBtn').style.display,
@@ -415,6 +416,7 @@ function applyRemoteState(payload){
   document.getElementById('traitCheckTitle').textContent = payload.traitCheckTitleText || 'CHEQUEO DE RASGO';
   document.getElementById('traitCheckText').textContent = payload.traitCheckText || '';
   document.getElementById('traitCheckDie').textContent = payload.traitCheckDieText || '–';
+  document.getElementById('traitCheckMathText').textContent = payload.traitCheckMathText || '';
   document.getElementById('traitCheckResultText').textContent = payload.traitCheckResultText || '';
   document.getElementById('traitCheckResultText').className = payload.traitCheckResultClass || 'check-result';
   document.getElementById('traitCheckRollBtn').style.display = payload.traitCheckRollBtnVisible || 'block';
@@ -1597,6 +1599,10 @@ function tokenClicked(id){
     if(isValidBlockTarget(id)){ chooseBlockTarget(id); }
     return;
   }
+  if(blitzActivePlayer!==null && isValidBlockTarget(id)){
+    chooseBlockTarget(id);
+    return;
+  }
   if(pendingFerocityAttack!==null){
     resolveFerocityAttack(id);
     return;
@@ -1747,8 +1753,9 @@ function declareBlitz(){
 
 // ---------- Block/Placaje targeting ----------
 function isValidBlockTarget(defenderId){
-  if(blockTargeting===null) return false;
-  const attacker = players.find(x=>x.id===blockTargeting);
+  const attackerId = blockTargeting!==null ? blockTargeting : blitzActivePlayer;
+  if(attackerId===null) return false;
+  const attacker = players.find(x=>x.id===attackerId);
   const defender = players.find(x=>x.id===defenderId);
   if(!attacker || !defender) return false;
   return defender.onPitch && defender.team!==attacker.team && defender.condition==='standing' &&
@@ -1777,7 +1784,8 @@ function cancelBlockTargeting(){
 }
 
 function chooseBlockTarget(defenderId){
-  const attacker = players.find(x=>x.id===blockTargeting);
+  const attackerId = blockTargeting!==null ? blockTargeting : blitzActivePlayer;
+  const attacker = players.find(x=>x.id===attackerId);
   const defender = players.find(x=>x.id===defenderId);
   blockTargeting = null;
   if(!attacker || !defender){ renderPitch(); return; }
@@ -2417,6 +2425,7 @@ function runTraitCheckThen(p, actionLabel, onSuccess){
   document.getElementById('traitCheckText').textContent =
     p.name + ' tiene ' + TRAIT_LABELS[trait] + ' — necesita ' + info.target + '+' + info.modifierNote + '. Tirada única, sin repetición. Tirad D6.';
   document.getElementById('traitCheckDie').textContent = '–';
+  document.getElementById('traitCheckMathText').textContent = '';
   document.getElementById('traitCheckResultText').textContent = '';
   document.getElementById('traitCheckResultText').className = 'check-result';
   document.getElementById('traitCheckRollBtn').style.display = 'block';
@@ -2432,7 +2441,10 @@ function rollTraitCheck(){
   const raw = Math.floor(Math.random()*6)+1;
   const modified = raw + pendingTraitCheck.modifier;
   const success = modified >= pendingTraitCheck.target;
-  document.getElementById('traitCheckDie').textContent = raw + (pendingTraitCheck.modifier ? (' (+'+pendingTraitCheck.modifier+' = '+modified+')') : '');
+  document.getElementById('traitCheckDie').textContent = raw;
+  document.getElementById('traitCheckMathText').textContent = pendingTraitCheck.modifier
+    ? ('Tirada ' + raw + ' + ' + pendingTraitCheck.modifier + ' = ' + modified + ' (necesita ' + pendingTraitCheck.target + '+)')
+    : ('Tirada ' + raw + ' (necesita ' + pendingTraitCheck.target + '+)');
   document.getElementById('traitCheckResultText').textContent = success ? '✅ SUPERADO' : '❌ FALLADO';
   document.getElementById('traitCheckResultText').className = 'check-result ' + (success ? 'ok' : 'fail');
   document.getElementById('traitCheckRollBtn').style.display = 'none';

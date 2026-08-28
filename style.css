@@ -250,6 +250,7 @@ button.full{width:100%; margin-top:6px;}
 .cell.endzone-a{background:repeating-linear-gradient(135deg, var(--endzone-a), var(--endzone-a) 6px, #6b2727 6px, #6b2727 12px);}
 .cell.endzone-b{background:repeating-linear-gradient(135deg, var(--endzone-b), var(--endzone-b) 6px, #26507e 6px, #26507e 12px);}
 .cell.los{box-shadow: inset 2px 0 0 var(--chalk), inset -2px 0 0 var(--chalk);}
+.cell.rooted-cell{background:repeating-linear-gradient(135deg, #6b4423, #6b4423 6px, #52341b 6px, #52341b 12px) !important;}
 .cell.reachable{box-shadow: inset 0 0 0 2px var(--gold); cursor:pointer;}
 .cell.reachable::after{
   content:''; position:absolute; inset:9px; border-radius:50%;

@@ -10,6 +10,9 @@ let pendingCatch = null;
 let pendingBallDrop = null;
 let pendingDriveStart = null;
 let selected = null;   // token selected during LIVE phase (for movement)
+let declaredAction = null; // null | 'move' | 'blitz' | 'block' | 'secureball' — se fija al elegir en la Ruleta
+let pendingTraitCheck = null; // { playerId, actionLabel, trait }
+let pendingFerocityAttack = null; // { attackerId }
 let placing = null;    // player id currently being placed/repositioned (SETUP phase)
 let phase = 'setup';   // 'setup' | 'live'
 let pendingTD = null;
@@ -244,6 +247,15 @@ function snapshotState(){
     matchEndModalOpen: document.getElementById('matchEndModal').classList.contains('show'),
     matchEndText: document.getElementById('matchEndText').textContent,
     pendingActionMenuPlayer,
+    declaredAction, pendingTraitCheck, pendingFerocityAttack,
+    traitCheckModalOpen: document.getElementById('traitCheckModal').classList.contains('show'),
+    traitCheckTitleText: document.getElementById('traitCheckTitle').textContent,
+    traitCheckText: document.getElementById('traitCheckText').textContent,
+    traitCheckDieText: document.getElementById('traitCheckDie').textContent,
+    traitCheckResultText: document.getElementById('traitCheckResultText').textContent,
+    traitCheckResultClass: document.getElementById('traitCheckResultText').className,
+    traitCheckRollBtnVisible: document.getElementById('traitCheckRollBtn').style.display,
+    traitCheckContinueBtnVisible: document.getElementById('traitCheckContinueBtn').style.display,
     secureBallText: document.getElementById('secureBallText').textContent,
     secureBallDieText: document.getElementById('secureBallDie').textContent,
     teamAName: document.getElementById('teamAName').value,
@@ -397,6 +409,17 @@ function applyRemoteState(payload){
   document.getElementById('matchEndText').textContent = payload.matchEndText || '';
   document.getElementById('matchEndModal').classList.toggle('show', !!payload.matchEndModalOpen);
   pendingActionMenuPlayer = payload.pendingActionMenuPlayer;
+  declaredAction = payload.declaredAction || null;
+  pendingTraitCheck = payload.pendingTraitCheck || null;
+  pendingFerocityAttack = payload.pendingFerocityAttack || null;
+  document.getElementById('traitCheckTitle').textContent = payload.traitCheckTitleText || 'CHEQUEO DE RASGO';
+  document.getElementById('traitCheckText').textContent = payload.traitCheckText || '';
+  document.getElementById('traitCheckDie').textContent = payload.traitCheckDieText || '–';
+  document.getElementById('traitCheckResultText').textContent = payload.traitCheckResultText || '';
+  document.getElementById('traitCheckResultText').className = payload.traitCheckResultClass || 'check-result';
+  document.getElementById('traitCheckRollBtn').style.display = payload.traitCheckRollBtnVisible || 'block';
+  document.getElementById('traitCheckContinueBtn').style.display = payload.traitCheckContinueBtnVisible || 'none';
+  document.getElementById('traitCheckModal').classList.toggle('show', !!payload.traitCheckModalOpen);
   nextId = payload.nextId;
   document.getElementById('teamAName').value = payload.teamAName;
   document.getElementById('teamBName').value = payload.teamBName;
@@ -565,7 +588,8 @@ function anyModalOpen(){
          document.getElementById('jumpUpModal').classList.contains('show') ||
          document.getElementById('secureBallModal').classList.contains('show') ||
          document.getElementById('matchEndModal').classList.contains('show') ||
-         pendingActionMenuPlayer !== null;
+         pendingActionMenuPlayer !== null ||
+         document.getElementById('traitCheckModal').classList.contains('show');
 }
 
 // ---------- Roster management ----------
@@ -891,7 +915,7 @@ function knockDown(){
   const p = players.find(x=>x.id===selected);
   if(!p || !p.onPitch){ alert('El jugador debe estar en el campo.'); return; }
   if(p.condition!=='standing'){ alert('Ese jugador ya está en el suelo.'); return; }
-  p.condition = 'tumbado';
+  p.condition = 'tumbado'; p.rooted = false;
   p.activated = true;
   selected = null;
   renderRosters(); renderPitch(); renderSelInfo();
@@ -1103,7 +1127,7 @@ function renderPitch(){
           highlightPush = true;
           highlightPushFree = freeActive;
         }
-      } else if(phase==='live' && selected!==null){
+      } else if(phase==='live' && selected!==null && (declaredAction==='move' || declaredAction==='blitz' || declaredAction==='secureball')){
         const p = players.find(x=>x.id===selected);
         if(p && inAdjacentReach(p,r,c) && !occupiedBy(r,c)){
           highlightable = true;
@@ -1122,6 +1146,7 @@ function renderPitch(){
       cell.onclick = ()=> cellClicked(r,c);
 
       const occ = posMap[r+'_'+c];
+      if(occ && occ.rooted){ cell.classList.add('rooted-cell'); }
       if(occ){
         const t = document.createElement('div');
         const condClass = occ.condition==='tumbado' ? ' tumbado' : occ.condition==='aturdido' ? ' aturdido' : occ.condition==='despistado' ? ' despistado' : '';
@@ -1310,6 +1335,7 @@ let pendingActionMenuPlayer = null;
 
 function openActionMenu(id){
   pendingActionMenuPlayer = id;
+  declaredAction = null;
   renderActionMenu();
   broadcastState();
 }
@@ -1333,8 +1359,12 @@ function getActionMenuOptionsFor(p){
     return opts;
   }
   const opts = [];
-  if(!blitzUsedByTeam[p.team]) opts.push({ icon:'⚡', label:'Blitz', fn:'actionMenuBlitz' });
-  if(canSecureBall(p)){
+  if(!p.rooted){
+    opts.push({ icon:'🏃', label:'Movimiento', fn:'actionMenuMove' });
+    if(!blitzUsedByTeam[p.team]) opts.push({ icon:'⚡', label:'Blitz', fn:'actionMenuBlitz' });
+  }
+  opts.push({ icon:'⚔️', label:'Placar', fn:'actionMenuBlock' });
+  if(!p.rooted && canSecureBall(p)){
     opts.push({ icon:'🔒', label:'Asegurar', fn:'actionMenuSecureBall' });
   }
   opts.push({ icon:'🥊', label:'Falta', fn:'actionMenuFoul' });
@@ -1389,22 +1419,49 @@ document.addEventListener('click', (e)=>{
   }
 });
 
+function actionMenuMove(){
+  const id = pendingActionMenuPlayer;
+  closeActionMenu();
+  const p = players.find(x=>x.id===id);
+  if(!p) return;
+  selected = id;
+  runTraitCheckThen(p, 'move', ()=> proceedDeclaredAction(p, 'move'));
+}
+
 function actionMenuBlitz(){
   const id = pendingActionMenuPlayer;
   closeActionMenu();
+  const p = players.find(x=>x.id===id);
+  if(!p) return;
   selected = id;
-  declareBlitz();
+  runTraitCheckThen(p, 'blitz', ()=> proceedDeclaredAction(p, 'blitz'));
+}
+
+function actionMenuBlock(){
+  const id = pendingActionMenuPlayer;
+  closeActionMenu();
+  const p = players.find(x=>x.id===id);
+  if(!p) return;
+  selected = id;
+  runTraitCheckThen(p, 'block', ()=> proceedDeclaredAction(p, 'block'));
 }
 
 function actionMenuSecureBall(){
   const id = pendingActionMenuPlayer;
   closeActionMenu();
+  const p = players.find(x=>x.id===id);
+  if(!p) return;
   selected = id;
-  secureTheBall();
+  runTraitCheckThen(p, 'secureball', ()=> proceedDeclaredAction(p, 'secureball'));
 }
 
 function actionMenuFoul(){
-  alert('La acción de Falta aún no está implementada — próximamente.');
+  const id = pendingActionMenuPlayer;
+  closeActionMenu();
+  const p = players.find(x=>x.id===id);
+  if(!p) return;
+  selected = id;
+  runTraitCheckThen(p, 'foul', ()=> proceedDeclaredAction(p, 'foul'));
 }
 
 function actionMenuEndActivation(){
@@ -1432,6 +1489,7 @@ function endActivation(id){
   if(!p) return;
   p.activated = true;
   selected = null;
+  declaredAction = null;
   renderPitch(); renderRosters(); renderSelInfo();
   updateStatus(p.name + ' termina su activación.');
   broadcastState();
@@ -1483,7 +1541,7 @@ function cellClicked(r,c){
   }
 
   // live phase — step by step movement
-  if(selected!==null){
+  if(selected!==null && (declaredAction==='move' || declaredAction==='blitz' || declaredAction==='secureball')){
     const p = players.find(x=>x.id===selected);
     if(p && inAdjacentReach(p,r,c) && !occupiedBy(r,c)){
       const fromR=p.row, fromC=p.col;
@@ -1539,17 +1597,9 @@ function tokenClicked(id){
     if(isValidBlockTarget(id)){ chooseBlockTarget(id); }
     return;
   }
-  if(selected!==null && phase==='live' && !anyModalOpen()){
-    const attacker = players.find(x=>x.id===selected);
-    const target = players.find(x=>x.id===id);
-    if(attacker && target && attacker.team===state.active && attacker.condition==='standing' &&
-       !attacker.activated && !attacker.blockedThisActivation &&
-       target.team!==attacker.team && target.onPitch && target.condition==='standing' &&
-       Math.max(Math.abs(attacker.row-target.row), Math.abs(attacker.col-target.col))===1){
-      blockTargeting = attacker.id;
-      chooseBlockTarget(id);
-      return;
-    }
+  if(pendingFerocityAttack!==null){
+    resolveFerocityAttack(id);
+    return;
   }
   if(anyModalOpen()) return;
   const p = players.find(x=>x.id===id);
@@ -1580,6 +1630,15 @@ function tokenClicked(id){
       log('⏹️ ' + prev.name + ' termina su activación (se movió y se cambió de jugador).');
     }
   }
+
+  const hasMoved = ((p.remainingMove ?? p.ma) !== p.ma || (p.gfiUsed ?? 0) > 0) && !p.justStoodThisActivation;
+  const freshActivation = !p.activated && !p.blockedThisActivation && !hasMoved && (p.condition==='standing' || p.condition==='tumbado');
+  if(freshActivation && selected!==id){
+    selected = id;
+    openActionMenu(id);
+    return;
+  }
+
   selected = (selected===id) ? null : id;
   renderRosters(); renderPitch(); renderSelInfo();
   broadcastState();
@@ -1890,7 +1949,7 @@ function applyBlockOutcome(kind){
   attacker.blockedThisActivation = true;
 
   if(kind==='attackerDown'){
-    attacker.condition = 'tumbado';
+    attacker.condition = 'tumbado'; attacker.rooted = false;
     attacker.activated = true;
     selected = null;
     log('👊 ' + attacker.name + ' (atacante) cae.');
@@ -1908,8 +1967,8 @@ function applyBlockOutcome(kind){
     const defenderFalls = !defHasTackle;
 
     const fallenNames = [];
-    if(attackerFalls){ attacker.condition = 'tumbado'; fallenNames.push(attacker.name); queueBallDropIfCarrier(attacker.id, attacker.row, attacker.col); }
-    if(defenderFalls){ defender.condition = 'tumbado'; fallenNames.push(defender.name); queueBallDropIfCarrier(defender.id, defender.row, defender.col); }
+    if(attackerFalls){ attacker.condition = 'tumbado'; attacker.rooted = false; fallenNames.push(attacker.name); queueBallDropIfCarrier(attacker.id, attacker.row, attacker.col); }
+    if(defenderFalls){ defender.condition = 'tumbado'; defender.rooted = false; fallenNames.push(defender.name); queueBallDropIfCarrier(defender.id, defender.row, defender.col); }
 
     if(!attackerFalls && isBlitz){
       selected = attacker.id;
@@ -1958,6 +2017,24 @@ function applyBlockOutcome(kind){
     attacker.activated = true;
     selected = null;
   }
+
+  if(defender.rooted){
+    log('🌳 ' + defender.name + ' está Echando raíces — no puede ser empujado, se queda en su casilla.');
+    if(kind==='pow' || (kind==='stumble' && !playerHasSkill(defender, 'esquiva', 'dodge'))){
+      defender.condition = 'tumbado'; defender.rooted = false;
+      queueBallDropIfCarrier(defender.id, defender.row, defender.col);
+      renderRosters(); renderPitch(); renderSelInfo();
+      broadcastState();
+      pendingArmorQueue = [defender.id];
+      processNextArmorInQueue();
+    } else {
+      if(kind==='stumble'){ log('🤸 ' + defender.name + ' tiene Esquiva — no cae.'); }
+      renderRosters(); renderPitch(); renderSelInfo();
+      broadcastState();
+    }
+    return;
+  }
+
   chainPushStack = [];
   const offsets = computePushOffsets(attacker.row, attacker.col, defender.row, defender.col);
   pendingPush = { attackerId: attacker.id, defenderId: defender.id, kind, isBlitz, offsets, freePush: !!attacker.freePushOverride };
@@ -2290,6 +2367,191 @@ function playerHasSkill(p, ...keywords){
   return keywords.some(k => lower.some(s => s.includes(k)));
 }
 
+function getPlayerTrait(p){
+  // Orden importante: comprobar las más específicas antes que las genéricas (p.ej. "realmente estúpido" contiene "estúpido").
+  if(playerHasSkill(p, 'realmente estúpido', 'realmente estupido', 'really stupid')) return 'reallyStupid';
+  if(playerHasSkill(p, 'estúpido', 'estupido', 'bone-head', 'bonehead')) return 'stupid';
+  if(playerHasSkill(p, 'echar raíces', 'echar raices', 'take root')) return 'takeRoot';
+  if(playerHasSkill(p, 'ferocidad animal', 'wild animal')) return 'wildAnimal';
+  if(playerHasSkill(p, 'ira descontrolada', 'really wild')) return 'uncontrolledRage';
+  return null;
+}
+
+const TRAIT_LABELS = {
+  stupid: 'Estúpido',
+  reallyStupid: 'Realmente Estúpido',
+  takeRoot: 'Echar Raíces',
+  wildAnimal: 'Ferocidad Animal',
+  uncontrolledRage: 'Ira Descontrolada'
+};
+
+function traitTargetAndModifier(p, trait, actionLabel){
+  // Devuelve { target, modifier, modifierNote }. Todas estas tiradas son ÚNICAS, sin reroll de ningún tipo.
+  if(trait==='stupid'){
+    return { target:2, modifier:0, modifierNote:'' };
+  }
+  if(trait==='takeRoot'){
+    return { target:2, modifier:0, modifierNote:'' };
+  }
+  if(trait==='reallyStupid'){
+    const hasHelper = players.some(p2 => p2.onPitch && p2.id!==p.id && p2.team===p.team && p2.condition==='standing' &&
+      Math.max(Math.abs(p2.row-p.row), Math.abs(p2.col-p.col))===1 &&
+      getPlayerTrait(p2)!=='reallyStupid');
+    return { target:4, modifier: hasHelper?2:0, modifierNote: hasHelper ? ' (+2 por compañero en pie adyacente)' : '' };
+  }
+  if(trait==='wildAnimal' || trait==='uncontrolledRage'){
+    const isAggro = (actionLabel==='blitz' || actionLabel==='block');
+    return { target:4, modifier: isAggro?2:0, modifierNote: isAggro ? ' (+2 por Placaje/Blitz)' : '' };
+  }
+  return { target:2, modifier:0, modifierNote:'' };
+}
+
+function runTraitCheckThen(p, actionLabel, onSuccess){
+  const trait = getPlayerTrait(p);
+  if(!trait){ onSuccess(); return; }
+  pendingTraitCheck = { playerId: p.id, actionLabel, trait, onSuccessAction: actionLabel };
+  const info = traitTargetAndModifier(p, trait, actionLabel);
+  pendingTraitCheck.target = info.target;
+  pendingTraitCheck.modifier = info.modifier;
+  document.getElementById('traitCheckTitle').textContent = '🎲 ' + TRAIT_LABELS[trait].toUpperCase();
+  document.getElementById('traitCheckText').textContent =
+    p.name + ' tiene ' + TRAIT_LABELS[trait] + ' — necesita ' + info.target + '+' + info.modifierNote + '. Tirada única, sin repetición. Tirad D6.';
+  document.getElementById('traitCheckDie').textContent = '–';
+  document.getElementById('traitCheckResultText').textContent = '';
+  document.getElementById('traitCheckResultText').className = 'check-result';
+  document.getElementById('traitCheckRollBtn').style.display = 'block';
+  document.getElementById('traitCheckContinueBtn').style.display = 'none';
+  document.getElementById('traitCheckModal').classList.add('show');
+  broadcastState();
+}
+
+function rollTraitCheck(){
+  if(!pendingTraitCheck) return;
+  const p = players.find(x=>x.id===pendingTraitCheck.playerId);
+  if(!p){ document.getElementById('traitCheckModal').classList.remove('show'); pendingTraitCheck=null; broadcastState(); return; }
+  const raw = Math.floor(Math.random()*6)+1;
+  const modified = raw + pendingTraitCheck.modifier;
+  const success = modified >= pendingTraitCheck.target;
+  document.getElementById('traitCheckDie').textContent = raw + (pendingTraitCheck.modifier ? (' (+'+pendingTraitCheck.modifier+' = '+modified+')') : '');
+  document.getElementById('traitCheckResultText').textContent = success ? '✅ SUPERADO' : '❌ FALLADO';
+  document.getElementById('traitCheckResultText').className = 'check-result ' + (success ? 'ok' : 'fail');
+  document.getElementById('traitCheckRollBtn').style.display = 'none';
+  document.getElementById('traitCheckContinueBtn').style.display = 'block';
+  log('🎲 ' + TRAIT_LABELS[pendingTraitCheck.trait] + ' de ' + p.name + ': ' + raw + (pendingTraitCheck.modifier?'+'+pendingTraitCheck.modifier:'') + ' vs ' + pendingTraitCheck.target + '+ → ' + (success?'SUPERADO':'FALLADO'));
+  pendingTraitCheck.success = success;
+  broadcastState();
+}
+
+function closeTraitCheckModal(){
+  if(!pendingTraitCheck){ document.getElementById('traitCheckModal').classList.remove('show'); broadcastState(); return; }
+  const p = players.find(x=>x.id===pendingTraitCheck.playerId);
+  const info = pendingTraitCheck;
+  document.getElementById('traitCheckModal').classList.remove('show');
+  pendingTraitCheck = null;
+  if(!p){ broadcastState(); return; }
+
+  if(info.success){
+    proceedDeclaredAction(p, info.actionLabel);
+    return;
+  }
+
+  applyTraitFailure(p, info.trait);
+}
+
+function applyTraitFailure(p, trait){
+  if(trait==='stupid' || trait==='reallyStupid'){
+    p.condition = 'despistado';
+    p.activated = true;
+    selected = null; declaredAction = null;
+    log('😵‍💫 ' + p.name + ' falla ' + TRAIT_LABELS[trait] + ' — queda Distraído, activación terminada.');
+    renderRosters(); renderPitch(); renderSelInfo();
+    broadcastState();
+    return;
+  }
+  if(trait==='uncontrolledRage'){
+    p.activated = true;
+    selected = null; declaredAction = null;
+    log('🗯️ ' + p.name + ' falla Ira Descontrolada — ruge de forma incoherente, activación terminada.');
+    renderRosters(); renderPitch(); renderSelInfo();
+    broadcastState();
+    return;
+  }
+  if(trait==='takeRoot'){
+    p.rooted = true;
+    p.activated = true;
+    selected = null; declaredAction = null;
+    log('🌳 ' + p.name + ' Echa Raíces en su casilla — no podrá moverse en los próximos turnos.');
+    renderRosters(); renderPitch(); renderSelInfo();
+    broadcastState();
+    return;
+  }
+  if(trait==='wildAnimal'){
+    const mates = players.filter(p2 => p2.onPitch && p2.id!==p.id && p2.team===p.team && p2.condition==='standing' &&
+      Math.max(Math.abs(p2.row-p.row), Math.abs(p2.col-p.col))===1);
+    if(mates.length===0){
+      p.condition = 'despistado';
+      p.activated = true;
+      selected = null; declaredAction = null;
+      log('🐗 ' + p.name + ' falla Ferocidad Animal sin compañeros adyacentes — queda Distraído.');
+      renderRosters(); renderPitch(); renderSelInfo();
+      broadcastState();
+      return;
+    }
+    p.activated = true;
+    selected = null; declaredAction = null;
+    pendingFerocityAttack = { attackerId: p.id };
+    log('🐗 ' + p.name + ' falla Ferocidad Animal — elegid a qué compañero adyacente ataca (click en él).');
+    updateStatus(p.name + ' ataca a un compañero — click en el compañero adyacente elegido.');
+    renderRosters(); renderPitch(); renderSelInfo();
+    broadcastState();
+    return;
+  }
+}
+
+function resolveFerocityAttack(targetId){
+  if(!pendingFerocityAttack) return;
+  const attacker = players.find(x=>x.id===pendingFerocityAttack.attackerId);
+  const target = players.find(x=>x.id===targetId);
+  if(!attacker || !target) return;
+  if(target.team!==attacker.team || target.condition!=='standing' || target.onPitch!==true ||
+     Math.max(Math.abs(target.row-attacker.row), Math.abs(target.col-attacker.col))!==1){
+    alert('Ese jugador no es un compañero en pie adyacente válido.');
+    return;
+  }
+  pendingFerocityAttack = null;
+  const wasCarrier = ball.carrierId===target.id;
+  target.condition = 'tumbado'; target.rooted = false;
+  log('🐗 ' + attacker.name + ' ataca a su compañero ' + target.name + ' — Derribado de inmediato.');
+  queueBallDropIfCarrier(target.id, target.row, target.col);
+  renderRosters(); renderPitch(); renderSelInfo();
+  broadcastState();
+  pendingArmorQueue = [target.id];
+  processNextArmorInQueue();
+  if(wasCarrier){
+    log('🔄 El compañero derribado llevaba el balón — cambio de turno.');
+  }
+}
+
+function proceedDeclaredAction(p, actionLabel){
+  selected = p.id;
+  if(actionLabel==='move'){
+    declaredAction = 'move';
+    renderPitch(); renderRosters(); renderSelInfo();
+    broadcastState();
+  } else if(actionLabel==='blitz'){
+    declaredAction = 'blitz';
+    declareBlitz();
+  } else if(actionLabel==='block'){
+    declaredAction = 'block';
+    startBlockTargeting();
+  } else if(actionLabel==='secureball'){
+    declaredAction = 'secureball';
+    secureTheBall();
+  } else if(actionLabel==='foul'){
+    alert('La acción de Falta aún no está implementada — próximamente.');
+  }
+}
+
 function parseAgTarget(agStr){
   const n = parseInt(agStr, 10);
   return isNaN(n) ? 4 : n;
@@ -2305,7 +2567,7 @@ function finishPushSequence(info){
   } else if(info.fallKind){
     const defender = players.find(x=>x.id===info.defenderId);
     if(defender){
-      defender.condition = 'tumbado';
+      defender.condition = 'tumbado'; defender.rooted = false;
       log('💥 ' + defender.name + (info.fallKind==='pow' ? ' cae (POW).' : ' cae (desequilibrado).'));
       queueBallDropIfCarrier(defender.id, defender.row, defender.col);
       renderRosters(); renderPitch();
@@ -2807,7 +3069,7 @@ function resolveDodge(success){
     completeStep(p, toR, toC, fromGfi ? 'none' : 'normal');
   } else {
     p.row = toR; p.col = toC;
-    p.condition = 'tumbado';
+    p.condition = 'tumbado'; p.rooted = false;
     p.activated = true;
     selected = null;
     renderRosters(); renderPitch(); renderSelInfo();
@@ -2879,7 +3141,7 @@ function resolveGfi(success){
   } else {
     p.gfiUsed = (p.gfiUsed ?? 0) + 1;
     p.row = toR; p.col = toC;
-    p.condition = 'tumbado';
+    p.condition = 'tumbado'; p.rooted = false;
     p.activated = true;
     selected = null;
     renderRosters(); renderPitch(); renderSelInfo();
@@ -2942,7 +3204,7 @@ function armorResult(broken){
     document.getElementById('injuryBlock').style.display='block';
     log('🛡️ Armadura ROTA' + (p?(' — '+p.name):'') + '. Tirad heridas.');
   } else {
-    if(p){ p.condition='tumbado'; }
+    if(p){ p.condition='tumbado'; p.rooted = false; }
     log('🛡️ Armadura aguanta' + (p?(' — '+p.name+' sigue tumbado.'):'.'));
     renderRosters(); renderPitch(); renderSelInfo();
     closeArmorModal();
@@ -3110,6 +3372,7 @@ function resetBoardForNewDrive(){
     p.onPitch=false; p.row=null; p.col=null; p.activated=false;
     if(p.condition==='tumbado' || p.condition==='aturdido'){ p.condition='standing'; }
     p.remainingMove=p.ma; p.gfiUsed=0; p.blockedThisActivation=false;
+    p.rooted = false;
   });
   ball = { carrierId: null, row: null, col: null };
   ballBounceActive = false;
@@ -3173,7 +3436,7 @@ function endTurn(){
   const finishing = state.active;
 
   players.filter(p=>p.team===finishing && p.condition==='aturdido').forEach(p=>{
-    p.condition = 'tumbado';
+    p.condition = 'tumbado'; p.rooted = false;
     log('🔄 ' + p.name + ' se da la vuelta (Aturdido → Tumbado) al final del turno.');
   });
 

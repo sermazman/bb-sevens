@@ -55,6 +55,15 @@
     font-size:10.5px; color:var(--gold); margin-top:3px; text-align:center;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-height:13px;
   }
+  .pos-limit-row{
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    margin-top:14px; padding-top:12px; border-top:1px solid var(--panel-line);
+  }
+  .pos-limit-label{
+    display:flex; align-items:center; gap:8px; font-size:12.5px; color:#cfc3a8;
+    cursor:pointer; user-select:none;
+  }
+  .pos-limit-label input[type=checkbox]{width:16px; height:16px; margin:0; cursor:pointer;}
   .skill-tags{display:flex; flex-wrap:wrap; gap:5px; margin-bottom:5px;}
   .skill-tag{
     background:#100e0c; border:1px solid var(--gold); color:var(--gold);
@@ -318,6 +327,14 @@
         <button onclick="clearFormation()" style="margin-top:8px; width:100%;">🔄 Vaciar colocación</button>
       </div>
     </div>
+
+    <div class="pos-limit-row">
+      <label class="pos-limit-label">
+        <input type="checkbox" id="disablePosLimitCheck" onchange="onDisablePosLimitChange(this.checked)">
+        Desactivar límite de posicionales (máx. 4 sin Clave Línea)
+      </label>
+      <span class="small-note" id="posLimitStatusNote"></span>
+    </div>
   </div>
 
 </div>
@@ -333,6 +350,7 @@
 <script>
 let team = { teamName: 'Nuevo Equipo', race: '', color: '#c0392b', textColor: 'auto', rerolls: 0, players: [] };
 let uid = 1;
+let disablePosLimit = false; // solo de sesión: no se guarda en el JSON del equipo
 
 const FALLBACK_RACES = ["Amazon","Black Orc","Bretonia","Chaos Chosen","Chaos Dwarf","Chaos Renegades","Dark Elf","Dwarf","Elfos Silvanos","Elven Union","Gnome","Goblin","Halfling","High Elf","Human","Imperial Nobility","Khorne","Lizardman","Necromantic","Norse","Nurgle","Ogre","Old World Alliance","Orcs","Shambling Undead","Skaven","Slann","Snotling","Tomb King","Underworld Denizens","Vampire"];
 
@@ -633,6 +651,12 @@ function onTeamRaceChange(value){
   scheduleJsonRefresh();
 }
 
+function onDisablePosLimitChange(checked){
+  disablePosLimit = checked;
+  const note = document.getElementById('posLimitStatusNote');
+  if(note) note.textContent = checked ? '⚠️ Límite desactivado: puedes elegir cualquier cantidad de no-Línea.' : '';
+}
+
 function claveCategory(clave){
   if(!clave) return null;
   const norm = clave.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -657,14 +681,14 @@ function onPositionChange(_uid, value){
         return;
       }
     }
-    if(entry && claveCategory(entry.clave) === 'otra'){
+    if(!disablePosLimit && entry && claveCategory(entry.clave) === 'otra'){
       const nonLineCount = team.players.filter(pl => {
         if(pl === p || !pl.position) return false;
         const e = findCatalogEntry(team.race, pl.position);
         return e && claveCategory(e.clave) === 'otra';
       }).length;
       if(nonLineCount >= 4){
-        showFormationModal('Máximo 4 jugadores sin Clave Línea', 'Ya tienes 4 jugadores en la plantilla cuya Clave no es "Línea". La posición "' + value + '" también sería no-Línea (' + entry.clave + '), y en Sevens el máximo permitido es 4.');
+        showFormationModal('Máximo 4 jugadores sin Clave Línea', 'Ya tienes 4 jugadores en la plantilla cuya Clave no es "Línea". La posición "' + value + '" también sería no-Línea (' + entry.clave + '), y en Sevens el máximo permitido es 4.\n\nSi necesitas superarlo, marca la casilla "Desactivar límite de posicionales" al final de este panel.');
         renderPlayers();
         return;
       }

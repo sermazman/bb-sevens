@@ -1436,6 +1436,8 @@ function actionMenuBlitz(){
   const p = players.find(x=>x.id===id);
   if(!p) return;
   selected = id;
+  blitzUsedByTeam[p.team] = true; // se gasta al declarar, aunque el chequeo de rasgo falle después
+  log('⚡ ' + teamName(p.team) + ' declara su Blitz de este turno (' + p.name + ').');
   runTraitCheckThen(p, 'blitz', ()=> proceedDeclaredAction(p, 'blitz'));
 }
 
@@ -1454,6 +1456,8 @@ function actionMenuSecureBall(){
   const p = players.find(x=>x.id===id);
   if(!p) return;
   selected = id;
+  secureBallUsedByTeam[p.team] = true; // se gasta al declarar, aunque el chequeo de rasgo falle después
+  log('🔒 ' + teamName(p.team) + ' declara su Asegurar Balón de este turno (' + p.name + ').');
   runTraitCheckThen(p, 'secureball', ()=> proceedDeclaredAction(p, 'secureball'));
 }
 
@@ -1743,7 +1747,6 @@ function declareBlitz(){
   if(selected===null) return;
   const p = players.find(x=>x.id===selected);
   if(!p || p.condition!=='standing' || p.team!==state.active || p.activated || p.blockedThisActivation) return;
-  if(blitzUsedByTeam[p.team]){ alert('Este equipo ya ha usado su Blitz este turno.'); return; }
   blitzUsedByTeam[p.team] = true;
   blitzActivePlayer = p.id;
   log('⚡ ' + p.name + ' declara BLITZ.');
@@ -2213,6 +2216,11 @@ function resolvePush(r,c){
   }
 
   if(attacker && originalPlayer){
+    if(playerHasSkill(attacker, 'furia', 'frenzy') && !occupiedBy(original.fromR, original.fromC)){
+      log('😡 ' + attacker.name + ' tiene Furia — el movimiento de impulso es obligatorio.');
+      resolveFollowUp(true);
+      return;
+    }
     document.getElementById('followUpText').textContent = `¿${attacker.name} avanza a la casilla que deja libre ${originalPlayer.name}?`;
     document.getElementById('followUpModal').classList.add('show');
     broadcastState();
@@ -2264,6 +2272,11 @@ function pushOutOfBounds(exitR, exitC){
 
   if(attacker && (followUpPlayer || !original)){
     const targetName = followUpPlayer ? followUpPlayer.name : mover.name;
+    if(playerHasSkill(attacker, 'furia', 'frenzy') && !occupiedBy(followUpVacatedR, followUpVacatedC)){
+      log('😡 ' + attacker.name + ' tiene Furia — el movimiento de impulso es obligatorio.');
+      resolveFollowUp(true);
+      return;
+    }
     document.getElementById('followUpText').textContent = `¿${attacker.name} avanza a la casilla que deja libre ${targetName}?`;
     document.getElementById('followUpModal').classList.add('show');
     broadcastState();
@@ -2307,7 +2320,6 @@ function secureTheBall(){
   const p = players.find(x=>x.id===selected);
   if(!p || p.condition!=='standing' || p.team!==state.active || p.activated) return;
   if(isBigGuy(p)){ alert('Los jugadores con la clave Grandullón no pueden declarar Asegurar el Balón.'); return; }
-  if(secureBallUsedByTeam[p.team]){ alert('Ya se ha declarado Asegurar el Balón este turno de equipo.'); return; }
   if(ball.carrierId!==null || ball.row===null){ alert('No hay ningún balón suelto en el campo.'); return; }
   const enemyNear = players.some(p2 => p2.onPitch && p2.team!==p.team && p2.condition==='standing' &&
     Math.max(Math.abs(p2.row-ball.row), Math.abs(p2.col-ball.col)) <= 2);

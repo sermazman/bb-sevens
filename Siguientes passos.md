@@ -11,23 +11,23 @@ Nuevos botones
 
 ** INICIO:  REALIZADO FECHA:
 
-Confirmamos por favor que el Asegurar balón lo tenemos puesto para realizarlo sólo una vez por turno cuando sea posible, que si lo consigue se termina la activación del jugador, Que si el jugador tiene en su Clave "GRANDULLON" o la habilidad "TEMBLOROSO" no puede realizar esta acción. Con esto creo que dejamos al 100% esta habilidad finalizada.
+- Confirmamos por favor que el Asegurar balón lo tenemos puesto para realizarlo sólo una vez por turno cuando sea posible, que si lo consigue se termina la activación del jugador, Que si el jugador tiene en su Clave "GRANDULLON" o la habilidad "TEMBLOROSO" no puede realizar esta acción. Con esto creo que dejamos al 100% esta habilidad finalizada.
 
 ** INICIO:  REALIZADO FECHA:
 
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ HABILIDADES / RASGOS AUTOMATIZADAS @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-PLACAR
-ESQUIVAR
-ESPRINTAR
-EN PIE DE UN SALTO
-MANOS SEGURAS
-ESTUPIDO / REALMENTE ESTUPIDO / IRA DESCONTROLADA / FEROCIDAD ANIMAL 
-FURIA
-PROFESIONAL (EN PROCESO)
+@@@@@@@@@@@@@@@@@@@ HABILIDADES / RASGOS AUTOMATIZADAS @@@@@@@@@@@@@@@@@@@
+- PLACAR
+- ESQUIVAR
+- ESPRINTAR
+- EN PIE DE UN SALTO
+- MANOS SEGURAS
+- ESTUPIDO / REALMENTE ESTUPIDO / IRA DESCONTROLADA / FEROCIDAD ANIMAL 
+- FURIA
+- PROFESIONAL (EN PROCESO)
 
-PRÓXIMAS VIABLES: PASAR y ANIMOSIDAD, ATRAPAR, CUERNOS, GOLPE MORTIFERO
+- PRÓXIMAS VIABLES: PASAR y ANIMOSIDAD, ATRAPAR, CUERNOS, GOLPE MORTIFERO
 
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ REALIZADOS @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@@@@@@@ REALIZADOS @@@@@@@@@@@@@@@@@@@
 
 Revisar Furia, que tiene que seguir siempre y no preguntar si quiere hacer movimiento impulso, no se si esta implementada o no. Preguntar antes.
 Darle de Furia toda la Habilidad para implementarla

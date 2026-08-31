@@ -1,0 +1,152 @@
+{
+  "teamName": "Altos Dragones",
+  "race": "High Elf",
+  "color": "#42adff",
+  "textColor": "auto",
+  "staff": {
+    "rerolls": {
+      "clave": "reroll",
+      "count": 0,
+      "pricePerUnit": 100000,
+      "total": 0
+    }
+  },
+  "players": [
+    {
+      "num": 1,
+      "name": "Rillion Ironheart",
+      "position": "Lineman",
+      "ma": 6,
+      "st": 3,
+      "ag": "2+",
+      "pa": "3+",
+      "av": "9+",
+      "skills": [
+        "Elf - Linea"
+      ]
+    },
+    {
+      "num": 2,
+      "name": "Aldric Caelen",
+      "position": "Lineman",
+      "ma": 6,
+      "st": 3,
+      "ag": "2+",
+      "pa": "3+",
+      "av": "9+",
+      "skills": [
+        "Elf - Linea"
+      ]
+    },
+    {
+      "num": 3,
+      "name": "Larion Wilhelm",
+      "position": "Lineman",
+      "ma": 6,
+      "st": 3,
+      "ag": "2+",
+      "pa": "3+",
+      "av": "9+",
+      "skills": [
+        "Elf - Linea"
+      ]
+    },
+    {
+      "num": 4,
+      "name": "Roland Blackwood",
+      "position": "Lineman",
+      "ma": 6,
+      "st": 3,
+      "ag": "2+",
+      "pa": "3+",
+      "av": "9+",
+      "skills": [
+        "Elf - Linea"
+      ]
+    },
+    {
+      "num": 5,
+      "name": "Edmund Thandor",
+      "position": "White Lion",
+      "ma": 7,
+      "st": 3,
+      "ag": "2+",
+      "pa": "3+",
+      "av": "9+",
+      "skills": [
+        "Forcejear",
+        "Garras",
+        "Elf - Blitzer"
+      ]
+    },
+    {
+      "num": 6,
+      "name": "Valen Purepass",
+      "position": "Dragon Prince",
+      "ma": 8,
+      "st": 3,
+      "ag": "2+",
+      "pa": "1+",
+      "av": "9+",
+      "skills": [
+        "El balon es mio",
+        "Equilibrio firme",
+        "Placar",
+        "Elf - Corredor - Blitzer"
+      ]
+    },
+    {
+      "num": 7,
+      "name": "Folk Jonas",
+      "position": "Phoenix Warrior",
+      "ma": 6,
+      "st": 3,
+      "ag": "2+",
+      "pa": "2+",
+      "av": "9+",
+      "skills": [
+        "Pasar",
+        "Partenubes",
+        "Pase seguro",
+        "Elf - Lanzador"
+      ]
+    }
+  ],
+  "formation": [
+    {
+      "num": 1,
+      "col": 1,
+      "row": 1
+    },
+    {
+      "num": 2,
+      "col": 5,
+      "row": 0
+    },
+    {
+      "num": 3,
+      "col": 9,
+      "row": 1
+    },
+    {
+      "num": 4,
+      "col": 8,
+      "row": 0
+    },
+    {
+      "num": 5,
+      "col": 2,
+      "row": 0
+    },
+    {
+      "num": 6,
+      "col": 4,
+      "row": 0
+    },
+    {
+      "num": 7,
+      "col": 6,
+      "row": 0
+    }
+  ]
+}

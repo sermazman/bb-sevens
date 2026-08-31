@@ -2451,11 +2451,11 @@ const POSITION_BORDER_COLORS = [
 ];
 
 function positionBorderColor(p){
-  const typeText = (p.type || p.Type || p.tipo || p.Tipo || '').toLowerCase();
-  if(typeText.includes('journeyman') || typeText.includes('journey')) return null; // sin color, forzado (mirando el TIPO, no la Clave)
-  const claveText = (p.clave || p.Clave || p.key || p.Key || '').toLowerCase();
-  if(!claveText.trim()) return null;
-  const matches = POSITION_BORDER_COLORS.filter(entry => entry.keys.some(k=>claveText.includes(k)));
+  const skillsText = (p.skills || []).join(' | ').toLowerCase();
+  const posText = (p.position || '').toLowerCase();
+  const combined = skillsText + ' ' + posText;
+  if(combined.includes('journeyman') || combined.includes('journey')) return null; // sin color, forzado (tipo, no Clave)
+  const matches = POSITION_BORDER_COLORS.filter(entry => entry.keys.some(k=>combined.includes(k)));
   if(matches.length!==1) return null; // ninguna coincidencia o varias a la vez -> se queda sin color
   return matches[0].color;
 }

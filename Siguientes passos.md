@@ -9,7 +9,7 @@ Nuevos botones
 - HG - Pone al jugador Herido Grave y ponerlo en el Banquillo de las bajas
 - MUERTO - Pone al jugador Muerto y ponerlo en el Banquillo de las bajas
 
-** INICIO:  REALIZADO FECHA:
+** INICIO: 31-08-2026 21h56 REALIZADO FECHA:
 
 - Confirmamos por favor que el Asegurar balón lo tenemos puesto para realizarlo sólo una vez por turno cuando sea posible, que si lo consigue se termina la activación del jugador, Que si el jugador tiene en su Clave "GRANDULLON" o la habilidad "TEMBLOROSO" no puede realizar esta acción. Con esto creo que dejamos al 100% esta habilidad finalizada.
 
@@ -30,7 +30,7 @@ Si le muerde, haz una tirada de Heridas por el Thrall Lineman, tratando cualquie
 - MANOS SEGURAS
 - ESTUPIDO / REALMENTE ESTUPIDO / IRA DESCONTROLADA / FEROCIDAD ANIMAL 
 - FURIA
-- PROFESIONAL (EN PROCESO)
+- PROFESIONAL (pruebas)
 
 - PRÓXIMAS VIABLES: PASAR y ANIMOSIDAD, ATRAPAR, CUERNOS, GOLPE MORTIFERO
 

@@ -27,6 +27,11 @@ Nuevos botones
 
 - PRÓXIMAS VIABLES: PASAR y ANIMOSIDAD, ATRAPAR, CUERNOS, GOLPE MORTIFERO
 
+@@@@@@@@@@@@@@@@@@@ EQUIPOS @@@@@@@@@@@@@@@@@@@
+ - PDTE PASAR A SHEETS: HALFLING, GOBLIN, SLANN, SNOTLINGS
+ - PASADOS SHEETS: GNOMES
+ - PDTE PASAR A GITHUB:
+ 
 @@@@@@@@@@@@@@@@@@@ REALIZADOS @@@@@@@@@@@@@@@@@@@
 
 Revisar Furia, que tiene que seguir siempre y no preguntar si quiere hacer movimiento impulso, no se si esta implementada o no. Preguntar antes.

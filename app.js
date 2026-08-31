@@ -14,6 +14,7 @@ let selected = null;   // token selected during LIVE phase (for movement)
 let declaredAction = null; // null | 'move' | 'blitz' | 'block' | 'secureball' — se fija al elegir en la Ruleta
 let pendingTraitCheck = null; // { playerId, actionLabel, trait }
 let pendingFerocityAttack = null; // { attackerId }
+let pendingManualStatus = null; // 'standing' | 'tumbado' | 'aturdido' | 'despistado' | 'ko' | 'injured' | 'injuredGrave' | 'dead'
 let placing = null;    // player id currently being placed/repositioned (SETUP phase)
 let phase = 'setup';   // 'setup' | 'live'
 let pendingTD = null;
@@ -248,6 +249,7 @@ function snapshotState(){
     matchEndModalOpen: document.getElementById('matchEndModal').classList.contains('show'),
     matchEndText: document.getElementById('matchEndText').textContent,
     pendingActionMenuPlayer,
+    pendingManualStatus,
     turnoverOverlayOpen: document.getElementById('turnoverOverlay').classList.contains('show'),
     declaredAction, pendingTraitCheck, pendingFerocityAttack,
     traitCheckModalOpen: document.getElementById('traitCheckModal').classList.contains('show'),
@@ -412,6 +414,8 @@ function applyRemoteState(payload){
   document.getElementById('matchEndText').textContent = payload.matchEndText || '';
   document.getElementById('matchEndModal').classList.toggle('show', !!payload.matchEndModalOpen);
   pendingActionMenuPlayer = payload.pendingActionMenuPlayer;
+  pendingManualStatus = payload.pendingManualStatus || null;
+  refreshManualStatusButtons();
   document.getElementById('turnoverOverlay').classList.toggle('show', !!payload.turnoverOverlayOpen);
   declaredAction = payload.declaredAction || null;
   pendingTraitCheck = payload.pendingTraitCheck || null;
@@ -775,9 +779,11 @@ function renderRosters(){
                      : p.condition==='aturdido' ? `<span class="downed-tag">ATURDIDO</span>`
                      : p.condition==='despistado' ? `<span class="downed-tag">DESPISTADO</span>` : '';
       const skillsText = (p.skills && p.skills.length) ? p.skills.join(', ') : 'Sin habilidades';
+      const posBorder = positionBorderColor(p);
+      const numBorderStyle = posBorder ? ('border-color:'+posBorder+';') : '';
       div.innerHTML = `
         <div class="ri-row1">
-          <span class="num" style="background:${tokenColorFor(p)}; color:${textColorFor(p)}">${p.num}</span>
+          <span class="num" style="background:${tokenColorFor(p)}; color:${textColorFor(p)}; ${numBorderStyle}">${p.num}</span>
           <span class="pname">${p.name}</span>
           <span class="pos">${posText}</span>
           ${condTag}
@@ -916,6 +922,82 @@ function resolveJumpUp(success){
     renderRosters(); renderPitch(); renderSelInfo();
     broadcastState();
   }
+}
+
+const MANUAL_STATUS_LABELS = {
+  standing: 'EN PIE (sin activar)',
+  tumbado: 'TUMBADO',
+  aturdido: 'ATURDIDO',
+  despistado: 'DISTRAÍDO',
+  ko: 'INCONSCIENTE',
+  injured: 'HERIDO LEVE',
+  injuredGrave: 'HERIDA GRAVE',
+  dead: 'MUERTO'
+};
+const MANUAL_STATUS_BTN_IDS = {
+  standing: 'manualStandBtn', tumbado: 'manualDownBtn', aturdido: 'manualStunBtn', despistado: 'manualConfuseBtn',
+  ko: 'manualKoBtn', injured: 'manualHlBtn', injuredGrave: 'manualHgBtn', dead: 'manualDeadBtn'
+};
+
+function refreshManualStatusButtons(){
+  Object.keys(MANUAL_STATUS_BTN_IDS).forEach(k=>{
+    const btn = document.getElementById(MANUAL_STATUS_BTN_IDS[k]);
+    if(btn) btn.classList.toggle('active-toggle', pendingManualStatus===k);
+  });
+}
+
+function startManualStatus(status){
+  if(pendingManualStatus===status){
+    pendingManualStatus = null;
+    updateStatus('Cancelado.');
+  } else {
+    pendingManualStatus = status;
+    updateStatus('Click en el jugador del campo para marcarlo como ' + MANUAL_STATUS_LABELS[status] + '.');
+  }
+  refreshManualStatusButtons();
+  broadcastState();
+}
+
+function applyManualStatus(playerId){
+  const status = pendingManualStatus;
+  pendingManualStatus = null;
+  refreshManualStatusButtons();
+  const p = players.find(x=>x.id===playerId);
+  if(!p){ broadcastState(); return; }
+
+  p.rooted = false;
+  if(status==='standing'){
+    p.condition = 'standing';
+    p.activated = false;
+    log('🧍 ' + p.name + ' marcado manualmente como EN PIE (sin activar).');
+  } else if(status==='tumbado'){
+    p.condition = 'tumbado';
+    log('🔻 ' + p.name + ' marcado manualmente como TUMBADO.');
+  } else if(status==='aturdido'){
+    p.condition = 'aturdido';
+    log('🤕 ' + p.name + ' marcado manualmente como ATURDIDO.');
+  } else if(status==='despistado'){
+    p.condition = 'despistado';
+    log('😵‍💫 ' + p.name + ' marcado manualmente como DISTRAÍDO.');
+  } else if(status==='ko'){
+    p.condition = 'ko'; p.onPitch = false; p.row = null; p.col = null;
+    if(ball.carrierId===p.id) ball.carrierId = null;
+    log('😵 ' + p.name + ' marcado manualmente como INCONSCIENTE — al banquillo de bajas.');
+  } else if(status==='injured'){
+    p.condition = 'injured'; p.onPitch = false; p.row = null; p.col = null;
+    if(ball.carrierId===p.id) ball.carrierId = null;
+    log('🚑 ' + p.name + ' marcado manualmente como HERIDO LEVE — al banquillo de bajas.');
+  } else if(status==='injuredGrave'){
+    p.condition = 'injuredGrave'; p.onPitch = false; p.row = null; p.col = null;
+    if(ball.carrierId===p.id) ball.carrierId = null;
+    log('🚑 ' + p.name + ' marcado manualmente como HERIDA GRAVE — al banquillo de bajas.');
+  } else if(status==='dead'){
+    p.condition = 'dead'; p.onPitch = false; p.row = null; p.col = null;
+    if(ball.carrierId===p.id) ball.carrierId = null;
+    log('☠️ ' + p.name + ' marcado manualmente como MUERTO — al banquillo de bajas.');
+  }
+  renderRosters(); renderPitch(); renderSelInfo();
+  broadcastState();
 }
 
 function knockDown(){
@@ -1646,6 +1728,10 @@ function completeStep(p, r, c, consume){
 }
 
 function tokenClicked(id){
+  if(pendingManualStatus!==null){
+    applyManualStatus(id);
+    return;
+  }
   const p0 = players.find(x=>x.id===id);
   if(p0 && p0.onPitch && (placingBallFree || pendingKickPlacement || kickoffBounceStep || ballBounceActive || pendingPush)){
     cellClicked(p0.row, p0.col);
@@ -2440,24 +2526,24 @@ function resolveSecureBall(success){
 }
 
 const POSITION_BORDER_COLORS = [
-  { keys:['línea', 'linea', 'lineman'], color:'#9e9e9e' },       // gris
-  { keys:['lanzador', 'thrower'], color:'#f5f5f5' },              // blanco
-  { keys:['blitzer'], color:'#e53935' },                          // rojo
-  { keys:['defensor', 'blocker'], color:'#43a047' },              // verde
-  { keys:['receptor', 'catcher'], color:'#fdd835' },              // amarillo
-  { keys:['especial', 'special'], color:'#8e44ad' },              // morado
-  { keys:['corredor', 'runner'], color:'#f39c12' },               // naranja
-  { keys:['grandullón', 'grandullon', 'big guy'], color:'#2980b9' } // azul
+  { keys:['línea', 'linea', 'lineman'], color:'#9e9e9e' },        // gris
+  { keys:['lanzador', 'thrower'], color:'#f5f5f5' },               // blanco
+  { keys:['blitzer'], color:'#e53935' },                           // rojo
+  { keys:['defensor', 'blocker'], color:'#43a047' },               // verde
+  { keys:['receptor', 'catcher'], color:'#fdd835' },               // amarillo
+  { keys:['grandullón', 'grandullon', 'big guy'], color:'#2980b9' }, // azul
+  { keys:['especial', 'special'], color:'#8e44ad' },               // morado
+  { keys:['corredor', 'runner'], color:'#f39c12' },                // naranja
+  { keys:['starplayer', 'star player'], color:'#d4af37' }          // dorado
 ];
 
 function positionBorderColor(p){
   const skillsText = (p.skills || []).join(' | ').toLowerCase();
   const posText = (p.position || '').toLowerCase();
   const combined = skillsText + ' ' + posText;
-  if(combined.includes('journeyman') || combined.includes('journey')) return null; // sin color, forzado (tipo, no Clave)
-  const matches = POSITION_BORDER_COLORS.filter(entry => entry.keys.some(k=>combined.includes(k)));
-  if(matches.length!==1) return null; // ninguna coincidencia o varias a la vez -> se queda sin color
-  return matches[0].color;
+  if(posText.includes('journeyman') || posText.includes('journey')) return null; // sin color, forzado (mirando "position")
+  const match = POSITION_BORDER_COLORS.find(entry => entry.keys.some(k=>combined.includes(k)));
+  return match ? match.color : null;
 }
 
 function playerHasSkill(p, ...keywords){

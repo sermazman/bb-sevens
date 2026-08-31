@@ -29,8 +29,8 @@ Nuevos botones
 
 @@@@@@@@@@@@@@@@@@@ EQUIPOS @@@@@@@@@@@@@@@@@@@
  - PDTE PASAR A SHEETS: HALFLING, GOBLIN, SLANN, SNOTLINGS
- - PASADOS SHEETS: GNOMES
- - PDTE PASAR A GITHUB:
+ - ACTUALIZADO SHEETS: GNOMES
+ - PDTE PASAR A GITHUB: GNOMES
  
 @@@@@@@@@@@@@@@@@@@ REALIZADOS @@@@@@@@@@@@@@@@@@@
 

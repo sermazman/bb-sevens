@@ -16,9 +16,11 @@ Por ello, la "Ruleta de Tumbados" (te lo dire así para diferenciarlo de la "Rul
 - En pie de un salto (esta habilidad solo debe salir en esta ruleta cuando el jugador tenga esta habilidad, y hace lo que tenemos programado que funciona bien)
 
 Si hubiera que cambiar algo en esta ruleta la llamaremos "Ruleta de Tumbados" y la otra la general solo "Ruleta" o "Ruleta Base".
-** INICIO:  REALIZADO FECHA:
+
+** INICIO: 31-08-2026  REALIZADO FECHA:
 
 Confirmamos por favor que el Asegurar balón lo tenemos puesto para realizarlo sólo una vez por turno cuando sea posible, que si lo consigue se termina la activación del jugador, Que si el jugador tiene en su Clave "GRANDULLON" o la habilidad "TEMBLOROSO" no puede realizar esta acción. Con esto creo que dejamos al 100% esta habilidad finalizada.
+
 ** INICIO:  REALIZADO FECHA:
 
 Y esta actualización de los botones manuales que tenemos abajo, hay que crear / actualizar los que te menciono y a parte su funcionamiento es mejor que sea: 1º pulsamos el Boton y 2º se elige al jugador para que haga la accion que el botón le hemos puesto:
@@ -35,7 +37,7 @@ Nuevos botones
 ** INICIO:  REALIZADO FECHA:
 
 
-Colores por Clave o Posición:
+Y el tema que hemos dejado de los colores en el borde de la ficha, tenemos que poner estos de momento buscando en la CLAVE del JUGADOR:
 LINEA - Gris
 LANZADOR - Blanco
 BLITZER - ROJO
@@ -44,6 +46,6 @@ RECEPTOR - Amarillo
 ESPECIAL - Morado
 CORREDOR - Naranja
 GRANDULLON - Azul
-Journeyman - (sin color)
+Journey - (sin color, este no busca el CLAVE DE JUGADOR, lo busca en el tipo de jugador)
 
-** INICIO:  REALIZADO FECHA:
+** INICIO: 31-08-2026  REALIZADO FECHA:

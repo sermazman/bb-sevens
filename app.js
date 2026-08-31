@@ -802,8 +802,10 @@ function renderReserveZone(){
 
     const chip = (p, badgeClass, badgeChar, extraLabel) => {
       const title = playerTooltipText(p, extraLabel).replace(/"/g,'&quot;');
+      const posBorder = positionBorderColor(p);
+      const borderStyle = posBorder ? ('border-color:'+posBorder+';') : '';
       return `<div class="chip-wrap" title="${title}">
-        <div class="token-chip" style="background:${tokenColorFor(p)}; color:${textColorFor(p)}">${p.num}</div>
+        <div class="token-chip" style="background:${tokenColorFor(p)}; color:${textColorFor(p)}; ${borderStyle}">${p.num}</div>
         <div class="casualty-badge ${badgeClass}">${badgeChar}</div>
       </div>`;
     };
@@ -1159,6 +1161,8 @@ function renderPitch(){
         t.dataset.playerId = occ.id;
         t.style.background = tokenColorFor(occ);
         t.style.color = textColorFor(occ);
+        const posBorder = positionBorderColor(occ);
+        if(posBorder) t.style.borderColor = posBorder;
         t.textContent = occ.num;
         const pitchExtra = 'MA restante ' + (occ.remainingMove ?? occ.ma) + '/' + occ.ma +
           ((occ.gfiUsed ?? 0) > 0 ? ' · A por ellos ' + occ.gfiUsed + '/' + maxGfiFor(occ) : '') +
@@ -1321,7 +1325,7 @@ function handleTokenRightClick(id){
   if(p.activated && p.condition!=='tumbado' && p.condition!=='aturdido' && p.condition!=='despistado') return;
   selected = id;
   const hasMoved = ((p.remainingMove ?? p.ma) !== p.ma || (p.gfiUsed ?? 0) > 0) && !p.justStoodThisActivation;
-  if(!p.activated && p.condition==='standing' && !p.blockedThisActivation && !hasMoved){
+  if(!p.activated && (p.condition==='standing' || p.condition==='despistado') && !p.blockedThisActivation && !hasMoved){
     openActionMenu(id);
   } else if(!p.activated && p.condition==='tumbado'){
     openActionMenu(id);
@@ -1353,13 +1357,19 @@ function canSecureBall(p){
 
 function getActionMenuOptionsFor(p){
   if(p.condition==='tumbado'){
-    const opts = [{ icon:'🧍', label:'Levantar', fn:'actionMenuStandUp' }];
+    // "Ruleta de Tumbados" — levantarse ya cuenta como activación, así que cada opción pasa por su propio chequeo de rasgo.
+    const opts = [];
+    opts.push({ icon:'🧍', label:'Levantar/Fin', fn:'actionMenuStandFin' });
+    opts.push({ icon:'🏃', label:'Levantar/Mover', fn:'actionMenuStandMove' });
+    if(!blitzUsedByTeam[p.team]) opts.push({ icon:'⚡', label:'Levantar/Blitz', fn:'actionMenuStandBlitz' });
+    if(canSecureBall(p)) opts.push({ icon:'🔒', label:'Levantar/Asegurar', fn:'actionMenuStandSecureBall' });
+    opts.push({ icon:'🥊', label:'Levantar/Falta', fn:'actionMenuStandFoul' });
     if(playerHasSkill(p, 'salto', 'jump up')){
       opts.push({ icon:'🤸', label:'Salto+Placar', fn:'actionMenuJumpUp' });
     }
-    opts.push({ icon:'⏹', label:'Fin', fn:'actionMenuEndActivation', danger:true });
     return opts;
   }
+  // "Ruleta" base (jugador en pie o despistado)
   const opts = [];
   if(!p.rooted){
     opts.push({ icon:'🏃', label:'Movimiento', fn:'actionMenuMove' });
@@ -1427,7 +1437,7 @@ function actionMenuMove(){
   const p = players.find(x=>x.id===id);
   if(!p) return;
   selected = id;
-  runTraitCheckThen(p, 'move', ()=> proceedDeclaredAction(p, 'move'));
+  runTraitCheckThen(p, 'move');
 }
 
 function actionMenuBlitz(){
@@ -1438,7 +1448,7 @@ function actionMenuBlitz(){
   selected = id;
   blitzUsedByTeam[p.team] = true; // se gasta al declarar, aunque el chequeo de rasgo falle después
   log('⚡ ' + teamName(p.team) + ' declara su Blitz de este turno (' + p.name + ').');
-  runTraitCheckThen(p, 'blitz', ()=> proceedDeclaredAction(p, 'blitz'));
+  runTraitCheckThen(p, 'blitz');
 }
 
 function actionMenuBlock(){
@@ -1447,7 +1457,7 @@ function actionMenuBlock(){
   const p = players.find(x=>x.id===id);
   if(!p) return;
   selected = id;
-  runTraitCheckThen(p, 'block', ()=> proceedDeclaredAction(p, 'block'));
+  runTraitCheckThen(p, 'block');
 }
 
 function actionMenuSecureBall(){
@@ -1458,7 +1468,7 @@ function actionMenuSecureBall(){
   selected = id;
   secureBallUsedByTeam[p.team] = true; // se gasta al declarar, aunque el chequeo de rasgo falle después
   log('🔒 ' + teamName(p.team) + ' declara su Asegurar Balón de este turno (' + p.name + ').');
-  runTraitCheckThen(p, 'secureball', ()=> proceedDeclaredAction(p, 'secureball'));
+  runTraitCheckThen(p, 'secureball');
 }
 
 function actionMenuFoul(){
@@ -1467,7 +1477,7 @@ function actionMenuFoul(){
   const p = players.find(x=>x.id===id);
   if(!p) return;
   selected = id;
-  runTraitCheckThen(p, 'foul', ()=> proceedDeclaredAction(p, 'foul'));
+  runTraitCheckThen(p, 'foul');
 }
 
 function actionMenuEndActivation(){
@@ -1476,11 +1486,53 @@ function actionMenuEndActivation(){
   endActivation(id);
 }
 
-function actionMenuStandUp(){
+function actionMenuStandFin(){
   const id = pendingActionMenuPlayer;
   closeActionMenu();
+  const p = players.find(x=>x.id===id);
+  if(!p) return;
   selected = id;
-  standUp();
+  runTraitCheckThen(p, 'standfin');
+}
+
+function actionMenuStandMove(){
+  const id = pendingActionMenuPlayer;
+  closeActionMenu();
+  const p = players.find(x=>x.id===id);
+  if(!p) return;
+  selected = id;
+  runTraitCheckThen(p, 'standmove');
+}
+
+function actionMenuStandBlitz(){
+  const id = pendingActionMenuPlayer;
+  closeActionMenu();
+  const p = players.find(x=>x.id===id);
+  if(!p) return;
+  selected = id;
+  blitzUsedByTeam[p.team] = true; // se gasta al declarar, aunque el chequeo de rasgo falle después
+  log('⚡ ' + teamName(p.team) + ' declara su Blitz de este turno (' + p.name + ', levantándose).');
+  runTraitCheckThen(p, 'standblitz');
+}
+
+function actionMenuStandSecureBall(){
+  const id = pendingActionMenuPlayer;
+  closeActionMenu();
+  const p = players.find(x=>x.id===id);
+  if(!p) return;
+  selected = id;
+  secureBallUsedByTeam[p.team] = true; // se gasta al declarar, aunque el chequeo de rasgo falle después
+  log('🔒 ' + teamName(p.team) + ' declara su Asegurar Balón de este turno (' + p.name + ', levantándose).');
+  runTraitCheckThen(p, 'standsecureball');
+}
+
+function actionMenuStandFoul(){
+  const id = pendingActionMenuPlayer;
+  closeActionMenu();
+  const p = players.find(x=>x.id===id);
+  if(!p) return;
+  selected = id;
+  runTraitCheckThen(p, 'standfoul');
 }
 
 function actionMenuJumpUp(){
@@ -1642,7 +1694,7 @@ function tokenClicked(id){
   }
 
   const hasMoved = ((p.remainingMove ?? p.ma) !== p.ma || (p.gfiUsed ?? 0) > 0) && !p.justStoodThisActivation;
-  const freshActivation = !p.activated && !p.blockedThisActivation && !hasMoved && (p.condition==='standing' || p.condition==='tumbado');
+  const freshActivation = !p.activated && !p.blockedThisActivation && !hasMoved && (p.condition==='standing' || p.condition==='tumbado' || p.condition==='despistado');
   if(freshActivation && selected!==id){
     selected = id;
     openActionMenu(id);
@@ -2381,6 +2433,26 @@ function resolveSecureBall(success){
   }
 }
 
+const POSITION_BORDER_COLORS = [
+  { keys:['línea', 'linea', 'lineman'], color:'#9e9e9e' },       // gris
+  { keys:['lanzador', 'thrower'], color:'#f5f5f5' },              // blanco
+  { keys:['blitzer'], color:'#e53935' },                          // rojo
+  { keys:['defensor', 'blocker'], color:'#43a047' },              // verde
+  { keys:['receptor', 'catcher'], color:'#fdd835' },              // amarillo
+  { keys:['especial', 'special'], color:'#8e44ad' },              // morado
+  { keys:['corredor', 'runner'], color:'#f39c12' },               // naranja
+  { keys:['grandullón', 'grandullon', 'big guy'], color:'#2980b9' } // azul
+];
+
+function positionBorderColor(p){
+  const text = (p.position||'').toLowerCase();
+  if(!text.trim()) return null;
+  if(text.includes('journeyman') || text.includes('journey')) return null; // sin color, forzado
+  const matches = POSITION_BORDER_COLORS.filter(entry => entry.keys.some(k=>text.includes(k)));
+  if(matches.length!==1) return null; // ninguna coincidencia o varias a la vez -> se queda sin color
+  return matches[0].color;
+}
+
 function playerHasSkill(p, ...keywords){
   if(!p || !p.skills) return false;
   const lower = p.skills.map(s => (s||'').toLowerCase());
@@ -2420,16 +2492,20 @@ function traitTargetAndModifier(p, trait, actionLabel){
     return { target:4, modifier: hasHelper?2:0, modifierNote: hasHelper ? ' (+2 por compañero en pie adyacente)' : '' };
   }
   if(trait==='wildAnimal' || trait==='uncontrolledRage'){
-    const isAggro = (actionLabel==='blitz' || actionLabel==='block');
+    const isAggro = (actionLabel==='blitz' || actionLabel==='block' || actionLabel==='standblitz');
     return { target:4, modifier: isAggro?2:0, modifierNote: isAggro ? ' (+2 por Placaje/Blitz)' : '' };
   }
   return { target:2, modifier:0, modifierNote:'' };
 }
 
-function runTraitCheckThen(p, actionLabel, onSuccess){
+function runTraitCheckThen(p, actionLabel){
   const trait = getPlayerTrait(p);
-  if(!trait){ onSuccess(); return; }
-  pendingTraitCheck = { playerId: p.id, actionLabel, trait, onSuccessAction: actionLabel };
+  if(!trait || (trait==='takeRoot' && p.condition==='tumbado')){
+    // Echar Raíces solo se comprueba "activado estando En pie" — no aplica al intentar levantarse.
+    proceedDeclaredAction(p, actionLabel);
+    return;
+  }
+  pendingTraitCheck = { playerId: p.id, actionLabel, trait };
   const info = traitTargetAndModifier(p, trait, actionLabel);
   pendingTraitCheck.target = info.target;
   pendingTraitCheck.modifier = info.modifier;
@@ -2483,11 +2559,12 @@ function closeTraitCheckModal(){
 }
 
 function applyTraitFailure(p, trait){
+  const wasTumbado = (p.condition==='tumbado');
   if(trait==='stupid' || trait==='reallyStupid'){
-    p.condition = 'despistado';
+    if(!wasTumbado) p.condition = 'despistado';
     p.activated = true;
     selected = null; declaredAction = null;
-    log('😵‍💫 ' + p.name + ' falla ' + TRAIT_LABELS[trait] + ' — queda Distraído, activación terminada.');
+    log('😵‍💫 ' + p.name + ' falla ' + TRAIT_LABELS[trait] + (wasTumbado ? ' — sigue Tumbado, activación terminada.' : ' — queda Distraído, activación terminada.'));
     renderRosters(); renderPitch(); renderSelInfo();
     broadcastState();
     return;
@@ -2513,10 +2590,10 @@ function applyTraitFailure(p, trait){
     const mates = players.filter(p2 => p2.onPitch && p2.id!==p.id && p2.team===p.team && p2.condition==='standing' &&
       Math.max(Math.abs(p2.row-p.row), Math.abs(p2.col-p.col))===1);
     if(mates.length===0){
-      p.condition = 'despistado';
+      if(!wasTumbado) p.condition = 'despistado';
       p.activated = true;
       selected = null; declaredAction = null;
-      log('🐗 ' + p.name + ' falla Ferocidad Animal sin compañeros adyacentes — queda Distraído.');
+      log('🐗 ' + p.name + ' falla Ferocidad Animal sin compañeros adyacentes' + (wasTumbado ? ' — sigue Tumbado.' : ' — queda Distraído.'));
       renderRosters(); renderPitch(); renderSelInfo();
       broadcastState();
       return;
@@ -2558,6 +2635,10 @@ function resolveFerocityAttack(targetId){
 
 function proceedDeclaredAction(p, actionLabel){
   selected = p.id;
+  if(p.condition==='despistado'){
+    p.condition = 'standing';
+    log('✅ ' + p.name + ' supera su chequeo y deja de estar Despistado.');
+  }
   if(actionLabel==='move'){
     declaredAction = 'move';
     renderPitch(); renderRosters(); renderSelInfo();
@@ -2572,6 +2653,25 @@ function proceedDeclaredAction(p, actionLabel){
     declaredAction = 'secureball';
     secureTheBall();
   } else if(actionLabel==='foul'){
+    alert('La acción de Falta aún no está implementada — próximamente.');
+  } else if(actionLabel==='standfin'){
+    standUp();
+    endActivation(p.id);
+  } else if(actionLabel==='standmove'){
+    standUp();
+    declaredAction = 'move';
+    renderPitch(); renderRosters(); renderSelInfo();
+    broadcastState();
+  } else if(actionLabel==='standblitz'){
+    standUp();
+    declaredAction = 'blitz';
+    declareBlitz();
+  } else if(actionLabel==='standsecureball'){
+    standUp();
+    declaredAction = 'secureball';
+    secureTheBall();
+  } else if(actionLabel==='standfoul'){
+    standUp();
     alert('La acción de Falta aún no está implementada — próximamente.');
   }
 }

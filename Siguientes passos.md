@@ -1,3 +1,34 @@
+Y esta actualización de los botones manuales que tenemos abajo, hay que crear / actualizar los que te menciono y a parte su funcionamiento es mejor que sea: 1º pulsamos el Boton y 2º se elige al jugador para que haga la accion que el botón le hemos puesto:
+Nuevos botones
+- LEVANTAR - Pone al jugador el pie y sin activar aún
+- TUMBAR - Pone al jugador Tumbado (sin hacer tiradas de Armaduras ni nada, solo marcar al Jugador como TUMBADO)
+- ATURDIR - Pone al jugador aturdido (sin hacer tiradas de Armaduras ni nada, solo marcar al Jugador como ATURDIDO)
+- DISTRAIDO - Pone al jugador Distraido
+- INCONSCIENTE - Poner al jugador Inconsciente y ponerlo en el Banquillo de las bajas
+- HL - Pone al jugador Herido Leve y ponerlo en el Banquillo de las bajas
+- HG - Pone al jugador Herido Grave y ponerlo en el Banquillo de las bajas
+- MUERTO - Pone al jugador Muerto y ponerlo en el Banquillo de las bajas
+
+** INICIO:  REALIZADO FECHA:
+
+Confirmamos por favor que el Asegurar balón lo tenemos puesto para realizarlo sólo una vez por turno cuando sea posible, que si lo consigue se termina la activación del jugador, Que si el jugador tiene en su Clave "GRANDULLON" o la habilidad "TEMBLOROSO" no puede realizar esta acción. Con esto creo que dejamos al 100% esta habilidad finalizada.
+
+** INICIO:  REALIZADO FECHA:
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ HABILIDADES / RASGOS AUTOMATIZADAS @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+PLACAR
+ESQUIVAR
+ESPRINTAR
+EN PIE DE UN SALTO
+MANOS SEGURAS
+ESTUPIDO / REALMENTE ESTUPIDO / IRA DESCONTROLADA / FEROCIDAD ANIMAL 
+FURIA
+PROFESIONAL (EN PROCESO)
+
+PRÓXIMAS VIABLES: PASAR y ANIMOSIDAD, ATRAPAR, CUERNOS, GOLPE MORTIFERO
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ REALIZADOS @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
 Revisar Furia, que tiene que seguir siempre y no preguntar si quiere hacer movimiento impulso, no se si esta implementada o no. Preguntar antes.
 Darle de Furia toda la Habilidad para implementarla
 
@@ -17,25 +48,7 @@ Por ello, la "Ruleta de Tumbados" (te lo dire así para diferenciarlo de la "Rul
 
 Si hubiera que cambiar algo en esta ruleta la llamaremos "Ruleta de Tumbados" y la otra la general solo "Ruleta" o "Ruleta Base".
 
-** INICIO: 31-08-2026  REALIZADO FECHA:
-
-Confirmamos por favor que el Asegurar balón lo tenemos puesto para realizarlo sólo una vez por turno cuando sea posible, que si lo consigue se termina la activación del jugador, Que si el jugador tiene en su Clave "GRANDULLON" o la habilidad "TEMBLOROSO" no puede realizar esta acción. Con esto creo que dejamos al 100% esta habilidad finalizada.
-
-** INICIO:  REALIZADO FECHA:
-
-Y esta actualización de los botones manuales que tenemos abajo, hay que crear / actualizar los que te menciono y a parte su funcionamiento es mejor que sea: 1º pulsamos el Boton y 2º se elige al jugador para que haga la accion que el botón le hemos puesto:
-Nuevos botones
-- LEVANTAR - Pone al jugador el pie y sin activar aún
-- TUMBAR - Pone al jugador Tumbado (sin hacer tiradas de Armaduras ni nada, solo marcar al Jugador como TUMBADO)
-- ATURDIR - Pone al jugador aturdido (sin hacer tiradas de Armaduras ni nada, solo marcar al Jugador como ATURDIDO)
-- DISTRAIDO - Pone al jugador Distraido
-- INCONSCIENTE - Poner al jugador Inconsciente y ponerlo en el Banquillo de las bajas
-- HL - Pone al jugador Herido Leve y ponerlo en el Banquillo de las bajas
-- HG - Pone al jugador Herido Grave y ponerlo en el Banquillo de las bajas
-- MUERTO - Pone al jugador Muerto y ponerlo en el Banquillo de las bajas
-
-** INICIO:  REALIZADO FECHA:
-
+** INICIO: 31-08-2026  REALIZADO FECHA: 31-08-2026
 
 Y el tema que hemos dejado de los colores en el borde de la ficha, tenemos que poner estos de momento buscando en la CLAVE del JUGADOR:
 LINEA - Gris
@@ -48,4 +61,4 @@ CORREDOR - Naranja
 GRANDULLON - Azul
 Journey - (sin color, este no busca el CLAVE DE JUGADOR, lo busca en el tipo de jugador)
 
-** INICIO: 31-08-2026  REALIZADO FECHA:
+** INICIO: 31-08-2026  REALIZADO FECHA: 31-08-2026

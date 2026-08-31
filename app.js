@@ -8,6 +8,7 @@ let ball = { carrierId: null, row: null, col: null };
 let ballBounceActive = false;
 let pendingCatch = null;
 let pendingBallDrop = null;
+let pendingTurnoverAfterResolve = false;
 let pendingDriveStart = null;
 let selected = null;   // token selected during LIVE phase (for movement)
 let declaredAction = null; // null | 'move' | 'blitz' | 'block' | 'secureball' — se fija al elegir en la Ruleta
@@ -247,6 +248,7 @@ function snapshotState(){
     matchEndModalOpen: document.getElementById('matchEndModal').classList.contains('show'),
     matchEndText: document.getElementById('matchEndText').textContent,
     pendingActionMenuPlayer,
+    turnoverOverlayOpen: document.getElementById('turnoverOverlay').classList.contains('show'),
     declaredAction, pendingTraitCheck, pendingFerocityAttack,
     traitCheckModalOpen: document.getElementById('traitCheckModal').classList.contains('show'),
     traitCheckTitleText: document.getElementById('traitCheckTitle').textContent,
@@ -410,6 +412,7 @@ function applyRemoteState(payload){
   document.getElementById('matchEndText').textContent = payload.matchEndText || '';
   document.getElementById('matchEndModal').classList.toggle('show', !!payload.matchEndModalOpen);
   pendingActionMenuPlayer = payload.pendingActionMenuPlayer;
+  document.getElementById('turnoverOverlay').classList.toggle('show', !!payload.turnoverOverlayOpen);
   declaredAction = payload.declaredAction || null;
   pendingTraitCheck = payload.pendingTraitCheck || null;
   pendingFerocityAttack = payload.pendingFerocityAttack || null;
@@ -591,7 +594,8 @@ function anyModalOpen(){
          document.getElementById('secureBallModal').classList.contains('show') ||
          document.getElementById('matchEndModal').classList.contains('show') ||
          pendingActionMenuPlayer !== null ||
-         document.getElementById('traitCheckModal').classList.contains('show');
+         document.getElementById('traitCheckModal').classList.contains('show') ||
+         document.getElementById('turnoverOverlay').classList.contains('show');
 }
 
 // ---------- Roster management ----------
@@ -2019,6 +2023,7 @@ function applyBlockOutcome(kind){
     queueBallDropIfCarrier(attacker.id, attacker.row, attacker.col);
     renderRosters(); renderPitch(); renderSelInfo();
     broadcastState();
+    pendingTurnoverAfterResolve = true;
     openArmorModal(attacker);
     return;
   }
@@ -2057,6 +2062,7 @@ function applyBlockOutcome(kind){
     if(defenderFalls) armorQueue.push(defender.id);
     if(attackerFalls) armorQueue.push(attacker.id);
     pendingArmorQueue = armorQueue;
+    if(attackerFalls) pendingTurnoverAfterResolve = true;
     processNextArmorInQueue();
     return;
   }
@@ -2429,7 +2435,7 @@ function resolveSecureBall(success){
     renderRosters(); renderPitch(); renderSelInfo();
     broadcastState();
     startBallBounce();
-    endTurn();
+    autoTurnoverThenEndTurn();
   }
 }
 
@@ -2445,10 +2451,11 @@ const POSITION_BORDER_COLORS = [
 ];
 
 function positionBorderColor(p){
-  const text = (p.position||'').toLowerCase();
-  if(!text.trim()) return null;
-  if(text.includes('journeyman') || text.includes('journey')) return null; // sin color, forzado
-  const matches = POSITION_BORDER_COLORS.filter(entry => entry.keys.some(k=>text.includes(k)));
+  const typeText = (p.type || p.Type || p.tipo || p.Tipo || '').toLowerCase();
+  if(typeText.includes('journeyman') || typeText.includes('journey')) return null; // sin color, forzado (mirando el TIPO, no la Clave)
+  const claveText = (p.clave || p.Clave || p.key || p.Key || '').toLowerCase();
+  if(!claveText.trim()) return null;
+  const matches = POSITION_BORDER_COLORS.filter(entry => entry.keys.some(k=>claveText.includes(k)));
   if(matches.length!==1) return null; // ninguna coincidencia o varias a la vez -> se queda sin color
   return matches[0].color;
 }
@@ -2627,10 +2634,11 @@ function resolveFerocityAttack(targetId){
   renderRosters(); renderPitch(); renderSelInfo();
   broadcastState();
   pendingArmorQueue = [target.id];
-  processNextArmorInQueue();
   if(wasCarrier){
+    pendingTurnoverAfterResolve = true;
     log('🔄 El compañero derribado llevaba el balón — cambio de turno.');
   }
+  processNextArmorInQueue();
 }
 
 function proceedDeclaredAction(p, actionLabel){
@@ -2842,7 +2850,7 @@ function resolveCatch(success){
     log('🏈 ' + p.name + ' falla la recogida — el balón sigue botando.' + (wasVoluntary ? ' Cambio de turno.' : ''));
     broadcastState();
     startBallBounce();
-    if(wasVoluntary) endTurn();
+    if(wasVoluntary) autoTurnoverThenEndTurn();
   } else {
     broadcastState();
   }
@@ -3111,6 +3119,12 @@ function checkActionButtons(prefix, success, p){
       btn.onclick = ()=> useCheckReroll(prefix, false);
       actionRow.appendChild(btn);
     }
+    if(playerHasSkill(p, 'profesional', 'pro') && !p.proRerollUsedThisTurn){
+      const btn = document.createElement('button');
+      btn.textContent = '🎓 Usar Profesional (3+ para poder repetir)';
+      btn.onclick = ()=> useProReroll(prefix);
+      actionRow.appendChild(btn);
+    }
   }
 
   const acceptBtn = document.createElement('button');
@@ -3118,6 +3132,33 @@ function checkActionButtons(prefix, success, p){
   acceptBtn.textContent = '➡️ Continuar (fallado)';
   acceptBtn.onclick = ()=> resolveFn(false);
   actionRow.appendChild(acceptBtn);
+}
+
+function useProReroll(prefix){
+  const pending = prefix==='dodge' ? pendingDodge : prefix==='gfi' ? pendingGfi : prefix==='secureBall' ? pendingSecureBall : pendingCatch;
+  if(!pending) return;
+  const p = players.find(x=>x.id===pending.playerId);
+  if(!p) return;
+  p.proRerollUsedThisTurn = true; // tras intentar usarla, no se puede usar ningún otro tipo de repetición en esa misma tirada
+  const proRoll = Math.floor(Math.random()*6)+1;
+  if(prefix==='dodge') dodgeRerollUsed = true;
+  else if(prefix==='gfi') gfiRerollUsed = true;
+  else if(prefix==='secureBall') secureBallRerollUsed = true;
+  else catchRerollUsed = true;
+
+  if(proRoll>=3){
+    log('🎓 ' + p.name + ' usa Profesional: tirada ' + proRoll + ' (3+) — puede repetir el dado.');
+    pending.lastSuccess = undefined;
+    document.getElementById(prefix+'ActionRow').style.display = 'none';
+    document.getElementById(prefix+'RollBtn').style.display = 'block';
+    document.getElementById(prefix+'ResultText').textContent = '';
+    document.getElementById(prefix+'ResultText').className = 'check-result';
+    document.getElementById(prefix+'Die').textContent = '–';
+    broadcastState();
+  } else {
+    log('🎓 ' + p.name + ' intenta usar Profesional: tirada ' + proRoll + ' (1-2) — NO puede repetir. Habilidad gastada.');
+    checkActionButtons(prefix, pending.lastSuccess, p);
+  }
 }
 
 function useCheckReroll(prefix, isSkill){
@@ -3418,6 +3459,10 @@ function closeArmorModal(){
       startBallBounce();
     }
   }
+  if(pendingTurnoverAfterResolve){
+    pendingTurnoverAfterResolve = false;
+    autoTurnoverThenEndTurn();
+  }
 }
 
 // ---------- KO recovery, at the start of each new drive ----------
@@ -3483,6 +3528,7 @@ function beginTurn(team){
     p.gfiUsed = 0;
     p.blockedThisActivation = false;
     p.dodgeSkillUsedThisTurn = false;
+    p.proRerollUsedThisTurn = false;
     p.justStoodThisActivation = false;
     p.catchSkillUsedThisTurn = false;
   });
@@ -3550,6 +3596,21 @@ function confirmTD(){
   renderScoreboard(); renderRosters(); renderPitch();
   pendingTD = null;
   broadcastState();
+}
+
+function showTurnoverOverlay(){
+  document.getElementById('turnoverOverlay').classList.add('show');
+  broadcastState();
+}
+
+function hideTurnoverOverlay(){
+  document.getElementById('turnoverOverlay').classList.remove('show');
+  broadcastState();
+}
+
+function autoTurnoverThenEndTurn(){
+  showTurnoverOverlay();
+  endTurn();
 }
 
 function endTurn(){

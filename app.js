@@ -217,7 +217,10 @@ function setupRoomRefs(code){
 
 function joinPresence(){
   const myRef = peersRef.child(myPeerId);
-  myRef.set(true);
+  myRef.set(true).catch(err=>{
+    console.error('Firebase presence write error:', err);
+    updateConnStatus('⚠️ Error al conectar con la sala (revisa las Reglas de la base de datos en Firebase). Detalle en la consola (F12).', false);
+  });
   myRef.onDisconnect().remove();
 }
 
@@ -229,6 +232,9 @@ function listenForPeers(){
     } else {
       updateConnStatus('Sala ' + roomCode + '. Esperando al rival...', false);
     }
+  }, err=>{
+    console.error('Firebase peers read error:', err);
+    updateConnStatus('⚠️ Error leyendo la sala (revisa las Reglas de la base de datos). Detalle en la consola (F12).', false);
   });
 }
 
@@ -239,6 +245,9 @@ function listenForState(){
     applyingRemote = true;
     applyRemoteState(payload);
     applyingRemote = false;
+  }, err=>{
+    console.error('Firebase state read error:', err);
+    updateConnStatus('⚠️ Error leyendo la partida (revisa las Reglas de la base de datos). Detalle en la consola (F12).', false);
   });
 }
 

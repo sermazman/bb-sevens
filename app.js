@@ -1676,6 +1676,14 @@ function cellClicked(r,c){
       alert('Casilla no válida: debe estar en vuestra mitad, fuera de la zona de anotación, y respetar el máx. de 1 jugador por zona lateral.');
       return;
     }
+    const onPitchCount = players.filter(p2 => p2.team===p.team && p2.onPitch && p2.id!==p.id).length;
+    if(onPitchCount>=7){
+      showInfoModal('⚠️ CAMPO COMPLETO', 'Ya tenéis 7 jugadores de ' + teamName(p.team) + ' en el campo. Tenéis que quitar a uno antes de poder colocar a otro más.');
+      placing = null;
+      renderRosters(); renderPitch();
+      broadcastState();
+      return;
+    }
     p.onPitch=true; p.row=r; p.col=c;
     placing=null;
     renderRosters(); renderPitch();
@@ -1977,8 +1985,11 @@ function joinNames(list){
   return names.slice(0,-1).join(', ') + ' y ' + names[names.length-1];
 }
 
-function computeBlockDiceInfo(attacker, defender){
-  const baseAtk = parseInt(attacker.st, 10) || 0;
+function computeBlockDiceInfo(attacker, defender, isBlitz){
+  let baseAtk = parseInt(attacker.st, 10) || 0;
+  if(isBlitz && playerHasSkill(attacker, 'cuernos', 'horns')){
+    baseAtk += 1;
+  }
   const baseDef = parseInt(defender.st, 10) || 0;
   const offAssisters = getAssistingPlayers(attacker.team, defender.id, attacker.id);
   const defAssisters = getAssistingPlayers(defender.team, attacker.id, defender.id);
@@ -1990,7 +2001,8 @@ function computeBlockDiceInfo(attacker, defender){
   if(stAtk === stDef){ diceCount = 1; chooser = null; }
   else if(stAtk > stDef){ diceCount = (stAtk > stDef*2) ? 3 : 2; chooser = 'attacker'; }
   else { diceCount = (stDef > stAtk*2) ? 3 : 2; chooser = 'defender'; }
-  return { baseAtk, baseDef, offAssisters, defAssisters, offAssists, defAssists, stAtk, stDef, diceCount, chooser };
+  const cuernosApplied = isBlitz && playerHasSkill(attacker, 'cuernos', 'horns');
+  return { baseAtk, baseDef, offAssisters, defAssisters, offAssists, defAssists, stAtk, stDef, diceCount, chooser, cuernosApplied };
 }
 
 function proceedToBlockDice(attacker, defender, isBlitzHit){
@@ -1998,9 +2010,9 @@ function proceedToBlockDice(attacker, defender, isBlitzHit){
   blockDiceRolled = false;
   document.getElementById('blockText').textContent = `${attacker.name} placa a ${defender.name} (${teamName(defender.team)}).`;
 
-  const info = computeBlockDiceInfo(attacker, defender);
+  const info = computeBlockDiceInfo(attacker, defender, isBlitzHit);
   activeBlock.diceInfo = info;
-  const atkLine = 'Atacante ' + attacker.name + ' con FU' + info.baseAtk
+  const atkLine = 'Atacante ' + attacker.name + ' con FU' + info.baseAtk + (info.cuernosApplied ? ' (incl. +1 Cuernos)' : '')
     + (info.offAssists>0 ? ' + apoyos ofensivos ' + joinNames(info.offAssisters) : '')
     + ' = FU' + info.stAtk;
   const defLine = 'Defensor ' + defender.name + ' con FU' + info.baseDef
@@ -2145,7 +2157,7 @@ function applyBlockOutcome(kind){
     if(fallenNames.length===0) return;
 
     const armorQueue = [];
-    if(defenderFalls) armorQueue.push(defender.id);
+    if(defenderFalls){ armorQueue.push(defender.id); golpeMortiferoMap[defender.id] = attacker.id; }
     if(attackerFalls) armorQueue.push(attacker.id);
     pendingArmorQueue = armorQueue;
     if(attackerFalls) pendingTurnoverAfterResolve = true;
@@ -2180,6 +2192,7 @@ function applyBlockOutcome(kind){
       queueBallDropIfCarrier(defender.id, defender.row, defender.col);
       renderRosters(); renderPitch(); renderSelInfo();
       broadcastState();
+      golpeMortiferoMap[defender.id] = attacker.id;
       pendingArmorQueue = [defender.id];
       processNextArmorInQueue();
     } else {
@@ -2775,6 +2788,14 @@ function parseAgTarget(agStr){
   return isNaN(n) ? 4 : n;
 }
 
+function parseAvTarget(avStr){
+  const n = parseInt(avStr, 10);
+  return isNaN(n) ? 8 : n;
+}
+
+let golpeMortiferoMap = {}; // { fallingPlayerId: attackerId } — Golpe Mortífero elegible en esta caída concreta
+let golpeMortiferoUsedOnArmor = false;
+
 function finishPushSequence(info){
   if(!info) return;
   const attacker = players.find(x=>x.id===info.attackerId);
@@ -2790,6 +2811,7 @@ function finishPushSequence(info){
       queueBallDropIfCarrier(defender.id, defender.row, defender.col);
       renderRosters(); renderPitch();
       broadcastState();
+      if(attacker) golpeMortiferoMap[defender.id] = attacker.id;
       openArmorModal(defender);
     }
   } else {
@@ -3439,12 +3461,29 @@ function openInjuryDirect(p){
 
 function rollArmor(){
   const d1=Math.floor(Math.random()*6)+1, d2=Math.floor(Math.random()*6)+1;
+  const sum = d1+d2;
   document.getElementById('armorDie1').textContent=d1;
   document.getElementById('armorDie2').textContent=d2;
-  document.getElementById('armorSum').textContent='Suma: '+(d1+d2);
-  document.getElementById('armorPassRow').style.display='block';
+  document.getElementById('armorSum').textContent='Suma: '+sum;
   const p = players.find(x=>x.id===armorForPlayer);
-  log('🎲 Armadura (' + (p?p.name:'?') + '): ' + d1 + ' + ' + d2 + ' = ' + (d1+d2));
+  log('🎲 Armadura (' + (p?p.name:'?') + '): ' + d1 + ' + ' + d2 + ' = ' + sum);
+
+  const gmAttackerId = p ? golpeMortiferoMap[p.id] : null;
+  const gmAttacker = gmAttackerId ? players.find(x=>x.id===gmAttackerId) : null;
+  golpeMortiferoUsedOnArmor = false;
+  if(p && gmAttacker && playerHasSkill(gmAttacker, 'golpe mortífero', 'golpe mortifero', 'mighty blow')){
+    const target = parseAvTarget(p.av);
+    const naturallyBroken = sum >= target;
+    const breaksWithBonus = (sum+1) >= target;
+    if(!naturallyBroken && breaksWithBonus){
+      golpeMortiferoUsedOnArmor = true;
+      document.getElementById('armorSum').textContent = 'Suma: ' + sum + ' +1 (Golpe Mortífero de ' + gmAttacker.name + ') = ' + (sum+1);
+      log('💀 Golpe Mortífero de ' + gmAttacker.name + ' aplicado en Armadura: ' + sum + '+1 = ' + (sum+1) + ' — ROTA.');
+      armorResult(true);
+      return;
+    }
+  }
+  document.getElementById('armorPassRow').style.display='block';
   broadcastState();
 }
 
@@ -3465,11 +3504,20 @@ function armorResult(broken){
 
 function rollInjury(){
   const d1=Math.floor(Math.random()*6)+1, d2=Math.floor(Math.random()*6)+1;
+  const sum = d1+d2;
+  const p = players.find(x=>x.id===armorForPlayer);
+  const gmAttackerId = p ? golpeMortiferoMap[p.id] : null;
+  const gmAttacker = gmAttackerId ? players.find(x=>x.id===gmAttackerId) : null;
+  const gmForInjury = p && !golpeMortiferoUsedOnArmor && gmAttacker && playerHasSkill(gmAttacker, 'golpe mortífero', 'golpe mortifero', 'mighty blow');
   document.getElementById('injuryDie1').textContent=d1;
   document.getElementById('injuryDie2').textContent=d2;
-  document.getElementById('injurySum').textContent='Suma: '+(d1+d2);
-  const p = players.find(x=>x.id===armorForPlayer);
-  log('🎲 Heridas (' + (p?p.name:'?') + '): ' + d1 + ' + ' + d2 + ' = ' + (d1+d2));
+  if(gmForInjury){
+    document.getElementById('injurySum').textContent = 'Suma: ' + sum + ' +1 (Golpe Mortífero de ' + gmAttacker.name + ') = ' + (sum+1);
+    log('🎲 Heridas (' + (p?p.name:'?') + '): ' + d1 + ' + ' + d2 + ' = ' + sum + ' +1 Golpe Mortífero = ' + (sum+1));
+  } else {
+    document.getElementById('injurySum').textContent='Suma: '+sum;
+    log('🎲 Heridas (' + (p?p.name:'?') + '): ' + d1 + ' + ' + d2 + ' = ' + sum);
+  }
   broadcastState();
 }
 
@@ -3523,8 +3571,11 @@ function queueBallDropIfCarrier(playerId, r, c, exitR, exitC){
 }
 
 function closeArmorModal(){
+  const resolvedPlayerId = armorForPlayer;
   document.getElementById('armorModal').classList.remove('show');
   armorForPlayer = null;
+  golpeMortiferoUsedOnArmor = false;
+  if(resolvedPlayerId!==null) delete golpeMortiferoMap[resolvedPlayerId];
   broadcastState();
   if(pendingArmorQueue && pendingArmorQueue.length>0){
     processNextArmorInQueue();

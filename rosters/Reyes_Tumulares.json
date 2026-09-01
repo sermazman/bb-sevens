@@ -1,0 +1,162 @@
+{
+  "teamName": "Reyes Tumulares",
+  "race": "Tomb King",
+  "color": "#d4af37",
+  "textColor": "auto",
+  "staff": {
+    "rerolls": {
+      "clave": "reroll",
+      "count": 1,
+      "pricePerUnit": 100000,
+      "total": 100000
+    }
+  },
+  "players": [
+    {
+      "num": 1,
+      "name": "",
+      "position": "Tomb Guardian",
+      "ma": 4,
+      "st": 5,
+      "ag": "5+",
+      "pa": "0+",
+      "av": "10+",
+      "skills": [
+        "Descomposición",
+        "Regeneración",
+        "Defensor - Grandullon - Human - No Muerto"
+      ]
+    },
+    {
+      "num": 2,
+      "name": "",
+      "position": "Tomb King Blitzers",
+      "ma": 6,
+      "st": 3,
+      "ag": "4+",
+      "pa": "5+",
+      "av": "9+",
+      "skills": [
+        "Placar",
+        "Regeneración",
+        "Cabeza dura",
+        "Human - Blitzer - No Muerto - Skeleton"
+      ]
+    },
+    {
+      "num": 3,
+      "name": "",
+      "position": "Tomb King Blitzers",
+      "ma": 6,
+      "st": 3,
+      "ag": "4+",
+      "pa": "5+",
+      "av": "9+",
+      "skills": [
+        "Placar",
+        "Regeneración",
+        "Cabeza dura",
+        "Human - Blitzer - No Muerto - Skeleton"
+      ]
+    },
+    {
+      "num": 4,
+      "name": "",
+      "position": "Tomb King Thrower",
+      "ma": 6,
+      "st": 3,
+      "ag": "4+",
+      "pa": "3+",
+      "av": "9+",
+      "skills": [
+        "Pasar",
+        "Regeneración",
+        "Manos seguras",
+        "Cabeza dura",
+        "Human - Lanzador - No Muerto - Skeleton"
+      ]
+    },
+    {
+      "num": 5,
+      "name": "",
+      "position": "Skeleton Lineman",
+      "ma": 5,
+      "st": 3,
+      "ag": "4+",
+      "pa": "6+",
+      "av": "8+",
+      "skills": [
+        "Regeneración",
+        "Cabeza dura",
+        "Human - Linea - No Muerto - Skeleton"
+      ]
+    },
+    {
+      "num": 6,
+      "name": "",
+      "position": "Skeleton Lineman",
+      "ma": 5,
+      "st": 3,
+      "ag": "4+",
+      "pa": "6+",
+      "av": "8+",
+      "skills": [
+        "Regeneración",
+        "Cabeza dura",
+        "Human - Linea - No Muerto - Skeleton"
+      ]
+    },
+    {
+      "num": 7,
+      "name": "",
+      "position": "Skeleton Lineman",
+      "ma": 5,
+      "st": 3,
+      "ag": "4+",
+      "pa": "6+",
+      "av": "8+",
+      "skills": [
+        "Regeneración",
+        "Cabeza dura",
+        "Human - Linea - No Muerto - Skeleton"
+      ]
+    }
+  ],
+  "formation": [
+    {
+      "num": 1,
+      "col": 4,
+      "row": 0
+    },
+    {
+      "num": 2,
+      "col": 1,
+      "row": 0
+    },
+    {
+      "num": 3,
+      "col": 9,
+      "row": 0
+    },
+    {
+      "num": 4,
+      "col": 5,
+      "row": 0
+    },
+    {
+      "num": 5,
+      "col": 6,
+      "row": 0
+    },
+    {
+      "num": 6,
+      "col": 2,
+      "row": 0
+    },
+    {
+      "num": 7,
+      "col": 8,
+      "row": 0
+    }
+  ]
+}

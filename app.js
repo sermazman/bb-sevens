@@ -171,6 +171,19 @@ let peer = null;
 let conn = null;
 let applyingRemote = false;
 
+// Servidores STUN/TURN: el STUN solo no basta cuando ambos estáis en redes distintas con NAT "estricta"
+// (routers domésticos normales, sobre todo en España con muchas operadoras usando CGNAT).
+// El TURN actúa de "relé" cuando la conexión directa no es posible.
+const ICE_SERVERS_CONFIG = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
+  ]
+};
+
 function generateCode(){
   const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let s=''; for(let i=0;i<4;i++) s+=chars[Math.floor(Math.random()*chars.length)];
@@ -194,7 +207,7 @@ document.addEventListener('click', (e)=>{
 
 function hostRoom(){
   const code = generateCode();
-  peer = new Peer('bb7-' + code);
+  peer = new Peer('bb7-' + code, { config: ICE_SERVERS_CONFIG });
   peer.on('open', ()=>{
     document.getElementById('connControls').style.display='none';
     document.getElementById('roomCodeBox').style.display='block';
@@ -210,6 +223,7 @@ function hostRoom(){
     });
   });
   peer.on('error', err=>{
+    console.error('PeerJS error (host):', err);
     updateConnStatus('Error: ' + err.type + ' (probad recargar y crear otra sala)', false);
   });
 }
@@ -217,16 +231,25 @@ function hostRoom(){
 function joinRoom(){
   const code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
   if(!code){ alert('Escribe el código de la sala.'); return; }
-  peer = new Peer();
+  peer = new Peer(undefined, { config: ICE_SERVERS_CONFIG });
+  updateConnStatus('Conectando...', false);
+  const joinTimeout = setTimeout(()=>{
+    if(!conn || !conn.open){
+      updateConnStatus('⚠️ La conexión no responde tras 15s. Puede ser un firewall/red restrictiva — probad con datos móviles en uno de los dos, o confirmad que el código y mayúsculas son correctos.', false);
+    }
+  }, 15000);
   peer.on('open', ()=>{
     conn = peer.connect('bb7-' + code);
     setupConnHandlers();
     conn.on('open', ()=>{
+      clearTimeout(joinTimeout);
       document.getElementById('connControls').style.display='none';
       updateConnStatus('✅ Conectado — sala ' + code, true);
     });
   });
   peer.on('error', err=>{
+    clearTimeout(joinTimeout);
+    console.error('PeerJS error (join):', err);
     updateConnStatus('Error: ' + err.type + ' (revisa el código)', false);
   });
 }

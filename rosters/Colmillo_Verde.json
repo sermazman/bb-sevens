@@ -3,6 +3,14 @@
   "race": "Orcs",
   "color": "#b30000",
   "textColor": "auto",
+  "staff": {
+    "rerolls": {
+      "clave": "reroll",
+      "count": 0,
+      "pricePerUnit": 100000,
+      "total": 0
+    }
+  },
   "players": [
     {
       "num": 1,
@@ -13,7 +21,9 @@
       "ag": "3+",
       "pa": "4+",
       "av": "10+",
-      "skills": []
+      "skills": [
+        "Linea - Orc"
+      ]
     },
     {
       "num": 2,
@@ -24,7 +34,9 @@
       "ag": "3+",
       "pa": "4+",
       "av": "10+",
-      "skills": []
+      "skills": [
+        "Linea - Orc"
+      ]
     },
     {
       "num": 3,
@@ -35,7 +47,9 @@
       "ag": "3+",
       "pa": "4+",
       "av": "10+",
-      "skills": []
+      "skills": [
+        "Linea - Orc"
+      ]
     },
     {
       "num": 4,
@@ -48,7 +62,8 @@
       "av": "10+",
       "skills": [
         "Placar",
-        "Abrirse paso"
+        "Abrirse paso",
+        "Blitzer - Orc"
       ]
     },
     {
@@ -64,7 +79,8 @@
         "Cabeza dura",
         "Golpe mortífero",
         "Provocar",
-        "Tembloroso"
+        "Tembloroso",
+        "Defensor - Orc"
       ]
     },
     {
@@ -78,7 +94,8 @@
       "av": "9+",
       "skills": [
         "Manos seguras",
-        "Pasar"
+        "Pasar",
+        "Lanzador - Orc"
       ]
     },
     {
@@ -97,8 +114,46 @@
         "Lanzar Compañero",
         "Golpe mortífero",
         "Proyectil vómito",
-        "Regeneración"
+        "Regeneración",
+        "Grandullon - Orc"
       ]
+    }
+  ],
+  "formation": [
+    {
+      "num": 1,
+      "col": 1,
+      "row": 0
+    },
+    {
+      "num": 2,
+      "col": 9,
+      "row": 0
+    },
+    {
+      "num": 3,
+      "col": 8,
+      "row": 0
+    },
+    {
+      "num": 4,
+      "col": 6,
+      "row": 0
+    },
+    {
+      "num": 5,
+      "col": 3,
+      "row": 0
+    },
+    {
+      "num": 6,
+      "col": 5,
+      "row": 0
+    },
+    {
+      "num": 7,
+      "col": 4,
+      "row": 0
     }
   ]
 }

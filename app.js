@@ -2531,7 +2531,7 @@ const POSITION_BORDER_COLORS = [
   { keys:['blitzer'], color:'#e53935' },                           // rojo
   { keys:['defensor', 'blocker'], color:'#43a047' },               // verde
   { keys:['receptor', 'catcher'], color:'#fdd835' },               // amarillo
-  { keys:['grandullón', 'grandullon', 'big guy'], color:'#2980b9' }, // azul
+  { keys:['grandullón', 'grandullon', 'big guy'], color:'#0089E8' }, // azul
   { keys:['especial', 'special'], color:'#8e44ad' },               // morado
   { keys:['corredor', 'runner'], color:'#f39c12' },                // naranja
   { keys:['starplayer', 'star player'], color:'#d4af37' }          // dorado

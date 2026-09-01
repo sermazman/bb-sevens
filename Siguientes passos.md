@@ -22,6 +22,9 @@ Al final de su activación, este jugador puede morder a un compañero Thrall Lin
 Si le muerde, haz una tirada de Heridas por el Thrall Lineman, tratando cualquier resultado de Lesionado como Magullado; esto no causa un cambio de turno a menos que el Thrall Lineman fuese el portador del balón. Si este jugador no muerde a un Thrall Lineman por el motivo que sea, se produce un cambio de turno, este jugador queda Distraído, e inmediatamente deja caer el balón si era el portador. Si estaba en la zona de anotación rival, no anota touchdown. Un jugador que haya fallado esta tirada y quiera realizar una acción de Pase, de Entregar el balón, o anotar touchdown, debe morder a un Thrall Lineman antes de realizar dicha acción o de anotar.
 ** INICIO:  REALIZADO FECHA:
 
+  INCLUIR RESTO DE STAFF EN ROSTERS y APP GENERAL (buscar huecos para Incentivos por el Futuro)
+  ** INICIO:  REALIZADO FECHA:
+
 @@@@@@@@@@@@@@@@@@@ HABILIDADES / RASGOS AUTOMATIZADAS @@@@@@@@@@@@@@@@@@@
 - PLACAR
 - ESQUIVAR

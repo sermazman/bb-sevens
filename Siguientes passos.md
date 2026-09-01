@@ -32,19 +32,19 @@ Si le muerde, haz una tirada de Heridas por el Thrall Lineman, tratando cualquie
 - FURIA
 - PROFESIONAL (pruebas)
 
-- PRÓXIMAS VIABLES: PASAR y ANIMOSIDAD, ATRAPAR, CUERNOS, GOLPE MORTIFERO
+- PRÓXIMAS VIABLES: PASAR y ANIMOSIDAD, ATRAPAR, CUERNOS, GOLPE MORTIFERO, GARRAS
 
 @@@@@@@@@@@@@@@@@@@ EQUIPOS @@@@@@@@@@@@@@@@@@@
  - PDTE PASAR A SHEETS: HALFLING, GOBLIN, SLANN, SNOTLINGS
  - ACTUALIZADO SHEETS: GNOMES
  - PDTE PASAR A GITHUB: GNOMES
  
-@@@@@@@@@@@@@@@@@@@ REALIZADOS @@@@@@@@@@@@@@@@@@@
+✅✅✅✅✅✅✅ REALIZADOS ✅✅✅✅✅✅✅
 
 Revisar Furia, que tiene que seguir siempre y no preguntar si quiere hacer movimiento impulso, no se si esta implementada o no. Preguntar antes.
 Darle de Furia toda la Habilidad para implementarla
 
-** REALIZADO: OK    FECHA: 30-08-2026
+✅* REALIZADO: OK    FECHA: 30-08-2026
 
 Vamos con otro actualización para dejar muy fino la ruleta que nos encanta como se gestiona ahora y nos ha abierto la mente a otras mejoras para poder actualizar.
 
@@ -60,7 +60,7 @@ Por ello, la "Ruleta de Tumbados" (te lo dire así para diferenciarlo de la "Rul
 
 Si hubiera que cambiar algo en esta ruleta la llamaremos "Ruleta de Tumbados" y la otra la general solo "Ruleta" o "Ruleta Base".
 
-** INICIO: 31-08-2026  REALIZADO FECHA: 31-08-2026
+✅* INICIO: 31-08-2026  REALIZADO FECHA: 31-08-2026
 
 Y el tema que hemos dejado de los colores en el borde de la ficha, tenemos que poner estos de momento buscando en la CLAVE del JUGADOR:
 LINEA - Gris
@@ -73,7 +73,7 @@ CORREDOR - Naranja
 GRANDULLON - Azul
 Journey - (sin color, este no busca el CLAVE DE JUGADOR, lo busca en el tipo de jugador)
 
-** INICIO: 31-08-2026  REALIZADO FECHA: 31-08-2026
+✅* INICIO: 31-08-2026  REALIZADO FECHA: 31-08-2026
 
 Luego tenemos que ver algunas activaciones de jugadores con habilidades y Rasgos como Estúpido, Realmente Estúpido, etc... que deben hacer tirada de chequeo al inicio de su activación. 
 Te pongo lo que hace cada uno:
@@ -101,3 +101,4 @@ Con 1-3, este jugador ruge de forma incoherente, pero no hace nada más. Su acti
 Cuando este jugador es activado o se marque la primera casilla para movimiento, tras declarar su acción, debe tirar 1D6. Puede aplicar un modificador de +2 a la tirada si se encuentra adyacente a algún compañero que esté En pie, no esté Distraído y no tengan a su vez Realmente estupido. Con 4+, este jugador puede realizar su acción declarada de manera normal. Con 1-3, en cambio, este jugador queda Distraido.
 
 Estas activaciones de Rasgos, no pueden ser repetidas por segundas oportunidades.
+✅

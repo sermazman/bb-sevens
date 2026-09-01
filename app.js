@@ -166,23 +166,27 @@ let pendingPush = null;      // { attackerId, defenderId, kind, isBlitz }
 let pendingFollowUp = null;  // { attackerId, defenderId, vacatedR, vacatedC, fallKind, isBlitz, directInjuryPlayerId }
 let crowdPushMode = false;
 
-// ---------- Remote play (PeerJS) ----------
-let peer = null;
-let conn = null;
-let applyingRemote = false;
-
-// Servidores STUN/TURN: el STUN solo no basta cuando ambos estáis en redes distintas con NAT "estricta"
-// (routers domésticos normales, sobre todo en España con muchas operadoras usando CGNAT).
-// El TURN actúa de "relé" cuando la conexión directa no es posible.
-const ICE_SERVERS_CONFIG = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
-    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
-    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
-  ]
+// ---------- Remote play (Firebase Realtime Database) ----------
+// Sustituye a PeerJS: en vez de conexión P2P directa (que falla con NAT/firewall entre redes
+// distintas), cada navegador lee/escribe en una "sala" compartida en la nube de Google.
+const firebaseConfig = {
+  apiKey: "AIzaSyApviYQNdvC1jBUafZnVRuhtUfySvXLuto",
+  authDomain: "bb-sevens.firebaseapp.com",
+  databaseURL: "https://bb-sevens-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "bb-sevens",
+  storageBucket: "bb-sevens.firebasestorage.app",
+  messagingSenderId: "407624262418",
+  appId: "1:407624262418:web:a87d394e9da7f9219149cb",
+  measurementId: "G-8NYFH7D5BH"
 };
+firebase.initializeApp(firebaseConfig);
+const fbDb = firebase.database();
+
+let applyingRemote = false;
+let roomCode = null;
+let stateRef = null;
+let peersRef = null;
+const myPeerId = Math.random().toString(36).slice(2) + Date.now().toString(36);
 
 function generateCode(){
   const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -205,60 +209,63 @@ document.addEventListener('click', (e)=>{
   }
 });
 
+function setupRoomRefs(code){
+  const roomRef = fbDb.ref('rooms/' + code);
+  stateRef = roomRef.child('state');
+  peersRef = roomRef.child('peers');
+}
+
+function joinPresence(){
+  const myRef = peersRef.child(myPeerId);
+  myRef.set(true);
+  myRef.onDisconnect().remove();
+}
+
+function listenForPeers(){
+  peersRef.on('value', snap=>{
+    const count = snap.exists() ? Object.keys(snap.val()).length : 0;
+    if(count>=2){
+      updateConnStatus('✅ Conectado — sala ' + roomCode, true);
+    } else {
+      updateConnStatus('Sala ' + roomCode + '. Esperando al rival...', false);
+    }
+  });
+}
+
+function listenForState(){
+  stateRef.on('value', snap=>{
+    const payload = snap.val();
+    if(!payload || payload.senderId===myPeerId) return; // vacío o eco de nuestro propio envío
+    applyingRemote = true;
+    applyRemoteState(payload);
+    applyingRemote = false;
+  });
+}
+
 function hostRoom(){
   const code = generateCode();
-  peer = new Peer('bb7-' + code, { config: ICE_SERVERS_CONFIG });
-  peer.on('open', ()=>{
-    document.getElementById('connControls').style.display='none';
-    document.getElementById('roomCodeBox').style.display='block';
-    document.getElementById('roomCodeText').textContent = code;
-    updateConnStatus('Sala creada. Esperando al rival...', false);
-  });
-  peer.on('connection', c=>{
-    conn = c;
-    setupConnHandlers();
-    conn.on('open', ()=>{
-      updateConnStatus('✅ Conectado — sala ' + code, true);
-      broadcastState();
-    });
-  });
-  peer.on('error', err=>{
-    console.error('PeerJS error (host):', err);
-    updateConnStatus('Error: ' + err.type + ' (probad recargar y crear otra sala)', false);
-  });
+  roomCode = code;
+  setupRoomRefs(code);
+  document.getElementById('connControls').style.display='none';
+  document.getElementById('roomCodeBox').style.display='block';
+  document.getElementById('roomCodeText').textContent = code;
+  updateConnStatus('Sala creada. Esperando al rival...', false);
+  joinPresence();
+  listenForPeers();
+  listenForState();
 }
 
 function joinRoom(){
   const code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
   if(!code){ alert('Escribe el código de la sala.'); return; }
-  peer = new Peer(undefined, { config: ICE_SERVERS_CONFIG });
+  roomCode = code;
+  setupRoomRefs(code);
+  document.getElementById('connControls').style.display='none';
   updateConnStatus('Conectando...', false);
-  const joinTimeout = setTimeout(()=>{
-    if(!conn || !conn.open){
-      updateConnStatus('⚠️ La conexión no responde tras 15s. Puede ser un firewall/red restrictiva — probad con datos móviles en uno de los dos, o confirmad que el código y mayúsculas son correctos.', false);
-    }
-  }, 15000);
-  peer.on('open', ()=>{
-    conn = peer.connect('bb7-' + code);
-    setupConnHandlers();
-    conn.on('open', ()=>{
-      clearTimeout(joinTimeout);
-      document.getElementById('connControls').style.display='none';
-      updateConnStatus('✅ Conectado — sala ' + code, true);
-    });
-  });
-  peer.on('error', err=>{
-    clearTimeout(joinTimeout);
-    console.error('PeerJS error (join):', err);
-    updateConnStatus('Error: ' + err.type + ' (revisa el código)', false);
-  });
-}
-
-function setupConnHandlers(){
-  conn.on('data', data=>{
-    if(data.type==='state') applyRemoteState(data.payload);
-  });
-  conn.on('close', ()=> updateConnStatus('Conexión cerrada.', false));
+  joinPresence();
+  listenForPeers();
+  listenForState();
+  broadcastState();
 }
 
 function snapshotState(){
@@ -361,7 +368,13 @@ function broadcastState(){
   if(applyingRemote) return;
   const snap = snapshotState();
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify(snap)); }catch(e){}
-  if(conn && conn.open){ conn.send({ type:'state', payload: snap }); }
+  if(stateRef){
+    snap.senderId = myPeerId;
+    let safeSnap;
+    try{ safeSnap = JSON.parse(JSON.stringify(snap)); } // Firebase no acepta 'undefined'; esto lo elimina de forma segura
+    catch(e){ console.error('No se pudo serializar el estado:', e); return; }
+    stateRef.set(safeSnap).catch(err=> console.error('Firebase write error:', err));
+  }
 }
 
 function applyRemoteState(payload){
@@ -1452,6 +1465,7 @@ function openActionMenu(id){
   pendingActionMenuPlayer = id;
   declaredAction = null;
   renderActionMenu();
+  renderSelInfo();
   broadcastState();
 }
 

@@ -376,12 +376,17 @@ function snapshotState(){
 
 const SAVE_KEY = 'bbsevens_autosave_v1';
 
+let localSeq = 0;
+let lastAppliedSeq = 0;
+
 function broadcastState(){
   if(applyingRemote) return;
   const snap = snapshotState();
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify(snap)); }catch(e){}
   if(stateRef){
+    localSeq += 1;
     snap.senderId = myPeerId;
+    snap.seq = localSeq;
     let safeSnap;
     try{ safeSnap = JSON.parse(JSON.stringify(snap)); } // Firebase no acepta 'undefined'; esto lo elimina de forma segura
     catch(e){ console.error('No se pudo serializar el estado:', e); return; }

@@ -308,6 +308,9 @@ function snapshotState(){
     kickSelectValue: document.getElementById('kickSelect').value,
     showHalfBtn: !!document.getElementById('newHalfBtn'),
     statusMsg: document.getElementById('statusLine').textContent,
+    histHtml: document.getElementById('hist').innerHTML,
+    blockResultHtml: document.getElementById('blockResult').innerHTML,
+    genericResultHtml: document.getElementById('genericResult').innerHTML,
     dodgeModalOpen: document.getElementById('dodgeModal').classList.contains('show'),
     dodgeText: document.getElementById('dodgeText').textContent,
     dodgeDieText: document.getElementById('dodgeDie').textContent,
@@ -458,11 +461,12 @@ function applyRemoteState(payload){
   }
   document.getElementById('matchEndText').textContent = payload.matchEndText || '';
   document.getElementById('matchEndModal').classList.toggle('show', !!payload.matchEndModalOpen);
-  pendingActionMenuPlayer = payload.pendingActionMenuPlayer;
+  // pendingActionMenuPlayer y declaredAction son estado de interacción LOCAL de cada navegador
+  // (qué jugador tienes tú cogido y qué acción elegiste en tu Ruleta) — nunca se sobrescriben con lo remoto,
+  // o cada click del otro jugador te resetearía tu propia selección a mitad de jugada.
   pendingManualStatus = payload.pendingManualStatus || null;
   refreshManualStatusButtons();
   document.getElementById('turnoverOverlay').classList.toggle('show', !!payload.turnoverOverlayOpen);
-  declaredAction = payload.declaredAction || null;
   pendingTraitCheck = payload.pendingTraitCheck || null;
   pendingFerocityAttack = payload.pendingFerocityAttack || null;
   document.getElementById('traitCheckTitle').textContent = payload.traitCheckTitleText || 'CHEQUEO DE RASGO';
@@ -610,6 +614,9 @@ function applyRemoteState(payload){
   renderRosters(); renderPitch(); renderScoreboard(); renderSelInfo(); updateKickSelectLabels();
   renderActionMenu();
   if(payload.statusMsg) updateStatus(payload.statusMsg);
+  if(payload.histHtml!==undefined) document.getElementById('hist').innerHTML = payload.histHtml;
+  if(payload.blockResultHtml!==undefined) document.getElementById('blockResult').innerHTML = payload.blockResultHtml;
+  if(payload.genericResultHtml!==undefined) document.getElementById('genericResult').innerHTML = payload.genericResultHtml;
   applyingRemote = false;
 }
 
@@ -3948,6 +3955,7 @@ function rollBlock(n){
     el.appendChild(d);
   }
   log('🎲 Bloqueo x'+n+': ' + results.join(' / '));
+  broadcastState();
 }
 
 function rollGeneric(sides, count){
@@ -3966,6 +3974,7 @@ function rollGeneric(sides, count){
   });
   const sumText = count>1 ? ' (suma ' + results.reduce((a,b)=>a+b,0) + ')' : '';
   log('🎲 ' + count + 'd' + sides + (label?(' ('+label+')'):'') + ': ' + results.join(', ') + sumText);
+  broadcastState();
 }
 
 // ---------- Save / Load ----------

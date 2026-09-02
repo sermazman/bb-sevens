@@ -292,6 +292,8 @@ function joinRoom(){
 }
 
 function snapshotState(){
+  if(!Array.isArray(players)){ console.error('[BB7] players estaba corrompido (' + players + ') — reparado a lista vacía.'); players = []; }
+  if(!ball || typeof ball!=='object'){ console.error('[BB7] ball estaba corrompido (' + ball + ') — reparado a valores por defecto.'); ball = { carrierId:null, row:null, col:null }; }
   return {
     players, ball, phase, state, pendingTD, pendingDodge, pendingGfi, armorForPlayer, nextId,
     koQueue, pendingKo, teamRace, customColorsEnabled, teamCustomColor, teamTextColor, openingKickoffDone, firstHalfKickingTeam, pitchBackgroundUrl, pitchBackgroundExact, teamStaff, teamRerollsLeft, kickoffPendingOOBAfterEvent,
@@ -414,6 +416,10 @@ function broadcastState(){
 }
 
 function applyRemoteState(payload){
+  if(!Array.isArray(payload.players) || !payload.ball || typeof payload.ball!=='object'){
+    console.error('[BB7] ⚠️ Estado recibido corrupto (players/ball inválidos) — IGNORADO para no propagar el fallo. Payload:', payload);
+    return;
+  }
   applyingRemote = true;
   players = payload.players;
   ball = payload.ball;
@@ -843,6 +849,7 @@ function exportTeam(team){
 }
 
 function renderRosters(){
+  if(!Array.isArray(players)){ console.error('[BB7] renderRosters: players inválido, reparado.'); players=[]; }
   ['A','B'].forEach(team=>{
     const el = document.getElementById('roster'+team);
     el.innerHTML='';
@@ -1254,6 +1261,8 @@ function isInOpponentTackleZone(r,c,team){
 }
 
 function renderPitch(){
+  if(!Array.isArray(players)){ console.error('[BB7] renderPitch: players inválido, reparado.'); players=[]; }
+  if(!ball || typeof ball!=='object'){ console.error('[BB7] renderPitch: ball inválido, reparado.'); ball={carrierId:null,row:null,col:null}; }
   const pitch = document.getElementById('pitch');
   pitch.innerHTML='';
   const posMap = {};

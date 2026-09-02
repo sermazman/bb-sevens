@@ -1681,6 +1681,40 @@ function actionMenuJumpUp(){
   jumpUpBlitzCheck();
 }
 
+function unstickState(){
+  // Cierra TODOS los modales (por si alguno se quedó marcado como abierto en el estado compartido)
+  document.querySelectorAll('.modal-back').forEach(m=> m.classList.remove('show'));
+  document.getElementById('turnoverOverlay').classList.remove('show');
+  // Limpia todos los "pendientes" de chequeos/acciones en curso
+  pendingDodge = null; dodgeRerollUsed = false;
+  pendingGfi = null; gfiRerollUsed = false;
+  pendingCatch = null; catchRerollUsed = false;
+  pendingSecureBall = null; secureBallRerollUsed = false;
+  activeBlock = null; blockTargeting = null; blockDiceRolled = false; currentBlockDiceIndices = [];
+  pendingTraitCheck = null;
+  pendingFerocityAttack = null;
+  pendingManualStatus = null;
+  armorForPlayer = null; pendingArmorQueue = [];
+  golpeMortiferoUsedOnArmor = false;
+  pendingPush = null; chainPushStack = [];
+  pendingFollowUp = null;
+  freeCatchTeam = null;
+  placingBallFree = false;
+  pendingKickPlacement = false; kickoffBounceStep = false;
+  ballBounceActive = false;
+  blitzActivePlayer = null;
+  secureBallActivePlayer = null;
+  pendingActionMenuPlayer = null;
+  declaredAction = null;
+  selected = null;
+  const oldMenu = document.getElementById('radialMenuContainer');
+  if(oldMenu) oldMenu.remove();
+  log('🆘 Estado desatascado manualmente — modales cerrados y acciones pendientes canceladas.');
+  refreshManualStatusButtons();
+  renderRosters(); renderPitch(); renderScoreboard(); renderSelInfo();
+  broadcastState();
+}
+
 function endActivation(id){
   const p = players.find(x=>x.id===id);
   if(!p) return;

@@ -1,0 +1,155 @@
+{
+  "teamName": "Alcantarilla Rats",
+  "race": "Skaven",
+  "color": "#2f563b",
+  "textColor": "#a0fe62",
+  "staff": {
+    "rerolls": {
+      "clave": "reroll",
+      "count": 0,
+      "pricePerUnit": 100000,
+      "total": 0
+    }
+  },
+  "players": [
+    {
+      "num": 1,
+      "name": "Rizzit Sarnoso",
+      "position": "ClanRat",
+      "ma": 7,
+      "st": 3,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "8+",
+      "skills": [
+        "Skaven - Linea"
+      ]
+    },
+    {
+      "num": 2,
+      "name": "Skrum Cebo",
+      "position": "ClanRat",
+      "ma": 7,
+      "st": 3,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "8+",
+      "skills": [
+        "Skaven - Linea"
+      ]
+    },
+    {
+      "num": 3,
+      "name": "Grip Parachoques",
+      "position": "ClanRat",
+      "ma": 7,
+      "st": 3,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "8+",
+      "skills": [
+        "Skaven - Linea"
+      ]
+    },
+    {
+      "num": 4,
+      "name": "Vermin Dientesangre",
+      "position": "Blitzer",
+      "ma": 8,
+      "st": 3,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "9+",
+      "skills": [
+        "Placar",
+        "Robar balón",
+        "Skaven - Blitzer"
+      ]
+    },
+    {
+      "num": 5,
+      "name": "Klawz Piesfrescos",
+      "position": "Gutter Runner",
+      "ma": 9,
+      "st": 2,
+      "ag": "2+",
+      "pa": "4+",
+      "av": "8+",
+      "skills": [
+        "Esquivar",
+        "Apuñalar",
+        "Skaven - Corredor"
+      ]
+    },
+    {
+      "num": 6,
+      "name": "Sling Colatorcida",
+      "position": "Rat Ogre",
+      "ma": 6,
+      "st": 5,
+      "ag": "4+",
+      "pa": "0+",
+      "av": "9+",
+      "skills": [
+        "Ferocidad animal",
+        "Furia",
+        "Solitario (4+)",
+        "Golpe mortífero",
+        "Cola prensil",
+        "Skaven - Grandullon"
+      ]
+    },
+    {
+      "num": 7,
+      "name": "Rattrik Buscahoyos",
+      "position": "Thrower",
+      "ma": 7,
+      "st": 3,
+      "ag": "3+",
+      "pa": "2+",
+      "av": "8+",
+      "skills": [
+        "Pasar",
+        "Manos seguras",
+        "Skaven - Lanzador"
+      ]
+    }
+  ],
+  "formation": [
+    {
+      "num": 1,
+      "col": 1,
+      "row": 0
+    },
+    {
+      "num": 2,
+      "col": 4,
+      "row": 0
+    },
+    {
+      "num": 3,
+      "col": 2,
+      "row": 0
+    },
+    {
+      "num": 4,
+      "col": 8,
+      "row": 0
+    },
+    {
+      "num": 5,
+      "col": 9,
+      "row": 0
+    },
+    {
+      "num": 6,
+      "col": 5,
+      "row": 0
+    },
+    {
+      "num": 7,
+      "col": 5,
+      "row": 1
+    }
+  ]
+}

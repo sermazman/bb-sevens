@@ -239,14 +239,28 @@ function listenForPeers(){
 }
 
 function listenForState(){
+  console.log('[BB7] listenForState() ENGANCHADO — a partir de aquí debería llegar el estado actual de la sala inmediatamente.');
   stateRef.on('value', snap=>{
     const payload = snap.val();
-    if(!payload || payload.senderId===myPeerId) return; // vacío o eco de nuestro propio envío
+    if(!payload){
+      console.log('[BB7] RECIBIDO: la sala está vacía (nadie ha enviado nada todavía).');
+      return;
+    }
+    if(payload.senderId===myPeerId){
+      console.log('[BB7] RECIBIDO seq='+payload.seq+' — es mi propio eco, ignorado.');
+      return;
+    }
+    console.log('[BB7] RECIBIDO seq='+payload.seq+' de otro jugador. phase='+payload.phase+' jugadores='+(payload.players?payload.players.length:0)+' balón row/col='+(payload.ball?payload.ball.row+'/'+payload.ball.col:'?')+' teamAName='+payload.teamAName+' teamBName='+payload.teamBName);
     applyingRemote = true;
-    applyRemoteState(payload);
+    try{
+      applyRemoteState(payload);
+      console.log('[BB7] ✅ Estado aplicado correctamente (seq='+payload.seq+')');
+    }catch(err){
+      console.error('[BB7] ❌ ERROR al aplicar el estado recibido (seq='+payload.seq+'):', err);
+    }
     applyingRemote = false;
   }, err=>{
-    console.error('Firebase state read error:', err);
+    console.error('[BB7] ❌ ERROR de lectura de Firebase state:', err);
     updateConnStatus('⚠️ Error leyendo la partida (revisa las Reglas de la base de datos). Detalle en la consola (F12).', false);
   });
 }
@@ -389,8 +403,13 @@ function broadcastState(){
     snap.seq = localSeq;
     let safeSnap;
     try{ safeSnap = JSON.parse(JSON.stringify(snap)); } // Firebase no acepta 'undefined'; esto lo elimina de forma segura
-    catch(e){ console.error('No se pudo serializar el estado:', e); return; }
-    stateRef.set(safeSnap).catch(err=> console.error('Firebase write error:', err));
+    catch(e){ console.error('[BB7] No se pudo serializar el estado:', e); return; }
+    console.log('[BB7] ENVIANDO seq='+localSeq+' phase='+safeSnap.phase+' jugadores='+(safeSnap.players?safeSnap.players.length:0)+' balón row/col='+(safeSnap.ball?safeSnap.ball.row+'/'+safeSnap.ball.col:'?')+' teamAName='+safeSnap.teamAName+' teamBName='+safeSnap.teamBName);
+    stateRef.set(safeSnap)
+      .then(()=> console.log('[BB7] ✅ Envío seq='+localSeq+' confirmado por Firebase'))
+      .catch(err=> console.error('[BB7] ❌ ERROR al escribir en Firebase (seq='+localSeq+'):', err));
+  } else {
+    console.log('[BB7] (sin sala conectada, no se envía nada — stateRef es null)');
   }
 }
 

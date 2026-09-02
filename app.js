@@ -262,6 +262,7 @@ function hostRoom(){
   joinPresence();
   listenForPeers();
   listenForState();
+  broadcastState(); // publica el estado actual (por si ya había equipos cargados antes de crear la sala)
 }
 
 function joinRoom(){
@@ -273,8 +274,7 @@ function joinRoom(){
   updateConnStatus('Conectando...', false);
   joinPresence();
   listenForPeers();
-  listenForState();
-  broadcastState();
+  listenForState(); // recibe el estado actual de la sala automáticamente; NO se envía el propio (evita sobrescribir al creador)
 }
 
 function snapshotState(){

@@ -1,18 +1,10 @@
-Y esta actualización de los botones manuales que tenemos abajo, hay que crear / actualizar los que te menciono y a parte su funcionamiento es mejor que sea: 1º pulsamos el Boton y 2º se elige al jugador para que haga la accion que el botón le hemos puesto:
-Nuevos botones
-- LEVANTAR - Pone al jugador el pie y sin activar aún
-- TUMBAR - Pone al jugador Tumbado (sin hacer tiradas de Armaduras ni nada, solo marcar al Jugador como TUMBADO)
-- ATURDIR - Pone al jugador aturdido (sin hacer tiradas de Armaduras ni nada, solo marcar al Jugador como ATURDIDO)
-- DISTRAIDO - Pone al jugador Distraido
-- INCONSCIENTE - Poner al jugador Inconsciente y ponerlo en el Banquillo de las bajas
-- HL - Pone al jugador Herido Leve y ponerlo en el Banquillo de las bajas
-- HG - Pone al jugador Herido Grave y ponerlo en el Banquillo de las bajas
-- MUERTO - Pone al jugador Muerto y ponerlo en el Banquillo de las bajas
+AUTOMATIZAR FALTA
+** INICIO:  REALIZADO FECHA:
 
-** INICIO: 31-08-2026 21h56 REALIZADO FECHA:
+INCLUIR RESTO DE STAFF EN ROSTERS y APP GENERAL (buscar huecos para Incentivos por el Futuro)
+** INICIO:  REALIZADO FECHA:
 
-- Confirmamos por favor que el Asegurar balón lo tenemos puesto para realizarlo sólo una vez por turno cuando sea posible, que si lo consigue se termina la activación del jugador, Que si el jugador tiene en su Clave "GRANDULLON" o la habilidad "TEMBLOROSO" no puede realizar esta acción. Con esto creo que dejamos al 100% esta habilidad finalizada.
-
+Añadir e implementar la patada de Inicio de entrada.
 ** INICIO:  REALIZADO FECHA:
 
 - Sed de Sangre (no se si implementarla de Inicio o más tarde)
@@ -21,9 +13,6 @@ Si el resultado es igual o superior al número que se indica entre paréntesis e
 Al final de su activación, este jugador puede morder a un compañero Thrall Lineman adyacente, sin importar el estado en el que se encuentre dicho Thrall Lineman (puede estar Tumbado, Distraido, Aturdido, etc...).
 Si le muerde, haz una tirada de Heridas por el Thrall Lineman, tratando cualquier resultado de Lesionado como Magullado; esto no causa un cambio de turno a menos que el Thrall Lineman fuese el portador del balón. Si este jugador no muerde a un Thrall Lineman por el motivo que sea, se produce un cambio de turno, este jugador queda Distraído, e inmediatamente deja caer el balón si era el portador. Si estaba en la zona de anotación rival, no anota touchdown. Un jugador que haya fallado esta tirada y quiera realizar una acción de Pase, de Entregar el balón, o anotar touchdown, debe morder a un Thrall Lineman antes de realizar dicha acción o de anotar.
 ** INICIO:  REALIZADO FECHA:
-
-  INCLUIR RESTO DE STAFF EN ROSTERS y APP GENERAL (buscar huecos para Incentivos por el Futuro)
-  ** INICIO:  REALIZADO FECHA:
 
 @@@@@@@@@@@@@@@@@@@ HABILIDADES / RASGOS AUTOMATIZADAS @@@@@@@@@@@@@@@@@@@
 - PLACAR
@@ -46,6 +35,23 @@ Si le muerde, haz una tirada de Heridas por el Thrall Lineman, tratando cualquie
  - PDTE PASAR A GITHUB: GNOMES
  
 ✅✅✅✅✅✅✅ REALIZADOS ✅✅✅✅✅✅✅
+
+- Confirmamos por favor que el Asegurar balón lo tenemos puesto para realizarlo sólo una vez por turno cuando sea posible, que si lo consigue se termina la activación del jugador, Que si el jugador tiene en su Clave "GRANDULLON" o la habilidad "TEMBLOROSO" no puede realizar esta acción. Con esto creo que dejamos al 100% esta habilidad finalizada.
+
+✅* INICIO:  REALIZADO FECHA: 03-09-2026 confirmado
+
+Y esta actualización de los botones manuales que tenemos abajo, hay que crear / actualizar los que te menciono y a parte su funcionamiento es mejor que sea: 1º pulsamos el Boton y 2º se elige al jugador para que haga la accion que el botón le hemos puesto:
+Nuevos botones
+- LEVANTAR - Pone al jugador el pie y sin activar aún
+- TUMBAR - Pone al jugador Tumbado (sin hacer tiradas de Armaduras ni nada, solo marcar al Jugador como TUMBADO)
+- ATURDIR - Pone al jugador aturdido (sin hacer tiradas de Armaduras ni nada, solo marcar al Jugador como ATURDIDO)
+- DISTRAIDO - Pone al jugador Distraido
+- INCONSCIENTE - Poner al jugador Inconsciente y ponerlo en el Banquillo de las bajas
+- HL - Pone al jugador Herido Leve y ponerlo en el Banquillo de las bajas
+- HG - Pone al jugador Herido Grave y ponerlo en el Banquillo de las bajas
+- MUERTO - Pone al jugador Muerto y ponerlo en el Banquillo de las bajas
+
+✅* INICIO: 31-08-2026 21h56 REALIZADO FECHA: 02-09-2026
 
 Revisar Furia, que tiene que seguir siempre y no preguntar si quiere hacer movimiento impulso, no se si esta implementada o no. Preguntar antes.
 Darle de Furia toda la Habilidad para implementarla

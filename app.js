@@ -423,6 +423,7 @@ function applyRemoteState(payload){
   applyingRemote = true;
   players = payload.players;
   ball = payload.ball;
+  if(!ball || typeof ball!=='object'){ console.error('[BB7] 🔍 TRAMPA: ball quedó corrompido justo tras aplicar el payload remoto. payload.ball era:', payload.ball); console.trace(); }
   phase = payload.phase;
   state = payload.state;
   pendingTD = payload.pendingTD;

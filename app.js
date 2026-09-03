@@ -241,22 +241,25 @@ function listenForPeers(){
 function listenForState(){
   console.log('[BB7] listenForState() ENGANCHADO — a partir de aquí debería llegar el estado actual de la sala inmediatamente.');
   stateRef.on('value', snap=>{
-    const payload = snap.val();
-    if(!payload){
+    const envelope = snap.val();
+    if(!envelope){
       console.log('[BB7] RECIBIDO: la sala está vacía (nadie ha enviado nada todavía).');
       return;
     }
-    if(payload.senderId===myPeerId){
-      console.log('[BB7] RECIBIDO seq='+payload.seq+' — es mi propio eco, ignorado.');
+    if(envelope.senderId===myPeerId){
+      console.log('[BB7] RECIBIDO seq='+envelope.seq+' — es mi propio eco, ignorado.');
       return;
     }
-    console.log('[BB7] RECIBIDO seq='+payload.seq+' de otro jugador. phase='+payload.phase+' jugadores='+(payload.players?payload.players.length:0)+' balón row/col='+(payload.ball?payload.ball.row+'/'+payload.ball.col:'?')+' teamAName='+payload.teamAName+' teamBName='+payload.teamBName);
+    let payload;
+    try{ payload = JSON.parse(envelope.blob); }
+    catch(e){ console.error('[BB7] ❌ No se pudo decodificar el blob recibido (seq='+envelope.seq+'):', e); return; }
+    console.log('[BB7] RECIBIDO seq='+envelope.seq+' de otro jugador. phase='+payload.phase+' jugadores='+(Array.isArray(payload.players)?payload.players.length:'?')+' balón='+JSON.stringify(payload.ball)+' teamAName='+payload.teamAName+' teamBName='+payload.teamBName);
     applyingRemote = true;
     try{
       applyRemoteState(payload);
-      console.log('[BB7] ✅ Estado aplicado correctamente (seq='+payload.seq+')');
+      console.log('[BB7] ✅ Estado aplicado correctamente (seq='+envelope.seq+')');
     }catch(err){
-      console.error('[BB7] ❌ ERROR al aplicar el estado recibido (seq='+payload.seq+'):', err);
+      console.error('[BB7] ❌ ERROR al aplicar el estado recibido (seq='+envelope.seq+'):', err);
     }
     applyingRemote = false;
   }, err=>{
@@ -403,11 +406,13 @@ function broadcastState(){
     localSeq += 1;
     snap.senderId = myPeerId;
     snap.seq = localSeq;
-    let safeSnap;
-    try{ safeSnap = JSON.parse(JSON.stringify(snap)); } // Firebase no acepta 'undefined'; esto lo elimina de forma segura
+    let blob;
+    try{ blob = JSON.stringify(snap); } // Firebase borra claves null y objetos/arrays vacíos anidados en cualquier
+    // parte del árbol (p.ej. ball={carrierId:null,row:null,col:null} al inicio, o players=[] recién creada) —
+    // mandar TODO como un único texto evita ese problema de raíz para siempre, sin tener que vigilar campo a campo.
     catch(e){ console.error('[BB7] No se pudo serializar el estado:', e); return; }
-    console.log('[BB7] ENVIANDO seq='+localSeq+' phase='+safeSnap.phase+' jugadores='+(safeSnap.players?safeSnap.players.length:0)+' balón row/col='+(safeSnap.ball?safeSnap.ball.row+'/'+safeSnap.ball.col:'?')+' teamAName='+safeSnap.teamAName+' teamBName='+safeSnap.teamBName);
-    stateRef.set(safeSnap)
+    console.log('[BB7] ENVIANDO seq='+localSeq+' phase='+snap.phase+' jugadores='+(Array.isArray(snap.players)?snap.players.length:'?')+' balón='+JSON.stringify(snap.ball)+' teamAName='+snap.teamAName+' teamBName='+snap.teamBName);
+    stateRef.set({ blob, senderId: myPeerId, seq: localSeq })
       .then(()=> console.log('[BB7] ✅ Envío seq='+localSeq+' confirmado por Firebase'))
       .catch(err=> console.error('[BB7] ❌ ERROR al escribir en Firebase (seq='+localSeq+'):', err));
   } else {
@@ -423,7 +428,6 @@ function applyRemoteState(payload){
   applyingRemote = true;
   players = payload.players;
   ball = payload.ball;
-  if(!ball || typeof ball!=='object'){ console.error('[BB7] 🔍 TRAMPA: ball quedó corrompido justo tras aplicar el payload remoto. payload.ball era:', payload.ball); console.trace(); }
   phase = payload.phase;
   state = payload.state;
   pendingTD = payload.pendingTD;
@@ -4251,3 +4255,14 @@ function setupModalEnhancements(){
 }
 document.addEventListener('DOMContentLoaded', setupModalEnhancements);
 if(document.readyState==='complete' || document.readyState==='interactive'){ setupModalEnhancements(); }
+
+(function showVersionBadge(){
+  const scripts = document.querySelectorAll('script[src*="app.js"]');
+  let v = '?';
+  scripts.forEach(s=>{
+    const m = s.src.match(/[?&]v=([^&]+)/);
+    if(m) v = m[1];
+  });
+  const badge = document.getElementById('versionBadge');
+  if(badge) badge.textContent = 'v' + v;
+})();

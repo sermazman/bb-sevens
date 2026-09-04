@@ -257,6 +257,7 @@ button.full{width:100%; margin-top:6px;}
   background:rgba(216,169,75,0.35); pointer-events:none;
 }
 .cell.reachable-gfi{box-shadow: inset 0 0 0 2px var(--bad); cursor:pointer;}
+.cell.reachable-remote{box-shadow: inset 0 0 0 2px #4fc3f7;}
 .cell.reachable-gfi::after{
   content:''; position:absolute; inset:9px; border-radius:50%;
   background:rgba(192,57,43,0.4); pointer-events:none;
@@ -532,6 +533,14 @@ button.full{width:100%; margin-top:6px;}
   100%{ background:rgba(160,15,15,0.16); }
 }
 @media (max-width: 700px){ #turnoverOverlayText{font-size:34px; letter-spacing:3px;} }
+.app-footer{
+  text-align:center;
+  padding:18px 10px 24px 10px;
+  color:#6b5e48;
+  font-family:'Oswald', sans-serif;
+  font-size:12px;
+  letter-spacing:0.5px;
+}
 .version-badge{
   font-family:'JetBrains Mono', monospace;
   font-size:11px;

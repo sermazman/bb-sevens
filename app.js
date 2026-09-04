@@ -11,9 +11,12 @@ let pendingBallDrop = null;
 let pendingTurnoverAfterResolve = false;
 let pendingDriveStart = null;
 let selected = null;   // token selected during LIVE phase (for movement)
-let declaredAction = null; // null | 'move' | 'blitz' | 'block' | 'secureball' — se fija al elegir en la Ruleta
+let declaredAction = null; // null | 'move' | 'blitz' | 'block' | 'secureball' | 'handoff' — se fija al elegir en la Ruleta
+let remoteSelected = null; // espejo de solo lectura de la selección del OTRO navegador, solo para pintar sus casillas de movimiento
+let remoteDeclaredAction = null;
 let pendingTraitCheck = null; // { playerId, actionLabel, trait }
 let pendingFerocityAttack = null; // { attackerId }
+let pendingHandoffChoice = null; // { fromId }
 let pendingManualStatus = null; // 'standing' | 'tumbado' | 'aturdido' | 'despistado' | 'ko' | 'injured' | 'injuredGrave' | 'dead'
 let placing = null;    // player id currently being placed/repositioned (SETUP phase)
 let phase = 'setup';   // 'setup' | 'live'
@@ -154,6 +157,7 @@ function setTeamTextColor(team, mode){
   broadcastState();
 }
 let blitzUsedByTeam = { A: false, B: false };
+let handoffUsedByTeam = { A: false, B: false };
 let secureBallUsedByTeam = { A: false, B: false };
 let pendingSecureBall = null;
 let secureBallActivePlayer = null;
@@ -299,10 +303,11 @@ function snapshotState(){
   if(!ball || typeof ball!=='object'){ console.error('[BB7] ball estaba corrompido (' + ball + ') — reparado a valores por defecto.'); ball = { carrierId:null, row:null, col:null }; }
   return {
     players, ball, phase, state, pendingTD, pendingDodge, pendingGfi, armorForPlayer, nextId,
+    mySelected: selected, myDeclaredAction: declaredAction,
     koQueue, pendingKo, teamRace, customColorsEnabled, teamCustomColor, teamTextColor, openingKickoffDone, firstHalfKickingTeam, pitchBackgroundUrl, pitchBackgroundExact, teamStaff, teamRerollsLeft, kickoffPendingOOBAfterEvent,
     ballBounceActive, pendingCatch, pendingBallDrop, pendingDriveStart,
     pendingKickPlacement, kickoffBounceStep, kickoffKickingTeam, kickoffReceivingTeam, freeCatchTeam, placingBallFree,
-    blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp, chainPushStack, secureBallUsedByTeam, pendingSecureBall, secureBallActivePlayer,
+    blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp, chainPushStack, secureBallUsedByTeam, pendingSecureBall, secureBallActivePlayer, handoffUsedByTeam, pendingHandoffChoice,
     secureBallModalOpen: document.getElementById('secureBallModal').classList.contains('show'),
     matchEndModalOpen: document.getElementById('matchEndModal').classList.contains('show'),
     matchEndText: document.getElementById('matchEndText').textContent,
@@ -427,6 +432,8 @@ function applyRemoteState(payload){
   }
   applyingRemote = true;
   players = payload.players;
+  remoteSelected = payload.mySelected!==undefined ? payload.mySelected : null;
+  remoteDeclaredAction = payload.myDeclaredAction || null;
   ball = payload.ball;
   phase = payload.phase;
   state = payload.state;
@@ -478,6 +485,8 @@ function applyRemoteState(payload){
   pendingFollowUp = payload.pendingFollowUp;
   chainPushStack = payload.chainPushStack || [];
   secureBallUsedByTeam = payload.secureBallUsedByTeam || { A:false, B:false };
+  handoffUsedByTeam = payload.handoffUsedByTeam || { A:false, B:false };
+  pendingHandoffChoice = payload.pendingHandoffChoice || null;
   secureBallActivePlayer = payload.secureBallActivePlayer;
   pendingSecureBall = payload.pendingSecureBall;
   document.getElementById('secureBallText').textContent = payload.secureBallText || '';
@@ -802,9 +811,11 @@ function presetPositions(team){
   }
   const teamPlayers = players.filter(p=>p.team===team);
   if(!teamPlayers.length){ showInfoModal('Sin jugadores', 'No hay jugadores en ' + teamName(team) + '.'); return; }
+  const retiredConditions = ['ko','injured','injuredGrave','dead'];
+  const placeablePlayers = teamPlayers.filter(p=>!retiredConditions.includes(p.condition));
 
-  // Quitar del campo a los jugadores de este equipo que ya estuvieran colocados
-  teamPlayers.forEach(p=>{
+  // Quitar del campo a los jugadores de este equipo que ya estuvieran colocados (los de baja no se tocan)
+  placeablePlayers.forEach(p=>{
     if(p.onPitch){
       p.onPitch = false; p.row = null; p.col = null; p.condition = 'standing';
       if(ball.carrierId === p.id) ball.carrierId = null;
@@ -820,7 +831,7 @@ function presetPositions(team){
   const skipped = [];
   formation.forEach(entry=>{
     if(entry.row==null || entry.col==null || entry.row<0 || entry.row>5 || entry.col<0 || entry.col>10) return;
-    const p = teamPlayers.find(pl=>String(pl.num)===String(entry.num));
+    const p = placeablePlayers.find(pl=>String(pl.num)===String(entry.num));
     if(!p){ skipped.push(entry.num); return; }
     const boardRow = entry.col;
     const boardCol = team==='A' ? (LOS_A - entry.row) : (LOS_B + entry.row);
@@ -1307,7 +1318,7 @@ function renderPitch(){
           highlightPush = true;
           highlightPushFree = freeActive;
         }
-      } else if(phase==='live' && selected!==null && (declaredAction==='move' || declaredAction==='blitz' || declaredAction==='secureball')){
+      } else if(phase==='live' && selected!==null && (declaredAction==='move' || declaredAction==='blitz' || declaredAction==='secureball' || declaredAction==='handoff')){
         const p = players.find(x=>x.id===selected);
         if(p && inAdjacentReach(p,r,c) && !occupiedBy(r,c)){
           highlightable = true;
@@ -1318,6 +1329,12 @@ function renderPitch(){
         if(p && isLegalSetupCell(p.team,r,c)) highlightable = true;
       }
       if(highlightable) cell.classList.add(highlightKickZone ? 'kick-zone' : (highlightPush ? (highlightPushFree ? 'push-option-free' : 'push-option') : (highlightBounce ? 'bounce-target' : (highlightGfi ? 'reachable-gfi' : 'reachable'))));
+      if(phase==='live' && remoteSelected!==null && remoteSelected!==selected && (remoteDeclaredAction==='move' || remoteDeclaredAction==='blitz' || remoteDeclaredAction==='secureball' || remoteDeclaredAction==='handoff')){
+        const rp = players.find(x=>x.id===remoteSelected);
+        if(rp && inAdjacentReach(rp,r,c) && !occupiedBy(r,c)){
+          cell.classList.add('reachable-remote');
+        }
+      }
       if(highlightBounce && ball.row!==null){
         const num = bounceDirectionNumber(ball.row, ball.col, r, c);
         if(num) cell.dataset.bnum = num;
@@ -1532,6 +1549,11 @@ function canSecureBall(p){
   return !enemyNear;
 }
 
+function canHandoff(p){
+  if(handoffUsedByTeam[p.team]) return false;
+  return moveMode(p) !== null; // no se valida el camino exacto hasta un compañero, igual que Blitz/Asegurar
+}
+
 function getActionMenuOptionsFor(p){
   if(p.condition==='tumbado'){
     // "Ruleta de Tumbados" — levantarse ya cuenta como activación, así que cada opción pasa por su propio chequeo de rasgo.
@@ -1540,6 +1562,7 @@ function getActionMenuOptionsFor(p){
     opts.push({ icon:'🏃', label:'Levantar/Mover', fn:'actionMenuStandMove' });
     if(!blitzUsedByTeam[p.team]) opts.push({ icon:'⚡', label:'Levantar/Blitz', fn:'actionMenuStandBlitz' });
     if(canSecureBall(p)) opts.push({ icon:'🔒', label:'Levantar/Asegurar', fn:'actionMenuStandSecureBall' });
+    if(!handoffUsedByTeam[p.team]) opts.push({ icon:'🤝', label:'Levantar/Entrega', fn:'actionMenuStandHandoff' });
     opts.push({ icon:'🥊', label:'Levantar/Falta', fn:'actionMenuStandFoul' });
     if(playerHasSkill(p, 'salto', 'jump up')){
       opts.push({ icon:'🤸', label:'Salto+Placar', fn:'actionMenuJumpUp' });
@@ -1555,6 +1578,9 @@ function getActionMenuOptionsFor(p){
   opts.push({ icon:'⚔️', label:'Placar', fn:'actionMenuBlock' });
   if(!p.rooted && canSecureBall(p)){
     opts.push({ icon:'🔒', label:'Asegurar', fn:'actionMenuSecureBall' });
+  }
+  if(!p.rooted && canHandoff(p)){
+    opts.push({ icon:'🤝', label:'Entrega', fn:'actionMenuHandoff' });
   }
   opts.push({ icon:'🥊', label:'Falta', fn:'actionMenuFoul' });
   opts.push({ icon:'⏹', label:'Fin', fn:'actionMenuEndActivation', danger:true });
@@ -1648,6 +1674,28 @@ function actionMenuSecureBall(){
   runTraitCheckThen(p, 'secureball');
 }
 
+function actionMenuHandoff(){
+  const id = pendingActionMenuPlayer;
+  closeActionMenu();
+  const p = players.find(x=>x.id===id);
+  if(!p) return;
+  selected = id;
+  handoffUsedByTeam[p.team] = true; // se gasta al declarar, aunque el chequeo de rasgo falle después
+  log('🤝 ' + teamName(p.team) + ' declara su Entrega de Balón de este turno (' + p.name + ').');
+  runTraitCheckThen(p, 'handoff');
+}
+
+function actionMenuStandHandoff(){
+  const id = pendingActionMenuPlayer;
+  closeActionMenu();
+  const p = players.find(x=>x.id===id);
+  if(!p) return;
+  selected = id;
+  handoffUsedByTeam[p.team] = true;
+  log('🤝 ' + teamName(p.team) + ' declara su Entrega de Balón de este turno (' + p.name + ', levantándose).');
+  runTraitCheckThen(p, 'standhandoff');
+}
+
 function actionMenuFoul(){
   const id = pendingActionMenuPlayer;
   closeActionMenu();
@@ -1731,6 +1779,7 @@ function unstickState(){
   activeBlock = null; blockTargeting = null; blockDiceRolled = false; currentBlockDiceIndices = [];
   pendingTraitCheck = null;
   pendingFerocityAttack = null;
+  pendingHandoffChoice = null;
   pendingManualStatus = null;
   armorForPlayer = null; pendingArmorQueue = [];
   golpeMortiferoUsedOnArmor = false;
@@ -1756,12 +1805,14 @@ function unstickState(){
 function endActivation(id){
   const p = players.find(x=>x.id===id);
   if(!p) return;
+  const wasHandoff = declaredAction==='handoff' && ball.carrierId===p.id;
   p.activated = true;
   selected = null;
   declaredAction = null;
   renderPitch(); renderRosters(); renderSelInfo();
   updateStatus(p.name + ' termina su activación.');
   broadcastState();
+  if(wasHandoff) tryResolveHandoff(p);
 }
 
 function cellClicked(r,c){
@@ -1818,7 +1869,7 @@ function cellClicked(r,c){
   }
 
   // live phase — step by step movement
-  if(selected!==null && (declaredAction==='move' || declaredAction==='blitz' || declaredAction==='secureball')){
+  if(selected!==null && (declaredAction==='move' || declaredAction==='blitz' || declaredAction==='secureball' || declaredAction==='handoff')){
     const p = players.find(x=>x.id===selected);
     if(p && inAdjacentReach(p,r,c) && !occupiedBy(r,c)){
       const fromR=p.row, fromC=p.col;
@@ -1844,7 +1895,8 @@ function completeStep(p, r, c, consume){
   // consume==='none' → already accounted for by a prior chained check
   p.justStoodThisActivation = false;
   if(ball.carrierId===p.id){ checkTouchdown(p); }
-  if(moveMode(p)===null || pendingTD){
+  const activationEnding = moveMode(p)===null || pendingTD;
+  if(activationEnding){
     p.activated = true;
     selected = null;
   }
@@ -1857,6 +1909,9 @@ function completeStep(p, r, c, consume){
     } else {
       openCatchModal(p, false, true);
     }
+  }
+  if(!pendingTD && activationEnding && declaredAction==='handoff' && ball.carrierId===p.id){
+    tryResolveHandoff(p);
   }
 }
 
@@ -1880,6 +1935,10 @@ function tokenClicked(id){
   }
   if(blitzActivePlayer!==null && isValidBlockTarget(id)){
     chooseBlockTarget(id);
+    return;
+  }
+  if(pendingHandoffChoice!==null){
+    resolveHandoffChoice(id);
     return;
   }
   if(pendingFerocityAttack!==null){
@@ -2840,6 +2899,43 @@ function applyTraitFailure(p, trait){
   }
 }
 
+function tryResolveHandoff(p){
+  const mates = players.filter(p2 => p2.onPitch && p2.id!==p.id && p2.team===p.team && p2.condition==='standing' &&
+    Math.max(Math.abs(p2.row-p.row), Math.abs(p2.col-p.col))===1);
+  if(mates.length===0) return; // no queda adyacente a nadie, la entrega no se completa (puede seguir jugando la ronda con normalidad)
+  declaredAction = null;
+  if(mates.length===1){
+    resolveHandoffTo(p, mates[0]);
+    return;
+  }
+  pendingHandoffChoice = { fromId: p.id };
+  updateStatus('Entrega de Balón: elegid a qué compañero adyacente se la dais (click en él).');
+  log('🤝 ' + p.name + ' queda adyacente a varios compañeros — elegid a quién se entrega el balón.');
+  broadcastState();
+}
+
+function resolveHandoffChoice(targetId){
+  if(!pendingHandoffChoice) return;
+  const p = players.find(x=>x.id===pendingHandoffChoice.fromId);
+  const target = players.find(x=>x.id===targetId);
+  pendingHandoffChoice = null;
+  if(!p || !target){ broadcastState(); return; }
+  if(target.team!==p.team || target.condition!=='standing' ||
+     Math.max(Math.abs(target.row-p.row), Math.abs(target.col-p.col))!==1){
+    alert('Ese jugador no es un compañero en pie adyacente válido.');
+    return;
+  }
+  resolveHandoffTo(p, target);
+}
+
+function resolveHandoffTo(p, target){
+  ball.carrierId = null;
+  log('🤝 ' + p.name + ' entrega el balón a ' + target.name + '.');
+  renderRosters(); renderPitch(); renderSelInfo();
+  broadcastState();
+  openCatchModal(target, false, false, 0, '', true); // useAtraparSkill=true
+}
+
 function resolveFerocityAttack(targetId){
   if(!pendingFerocityAttack) return;
   const attacker = players.find(x=>x.id===pendingFerocityAttack.attackerId);
@@ -2884,6 +2980,11 @@ function proceedDeclaredAction(p, actionLabel){
   } else if(actionLabel==='secureball'){
     declaredAction = 'secureball';
     secureTheBall();
+  } else if(actionLabel==='handoff'){
+    declaredAction = 'handoff';
+    renderPitch(); renderRosters(); renderSelInfo();
+    updateStatus(p.name + ' declara Entrega de Balón — mueve hasta quedar adyacente a un compañero en pie.');
+    broadcastState();
   } else if(actionLabel==='foul'){
     alert('La acción de Falta aún no está implementada — próximamente.');
   } else if(actionLabel==='standfin'){
@@ -2902,6 +3003,12 @@ function proceedDeclaredAction(p, actionLabel){
     standUp();
     declaredAction = 'secureball';
     secureTheBall();
+  } else if(actionLabel==='standhandoff'){
+    standUp();
+    declaredAction = 'handoff';
+    renderPitch(); renderRosters(); renderSelInfo();
+    updateStatus(p.name + ' declara Entrega de Balón — mueve hasta quedar adyacente a un compañero en pie.');
+    broadcastState();
   } else if(actionLabel==='standfoul'){
     standUp();
     alert('La acción de Falta aún no está implementada — próximamente.');
@@ -3028,11 +3135,11 @@ function resolveBounce(r,c){
   }
 }
 
-function openCatchModal(p, noModifiers, voluntary, extraPenalty, extraReason){
+function openCatchModal(p, noModifiers, voluntary, extraPenalty, extraReason, useAtraparSkill){
   const markers = noModifiers ? 0 : countOpponentTackleZones(p.row, p.col, p.team);
   const extra = noModifiers ? 0 : (extraPenalty || 0);
   const target = noModifiers ? parseAgTarget(p.ag) : parseAgTarget(p.ag) + markers + extra;
-  pendingCatch = { playerId: p.id, target, voluntary: !!voluntary };
+  pendingCatch = { playerId: p.id, target, voluntary: !!voluntary, useAtraparSkill: !!useAtraparSkill };
   catchRerollUsed = false;
   let modText;
   if(noModifiers){
@@ -3043,7 +3150,9 @@ function openCatchModal(p, noModifiers, voluntary, extraPenalty, extraReason){
     if(extra>0) parts.push('-1 por ser ' + (extraReason || 'recogida especial'));
     modText = `(AG${p.ag ?? '?'}${parts.length ? ' ' + parts.join(' ') : ', sin modificadores'})`;
   }
-  document.getElementById('catchText').textContent = `${p.name} intenta recoger el balón — necesita ${target}+ ${modText}. Tirad D6.`;
+  document.getElementById('catchText').textContent = useAtraparSkill
+    ? `${p.name} intenta atrapar la entrega de balón — necesita ${target}+ ${modText}. Tirad D6.`
+    : `${p.name} intenta recoger el balón — necesita ${target}+ ${modText}. Tirad D6.`;
   document.getElementById('catchDie').textContent = '–';
   document.getElementById('catchResultText').textContent = '';
   document.getElementById('catchResultText').className = 'check-result';
@@ -3337,9 +3446,12 @@ function checkActionButtons(prefix, success, p){
   const usedFlag = prefix==='dodge' ? dodgeRerollUsed : prefix==='gfi' ? gfiRerollUsed : prefix==='secureBall' ? secureBallRerollUsed : catchRerollUsed;
   if(!usedFlag){
     const hasDodgeSkill = prefix==='dodge' && playerHasSkill(p, 'esquiva', 'dodge') && !p.dodgeSkillUsedThisTurn;
-    const hasCatchSkill = prefix==='catch' && !p.catchSkillUsedThisTurn && playerHasSkill(p, 'manos seguras', 'sure hands');
+    const isAtraparCatch = prefix==='catch' && pendingCatch && pendingCatch.useAtraparSkill;
+    const hasCatchSkill = prefix==='catch' && !p.catchSkillUsedThisTurn &&
+      (isAtraparCatch ? playerHasSkill(p, 'atrapar', 'catch') : playerHasSkill(p, 'manos seguras', 'sure hands'));
     // Nota: Manos Seguras NUNCA ofrece repetición gratis para Asegurar Balón — solo para recoger el balón del suelo.
-    const skillLabel = 'Manos Seguras';
+    // Atrapar es la habilidad correcta para recibir una Entrega de Balón (y, más adelante, un Pase).
+    const skillLabel = isAtraparCatch ? 'Atrapar' : 'Manos Seguras';
     const hasFreeSkillReroll = hasDodgeSkill || hasCatchSkill;
     if(hasFreeSkillReroll){
       const btn = document.createElement('button');
@@ -3412,7 +3524,8 @@ function useCheckReroll(prefix, isSkill){
     log('🔁 ' + p.name + ' repite gratis con su habilidad Esquivar (ya no podrá volver a usarla este turno).');
   } else {
     p.catchSkillUsedThisTurn = true;
-    log('🔁 ' + p.name + ' repite gratis con su habilidad Manos Seguras (ya no podrá volver a usarla este turno).');
+    const usedSkillLabel = (prefix==='catch' && pendingCatch && pendingCatch.useAtraparSkill) ? 'Atrapar' : 'Manos Seguras';
+    log('🔁 ' + p.name + ' repite gratis con su habilidad ' + usedSkillLabel + ' (ya no podrá volver a usarla este turno).');
   }
   pending.lastSuccess = undefined;
   document.getElementById(prefix+'ActionRow').style.display = 'none';
@@ -3474,6 +3587,7 @@ function resolveDodge(success){
     log('💥 ' + p.name + ' falla la esquiva y cae al suelo.');
     queueBallDropIfCarrier(p.id, toR, toC);
     broadcastState();
+    pendingTurnoverAfterResolve = true;
     openArmorModal(p);
   }
 }
@@ -3546,6 +3660,7 @@ function resolveGfi(success){
     log('💥 ' + p.name + ' falla "a por ellos" y cae al suelo.');
     queueBallDropIfCarrier(p.id, toR, toC);
     broadcastState();
+    pendingTurnoverAfterResolve = true;
     openArmorModal(p);
   }
 }
@@ -3783,6 +3898,7 @@ function beginTurn(team){
   state.active = team;
   blitzUsedByTeam[team] = false;
   secureBallUsedByTeam[team] = false;
+  handoffUsedByTeam[team] = false;
   secureBallActivePlayer = null;
   players.filter(p=>p.team===team).forEach(p=>{
     p.activated = false;

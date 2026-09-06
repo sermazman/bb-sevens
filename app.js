@@ -1561,10 +1561,15 @@ function canHandoff(p){
   if(moveMode(p)===null) return false;
   const reach = playerMoveReach(p);
   if(ball.carrierId!==null){
-    // El balón lo lleva alguien: solo el propio portador puede declarar Entrega, y solo si puede llegar junto a un compañero.
-    if(p.id!==ball.carrierId) return false;
-    return players.some(p2 => p2.onPitch && p2.id!==p.id && p2.team===p.team && p2.condition==='standing' &&
-      Math.max(Math.abs(p2.row-p.row), Math.abs(p2.col-p.col)) <= reach+1);
+    const carrier = players.find(x=>x.id===ball.carrierId);
+    if(!carrier || carrier.team!==p.team) return false; // el balón lo tiene el equipo rival
+    if(p.id===carrier.id){
+      // El propio portador: necesita poder llegar junto a algún compañero en pie.
+      return players.some(p2 => p2.onPitch && p2.id!==p.id && p2.team===p.team && p2.condition==='standing' &&
+        Math.max(Math.abs(p2.row-p.row), Math.abs(p2.col-p.col)) <= reach+1);
+    }
+    // Un compañero (no portador): necesita poder llegar junto al portador.
+    return Math.max(Math.abs(carrier.row-p.row), Math.abs(carrier.col-p.col)) <= reach+1;
   }
   // Balón suelto: cualquier jugador puede intentarlo si su movimiento (+ a por ellos) le permite llegar a la casilla del balón.
   if(ball.row===null) return false;
@@ -1950,12 +1955,14 @@ function tokenClicked(id){
     return;
   }
   if(isValidHandoffTarget(id)){
-    const carrier = players.find(x=>x.id===selected);
-    const target = players.find(x=>x.id===id);
-    carrier.activated = true;
+    const mover = players.find(x=>x.id===selected);
+    const clicked = players.find(x=>x.id===id);
+    const carrier = ball.carrierId===mover.id ? mover : clicked;
+    const receiver = ball.carrierId===mover.id ? clicked : mover;
+    mover.activated = true;
     selected = null;
     declaredAction = null;
-    resolveHandoffTo(carrier, target);
+    resolveHandoffTo(carrier, receiver);
     return;
   }
   if(pendingFerocityAttack!==null){
@@ -2118,12 +2125,19 @@ function isValidBlockTarget(defenderId){
 
 function isValidHandoffTarget(targetId){
   if(declaredAction!=='handoff' || selected===null) return false;
-  const carrier = players.find(x=>x.id===selected);
+  const mover = players.find(x=>x.id===selected);
   const target = players.find(x=>x.id===targetId);
-  if(!carrier || !target || ball.carrierId!==carrier.id) return false;
-  return target.onPitch && target.team===carrier.team && target.id!==carrier.id &&
-    target.condition==='standing' &&
-    Math.max(Math.abs(target.row-carrier.row), Math.abs(target.col-carrier.col))===1;
+  if(!mover || !target || mover.id===target.id) return false;
+  if(Math.max(Math.abs(target.row-mover.row), Math.abs(target.col-mover.col))!==1) return false;
+  if(ball.carrierId===mover.id){
+    // El que se mueve ES el portador: el objetivo debe ser un compañero en pie.
+    return target.onPitch && target.team===mover.team && target.condition==='standing';
+  }
+  if(ball.carrierId===target.id && target.team===mover.team){
+    // El que se mueve es un compañero acercándose al portador.
+    return mover.condition==='standing' && target.condition==='standing';
+  }
+  return false;
 }
 
 function startBlockTargeting(){

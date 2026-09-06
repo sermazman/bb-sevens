@@ -1348,9 +1348,10 @@ function renderPitch(){
         const t = document.createElement('div');
         const condClass = occ.condition==='tumbado' ? ' tumbado' : occ.condition==='aturdido' ? ' aturdido' : occ.condition==='despistado' ? ' despistado' : '';
         const targetClass = isValidBlockTarget(occ.id) ? ' block-target' : '';
+        const handoffClass = isValidHandoffTarget(occ.id) ? ' handoff-target' : '';
         const freeCatchClass = (freeCatchTeam===occ.team && occ.onPitch && occ.condition==='standing') ? ' free-catch-target' : '';
         const showActivated = occ.activated && phase==='live' && occ.team===state.active;
-        t.className = 'token' + (occ.id===selected?' selected':'') + (showActivated?' activated':'') + condClass + targetClass + freeCatchClass;
+        t.className = 'token' + (occ.id===selected?' selected':'') + (showActivated?' activated':'') + condClass + targetClass + handoffClass + freeCatchClass;
         t.dataset.playerId = occ.id;
         t.style.background = tokenColorFor(occ);
         t.style.color = textColorFor(occ);
@@ -1549,9 +1550,25 @@ function canSecureBall(p){
   return !enemyNear;
 }
 
+function playerMoveReach(p){
+  const remaining = p.remainingMove ?? p.ma;
+  const gfiLeft = maxGfiFor(p) - (p.gfiUsed ?? 0);
+  return remaining + Math.max(0, gfiLeft);
+}
+
 function canHandoff(p){
   if(handoffUsedByTeam[p.team]) return false;
-  return moveMode(p) !== null; // no se valida el camino exacto hasta un compañero, igual que Blitz/Asegurar
+  if(moveMode(p)===null) return false;
+  const reach = playerMoveReach(p);
+  if(ball.carrierId!==null){
+    // El balón lo lleva alguien: solo el propio portador puede declarar Entrega, y solo si puede llegar junto a un compañero.
+    if(p.id!==ball.carrierId) return false;
+    return players.some(p2 => p2.onPitch && p2.id!==p.id && p2.team===p.team && p2.condition==='standing' &&
+      Math.max(Math.abs(p2.row-p.row), Math.abs(p2.col-p.col)) <= reach+1);
+  }
+  // Balón suelto: cualquier jugador puede intentarlo si su movimiento (+ a por ellos) le permite llegar a la casilla del balón.
+  if(ball.row===null) return false;
+  return Math.max(Math.abs(ball.row-p.row), Math.abs(ball.col-p.col)) <= reach;
 }
 
 function getActionMenuOptionsFor(p){
@@ -1805,14 +1822,12 @@ function unstickState(){
 function endActivation(id){
   const p = players.find(x=>x.id===id);
   if(!p) return;
-  const wasHandoff = declaredAction==='handoff' && ball.carrierId===p.id;
   p.activated = true;
   selected = null;
   declaredAction = null;
   renderPitch(); renderRosters(); renderSelInfo();
   updateStatus(p.name + ' termina su activación.');
   broadcastState();
-  if(wasHandoff) tryResolveHandoff(p);
 }
 
 function cellClicked(r,c){
@@ -1910,9 +1925,6 @@ function completeStep(p, r, c, consume){
       openCatchModal(p, false, true);
     }
   }
-  if(!pendingTD && activationEnding && declaredAction==='handoff' && ball.carrierId===p.id){
-    tryResolveHandoff(p);
-  }
 }
 
 function tokenClicked(id){
@@ -1937,8 +1949,13 @@ function tokenClicked(id){
     chooseBlockTarget(id);
     return;
   }
-  if(pendingHandoffChoice!==null){
-    resolveHandoffChoice(id);
+  if(isValidHandoffTarget(id)){
+    const carrier = players.find(x=>x.id===selected);
+    const target = players.find(x=>x.id===id);
+    carrier.activated = true;
+    selected = null;
+    declaredAction = null;
+    resolveHandoffTo(carrier, target);
     return;
   }
   if(pendingFerocityAttack!==null){
@@ -2097,6 +2114,16 @@ function isValidBlockTarget(defenderId){
   if(!attacker || !defender) return false;
   return defender.onPitch && defender.team!==attacker.team && defender.condition==='standing' &&
     Math.max(Math.abs(defender.row-attacker.row), Math.abs(defender.col-attacker.col))===1;
+}
+
+function isValidHandoffTarget(targetId){
+  if(declaredAction!=='handoff' || selected===null) return false;
+  const carrier = players.find(x=>x.id===selected);
+  const target = players.find(x=>x.id===targetId);
+  if(!carrier || !target || ball.carrierId!==carrier.id) return false;
+  return target.onPitch && target.team===carrier.team && target.id!==carrier.id &&
+    target.condition==='standing' &&
+    Math.max(Math.abs(target.row-carrier.row), Math.abs(target.col-carrier.col))===1;
 }
 
 function startBlockTargeting(){
@@ -2899,41 +2926,12 @@ function applyTraitFailure(p, trait){
   }
 }
 
-function tryResolveHandoff(p){
-  const mates = players.filter(p2 => p2.onPitch && p2.id!==p.id && p2.team===p.team && p2.condition==='standing' &&
-    Math.max(Math.abs(p2.row-p.row), Math.abs(p2.col-p.col))===1);
-  if(mates.length===0) return; // no queda adyacente a nadie, la entrega no se completa (puede seguir jugando la ronda con normalidad)
-  declaredAction = null;
-  if(mates.length===1){
-    resolveHandoffTo(p, mates[0]);
-    return;
-  }
-  pendingHandoffChoice = { fromId: p.id };
-  updateStatus('Entrega de Balón: elegid a qué compañero adyacente se la dais (click en él).');
-  log('🤝 ' + p.name + ' queda adyacente a varios compañeros — elegid a quién se entrega el balón.');
-  broadcastState();
-}
-
-function resolveHandoffChoice(targetId){
-  if(!pendingHandoffChoice) return;
-  const p = players.find(x=>x.id===pendingHandoffChoice.fromId);
-  const target = players.find(x=>x.id===targetId);
-  pendingHandoffChoice = null;
-  if(!p || !target){ broadcastState(); return; }
-  if(target.team!==p.team || target.condition!=='standing' ||
-     Math.max(Math.abs(target.row-p.row), Math.abs(target.col-p.col))!==1){
-    alert('Ese jugador no es un compañero en pie adyacente válido.');
-    return;
-  }
-  resolveHandoffTo(p, target);
-}
-
 function resolveHandoffTo(p, target){
   ball.carrierId = null;
   log('🤝 ' + p.name + ' entrega el balón a ' + target.name + '.');
   renderRosters(); renderPitch(); renderSelInfo();
   broadcastState();
-  openCatchModal(target, false, false, 0, '', true); // useAtraparSkill=true
+  openCatchModal(target, false, true, 0, '', true); // voluntary=true -> rebote+cambio de turno automático si falla; useAtraparSkill=true
 }
 
 function resolveFerocityAttack(targetId){
@@ -3179,17 +3177,18 @@ function resolveCatch(success){
   if(!pendingCatch){ broadcastState(); return; }
   const p = players.find(x=>x.id===pendingCatch.playerId);
   const wasVoluntary = !!pendingCatch.voluntary;
+  const isHandoffCatch = !!pendingCatch.useAtraparSkill;
   document.getElementById('catchModal').classList.remove('show');
   pendingCatch = null;
   if(p && success){
     ball.carrierId = p.id;
-    log('🏈 ' + p.name + ' recoge el balón.');
+    log(isHandoffCatch ? ('🏈 ' + p.name + ' atrapa la entrega de balón.') : ('🏈 ' + p.name + ' recoge el balón.'));
     renderPitch(); renderRosters();
     broadcastState();
     checkTouchdown(p);
     if(!pendingTD) checkDriveStartAfterBounce();
   } else if(p){
-    log('🏈 ' + p.name + ' falla la recogida — el balón sigue botando.' + (wasVoluntary ? ' Cambio de turno.' : ''));
+    log((isHandoffCatch ? ('🏈 ' + p.name + ' falla al atrapar la entrega') : ('🏈 ' + p.name + ' falla la recogida')) + ' — el balón rebota.' + (wasVoluntary ? ' Cambio de turno.' : ''));
     broadcastState();
     startBallBounce();
     if(wasVoluntary) autoTurnoverThenEndTurn();

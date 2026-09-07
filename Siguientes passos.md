@@ -1,9 +1,6 @@
 ACCION DE PASAR
 ** INICIO:  REALIZADO FECHA:
 
-ENTREGAR BALÓN - "En pruebas, parece que va bien"
-** INICIO: 03-09-2026 REALIZADO FECHA:
-
 AUTOMATIZAR FALTA
 ** INICIO:  REALIZADO FECHA:
 
@@ -29,13 +26,26 @@ Si le muerde, haz una tirada de Heridas por el Thrall Lineman, tratando cualquie
 - ESTUPIDO / REALMENTE ESTUPIDO / IRA DESCONTROLADA / FEROCIDAD ANIMAL (OK)
 - FURIA (OK 03-09-2026)
 - GOLPE MORTIFERO (OK 03-09-2026)
+- CUERNOS (OK 07-09-2026)
 
-¿¿¿ EN PRUEBAS ???
+¿¿¿ EN PRUEBAS ??? (las habilidades con guión, están en Pruebas)
 - PROFESIONAL (pruebas desde 01-09-2026)
-- CUERNOS (pruebas desde 01-09-2026)
 - ATRAPAR (pruebas desde 03-09-2026)
+EL BALON ES MIO
+EQUILIBRIO FIRME
+GARRAS
+FORCEJEAR
+CABEZA DURA
+ECHARSE A UN LADO
+LLAVE DE BRAZO
+DEJADA
 
-- PRÓXIMAS VIABLES: PASAR y ANIMOSIDAD, GARRAS, CABEZA DURA, LLAVE DE BRAZO, DEJADA, NERVIOS DE ACERO, ECHARSE A UN LADO, RECEPCIÓN HEROICA
+HABILIDADES TRAS IMPLEMENTAR PASAR:
+PARTENUBES
+PASE SEGURO
+RECEPCIÓN HERÓICA
+ANIMOSIDAD
+NERVIOS DE ACERO
 
 @@@@@@@@@@@@@@@@@@@ EQUIPOS @@@@@@@@@@@@@@@@@@@
  - PDTE PASAR A SHEETS: HALFLING, GOBLIN, SLANN, SNOTLINGS
@@ -43,6 +53,9 @@ Si le muerde, haz una tirada de Heridas por el Thrall Lineman, tratando cualquie
  - PDTE PASAR A GITHUB: GNOMES
  
 ✅✅✅✅✅✅✅ REALIZADOS ✅✅✅✅✅✅✅
+
+ENTREGAR BALÓN - 
+✅* INICIO: 03-09-2026 REALIZADO FECHA:
 
 - Confirmamos por favor que el Asegurar balón lo tenemos puesto para realizarlo sólo una vez por turno cuando sea posible, que si lo consigue se termina la activación del jugador, Que si el jugador tiene en su Clave "GRANDULLON" o la habilidad "TEMBLOROSO" no puede realizar esta acción. Con esto creo que dejamos al 100% esta habilidad finalizada.
 

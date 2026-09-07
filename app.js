@@ -158,6 +158,8 @@ function setTeamTextColor(team, mode){
 }
 let blitzUsedByTeam = { A: false, B: false };
 let handoffUsedByTeam = { A: false, B: false };
+let foulUsedByTeam = { A: false, B: false };
+let pendingFoulContext = null; // { foulerId, targetId, offAssists, defAssists, modifier, doubleDetected }
 let secureBallUsedByTeam = { A: false, B: false };
 let pendingSecureBall = null;
 let secureBallActivePlayer = null;
@@ -307,7 +309,7 @@ function snapshotState(){
     koQueue, pendingKo, teamRace, customColorsEnabled, teamCustomColor, teamTextColor, openingKickoffDone, firstHalfKickingTeam, pitchBackgroundUrl, pitchBackgroundExact, teamStaff, teamRerollsLeft, kickoffPendingOOBAfterEvent,
     ballBounceActive, pendingCatch, pendingBallDrop, pendingDriveStart,
     pendingKickPlacement, kickoffBounceStep, kickoffKickingTeam, kickoffReceivingTeam, freeCatchTeam, placingBallFree,
-    blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp, chainPushStack, secureBallUsedByTeam, pendingSecureBall, secureBallActivePlayer, handoffUsedByTeam, pendingHandoffChoice,
+    blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp, chainPushStack, secureBallUsedByTeam, pendingSecureBall, secureBallActivePlayer, handoffUsedByTeam, pendingHandoffChoice, foulUsedByTeam, pendingFoulContext,
     secureBallModalOpen: document.getElementById('secureBallModal').classList.contains('show'),
     matchEndModalOpen: document.getElementById('matchEndModal').classList.contains('show'),
     matchEndText: document.getElementById('matchEndText').textContent,
@@ -486,6 +488,8 @@ function applyRemoteState(payload){
   chainPushStack = payload.chainPushStack || [];
   secureBallUsedByTeam = payload.secureBallUsedByTeam || { A:false, B:false };
   handoffUsedByTeam = payload.handoffUsedByTeam || { A:false, B:false };
+  foulUsedByTeam = payload.foulUsedByTeam || { A:false, B:false };
+  pendingFoulContext = payload.pendingFoulContext || null;
   pendingHandoffChoice = payload.pendingHandoffChoice || null;
   secureBallActivePlayer = payload.secureBallActivePlayer;
   pendingSecureBall = payload.pendingSecureBall;
@@ -811,7 +815,7 @@ function presetPositions(team){
   }
   const teamPlayers = players.filter(p=>p.team===team);
   if(!teamPlayers.length){ showInfoModal('Sin jugadores', 'No hay jugadores en ' + teamName(team) + '.'); return; }
-  const retiredConditions = ['ko','injured','injuredGrave','dead'];
+  const retiredConditions = ['ko','injured','injuredGrave','dead','expelled'];
   const placeablePlayers = teamPlayers.filter(p=>!retiredConditions.includes(p.condition));
 
   // Quitar del campo a los jugadores de este equipo que ya estuvieran colocados (los de baja no se tocan)
@@ -869,7 +873,7 @@ function renderRosters(){
   ['A','B'].forEach(team=>{
     const el = document.getElementById('roster'+team);
     el.innerHTML='';
-    const retired = ['ko','injured','injuredGrave','dead'];
+    const retired = ['ko','injured','injuredGrave','dead','expelled'];
     players.filter(p=>p.team===team && !retired.includes(p.condition)).forEach(p=>{
       const div = document.createElement('div');
       div.className = 'roster-item' + (p.onPitch ? ' on-pitch' : '') + (placing===p.id ? ' picking':'');
@@ -923,7 +927,8 @@ function renderReserveZone(){
       { cond:'ko', badgeClass:'ko', badgeChar:'★', extraLabel:'INCONSCIENTE' },
       { cond:'injured', badgeClass:'light', badgeChar:'✚', extraLabel:'HERIDO (LEVE)' },
       { cond:'injuredGrave', badgeClass:'grave', badgeChar:'✚', extraLabel:'HERIDA GRAVE' },
-      { cond:'dead', badgeClass:'dead', badgeChar:'✚', extraLabel:'MUERTO' }
+      { cond:'dead', badgeClass:'dead', badgeChar:'✚', extraLabel:'MUERTO' },
+      { cond:'expelled', badgeClass:'expelled', badgeChar:'■', extraLabel:'EXPULSADO' }
     ];
 
     let chipsHtml = '';
@@ -1318,7 +1323,7 @@ function renderPitch(){
           highlightPush = true;
           highlightPushFree = freeActive;
         }
-      } else if(phase==='live' && selected!==null && (declaredAction==='move' || declaredAction==='blitz' || declaredAction==='secureball' || declaredAction==='handoff')){
+      } else if(phase==='live' && selected!==null && (declaredAction==='move' || declaredAction==='blitz' || declaredAction==='secureball' || declaredAction==='handoff' || declaredAction==='foul')){
         const p = players.find(x=>x.id===selected);
         if(p && inAdjacentReach(p,r,c) && !occupiedBy(r,c)){
           highlightable = true;
@@ -1349,9 +1354,10 @@ function renderPitch(){
         const condClass = occ.condition==='tumbado' ? ' tumbado' : occ.condition==='aturdido' ? ' aturdido' : occ.condition==='despistado' ? ' despistado' : '';
         const targetClass = isValidBlockTarget(occ.id) ? ' block-target' : '';
         const handoffClass = isValidHandoffTarget(occ.id) ? ' handoff-target' : '';
+        const foulClass = isValidFoulTarget(occ.id) ? ' foul-target' : '';
         const freeCatchClass = (freeCatchTeam===occ.team && occ.onPitch && occ.condition==='standing') ? ' free-catch-target' : '';
         const showActivated = occ.activated && phase==='live' && occ.team===state.active;
-        t.className = 'token' + (occ.id===selected?' selected':'') + (showActivated?' activated':'') + condClass + targetClass + handoffClass + freeCatchClass;
+        t.className = 'token' + (occ.id===selected?' selected':'') + (showActivated?' activated':'') + condClass + targetClass + handoffClass + foulClass + freeCatchClass;
         t.dataset.playerId = occ.id;
         t.style.background = tokenColorFor(occ);
         t.style.color = textColorFor(occ);
@@ -1576,6 +1582,14 @@ function canHandoff(p){
   return Math.max(Math.abs(ball.row-p.row), Math.abs(ball.col-p.col)) <= reach;
 }
 
+function canFoul(p){
+  if(foulUsedByTeam[p.team]) return false;
+  if(moveMode(p)===null) return false;
+  const reach = playerMoveReach(p);
+  return players.some(p2 => p2.onPitch && p2.team!==p.team && (p2.condition==='tumbado' || p2.condition==='aturdido') &&
+    Math.max(Math.abs(p2.row-p.row), Math.abs(p2.col-p.col)) <= reach+1);
+}
+
 function getActionMenuOptionsFor(p){
   if(p.condition==='tumbado'){
     // "Ruleta de Tumbados" — levantarse ya cuenta como activación, así que cada opción pasa por su propio chequeo de rasgo.
@@ -1604,7 +1618,9 @@ function getActionMenuOptionsFor(p){
   if(!p.rooted && canHandoff(p)){
     opts.push({ icon:'🤝', label:'Entrega', fn:'actionMenuHandoff' });
   }
-  opts.push({ icon:'🥊', label:'Falta', fn:'actionMenuFoul' });
+  if(canFoul(p)){
+    opts.push({ icon:'🥊', label:'Falta', fn:'actionMenuFoul' });
+  }
   opts.push({ icon:'⏹', label:'Fin', fn:'actionMenuEndActivation', danger:true });
   return opts;
 }
@@ -1724,6 +1740,8 @@ function actionMenuFoul(){
   const p = players.find(x=>x.id===id);
   if(!p) return;
   selected = id;
+  foulUsedByTeam[p.team] = true; // se gasta al declarar, aunque el chequeo de rasgo falle después
+  log('🥊 ' + teamName(p.team) + ' declara su Falta de este turno (' + p.name + ').');
   runTraitCheckThen(p, 'foul');
 }
 
@@ -1779,6 +1797,8 @@ function actionMenuStandFoul(){
   const p = players.find(x=>x.id===id);
   if(!p) return;
   selected = id;
+  foulUsedByTeam[p.team] = true;
+  log('🥊 ' + teamName(p.team) + ' declara su Falta de este turno (' + p.name + ', levantándose).');
   runTraitCheckThen(p, 'standfoul');
 }
 
@@ -1802,6 +1822,7 @@ function unstickState(){
   pendingTraitCheck = null;
   pendingFerocityAttack = null;
   pendingHandoffChoice = null;
+  pendingFoulContext = null;
   pendingManualStatus = null;
   armorForPlayer = null; pendingArmorQueue = [];
   golpeMortiferoUsedOnArmor = false;
@@ -1889,7 +1910,7 @@ function cellClicked(r,c){
   }
 
   // live phase — step by step movement
-  if(selected!==null && (declaredAction==='move' || declaredAction==='blitz' || declaredAction==='secureball' || declaredAction==='handoff')){
+  if(selected!==null && (declaredAction==='move' || declaredAction==='blitz' || declaredAction==='secureball' || declaredAction==='handoff' || declaredAction==='foul')){
     const p = players.find(x=>x.id===selected);
     if(p && inAdjacentReach(p,r,c) && !occupiedBy(r,c)){
       const fromR=p.row, fromC=p.col;
@@ -1954,6 +1975,15 @@ function tokenClicked(id){
     chooseBlockTarget(id);
     return;
   }
+  if(isValidFoulTarget(id)){
+    const fouler = players.find(x=>x.id===selected);
+    const target = players.find(x=>x.id===id);
+    fouler.activated = true;
+    selected = null;
+    declaredAction = null;
+    startFoulOn(fouler, target);
+    return;
+  }
   if(isValidHandoffTarget(id)){
     const mover = players.find(x=>x.id===selected);
     const clicked = players.find(x=>x.id===id);
@@ -2007,7 +2037,22 @@ function tokenClicked(id){
     return;
   }
 
-  selected = (selected===id) ? null : id;
+  if(selected===id){
+    if(p.condition==='standing' && !p.activated &&
+       (((p.remainingMove ?? p.ma) < p.ma) || (p.gfiUsed ?? 0) > 0)){
+      p.activated = true;
+      declaredAction = null;
+      selected = null;
+      log('⏹️ ' + p.name + ' termina su activación (se movió y se deseleccionó).');
+      renderRosters(); renderPitch(); renderSelInfo();
+      broadcastState();
+      return;
+    }
+    selected = null;
+    declaredAction = null;
+  } else {
+    selected = id;
+  }
   renderRosters(); renderPitch(); renderSelInfo();
   broadcastState();
 }
@@ -2121,6 +2166,15 @@ function isValidBlockTarget(defenderId){
   if(!attacker || !defender) return false;
   return defender.onPitch && defender.team!==attacker.team && defender.condition==='standing' &&
     Math.max(Math.abs(defender.row-attacker.row), Math.abs(defender.col-attacker.col))===1;
+}
+
+function isValidFoulTarget(targetId){
+  if(declaredAction!=='foul' || selected===null) return false;
+  const fouler = players.find(x=>x.id===selected);
+  const target = players.find(x=>x.id===targetId);
+  if(!fouler || !target) return false;
+  return target.onPitch && target.team!==fouler.team && (target.condition==='tumbado' || target.condition==='aturdido') &&
+    Math.max(Math.abs(target.row-fouler.row), Math.abs(target.col-fouler.col))===1;
 }
 
 function isValidHandoffTarget(targetId){
@@ -2940,6 +2994,39 @@ function applyTraitFailure(p, trait){
   }
 }
 
+function startRefereeArgument(fouler){
+  const roll = Math.floor(Math.random()*6)+1;
+  if(roll<=4){
+    fouler.condition = 'expelled';
+    fouler.onPitch = false; fouler.row = null; fouler.col = null;
+    if(ball.carrierId===fouler.id) ball.carrierId = null;
+    log('🟥 ' + fouler.name + ' protesta al árbitro (D6=' + roll + ') — "¡ME DA IGUAL!" Expulsado del resto del partido.');
+  } else {
+    log('🟨 ' + fouler.name + ' protesta al árbitro (D6=' + roll + ') — "AHORA QUE LO DICES..." No es expulsado, vuelve a su casilla. Cambio de turno igualmente.');
+  }
+  renderRosters(); renderPitch(); renderScoreboard(); renderSelInfo();
+  broadcastState();
+  autoTurnoverThenEndTurn();
+}
+
+function startFoulOn(fouler, target){
+  const offAssisters = getAssistingPlayers(fouler.team, target.id, fouler.id);
+  const defAssisters = getAssistingPlayers(target.team, fouler.id, target.id);
+  const modifier = offAssisters.length - defAssisters.length;
+  pendingFoulContext = {
+    foulerId: fouler.id, targetId: target.id,
+    offAssists: offAssisters.length, defAssists: defAssisters.length, modifier,
+    doubleDetected: false
+  };
+  const assistTxt = (offAssisters.length>0 || defAssisters.length>0)
+    ? (' (' + (offAssisters.length>0 ? '+'+offAssisters.length+' apoyo ofensivo ('+joinNames(offAssisters)+')' : '') +
+       (offAssisters.length>0 && defAssisters.length>0 ? ', ' : '') +
+       (defAssisters.length>0 ? '-'+defAssisters.length+' apoyo defensivo ('+joinNames(defAssisters)+')' : '') + ')')
+    : '';
+  log('🥊 ' + fouler.name + ' comete Falta contra ' + target.name + assistTxt + '.');
+  openArmorModal(target);
+}
+
 function resolveHandoffTo(p, target){
   ball.carrierId = null;
   log('🤝 ' + p.name + ' entrega el balón a ' + target.name + '.');
@@ -2998,7 +3085,10 @@ function proceedDeclaredAction(p, actionLabel){
     updateStatus(p.name + ' declara Entrega de Balón — mueve hasta quedar adyacente a un compañero en pie.');
     broadcastState();
   } else if(actionLabel==='foul'){
-    alert('La acción de Falta aún no está implementada — próximamente.');
+    declaredAction = 'foul';
+    renderPitch(); renderRosters(); renderSelInfo();
+    updateStatus(p.name + ' declara Falta — mueve hasta quedar adyacente a un rival Tumbado o Aturdido.');
+    broadcastState();
   } else if(actionLabel==='standfin'){
     standUp();
     endActivation(p.id);
@@ -3023,7 +3113,10 @@ function proceedDeclaredAction(p, actionLabel){
     broadcastState();
   } else if(actionLabel==='standfoul'){
     standUp();
-    alert('La acción de Falta aún no está implementada — próximamente.');
+    declaredAction = 'foul';
+    renderPitch(); renderRosters(); renderSelInfo();
+    updateStatus(p.name + ' declara Falta — mueve hasta quedar adyacente a un rival Tumbado o Aturdido.');
+    broadcastState();
   }
 }
 
@@ -3717,9 +3810,21 @@ function rollArmor(){
   const sum = d1+d2;
   document.getElementById('armorDie1').textContent=d1;
   document.getElementById('armorDie2').textContent=d2;
-  document.getElementById('armorSum').textContent='Suma: '+sum;
   const p = players.find(x=>x.id===armorForPlayer);
-  log('🎲 Armadura (' + (p?p.name:'?') + '): ' + d1 + ' + ' + d2 + ' = ' + sum);
+
+  const isFoulRoll = pendingFoulContext && pendingFoulContext.targetId===armorForPlayer;
+  if(isFoulRoll && d1===d2){
+    pendingFoulContext.doubleDetected = true;
+    log('⚠️ Doble natural (' + d1 + '-' + d1 + ') en la tirada de Armadura de la Falta — el que ha cometido la falta será Expulsado al terminar esta acción.');
+  }
+  if(isFoulRoll && pendingFoulContext.modifier!==0){
+    const mSign = pendingFoulContext.modifier>0 ? '+' : '';
+    document.getElementById('armorSum').textContent = 'Suma: ' + sum + ' ' + mSign + pendingFoulContext.modifier + ' (apoyos de Falta) = ' + (sum+pendingFoulContext.modifier);
+    log('🎲 Armadura (Falta a ' + (p?p.name:'?') + '): ' + d1 + ' + ' + d2 + ' = ' + sum + ' ' + mSign + pendingFoulContext.modifier + ' = ' + (sum+pendingFoulContext.modifier));
+  } else {
+    document.getElementById('armorSum').textContent='Suma: '+sum;
+    log('🎲 Armadura (' + (p?p.name:'?') + '): ' + d1 + ' + ' + d2 + ' = ' + sum);
+  }
 
   const gmAttackerId = p ? golpeMortiferoMap[p.id] : null;
   const gmAttacker = gmAttackerId ? players.find(x=>x.id===gmAttackerId) : null;
@@ -3747,8 +3852,12 @@ function armorResult(broken){
     document.getElementById('injuryBlock').style.display='block';
     log('🛡️ Armadura ROTA' + (p?(' — '+p.name):'') + '. Tirad heridas.');
   } else {
-    if(p){ p.condition='tumbado'; p.rooted = false; }
-    log('🛡️ Armadura aguanta' + (p?(' — '+p.name+' sigue tumbado.'):'.'));
+    if(p){
+      const wasAlreadyDown = pendingFoulContext && pendingFoulContext.targetId===p.id && (p.condition==='tumbado' || p.condition==='aturdido');
+      if(!wasAlreadyDown) p.condition = 'tumbado';
+      p.rooted = false;
+    }
+    log('🛡️ Armadura aguanta' + (p?(' — '+p.name+'.'):'.'));
     renderRosters(); renderPitch(); renderSelInfo();
     closeArmorModal();
   }
@@ -3759,6 +3868,11 @@ function rollInjury(){
   const d1=Math.floor(Math.random()*6)+1, d2=Math.floor(Math.random()*6)+1;
   const sum = d1+d2;
   const p = players.find(x=>x.id===armorForPlayer);
+  const isFoulRoll = pendingFoulContext && pendingFoulContext.targetId===armorForPlayer;
+  if(isFoulRoll && d1===d2 && !pendingFoulContext.doubleDetected){
+    pendingFoulContext.doubleDetected = true;
+    log('⚠️ Doble natural (' + d1 + '-' + d1 + ') en la tirada de Heridas de la Falta — el que ha cometido la falta será Expulsado al terminar esta acción.');
+  }
   const gmAttackerId = p ? golpeMortiferoMap[p.id] : null;
   const gmAttacker = gmAttackerId ? players.find(x=>x.id===gmAttackerId) : null;
   const gmForInjury = p && !golpeMortiferoUsedOnArmor && gmAttacker && playerHasSkill(gmAttacker, 'golpe mortífero', 'golpe mortifero', 'mighty blow');
@@ -3852,6 +3966,15 @@ function closeArmorModal(){
   if(pendingTurnoverAfterResolve){
     pendingTurnoverAfterResolve = false;
     autoTurnoverThenEndTurn();
+    return;
+  }
+  if(pendingFoulContext && pendingFoulContext.targetId===resolvedPlayerId){
+    const ctx = pendingFoulContext;
+    pendingFoulContext = null;
+    if(ctx.doubleDetected){
+      const fouler = players.find(x=>x.id===ctx.foulerId);
+      if(fouler) startRefereeArgument(fouler);
+    }
   }
 }
 
@@ -3912,6 +4035,7 @@ function beginTurn(team){
   blitzUsedByTeam[team] = false;
   secureBallUsedByTeam[team] = false;
   handoffUsedByTeam[team] = false;
+  foulUsedByTeam[team] = false;
   secureBallActivePlayer = null;
   players.filter(p=>p.team===team).forEach(p=>{
     p.activated = false;

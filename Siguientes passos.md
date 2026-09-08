@@ -1,14 +1,15 @@
-ACCION DE PASAR
-** INICIO:  REALIZADO FECHA:
+ACCION DE PASAR - Redactar todo y ver como hacerlo lo forma bonita
+** INICIO: Previsión 08-09 ó 09-09 REALIZADO FECHA:
 
-AUTOMATIZAR FALTA
-** INICIO:  REALIZADO FECHA:
+AUTOMATIZAR FALTA - En fase de pruebas
+** INICIO: 07-09-2026 REALIZADO FECHA:
 
 INCLUIR RESTO DE STAFF EN ROSTERS y APP GENERAL (buscar huecos para Incentivos por el Futuro)
 ** INICIO:  REALIZADO FECHA:
 
-Añadir e implementar la patada de Inicio de entrada.
-** INICIO:  REALIZADO FECHA:
+Añadir e implementar la patada de Inicio de entrada. 
+En proceso automatización tirada de Dados
+** INICIO: 08-09-2026 REALIZADO FECHA:
 
 - Sed de Sangre (no se si implementarla de Inicio o más tarde)
 Cuando este jugador es activado o se marque la primera casilla para movimiento, tras declarar su acción, debe tirar 106, sumando 1 al dado si ha declarado una acción de Placaje o de Penetración. 
@@ -31,9 +32,9 @@ Si le muerde, haz una tirada de Heridas por el Thrall Lineman, tratando cualquie
 ¿¿¿ EN PRUEBAS ??? (las habilidades con guión, están en Pruebas)
 - PROFESIONAL (pruebas desde 01-09-2026)
 - ATRAPAR (pruebas desde 03-09-2026)
+- GARRAS (pruebas desde 08-09-2026)
 EL BALON ES MIO
 EQUILIBRIO FIRME
-GARRAS
 FORCEJEAR
 CABEZA DURA
 ECHARSE A UN LADO

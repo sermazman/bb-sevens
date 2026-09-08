@@ -1,10 +1,13 @@
 ACCION DE PASAR - Redactar todo y ver como hacerlo lo forma bonita
+
 ** INICIO: Previsión 08-09 ó 09-09 REALIZADO FECHA:
 
 AUTOMATIZAR FALTA - En fase de pruebas
+
 ** INICIO: 07-09-2026 REALIZADO FECHA:
 
 INCLUIR RESTO DE STAFF EN ROSTERS y APP GENERAL (buscar huecos para Incentivos por el Futuro)
+
 ** INICIO:  REALIZADO FECHA:
 
 Añadir e implementar la patada de Inicio de entrada. 

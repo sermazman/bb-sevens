@@ -3387,19 +3387,27 @@ function continueAfterKickoffEvent(){
   startKickoffBounce(2);
 }
 
+function kickoffDirOffset(n){
+  const map = {
+    1:{dr:-1,dc:-1}, 2:{dr:-1,dc:0}, 3:{dr:-1,dc:1},
+    4:{dr:0,dc:-1},                  5:{dr:0,dc:1},
+    6:{dr:1,dc:-1},  7:{dr:1,dc:0},  8:{dr:1,dc:1}
+  };
+  return map[n];
+}
+
 function startKickoffBounce(step){
   kickoffBounceStep = step;
-  if(step===1) kickoffDistance = 1;
-  document.getElementById('kickoffPanel').style.display = 'block';
-  document.getElementById('kickoffEventPanel').style.display = 'none';
-  document.getElementById('kickoffDistRow').style.display = step===1 ? 'flex' : 'none';
-  document.getElementById('kickoffDirDie').textContent = '–';
-  document.getElementById('kickoffDistDie').textContent = '–';
-  document.getElementById('kickoffStepText').textContent = step===1
-    ? 'Patada inicial: tirad 1D8 (dirección) y 1D6 (nº de casillas). Elegid la casilla numerada (1-8: 1-2-3 arriba, 4-balón-5 en medio, 6-7-8 abajo), o "Fuera del campo".'
-    : 'Rebote final: tirad 1D8 y elegid la casilla numerada (1-8), o "Fuera del campo".';
-  renderPitch();
-  broadcastState();
+  const dirRoll = Math.floor(Math.random()*8)+1;
+  const offset = kickoffDirOffset(dirRoll);
+  if(step===1){
+    kickoffDistance = Math.floor(Math.random()*6)+1;
+    log('🎲 Patada inicial: D8=' + dirRoll + ', D6=' + kickoffDistance + ' casilla(s).');
+  } else {
+    kickoffDistance = 1;
+    log('🎲 Rebote final: D8=' + dirRoll + '.');
+  }
+  resolveKickoffBounce(ball.row + offset.dr, ball.col + offset.dc);
 }
 
 function rollKickoffDistanceDie(){
@@ -3826,9 +3834,17 @@ function rollArmor(){
     log('🎲 Armadura (' + (p?p.name:'?') + '): ' + d1 + ' + ' + d2 + ' = ' + sum);
   }
 
+  const garrasAttackerId = p ? golpeMortiferoMap[p.id] : null;
+  const garrasAttacker = garrasAttackerId ? players.find(x=>x.id===garrasAttackerId) : null;
+  golpeMortiferoUsedOnArmor = false;
+  if(p && garrasAttacker && playerHasSkill(garrasAttacker, 'garras', 'claws') && sum>=8){
+    log('🩸 Garras de ' + garrasAttacker.name + ': resultado natural ' + sum + ' (8+) — la Armadura se rompe siempre, sea cual sea su AV.');
+    armorResult(true);
+    return;
+  }
+
   const gmAttackerId = p ? golpeMortiferoMap[p.id] : null;
   const gmAttacker = gmAttackerId ? players.find(x=>x.id===gmAttackerId) : null;
-  golpeMortiferoUsedOnArmor = false;
   if(p && gmAttacker && playerHasSkill(gmAttacker, 'golpe mortífero', 'golpe mortifero', 'mighty blow')){
     const target = parseAvTarget(p.av);
     const naturallyBroken = sum >= target;

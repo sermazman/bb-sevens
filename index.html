@@ -367,6 +367,7 @@
 
     <div id="injuryBlock" style="display:none; margin-top:14px; border-top:1px solid var(--panel-line); padding-top:12px;">
       <h3 style="margin-bottom:6px; color:var(--gold);">TIRADA DE HERIDAS</h3>
+      <div id="cabezaDuraWarning" style="display:none; color:var(--bad); font-weight:800; text-align:center; margin-bottom:8px;">⚠️ Jugador con CABEZA DURA</div>
       <div class="row" style="justify-content:center; gap:10px;">
         <div class="die-face" id="injuryDie1">–</div>
         <div class="die-face" id="injuryDie2">–</div>
@@ -422,6 +423,7 @@
     </div>
     <div class="small-note" id="blockDiceHint" style="display:none; margin-top:8px;">Click en el dado con el resultado que queréis aplicar:</div>
     <div class="block-face-list" id="blockDiceArea"></div>
+    <button class="full" id="blockProfesionalBtn" onclick="useProfesionalOnBlock()" style="display:none; margin-top:8px;">🎓 Usar Profesional (3+ para poder repetir un dado)</button>
     <div id="blockOutcomeRow" class="disabled-block" style="margin-top:12px;">
       <button class="full" id="blockFreePushBtn" onclick="toggleFreePushForActiveBlock()" style="margin-bottom:10px;">🔓 Activar todos los empujes (para este placaje)</button>
       <div id="blockChooserBanner" class="chooser-banner">ELIGE: —</div>
@@ -535,7 +537,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
-<script src="app.js?v=20250908-9"></script>
+<script src="app.js?v=20250908-10"></script>
 
 </body>
 </html>

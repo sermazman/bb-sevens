@@ -317,6 +317,7 @@ function snapshotState(){
     pendingForcejearChoice,
     matchEndText: document.getElementById('matchEndText').textContent,
     pendingActionMenuPlayer,
+    dejadaWheelActive,
     pendingManualStatus,
     turnoverOverlayOpen: document.getElementById('turnoverOverlay').classList.contains('show'),
     declaredAction, pendingTraitCheck, pendingFerocityAttack,
@@ -359,6 +360,7 @@ function snapshotState(){
     armorRollBtnVisible: document.getElementById('armorRollBtn').style.display!=='none',
     crowdPushMode,
     injuryBlockVisible: document.getElementById('injuryBlock').style.display==='block',
+    cabezaDuraWarningVisible: document.getElementById('cabezaDuraWarning').style.display==='block',
     injuryDie1: document.getElementById('injuryDie1').textContent,
     injuryDie2: document.getElementById('injuryDie2').textContent,
     injurySum: document.getElementById('injurySum').textContent,
@@ -368,7 +370,8 @@ function snapshotState(){
     blockModalOpen: document.getElementById('blockModal').classList.contains('show'),
     blockText: document.getElementById('blockText').textContent,
     blockDiceAreaHtml: document.getElementById('blockDiceArea').innerHTML,
-    currentBlockDiceIndices,
+    currentBlockDiceIndices, blockProfesionalUsed, profesionalPickMode,
+    blockProfesionalBtnVisible: document.getElementById('blockProfesionalBtn').style.display==='block',
     blockOutcomeRowVisible: document.getElementById('blockOutcomeRow').classList.contains('active'),
     blockFreePushBtnText: document.getElementById('blockFreePushBtn').textContent,
     blockFreePushBtnActive: document.getElementById('blockFreePushBtn').classList.contains('active-toggle'),
@@ -590,6 +593,7 @@ function applyRemoteState(payload){
   document.getElementById('armorRollBtn').style.display = (payload.armorRollBtnVisible===false) ? 'none' : 'block';
   crowdPushMode = !!payload.crowdPushMode;
   document.getElementById('injuryBlock').style.display = payload.injuryBlockVisible ? 'block' : 'none';
+  document.getElementById('cabezaDuraWarning').style.display = payload.cabezaDuraWarningVisible ? 'block' : 'none';
   document.getElementById('injuryDie1').textContent = payload.injuryDie1 || '–';
   document.getElementById('injuryDie2').textContent = payload.injuryDie2 || '–';
   document.getElementById('injurySum').textContent = payload.injurySum || 'Suma: –';
@@ -606,7 +610,10 @@ function applyRemoteState(payload){
 
   document.getElementById('blockText').textContent = payload.blockText || '';
   currentBlockDiceIndices = payload.currentBlockDiceIndices || [];
+  blockProfesionalUsed = !!payload.blockProfesionalUsed;
+  profesionalPickMode = !!payload.profesionalPickMode;
   renderBlockDice(currentBlockDiceIndices);
+  document.getElementById('blockProfesionalBtn').style.display = payload.blockProfesionalBtnVisible ? 'block' : 'none';
   document.getElementById('blockOutcomeRow').classList.toggle('active', !!payload.blockOutcomeRowVisible);
   document.getElementById('blockFreePushBtn').textContent = payload.blockFreePushBtnText || '🔓 Activar todos los empujes (para este placaje)';
   document.getElementById('blockFreePushBtn').classList.toggle('active-toggle', !!payload.blockFreePushBtnActive);
@@ -1530,6 +1537,16 @@ function handleTokenRightClick(id){
   if(phase!=='live' || anyModalOpen()) return;
   const p = players.find(x=>x.id===id);
   if(!p || p.team!==state.active) return;
+  if(selected===id && ball.carrierId===id && p.previousRow!==undefined && p.previousRow!==null &&
+     (declaredAction==='move' || declaredAction==='blitz' || declaredAction==='handoff') &&
+     playerHasSkill(p, 'dejada')){
+    dejadaWheelActive = true;
+    pendingActionMenuPlayer = id;
+    renderActionMenu();
+    renderSelInfo();
+    broadcastState();
+    return;
+  }
   if(p.activated && p.condition!=='tumbado' && p.condition!=='aturdido' && p.condition!=='despistado') return;
   selected = id;
   const hasMoved = ((p.remainingMove ?? p.ma) !== p.ma || (p.gfiUsed ?? 0) > 0) && !p.justStoodThisActivation;
@@ -1543,6 +1560,7 @@ function handleTokenRightClick(id){
 }
 
 let pendingActionMenuPlayer = null;
+let dejadaWheelActive = false;
 
 // La lista de opciones se calcula al vuelo en getActionMenuOptionsFor() según el estado del jugador/partida.
 // Añadir una opción nueva es añadir una línea de push() ahí — el racimo se reparte solo.
@@ -1600,6 +1618,9 @@ function canFoul(p){
 }
 
 function getActionMenuOptionsFor(p){
+  if(dejadaWheelActive && ball.carrierId===p.id && playerHasSkill(p, 'dejada')){
+    return [{ icon:'📍', label:'Dejada', fn:'actionMenuDejada' }];
+  }
   if(p.condition==='tumbado'){
     // "Ruleta de Tumbados" — levantarse ya cuenta como activación, así que cada opción pasa por su propio chequeo de rasgo.
     const opts = [];
@@ -1671,6 +1692,7 @@ function closeActionMenu(){
   const el = document.getElementById('radialMenuContainer');
   if(el) el.remove();
   pendingActionMenuPlayer = null;
+  dejadaWheelActive = false;
   broadcastState();
 }
 
@@ -1818,6 +1840,21 @@ function actionMenuJumpUp(){
   jumpUpBlitzCheck();
 }
 
+function actionMenuDejada(){
+  const id = pendingActionMenuPlayer;
+  const savedDeclaredAction = declaredAction;
+  closeActionMenu();
+  const p = players.find(x=>x.id===id);
+  if(!p || ball.carrierId!==p.id || p.previousRow===undefined || p.previousRow===null){ return; }
+  ball.carrierId = null;
+  ball.row = p.previousRow; ball.col = p.previousCol;
+  selected = id;
+  declaredAction = savedDeclaredAction; // el jugador sigue su movimiento con normalidad
+  log('📍 ' + p.name + ' usa Dejada — deja el balón en la casilla que acaba de abandonar. Sin cambio de turno.');
+  renderRosters(); renderPitch(); renderSelInfo();
+  broadcastState();
+}
+
 function unstickState(){
   // Cierra TODOS los modales (por si alguno se quedó marcado como abierto en el estado compartido)
   document.querySelectorAll('.modal-back').forEach(m=> m.classList.remove('show'));
@@ -1941,6 +1978,7 @@ function cellClicked(r,c){
 }
 
 function completeStep(p, r, c, consume){
+  p.previousRow = p.row; p.previousCol = p.col;
   p.row=r; p.col=c;
   if(consume==='gfi'){ p.gfiUsed = (p.gfiUsed ?? 0) + 1; }
   else if(consume==='normal'){ p.remainingMove = Math.max(0, (p.remainingMove ?? p.ma) - 1); }
@@ -2378,16 +2416,49 @@ function blockFaceHtml(idx){
 
 let currentBlockDiceIndices = [];
 
+let blockProfesionalUsed = false;
+let profesionalPickMode = false;
+
 function renderBlockDice(indices){
   const el = document.getElementById('blockDiceArea');
   el.innerHTML = '';
-  indices.forEach(idx=>{
+  indices.forEach((idx, i)=>{
     const d = document.createElement('div');
-    d.className = 'block-face clickable-die';
+    d.className = 'block-face clickable-die' + (profesionalPickMode ? ' profesional-pick' : '');
     d.innerHTML = blockFaceHtml(idx);
-    d.onclick = ()=> applyBlockOutcome(BLOCK_OUTCOME_KINDS[idx]);
+    d.onclick = ()=>{
+      if(profesionalPickMode){ rerollBlockDie(i); }
+      else { applyBlockOutcome(BLOCK_OUTCOME_KINDS[idx]); }
+    };
     el.appendChild(d);
   });
+}
+
+function rerollBlockDie(i){
+  const oldFace = BLOCK_FACES[currentBlockDiceIndices[i]];
+  const newIdx = Math.floor(Math.random()*6);
+  currentBlockDiceIndices[i] = newIdx;
+  profesionalPickMode = false;
+  log('🎓 Profesional: dado repetido — ' + oldFace + ' → ' + BLOCK_FACES[newIdx] + '.');
+  renderBlockDice(currentBlockDiceIndices);
+  broadcastState();
+}
+
+function useProfesionalOnBlock(){
+  if(blockProfesionalUsed || !activeBlock || !blockDiceRolled) return;
+  const attacker = players.find(x=>x.id===activeBlock.attackerId);
+  if(!attacker || !playerHasSkill(attacker, 'profesional', 'pro')) return;
+  blockProfesionalUsed = true;
+  document.getElementById('blockProfesionalBtn').style.display = 'none';
+  const roll = Math.floor(Math.random()*6)+1;
+  if(roll>=3){
+    log('🎓 ' + attacker.name + ' usa Profesional: tirada ' + roll + ' (3+) — elegid qué dado repetir (click en él).');
+    profesionalPickMode = true;
+    renderBlockDice(currentBlockDiceIndices);
+  } else {
+    log('🎓 ' + attacker.name + ' intenta usar Profesional: tirada ' + roll + ' (1-2) — no puede repetir ningún dado.');
+  }
+  broadcastState();
 }
 
 function rollBlockDiceModal(n){
@@ -2398,6 +2469,10 @@ function rollBlockDiceModal(n){
   document.getElementById('blockOutcomeRow').classList.add('active');
   document.getElementById('blockDiceHint').style.display = 'block';
   blockDiceRolled = true;
+  blockProfesionalUsed = false;
+  profesionalPickMode = false;
+  const attacker = activeBlock ? players.find(x=>x.id===activeBlock.attackerId) : null;
+  document.getElementById('blockProfesionalBtn').style.display = (attacker && playerHasSkill(attacker, 'profesional', 'pro')) ? 'block' : 'none';
   log('🎲 Placaje x' + n + ': ' + results.map(i=>BLOCK_FACES[i]).join(' / '));
   broadcastState();
 }
@@ -3127,6 +3202,7 @@ function resolveFerocityAttack(targetId){
   renderRosters(); renderPitch(); renderSelInfo();
   broadcastState();
   pendingArmorQueue = [target.id];
+  golpeMortiferoMap[target.id] = attacker.id;
   if(wasCarrier){
     pendingTurnoverAfterResolve = true;
     log('🔄 El compañero derribado llevaba el balón — cambio de turno.');
@@ -3888,6 +3964,7 @@ function openInjuryDirect(p){
   document.getElementById('armorSum').textContent='(sin tirada de armadura)';
   document.getElementById('armorPassRow').style.display='none';
   document.getElementById('injuryBlock').style.display='block';
+  document.getElementById('cabezaDuraWarning').style.display = playerHasSkill(p, 'cabeza dura', 'thick skull') ? 'block' : 'none';
   document.getElementById('injuryDie1').textContent='–';
   document.getElementById('injuryDie2').textContent='–';
   document.getElementById('injurySum').textContent='Suma: –';
@@ -3948,6 +4025,7 @@ function armorResult(broken){
   if(broken){
     document.getElementById('armorPassRow').style.display='none';
     document.getElementById('injuryBlock').style.display='block';
+    document.getElementById('cabezaDuraWarning').style.display = playerHasSkill(p, 'cabeza dura', 'thick skull') ? 'block' : 'none';
     log('🛡️ Armadura ROTA' + (p?(' — '+p.name):'') + '. Tirad heridas.');
   } else {
     if(p){

@@ -374,6 +374,7 @@ button.full{width:100%; margin-top:6px;}
   cursor:pointer; border:2px solid transparent; transition:transform .1s ease, border-color .1s ease;
 }
 .block-face.clickable-die:hover{border-color:var(--gold); transform:scale(1.06);}
+.block-face.profesional-pick{border-color:#d4af37; animation:pulseTarget 1s ease-in-out infinite;}
 .block-icon{font-size:22px; line-height:1; margin-bottom:3px;}
 .block-icon-img{width:26px; height:26px; display:block; margin:0 auto 3px auto; object-fit:contain;}
 .block-label{font-size:9px;}

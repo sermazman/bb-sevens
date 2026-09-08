@@ -312,6 +312,9 @@ function snapshotState(){
     blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp, chainPushStack, secureBallUsedByTeam, pendingSecureBall, secureBallActivePlayer, handoffUsedByTeam, pendingHandoffChoice, foulUsedByTeam, pendingFoulContext,
     secureBallModalOpen: document.getElementById('secureBallModal').classList.contains('show'),
     matchEndModalOpen: document.getElementById('matchEndModal').classList.contains('show'),
+    forcejearModalOpen: document.getElementById('forcejearModal').classList.contains('show'),
+    forcejearText: document.getElementById('forcejearText').textContent,
+    pendingForcejearChoice,
     matchEndText: document.getElementById('matchEndText').textContent,
     pendingActionMenuPlayer,
     pendingManualStatus,
@@ -508,6 +511,9 @@ function applyRemoteState(payload){
     document.getElementById('secureBallActionRow').innerHTML = '';
   }
   document.getElementById('matchEndText').textContent = payload.matchEndText || '';
+  document.getElementById('forcejearText').textContent = payload.forcejearText || '';
+  document.getElementById('forcejearModal').classList.toggle('show', !!payload.forcejearModalOpen);
+  pendingForcejearChoice = payload.pendingForcejearChoice || null;
   document.getElementById('matchEndModal').classList.toggle('show', !!payload.matchEndModalOpen);
   // pendingActionMenuPlayer y declaredAction son estado de interacción LOCAL de cada navegador
   // (qué jugador tienes tú cogido y qué acción elegiste en tu Ruleta) — nunca se sobrescriben con lo remoto,
@@ -697,6 +703,7 @@ function anyModalOpen(){
          document.getElementById('jumpUpModal').classList.contains('show') ||
          document.getElementById('secureBallModal').classList.contains('show') ||
          document.getElementById('matchEndModal').classList.contains('show') ||
+         document.getElementById('forcejearModal').classList.contains('show') ||
          pendingActionMenuPlayer !== null ||
          document.getElementById('traitCheckModal').classList.contains('show') ||
          document.getElementById('turnoverOverlay').classList.contains('show');
@@ -1355,9 +1362,10 @@ function renderPitch(){
         const targetClass = isValidBlockTarget(occ.id) ? ' block-target' : '';
         const handoffClass = isValidHandoffTarget(occ.id) ? ' handoff-target' : '';
         const foulClass = isValidFoulTarget(occ.id) ? ' foul-target' : '';
+        const ferocityClass = isValidFerocityTarget(occ.id) ? ' ferocity-target' : '';
         const freeCatchClass = (freeCatchTeam===occ.team && occ.onPitch && occ.condition==='standing') ? ' free-catch-target' : '';
         const showActivated = occ.activated && phase==='live' && occ.team===state.active;
-        t.className = 'token' + (occ.id===selected?' selected':'') + (showActivated?' activated':'') + condClass + targetClass + handoffClass + foulClass + freeCatchClass;
+        t.className = 'token' + (occ.id===selected?' selected':'') + (showActivated?' activated':'') + condClass + targetClass + handoffClass + foulClass + ferocityClass + freeCatchClass;
         t.dataset.playerId = occ.id;
         t.style.background = tokenColorFor(occ);
         t.style.color = textColorFor(occ);
@@ -1569,6 +1577,7 @@ function canHandoff(p){
   if(ball.carrierId!==null){
     const carrier = players.find(x=>x.id===ball.carrierId);
     if(!carrier || carrier.team!==p.team) return false; // el balón lo tiene el equipo rival
+    if(playerHasSkill(carrier, 'el balón es mío', 'el balon es mio', 'ball and chain')) return false; // nunca suelta el balón voluntariamente
     if(p.id===carrier.id){
       // El propio portador: necesita poder llegar junto a algún compañero en pie.
       return players.some(p2 => p2.onPitch && p2.id!==p.id && p2.team===p.team && p2.condition==='standing' &&
@@ -1823,6 +1832,8 @@ function unstickState(){
   pendingFerocityAttack = null;
   pendingHandoffChoice = null;
   pendingFoulContext = null;
+  pendingForcejearChoice = null;
+  document.getElementById('forcejearModal').classList.remove('show');
   pendingManualStatus = null;
   armorForPlayer = null; pendingArmorQueue = [];
   golpeMortiferoUsedOnArmor = false;
@@ -2168,6 +2179,15 @@ function isValidBlockTarget(defenderId){
     Math.max(Math.abs(defender.row-attacker.row), Math.abs(defender.col-attacker.col))===1;
 }
 
+function isValidFerocityTarget(targetId){
+  if(!pendingFerocityAttack) return false;
+  const attacker = players.find(x=>x.id===pendingFerocityAttack.attackerId);
+  const target = players.find(x=>x.id===targetId);
+  if(!attacker || !target || attacker.id===target.id) return false;
+  return target.onPitch && target.team===attacker.team && target.condition==='standing' &&
+    Math.max(Math.abs(target.row-attacker.row), Math.abs(target.col-attacker.col))===1;
+}
+
 function isValidFoulTarget(targetId){
   if(declaredAction!=='foul' || selected===null) return false;
   const fouler = players.find(x=>x.id===selected);
@@ -2184,10 +2204,12 @@ function isValidHandoffTarget(targetId){
   if(!mover || !target || mover.id===target.id) return false;
   if(Math.max(Math.abs(target.row-mover.row), Math.abs(target.col-mover.col))!==1) return false;
   if(ball.carrierId===mover.id){
+    if(playerHasSkill(mover, 'el balón es mío', 'el balon es mio', 'ball and chain')) return false;
     // El que se mueve ES el portador: el objetivo debe ser un compañero en pie.
     return target.onPitch && target.team===mover.team && target.condition==='standing';
   }
   if(ball.carrierId===target.id && target.team===mover.team){
+    if(playerHasSkill(target, 'el balón es mío', 'el balon es mio', 'ball and chain')) return false;
     // El que se mueve es un compañero acercándose al portador.
     return mover.condition==='standing' && target.condition==='standing';
   }
@@ -2380,6 +2402,65 @@ function rollBlockDiceModal(n){
   broadcastState();
 }
 
+let pendingForcejearChoice = null; // { attackerId, defenderId, isBlitz }
+
+function resolveBothDownFall(attacker, defender, isBlitz, forcejearUsed){
+  const atkHasTackle = !forcejearUsed && playerHasSkill(attacker, 'placar', 'tackle');
+  const defHasTackle = !forcejearUsed && playerHasSkill(defender, 'placar', 'tackle');
+  let attackerFalls = !atkHasTackle;
+  let defenderFalls = !defHasTackle;
+
+  let attackerResisted = false, defenderResisted = false;
+  if(attackerFalls && checkEquilibrioFirme(attacker)){ attackerFalls = false; attackerResisted = true; }
+  if(defenderFalls && checkEquilibrioFirme(defender)){ defenderFalls = false; defenderResisted = true; }
+
+  const fallenNames = [];
+  if(attackerFalls){ attacker.condition = 'tumbado'; attacker.rooted = false; fallenNames.push(attacker.name); queueBallDropIfCarrier(attacker.id, attacker.row, attacker.col); }
+  if(defenderFalls){ defender.condition = 'tumbado'; defender.rooted = false; fallenNames.push(defender.name); queueBallDropIfCarrier(defender.id, defender.row, defender.col); }
+
+  if(!attackerFalls && isBlitz){
+    selected = attacker.id;
+    updateStatus(attacker.name + ' puede seguir moviéndose (Blitz).');
+  } else {
+    attacker.activated = true;
+    selected = null;
+  }
+
+  if(forcejearUsed) log('🤼 Forcejear usado — ambos caen, con independencia de otras habilidades.');
+  if(attackerResisted) log('🛡️ ' + attacker.name + ' resiste la caída con Equilibrio Firme.');
+  if(defenderResisted) log('🛡️ ' + defender.name + ' resiste la caída con Equilibrio Firme.');
+
+  if(fallenNames.length===0){
+    log('🤝 Ambos caen, pero al final ninguno cae (Placar/Equilibrio Firme).');
+  } else {
+    const tackleWho = atkHasTackle ? attacker.name : (defHasTackle ? defender.name : null);
+    const tackleNote = tackleWho ? ' (Placar evita la caída de ' + tackleWho + ')' : '';
+    log('👊 Ambos caen: ' + fallenNames.join(' y ') + '.' + tackleNote);
+  }
+  renderRosters(); renderPitch(); renderSelInfo();
+  broadcastState();
+
+  if(fallenNames.length===0) return;
+
+  const armorQueue = [];
+  if(defenderFalls){ armorQueue.push(defender.id); golpeMortiferoMap[defender.id] = attacker.id; }
+  if(attackerFalls) armorQueue.push(attacker.id);
+  pendingArmorQueue = armorQueue;
+  if(attackerFalls) pendingTurnoverAfterResolve = true;
+  processNextArmorInQueue();
+}
+
+function resolveForcejearChoice(useIt){
+  const ctx = pendingForcejearChoice;
+  pendingForcejearChoice = null;
+  document.getElementById('forcejearModal').classList.remove('show');
+  if(!ctx){ broadcastState(); return; }
+  const attacker = players.find(x=>x.id===ctx.attackerId);
+  const defender = players.find(x=>x.id===ctx.defenderId);
+  if(!attacker || !defender){ broadcastState(); return; }
+  resolveBothDownFall(attacker, defender, ctx.isBlitz, !!useIt);
+}
+
 function applyBlockOutcome(kind){
   if(!activeBlock) return;
   if(!blockDiceRolled){ alert('Tirad primero los dados de placaje.'); return; }
@@ -2393,6 +2474,12 @@ function applyBlockOutcome(kind){
   attacker.blockedThisActivation = true;
 
   if(kind==='attackerDown'){
+    if(checkEquilibrioFirme(attacker)){
+      log('🛡️ ' + attacker.name + ' resiste la caída con Equilibrio Firme — sigue de pie y puede continuar su activación.');
+      renderRosters(); renderPitch(); renderSelInfo();
+      broadcastState();
+      return;
+    }
     attacker.condition = 'tumbado'; attacker.rooted = false;
     attacker.activated = true;
     selected = null;
@@ -2408,39 +2495,18 @@ function applyBlockOutcome(kind){
   if(kind==='bothDown'){
     const atkHasTackle = playerHasSkill(attacker, 'placar', 'tackle');
     const defHasTackle = playerHasSkill(defender, 'placar', 'tackle');
-    const attackerFalls = !atkHasTackle;
-    const defenderFalls = !defHasTackle;
-
-    const fallenNames = [];
-    if(attackerFalls){ attacker.condition = 'tumbado'; attacker.rooted = false; fallenNames.push(attacker.name); queueBallDropIfCarrier(attacker.id, attacker.row, attacker.col); }
-    if(defenderFalls){ defender.condition = 'tumbado'; defender.rooted = false; fallenNames.push(defender.name); queueBallDropIfCarrier(defender.id, defender.row, defender.col); }
-
-    if(!attackerFalls && isBlitz){
-      selected = attacker.id;
-      updateStatus(attacker.name + ' puede seguir moviéndose (Blitz).');
-    } else {
-      attacker.activated = true;
-      selected = null;
+    const atkHasForcejear = playerHasSkill(attacker, 'forcejear', 'wrestle');
+    const defHasForcejear = playerHasSkill(defender, 'forcejear', 'wrestle');
+    const placarRelevant = atkHasTackle || defHasTackle;
+    if((atkHasForcejear || defHasForcejear) && placarRelevant){
+      pendingForcejearChoice = { attackerId: attacker.id, defenderId: defender.id, isBlitz: !!isBlitz };
+      document.getElementById('forcejearText').textContent = (atkHasForcejear ? attacker.name : defender.name) +
+        ' tiene Forcejear. ¿Usarla? Ambos caerán al suelo, con independencia de Placar u otras habilidades.';
+      document.getElementById('forcejearModal').classList.add('show');
+      broadcastState();
+      return;
     }
-
-    if(fallenNames.length===0){
-      log('🤝 Ambos caen, pero ' + attacker.name + ' y ' + defender.name + ' tienen Placar — ninguno cae.');
-    } else {
-      const tackleWho = atkHasTackle ? attacker.name : (defHasTackle ? defender.name : null);
-      const tackleNote = tackleWho ? ' (Placar evita la caída de ' + tackleWho + ')' : '';
-      log('👊 Ambos caen: ' + fallenNames.join(' y ') + '.' + tackleNote);
-    }
-    renderRosters(); renderPitch(); renderSelInfo();
-    broadcastState();
-
-    if(fallenNames.length===0) return;
-
-    const armorQueue = [];
-    if(defenderFalls){ armorQueue.push(defender.id); golpeMortiferoMap[defender.id] = attacker.id; }
-    if(attackerFalls) armorQueue.push(attacker.id);
-    pendingArmorQueue = armorQueue;
-    if(attackerFalls) pendingTurnoverAfterResolve = true;
-    processNextArmorInQueue();
+    resolveBothDownFall(attacker, defender, isBlitz, false);
     return;
   }
 
@@ -2844,6 +2910,14 @@ function playerHasSkill(p, ...keywords){
   return keywords.some(k => lower.some(s => s.includes(k)));
 }
 
+function checkEquilibrioFirme(p){
+  if(!p || !playerHasSkill(p, 'equilibrio firme', 'sure feet')) return false;
+  const roll = Math.floor(Math.random()*6)+1;
+  const resisted = roll===6;
+  log('🎲 Equilibrio Firme de ' + p.name + ': ' + roll + (resisted ? ' — ¡RESISTE, no cae!' : ' — no resiste, cae con normalidad.'));
+  return resisted;
+}
+
 function getPlayerTrait(p){
   // Orden importante: comprobar las más específicas antes que las genéricas (p.ej. "realmente estúpido" contiene "estúpido").
   if(playerHasSkill(p, 'realmente estúpido', 'realmente estupido', 'really stupid')) return 'reallyStupid';
@@ -3143,6 +3217,12 @@ function finishPushSequence(info){
   } else if(info.fallKind){
     const defender = players.find(x=>x.id===info.defenderId);
     if(defender){
+      if(checkEquilibrioFirme(defender)){
+        log('🛡️ ' + defender.name + ' resiste la caída con Equilibrio Firme — se queda en pie.');
+        renderRosters(); renderPitch(); renderSelInfo();
+        broadcastState();
+        return;
+      }
       defender.condition = 'tumbado'; defender.rooted = false;
       log('💥 ' + defender.name + (info.fallKind==='pow' ? ' cae (POW).' : ' cae (desequilibrado).'));
       queueBallDropIfCarrier(defender.id, defender.row, defender.col);
@@ -3692,6 +3772,8 @@ function resolveDodge(success){
 
   if(success){
     completeStep(p, toR, toC, fromGfi ? 'none' : 'normal');
+  } else if(checkEquilibrioFirme(p)){
+    completeStep(p, toR, toC, fromGfi ? 'none' : 'normal');
   } else {
     p.row = toR; p.col = toC;
     p.condition = 'tumbado'; p.rooted = false;
@@ -3747,7 +3829,7 @@ function resolveGfi(success){
   pendingGfi = null;
   if(!p){ broadcastState(); return; }
 
-  if(success){
+  if(success || checkEquilibrioFirme(p)){
     if(blockDefenderId){
       p.gfiUsed = (p.gfiUsed ?? 0) + 1;
       const defender = players.find(x=>x.id===blockDefenderId);

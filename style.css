@@ -335,6 +335,7 @@ button.full{width:100%; margin-top:6px;}
 .token.block-target{outline:2px solid var(--bad); outline-offset:2px; cursor:pointer; animation:pulseTarget 1s ease-in-out infinite;}
 .token.handoff-target{outline:2px solid #43a047; outline-offset:2px; cursor:pointer; animation:pulseTarget 1s ease-in-out infinite;}
 .token.foul-target{outline:2px solid #7b1010; outline-offset:2px; cursor:pointer; animation:pulseTarget 1s ease-in-out infinite;}
+.token.ferocity-target{outline:2px solid #9b59b6; outline-offset:2px; cursor:pointer; animation:pulseTarget 1s ease-in-out infinite;}
 @keyframes pulseTarget{
   0%,100%{ box-shadow:0 0 0 0 rgba(192,57,43,0.6); }
   50%{ box-shadow:0 0 0 4px rgba(192,57,43,0); }

@@ -36,12 +36,9 @@ Si le muerde, haz una tirada de Heridas por el Thrall Lineman, tratando cualquie
 - PROFESIONAL (pruebas desde 01-09-2026)
 - ATRAPAR (pruebas desde 03-09-2026)
 - GARRAS (pruebas desde 08-09-2026)
-
-EL BALON ES MIO
-
-EQUILIBRIO FIRME
-
-FORCEJEAR
+- EL BALON ES MIO (pruebas desde 08-09-2026)
+- EQUILIBRIO FIRMA (pruebas desde 08-09-2026)
+- FORCEJEAR (pruebas desde 08-09-2026)
 
 CABEZA DURA
 

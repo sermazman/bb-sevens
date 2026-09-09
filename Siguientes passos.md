@@ -29,12 +29,19 @@ Si le muerde, haz una tirada de Heridas por el Thrall Lineman, tratando cualquie
 - CUERNOS (OK 07-09-2026)
 
 ☣️☣️☣️¿¿¿ EN PRUEBAS ??? (las habilidades con guión, están en Pruebas)
+
 ☣️- PROFESIONAL (pruebas desde 01-09-2026) Ok con recoger balón // PDTE de dados bloqueo / Esquivar / A por Ellos
+
 ☣️- ATRAPAR (pruebas desde 03-09-2026)
+
 ☣️- GARRAS (pruebas desde 08-09-2026)
+
 ☣️- EL BALON ES MIO (pruebas desde 08-09-2026)
+
 ☣️- EQUILIBRIO FIRME (pruebas desde 08-09-2026)
+
 ☣️- FORCEJEAR (pruebas desde 08-09-2026)
+
 ☣️- DEJADA (pruebas desde 08-09-2026)
 Cuando este jugador sea el portador del balón y realice una acción de Movimiento, puede elegir "dejar el balón", colocándolo en cualquier casilla que abandone durante dicha acción de Movimiento. Esto no provoca un cambio de turno.
 El balón quedará en la casilla que abandone tras declarar la Dejada por lo que yo haría sería que mientras que el jugador con la habilidad dejada esté haciendo su Movimiento, si pinchamos sobre el con el boton derecho que salte solo la opcion en la ruleta de Dejada para activar esta habilidad... o como podemos proceder?

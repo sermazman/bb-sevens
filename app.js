@@ -308,7 +308,7 @@ function snapshotState(){
     mySelected: selected, myDeclaredAction: declaredAction,
     koQueue, pendingKo, teamRace, customColorsEnabled, teamCustomColor, teamTextColor, openingKickoffDone, firstHalfKickingTeam, pitchBackgroundUrl, pitchBackgroundExact, teamStaff, teamRerollsLeft, kickoffPendingOOBAfterEvent,
     ballBounceActive, pendingCatch, pendingBallDrop, pendingDriveStart,
-    pendingKickPlacement, kickoffBounceStep, kickoffKickingTeam, kickoffReceivingTeam, freeCatchTeam, placingBallFree,
+    pendingKickPlacement, kickoffBounceStep, kickoffKickingTeam, kickoffReceivingTeam, freeCatchTeam, placingBallFree, kickoffTargetRow, kickoffTargetCol,
     blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp, chainPushStack, secureBallUsedByTeam, pendingSecureBall, secureBallActivePlayer, handoffUsedByTeam, pendingHandoffChoice, foulUsedByTeam, pendingFoulContext,
     secureBallModalOpen: document.getElementById('secureBallModal').classList.contains('show'),
     matchEndModalOpen: document.getElementById('matchEndModal').classList.contains('show'),
@@ -320,6 +320,7 @@ function snapshotState(){
     dejadaWheelActive,
     pendingManualStatus,
     turnoverOverlayOpen: document.getElementById('turnoverOverlay').classList.contains('show'),
+    halfTimeOverlayOpen: document.getElementById('halfTimeOverlay').classList.contains('show'),
     declaredAction, pendingTraitCheck, pendingFerocityAttack,
     traitCheckModalOpen: document.getElementById('traitCheckModal').classList.contains('show'),
     traitCheckTitleText: document.getElementById('traitCheckTitle').textContent,
@@ -481,6 +482,8 @@ function applyRemoteState(payload){
   pendingKickPlacement = payload.pendingKickPlacement;
   kickoffBounceStep = payload.kickoffBounceStep || 0;
   kickoffKickingTeam = payload.kickoffKickingTeam;
+  kickoffTargetRow = payload.kickoffTargetRow ?? null;
+  kickoffTargetCol = payload.kickoffTargetCol ?? null;
   kickoffReceivingTeam = payload.kickoffReceivingTeam;
   freeCatchTeam = payload.freeCatchTeam;
   placingBallFree = !!payload.placingBallFree;
@@ -524,6 +527,7 @@ function applyRemoteState(payload){
   pendingManualStatus = payload.pendingManualStatus || null;
   refreshManualStatusButtons();
   document.getElementById('turnoverOverlay').classList.toggle('show', !!payload.turnoverOverlayOpen);
+  document.getElementById('halfTimeOverlay').classList.toggle('show', !!payload.halfTimeOverlayOpen);
   pendingTraitCheck = payload.pendingTraitCheck || null;
   pendingFerocityAttack = payload.pendingFerocityAttack || null;
   document.getElementById('traitCheckTitle').textContent = payload.traitCheckTitleText || 'CHEQUEO DE RASGO';
@@ -1407,6 +1411,13 @@ function renderPitch(){
         cell.appendChild(looseBall);
       }
 
+      if(kickoffTargetRow===r && kickoffTargetCol===c){
+        const crosshair = document.createElement('div');
+        crosshair.className = 'kickoff-target-marker';
+        crosshair.title = 'Casilla objetivo de la patada';
+        cell.appendChild(crosshair);
+      }
+
       pitch.appendChild(cell);
     }
   }
@@ -1880,6 +1891,7 @@ function unstickState(){
   placingBallFree = false;
   pendingKickPlacement = false; kickoffBounceStep = false;
   ballBounceActive = false;
+  kickoffTargetRow = null; kickoffTargetCol = null;
   blitzActivePlayer = null;
   secureBallActivePlayer = null;
   pendingActionMenuPlayer = null;
@@ -2495,8 +2507,20 @@ function rollBlockDiceModal(n){
 let pendingForcejearChoice = null; // { attackerId, defenderId, isBlitz }
 
 function resolveBothDownFall(attacker, defender, isBlitz, forcejearUsed){
-  const atkHasTackle = !forcejearUsed && playerHasSkill(attacker, 'placar', 'tackle');
-  const defHasTackle = !forcejearUsed && playerHasSkill(defender, 'placar', 'tackle');
+  if(forcejearUsed){
+    attacker.condition = 'tumbado'; attacker.rooted = false;
+    defender.condition = 'tumbado'; defender.rooted = false;
+    queueBallDropIfCarrier(attacker.id, attacker.row, attacker.col);
+    queueBallDropIfCarrier(defender.id, defender.row, defender.col);
+    attacker.activated = true; selected = null;
+    log('🤼 Forcejear usado — ' + attacker.name + ' y ' + defender.name + ' quedan Tumbados directamente, sin tirada de Armadura ni otras habilidades de por medio.');
+    renderRosters(); renderPitch(); renderSelInfo();
+    broadcastState();
+    return;
+  }
+
+  const atkHasTackle = playerHasSkill(attacker, 'placar', 'tackle');
+  const defHasTackle = playerHasSkill(defender, 'placar', 'tackle');
   let attackerFalls = !atkHasTackle;
   let defenderFalls = !defHasTackle;
 
@@ -3494,6 +3518,8 @@ function checkDriveStartAfterBounce(){
 let pendingKickPlacement = null; // { kickingTeam, receivingTeam }
 let kickoffBounceStep = 0;       // 0 inactive, 1 first scatter, 2 second scatter
 let kickoffKickingTeam = null;
+let kickoffTargetRow = null;
+let kickoffTargetCol = null;
 let kickoffReceivingTeam = null;
 let kickoffDistance = 1;
 let kickoffPendingOOBAfterEvent = false;
@@ -3522,6 +3548,7 @@ function placeKickBall(r,c){
   pendingKickPlacement = null;
   document.getElementById('kickPlacementPanel').style.display = 'none';
   ball.carrierId = null; ball.row = r; ball.col = c;
+  kickoffTargetRow = r; kickoffTargetCol = c;
   kickoffKickingTeam = info.kickingTeam;
   kickoffReceivingTeam = info.receivingTeam;
   log('🏈 Saque colocado por ' + teamName(info.kickingTeam) + '.');
@@ -3674,6 +3701,7 @@ function resolveKickoffBounce(r,c){
   }
 
   pendingDriveStart = kickoffReceivingTeam;
+  kickoffTargetRow = null; kickoffTargetCol = null;
   const occ = occupiedBy(finalR, finalC);
   if(occ && occ.condition==='standing'){
     openCatchModal(occ, true);
@@ -3685,6 +3713,7 @@ function resolveKickoffBounce(r,c){
 
 function finishKickoffAsFreeCatch(){
   kickoffBounceStep = 0;
+  kickoffTargetRow = null; kickoffTargetCol = null;
   document.getElementById('kickoffPanel').style.display = 'none';
   freeCatchTeam = kickoffReceivingTeam;
   document.getElementById('freeCatchPanel').style.display = 'block';
@@ -4259,6 +4288,7 @@ function resetBoardForNewDrive(){
   });
   ball = { carrierId: null, row: null, col: null };
   ballBounceActive = false;
+  kickoffTargetRow = null; kickoffTargetCol = null;
   pendingCatch = null;
   pendingBallDrop = null;
   pendingDriveStart = null;
@@ -4371,30 +4401,39 @@ function showMatchEndModal(){
   broadcastState();
 }
 
+function startSecondHalf(){
+  state.half=2; state.turns={A:0,B:0};
+  players.forEach(p=>{ p.activated=false; });
+  const existingBtn = document.getElementById('newHalfBtn');
+  if(existingBtn) existingBtn.remove();
+  if(firstHalfKickingTeam){
+    const swapped = firstHalfKickingTeam==='A' ? 'B' : 'A';
+    const sel = document.getElementById('kickSelect');
+    sel.value = swapped;
+    sel.disabled = true;
+    onKickChangeQuiet();
+    log('🔄 Mitad 2: patea automáticamente ' + teamName(swapped) + ' (equipo receptor de la 1ª mitad).');
+  }
+  renderScoreboard();
+  resetRerollsForNewHalf();
+  updateStatus('¡Comienza la Mitad 2! Colocad y pulsad "Iniciar Entrada".');
+  broadcastState();
+  startKoRecoveryFlow();
+}
+
+function showHalfTimeOverlay(){
+  document.getElementById('halfTimeOverlay').classList.add('show');
+  broadcastState();
+}
+
+function hideHalfTimeOverlay(){
+  document.getElementById('halfTimeOverlay').classList.remove('show');
+  broadcastState();
+  startSecondHalf();
+}
+
 function addNewHalfButton(){
-  if(document.getElementById('newHalfBtn')) return;
-  const btn = document.createElement('button');
-  btn.id='newHalfBtn'; btn.className='full primary'; btn.textContent='Empezar Mitad 2';
-  btn.style.marginTop='8px';
-  btn.onclick = ()=>{
-    state.half=2; state.turns={A:0,B:0};
-    players.forEach(p=>{ p.activated=false; });
-    btn.remove();
-    if(firstHalfKickingTeam){
-      const swapped = firstHalfKickingTeam==='A' ? 'B' : 'A';
-      const sel = document.getElementById('kickSelect');
-      sel.value = swapped;
-      sel.disabled = true;
-      onKickChangeQuiet();
-      log('🔄 Mitad 2: patea automáticamente ' + teamName(swapped) + ' (equipo receptor de la 1ª mitad).');
-    }
-    renderScoreboard();
-    resetRerollsForNewHalf();
-    updateStatus('¡Comienza la Mitad 2! Colocad y pulsad "Iniciar Entrada".');
-    broadcastState();
-    startKoRecoveryFlow();
-  };
-  document.getElementById('setupPanel').appendChild(btn);
+  showHalfTimeOverlay();
 }
 
 function resetActivations(){

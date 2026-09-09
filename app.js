@@ -2213,7 +2213,8 @@ function isValidBlockTarget(defenderId){
   const attacker = players.find(x=>x.id===attackerId);
   const defender = players.find(x=>x.id===defenderId);
   if(!attacker || !defender) return false;
-  return defender.onPitch && defender.team!==attacker.team && defender.condition==='standing' &&
+  return defender.onPitch && defender.team!==attacker.team &&
+    (defender.condition==='standing' || defender.condition==='despistado') &&
     Math.max(Math.abs(defender.row-attacker.row), Math.abs(defender.col-attacker.col))===1;
 }
 
@@ -2330,6 +2331,20 @@ function computeBlockDiceInfo(attacker, defender, isBlitz){
     baseAtk += 1;
   }
   const baseDef = parseInt(defender.st, 10) || 0;
+
+  let agallasNote = '';
+  if(baseAtk < baseDef && playerHasSkill(attacker, 'agallas', 'guts')){
+    const agallasRoll = Math.floor(Math.random()*6)+1;
+    const total = baseAtk + agallasRoll;
+    if(total > baseDef){
+      log('🦾 Agallas de ' + attacker.name + ': FU' + baseAtk + ' + D6(' + agallasRoll + ') = ' + total + ' > FU' + baseDef + ' rival — su FU sube a ' + baseDef + ' para este placaje.');
+      agallasNote = ' (Agallas: FU' + baseAtk + '→' + baseDef + ')';
+      baseAtk = baseDef;
+    } else {
+      log('🦾 Agallas de ' + attacker.name + ': FU' + baseAtk + ' + D6(' + agallasRoll + ') = ' + total + ' no supera FU' + baseDef + ' rival — sin efecto.');
+    }
+  }
+
   const offAssisters = getAssistingPlayers(attacker.team, defender.id, attacker.id);
   const defAssisters = getAssistingPlayers(defender.team, attacker.id, defender.id);
   const offAssists = offAssisters.length;
@@ -2341,7 +2356,7 @@ function computeBlockDiceInfo(attacker, defender, isBlitz){
   else if(stAtk > stDef){ diceCount = (stAtk > stDef*2) ? 3 : 2; chooser = 'attacker'; }
   else { diceCount = (stDef > stAtk*2) ? 3 : 2; chooser = 'defender'; }
   const cuernosApplied = isBlitz && playerHasSkill(attacker, 'cuernos', 'horns');
-  return { baseAtk, baseDef, offAssisters, defAssisters, offAssists, defAssists, stAtk, stDef, diceCount, chooser, cuernosApplied };
+  return { baseAtk, baseDef, offAssisters, defAssisters, offAssists, defAssists, stAtk, stDef, diceCount, chooser, cuernosApplied, agallasNote };
 }
 
 function proceedToBlockDice(attacker, defender, isBlitzHit){
@@ -2351,7 +2366,7 @@ function proceedToBlockDice(attacker, defender, isBlitzHit){
 
   const info = computeBlockDiceInfo(attacker, defender, isBlitzHit);
   activeBlock.diceInfo = info;
-  const atkLine = 'Atacante ' + attacker.name + ' con FU' + info.baseAtk + (info.cuernosApplied ? ' (incl. +1 Cuernos)' : '')
+  const atkLine = 'Atacante ' + attacker.name + ' con FU' + info.baseAtk + (info.cuernosApplied ? ' (incl. +1 Cuernos)' : '') + info.agallasNote
     + (info.offAssists>0 ? ' + apoyos ofensivos ' + joinNames(info.offAssisters) : '')
     + ' = FU' + info.stAtk;
   const defLine = 'Defensor ' + defender.name + ' con FU' + info.baseDef
@@ -2793,6 +2808,11 @@ function resolvePush(r,c){
   }
 
   if(attacker && originalPlayer){
+    if(attacker.rooted){
+      log('🌳 ' + attacker.name + ' está Echando raíces — no puede hacer el movimiento de impulso.');
+      finishPushSequence(pendingFollowUp);
+      return;
+    }
     if(playerHasSkill(attacker, 'furia', 'frenzy') && !occupiedBy(original.fromR, original.fromC)){
       log('😡 ' + attacker.name + ' tiene Furia — el movimiento de impulso es obligatorio.');
       resolveFollowUp(true);
@@ -2849,6 +2869,11 @@ function pushOutOfBounds(exitR, exitC){
 
   if(attacker && (followUpPlayer || !original)){
     const targetName = followUpPlayer ? followUpPlayer.name : mover.name;
+    if(attacker.rooted){
+      log('🌳 ' + attacker.name + ' está Echando raíces — no puede hacer el movimiento de impulso.');
+      finishPushSequence(pendingFollowUp);
+      return;
+    }
     if(playerHasSkill(attacker, 'furia', 'frenzy') && !occupiedBy(followUpVacatedR, followUpVacatedC)){
       log('😡 ' + attacker.name + ' tiene Furia — el movimiento de impulso es obligatorio.');
       resolveFollowUp(true);

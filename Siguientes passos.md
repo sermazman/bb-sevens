@@ -53,7 +53,8 @@ ECHARSE A UN LADO
 
 LLAVE DE BRAZO
 
-AGALLAS
+☣️- AGALLAS (pruebas desde 09-09-2026)
+Cuando este jugador realiza una acción de Placaje (normal o placaje cuando marcamos el Blitz) contra un jugador rival con un atributo Fuerza superior al suyo (antes de aplicar modificadores a ambos jugadores por los apoyos), este jugador tira 1D6 y suma a su atributo Fuerza al resultado. Si el total es mayor que el atributo Fuerza sin modificar del jugador rival, mientras dure la acción de Placaje este jugador aumentará su propio atributo Fuerza hasta igualarlo al del jugador rival. A continuación se aplicarán de manera normal todos los modificadores que procedan. Si este jugador tiene además una habilidad que le permita realizar más de una acción de Placaje en una misma activación, como por ejemplo Furia, deberá hacer una tirada de Agallas por separado para cada una de esas acciones de Placaje.
 
 ROMPER DEFENSAS
 

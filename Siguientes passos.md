@@ -36,7 +36,7 @@ Si le muerde, haz una tirada de Heridas por el Thrall Lineman, tratando cualquie
 
 ☣️- GARRAS (pruebas desde 08-09-2026)
 
-☣️- EL BALON ES MIO (pruebas desde 08-09-2026)
+☣️- EL BALON ES MIO (pruebas desde 08-09-2026) - De momento funciona, no deja pasar ni entregar la pelota.
 
 ☣️- EQUILIBRIO FIRME (pruebas desde 08-09-2026)
 

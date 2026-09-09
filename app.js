@@ -2583,15 +2583,12 @@ function applyBlockOutcome(kind){
   }
 
   if(kind==='bothDown'){
-    const atkHasTackle = playerHasSkill(attacker, 'placar', 'tackle');
-    const defHasTackle = playerHasSkill(defender, 'placar', 'tackle');
     const atkHasForcejear = playerHasSkill(attacker, 'forcejear', 'wrestle');
     const defHasForcejear = playerHasSkill(defender, 'forcejear', 'wrestle');
-    const placarRelevant = atkHasTackle || defHasTackle;
-    if((atkHasForcejear || defHasForcejear) && placarRelevant){
+    if(atkHasForcejear || defHasForcejear){
       pendingForcejearChoice = { attackerId: attacker.id, defenderId: defender.id, isBlitz: !!isBlitz };
       document.getElementById('forcejearText').textContent = (atkHasForcejear ? attacker.name : defender.name) +
-        ' tiene Forcejear. ¿Usarla? Ambos caerán al suelo, con independencia de Placar u otras habilidades.';
+        ' tiene Forcejear. ¿Usarla? Ambos caerán al suelo, con independencia de otras habilidades.';
       document.getElementById('forcejearModal').classList.add('show');
       broadcastState();
       return;

@@ -31,6 +31,8 @@ Si le muerde, haz una tirada de Heridas por el Thrall Lineman, tratando cualquie
 Cuando este jugador realiza una acción de Placaje (normal o placaje cuando marcamos el Blitz) contra un jugador rival con un atributo Fuerza superior al suyo (antes de aplicar modificadores a ambos jugadores por los apoyos), este jugador tira 1D6 y suma a su atributo Fuerza al resultado. Si el total es mayor que el atributo Fuerza sin modificar del jugador rival, mientras dure la acción de Placaje este jugador aumentará su propio atributo Fuerza hasta igualarlo al del jugador rival. A continuación se aplicarán de manera normal todos los modificadores que procedan. Si este jugador tiene además una habilidad que le permita realizar más de una acción de Placaje en una misma activación, como por ejemplo Furia, deberá hacer una tirada de Agallas por separado para cada una de esas acciones de Placaje.
 - FORCEJEAR (OK 10-09-2026 // TE PREGUNTA SI USAR HABILIDAD O SEGUIR)
 - EQUILIBRIO FIRME (OK 10-09-2026 // TIRADA AUTOMATICA, VER HISTORIAL)
+- GARRAS (OK 10-09-2026)
+- EL BALON ES MIO (OK 10-09-2026) - No deja pasar ni entregar la pelota.
 
 ☣️☣️☣️¿¿¿ EN PRUEBAS ??? (las habilidades con guión, están en Pruebas)
 
@@ -38,11 +40,7 @@ Cuando este jugador realiza una acción de Placaje (normal o placaje cuando marc
 
 ☣️- ATRAPAR (pruebas desde 03-09-2026)
 
-☣️- GARRAS (pruebas desde 08-09-2026)
-
-☣️- EL BALON ES MIO (pruebas desde 08-09-2026) - De momento funciona, no deja pasar ni entregar la pelota.
-
-☣️- DEJADA (pruebas desde 08-09-2026 // bien y afinando) 
+☣️- DEJADA (pruebas desde 08-09-2026 // bien y afinandolo) 
 Cuando este jugador sea el portador del balón y realice una acción de Movimiento, puede elegir "dejar el balón", colocándolo en cualquier casilla que abandone durante dicha acción de Movimiento. Esto no provoca un cambio de turno.
 El balón quedará en la casilla que abandone tras declarar la Dejada por lo que yo haría sería que mientras que el jugador con la habilidad dejada esté haciendo su Movimiento, si pinchamos sobre el con el boton derecho que salte solo la opcion en la ruleta de Dejada para activar esta habilidad... o como podemos proceder?
 
@@ -51,7 +49,8 @@ De momento, avisar en el modal cuando se haga una tirada de Heridas contra ese j
 
 ECHARSE A UN LADO
 
-LLAVE DE BRAZO
+☣️- LLAVE DE BRAZO (pruebas desde 10-09-2026)
+Si un jugador rival se Cae por haber fallado su intento de esquivar, saltar o brincar desde una casilla en la Zona de defensa de este jugador, este jugador puede aplicar un modificador de +1 en la tirada de Armadura y si la pasa sin aplicarlo, lo aplica en la de Heridas (es como lo de Golpe Mortífero). Si un Jugador intenta salir de una casilla en la Zona de defensa de varios jugadores con esta habilidad, solo uno de ellos podrá utilizarla.
 
 ROMPER DEFENSAS
 

@@ -19,14 +19,18 @@ Si le muerde, haz una tirada de Heridas por el Thrall Lineman, tratando cualquie
 
 @@@@@@@@@@@@@@@@@@@ HABILIDADES / RASGOS AUTOMATIZADAS @@@@@@@@@@@@@@@@@@@
 - PLACAR (OK)
-- ESQUIVAR (OK)
+- ESQUIVAR (OK // TE PREGUNTA SI USAR ESQUIVAR)
 - ESPRINTAR (OK)
 - EN PIE DE UN SALTO 
-- MANOS SEGURAS  (OK)
+- MANOS SEGURAS (OK)
 - ESTUPIDO / REALMENTE ESTUPIDO / IRA DESCONTROLADA / FEROCIDAD ANIMAL (OK)
-- FURIA (OK 03-09-2026)
-- GOLPE MORTIFERO (OK 03-09-2026)
-- CUERNOS (OK 07-09-2026)
+- FURIA (OK 03-09-2026 // AUTOMÁTICO)
+- GOLPE MORTIFERO (OK 03-09-2026 // APLICACIÓN AUTOMÁTICA)
+- CUERNOS (OK 07-09-2026 // SUMA AUTOMÁTICA)
+- AGALLAS (OK 10-09-2026 // TIRADA AUTOMATICA, VER HISTORIAL)
+Cuando este jugador realiza una acción de Placaje (normal o placaje cuando marcamos el Blitz) contra un jugador rival con un atributo Fuerza superior al suyo (antes de aplicar modificadores a ambos jugadores por los apoyos), este jugador tira 1D6 y suma a su atributo Fuerza al resultado. Si el total es mayor que el atributo Fuerza sin modificar del jugador rival, mientras dure la acción de Placaje este jugador aumentará su propio atributo Fuerza hasta igualarlo al del jugador rival. A continuación se aplicarán de manera normal todos los modificadores que procedan. Si este jugador tiene además una habilidad que le permita realizar más de una acción de Placaje en una misma activación, como por ejemplo Furia, deberá hacer una tirada de Agallas por separado para cada una de esas acciones de Placaje.
+- FORCEJEAR (OK 10-09-2026 // TE PREGUNTA SI USAR HABILIDAD O SEGUIR)
+- EQUILIBRIO FIRME (OK 10-09-2026 // TIRADA AUTOMATICA, VER HISTORIAL)
 
 ☣️☣️☣️¿¿¿ EN PRUEBAS ??? (las habilidades con guión, están en Pruebas)
 
@@ -38,29 +42,23 @@ Si le muerde, haz una tirada de Heridas por el Thrall Lineman, tratando cualquie
 
 ☣️- EL BALON ES MIO (pruebas desde 08-09-2026) - De momento funciona, no deja pasar ni entregar la pelota.
 
-☣️- EQUILIBRIO FIRME (pruebas desde 08-09-2026)
-
-☣️- FORCEJEAR (pruebas desde 08-09-2026)
-
-☣️- DEJADA (pruebas desde 08-09-2026)
+☣️- DEJADA (pruebas desde 08-09-2026 // bien y afinando) 
 Cuando este jugador sea el portador del balón y realice una acción de Movimiento, puede elegir "dejar el balón", colocándolo en cualquier casilla que abandone durante dicha acción de Movimiento. Esto no provoca un cambio de turno.
 El balón quedará en la casilla que abandone tras declarar la Dejada por lo que yo haría sería que mientras que el jugador con la habilidad dejada esté haciendo su Movimiento, si pinchamos sobre el con el boton derecho que salte solo la opcion en la ruleta de Dejada para activar esta habilidad... o como podemos proceder?
 
-☣️- CABEZA DURA (pruebas desde 08-09-2026)
+☣️- CABEZA DURA (pruebas desde 08-09-2026 - Sale aviso de que tiene esta habilidad)
 De momento, avisar en el modal cuando se haga una tirada de Heridas contra ese jugador en letras de color rojo que tiene "Jugador con CABEZA DURA" para avisarnos al elegir el resultado
 
 ECHARSE A UN LADO
 
 LLAVE DE BRAZO
 
-☣️- AGALLAS (pruebas desde 09-09-2026)
-Cuando este jugador realiza una acción de Placaje (normal o placaje cuando marcamos el Blitz) contra un jugador rival con un atributo Fuerza superior al suyo (antes de aplicar modificadores a ambos jugadores por los apoyos), este jugador tira 1D6 y suma a su atributo Fuerza al resultado. Si el total es mayor que el atributo Fuerza sin modificar del jugador rival, mientras dure la acción de Placaje este jugador aumentará su propio atributo Fuerza hasta igualarlo al del jugador rival. A continuación se aplicarán de manera normal todos los modificadores que procedan. Si este jugador tiene además una habilidad que le permita realizar más de una acción de Placaje en una misma activación, como por ejemplo Furia, deberá hacer una tirada de Agallas por separado para cada una de esas acciones de Placaje.
-
 ROMPER DEFENSAS
 
 HABILIDADES TRAS IMPLEMENTAR PASAR:
 PARTENUBES
 PASE SEGURO
+PASE A LO LOCO
 RECEPCIÓN HERÓICA
 ANIMOSIDAD
 NERVIOS DE ACERO

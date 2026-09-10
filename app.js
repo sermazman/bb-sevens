@@ -361,6 +361,7 @@ function snapshotState(){
     armorRollBtnVisible: document.getElementById('armorRollBtn').style.display!=='none',
     crowdPushMode,
     injuryBlockVisible: document.getElementById('injuryBlock').style.display==='block',
+    garrasWarningVisible: document.getElementById('garrasWarning').style.display==='block',
     cabezaDuraWarningVisible: document.getElementById('cabezaDuraWarning').style.display==='block',
     injuryDie1: document.getElementById('injuryDie1').textContent,
     injuryDie2: document.getElementById('injuryDie2').textContent,
@@ -597,6 +598,7 @@ function applyRemoteState(payload){
   document.getElementById('armorRollBtn').style.display = (payload.armorRollBtnVisible===false) ? 'none' : 'block';
   crowdPushMode = !!payload.crowdPushMode;
   document.getElementById('injuryBlock').style.display = payload.injuryBlockVisible ? 'block' : 'none';
+  document.getElementById('garrasWarning').style.display = payload.garrasWarningVisible ? 'block' : 'none';
   document.getElementById('cabezaDuraWarning').style.display = payload.cabezaDuraWarningVisible ? 'block' : 'none';
   document.getElementById('injuryDie1').textContent = payload.injuryDie1 || '–';
   document.getElementById('injuryDie2').textContent = payload.injuryDie2 || '–';
@@ -1548,7 +1550,7 @@ function handleTokenRightClick(id){
   if(phase!=='live' || anyModalOpen()) return;
   const p = players.find(x=>x.id===id);
   if(!p || p.team!==state.active) return;
-  if(selected===id && ball.carrierId===id && p.previousRow!==undefined && p.previousRow!==null &&
+  if(selected===id && ball.carrierId===id &&
      (declaredAction==='move' || declaredAction==='blitz' || declaredAction==='handoff') &&
      playerHasSkill(p, 'dejada')){
     dejadaWheelActive = true;
@@ -1856,12 +1858,12 @@ function actionMenuDejada(){
   const savedDeclaredAction = declaredAction;
   closeActionMenu();
   const p = players.find(x=>x.id===id);
-  if(!p || ball.carrierId!==p.id || p.previousRow===undefined || p.previousRow===null){ return; }
+  if(!p || ball.carrierId!==p.id) return;
   ball.carrierId = null;
-  ball.row = p.previousRow; ball.col = p.previousCol;
+  ball.row = p.row; ball.col = p.col;
   selected = id;
   declaredAction = savedDeclaredAction; // el jugador sigue su movimiento con normalidad
-  log('📍 ' + p.name + ' usa Dejada — deja el balón en la casilla que acaba de abandonar. Sin cambio de turno.');
+  log('📍 ' + p.name + ' usa Dejada — deja el balón en su casilla actual y sigue moviéndose. Sin cambio de turno.');
   renderRosters(); renderPitch(); renderSelInfo();
   broadcastState();
 }
@@ -2315,7 +2317,10 @@ function executeBlockHit(attacker, defender, isBlitz){
   }
 }
 
-function getAssistingPlayers(supporterTeam, targetId, excludeId){
+function getAssistingPlayers(supporterTeam, targetId, excludeId, context){
+  // context: undefined/'block' (por defecto) -> Defensa bypassa la restricción en los dos lados.
+  // 'foulOff' -> apoyo ofensivo en una Falta -> Meter la Bota bypassa la restricción.
+  // 'foulDef' -> apoyo defensivo en una Falta -> ninguna de las dos habilidades aplica aquí.
   const target = players.find(x=>x.id===targetId);
   if(!target) return [];
   const enemyTeam = supporterTeam==='A' ? 'B' : 'A';
@@ -2324,9 +2329,15 @@ function getAssistingPlayers(supporterTeam, targetId, excludeId){
     if(!(p2.onPitch && p2.team===supporterTeam && p2.condition==='standing')) return false;
     const distToTarget = Math.max(Math.abs(p2.row-target.row), Math.abs(p2.col-target.col));
     if(distToTarget!==1) return false;
-    const markedByOtherEnemy = players.some(e => e.onPitch && e.team===enemyTeam && e.condition==='standing' && e.id!==targetId &&
+    const markingEnemies = players.filter(e => e.onPitch && e.team===enemyTeam && e.condition==='standing' && e.id!==targetId &&
       Math.max(Math.abs(e.row-p2.row), Math.abs(e.col-p2.col))===1);
-    return !markedByOtherEnemy;
+    const nullifiedByRomperDefensas = markingEnemies.some(e => playerHasSkill(e, 'romper defensas', 'break tackle'));
+    const bypass = !nullifiedByRomperDefensas && (
+      (context!=='foulOff' && context!=='foulDef' && playerHasSkill(p2, 'defensa', 'guard')) ||
+      (context==='foulOff' && playerHasSkill(p2, 'meter la bota', 'dirty player'))
+    );
+    if(bypass) return true;
+    return markingEnemies.length===0;
   });
 }
 
@@ -3205,8 +3216,8 @@ function startRefereeArgument(fouler){
 }
 
 function startFoulOn(fouler, target){
-  const offAssisters = getAssistingPlayers(fouler.team, target.id, fouler.id);
-  const defAssisters = getAssistingPlayers(target.team, fouler.id, target.id);
+  const offAssisters = getAssistingPlayers(fouler.team, target.id, fouler.id, 'foulOff');
+  const defAssisters = getAssistingPlayers(target.team, fouler.id, target.id, 'foulDef');
   const modifier = offAssisters.length - defAssisters.length;
   pendingFoulContext = {
     foulerId: fouler.id, targetId: target.id,
@@ -3327,7 +3338,9 @@ function parseAvTarget(avStr){
 }
 
 let golpeMortiferoMap = {}; // { fallingPlayerId: attackerId } — Golpe Mortífero elegible en esta caída concreta
+let llaveDeBrazoMap = {}; // { fallingPlayerId: opponentId } — Llave de Brazo elegible en esta caída concreta (esquiva fallida)
 let golpeMortiferoUsedOnArmor = false;
+let llaveDeBrazoUsedOnArmor = false;
 
 function finishPushSequence(info){
   if(!info) return;
@@ -3744,6 +3757,11 @@ function countOpponentTackleZones(r,c,team){
     Math.max(Math.abs(p2.row-r), Math.abs(p2.col-c))===1).length;
 }
 
+function opponentTackleZonePlayers(r,c,team){
+  return players.filter(p2 => p2.onPitch && p2.team!==team && p2.condition==='standing' &&
+    Math.max(Math.abs(p2.row-r), Math.abs(p2.col-c))===1);
+}
+
 function checkActionButtons(prefix, success, p){
   const resultEl = document.getElementById(prefix+'ResultText');
   resultEl.textContent = success ? '✅ CONSEGUIDO' : '❌ FALLADO';
@@ -3893,6 +3911,7 @@ function resolveDodge(success){
   if(!pendingDodge) return;
   const { playerId, toR, toC, fromGfi } = pendingDodge;
   const p = players.find(x=>x.id===playerId);
+  const fromR = p ? p.row : null, fromC = p ? p.col : null;
   document.getElementById('dodgeModal').classList.remove('show');
   pendingDodge = null;
   if(!p){ broadcastState(); return; }
@@ -3909,6 +3928,11 @@ function resolveDodge(success){
     renderRosters(); renderPitch(); renderSelInfo();
     log('💥 ' + p.name + ' falla la esquiva y cae al suelo.');
     queueBallDropIfCarrier(p.id, toR, toC);
+    const llaveCandidates = opponentTackleZonePlayers(fromR, fromC, p.team).filter(op => playerHasSkill(op, 'llave de brazo', 'arm bar'));
+    if(llaveCandidates.length>0){
+      llaveDeBrazoMap[p.id] = llaveCandidates[0].id;
+      log('💪 ' + llaveCandidates[0].name + ' puede usar Llave de Brazo contra ' + p.name + '.');
+    }
     broadcastState();
     pendingTurnoverAfterResolve = true;
     openArmorModal(p);
@@ -3992,6 +4016,9 @@ function openArmorModal(p){
   armorForPlayer = p.id;
   crowdPushMode = false;
   document.getElementById('armorText').textContent = `Tirando armadura a ${p.name} con AV ${p.av ?? '(sin dato)'}.`;
+  const garrasAttackerId0 = golpeMortiferoMap[p.id];
+  const garrasAttacker0 = garrasAttackerId0 ? players.find(x=>x.id===garrasAttackerId0) : null;
+  document.getElementById('garrasWarning').style.display = (garrasAttacker0 && playerHasSkill(garrasAttacker0, 'garras', 'claws')) ? 'block' : 'none';
   document.getElementById('armorRollBtn').style.display = 'block';
   document.getElementById('armorDie1').textContent='–';
   document.getElementById('armorDie2').textContent='–';
@@ -4067,6 +4094,22 @@ function rollArmor(){
       return;
     }
   }
+
+  const llaveAttackerId = p ? llaveDeBrazoMap[p.id] : null;
+  const llaveAttacker = llaveAttackerId ? players.find(x=>x.id===llaveAttackerId) : null;
+  llaveDeBrazoUsedOnArmor = false;
+  if(p && llaveAttacker && playerHasSkill(llaveAttacker, 'llave de brazo', 'arm bar')){
+    const target = parseAvTarget(p.av);
+    const naturallyBroken = sum >= target;
+    const breaksWithBonus = (sum+1) >= target;
+    if(!naturallyBroken && breaksWithBonus){
+      llaveDeBrazoUsedOnArmor = true;
+      document.getElementById('armorSum').textContent = 'Suma: ' + sum + ' +1 (Llave de Brazo de ' + llaveAttacker.name + ') = ' + (sum+1);
+      log('💪 Llave de Brazo de ' + llaveAttacker.name + ' aplicado en Armadura: ' + sum + '+1 = ' + (sum+1) + ' — ROTA.');
+      armorResult(true);
+      return;
+    }
+  }
   document.getElementById('armorPassRow').style.display='block';
   broadcastState();
 }
@@ -4103,11 +4146,17 @@ function rollInjury(){
   const gmAttackerId = p ? golpeMortiferoMap[p.id] : null;
   const gmAttacker = gmAttackerId ? players.find(x=>x.id===gmAttackerId) : null;
   const gmForInjury = p && !golpeMortiferoUsedOnArmor && gmAttacker && playerHasSkill(gmAttacker, 'golpe mortífero', 'golpe mortifero', 'mighty blow');
+  const llaveAttackerId = p ? llaveDeBrazoMap[p.id] : null;
+  const llaveAttacker = llaveAttackerId ? players.find(x=>x.id===llaveAttackerId) : null;
+  const llaveForInjury = p && !gmForInjury && !llaveDeBrazoUsedOnArmor && llaveAttacker && playerHasSkill(llaveAttacker, 'llave de brazo', 'arm bar');
   document.getElementById('injuryDie1').textContent=d1;
   document.getElementById('injuryDie2').textContent=d2;
   if(gmForInjury){
     document.getElementById('injurySum').textContent = 'Suma: ' + sum + ' +1 (Golpe Mortífero de ' + gmAttacker.name + ') = ' + (sum+1);
     log('🎲 Heridas (' + (p?p.name:'?') + '): ' + d1 + ' + ' + d2 + ' = ' + sum + ' +1 Golpe Mortífero = ' + (sum+1));
+  } else if(llaveForInjury){
+    document.getElementById('injurySum').textContent = 'Suma: ' + sum + ' +1 (Llave de Brazo de ' + llaveAttacker.name + ') = ' + (sum+1);
+    log('🎲 Heridas (' + (p?p.name:'?') + '): ' + d1 + ' + ' + d2 + ' = ' + sum + ' +1 Llave de Brazo = ' + (sum+1));
   } else {
     document.getElementById('injurySum').textContent='Suma: '+sum;
     log('🎲 Heridas (' + (p?p.name:'?') + '): ' + d1 + ' + ' + d2 + ' = ' + sum);
@@ -4167,9 +4216,12 @@ function queueBallDropIfCarrier(playerId, r, c, exitR, exitC){
 function closeArmorModal(){
   const resolvedPlayerId = armorForPlayer;
   document.getElementById('armorModal').classList.remove('show');
+  document.getElementById('garrasWarning').style.display = 'none';
   armorForPlayer = null;
   golpeMortiferoUsedOnArmor = false;
   if(resolvedPlayerId!==null) delete golpeMortiferoMap[resolvedPlayerId];
+  llaveDeBrazoUsedOnArmor = false;
+  if(resolvedPlayerId!==null) delete llaveDeBrazoMap[resolvedPlayerId];
   broadcastState();
   if(pendingArmorQueue && pendingArmorQueue.length>0){
     processNextArmorInQueue();

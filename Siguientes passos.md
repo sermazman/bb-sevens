@@ -47,14 +47,21 @@ El balón quedará en la casilla que abandone tras declarar la Dejada por lo que
 ☣️- CABEZA DURA (pruebas desde 08-09-2026 - Sale aviso de que tiene esta habilidad)
 De momento, avisar en el modal cuando se haga una tirada de Heridas contra ese jugador en letras de color rojo que tiene "Jugador con CABEZA DURA" para avisarnos al elegir el resultado
 
-ECHARSE A UN LADO
-
 ☣️- LLAVE DE BRAZO (pruebas desde 10-09-2026)
 Si un jugador rival se Cae por haber fallado su intento de esquivar, saltar o brincar desde una casilla en la Zona de defensa de este jugador, este jugador puede aplicar un modificador de +1 en la tirada de Armadura y si la pasa sin aplicarlo, lo aplica en la de Heridas (es como lo de Golpe Mortífero). Si un Jugador intenta salir de una casilla en la Zona de defensa de varios jugadores con esta habilidad, solo uno de ellos podrá utilizarla.
 
-ROMPER DEFENSAS
+☣️- ROMPER DEFENSAS (pruebas desde 10-09-2026)
+Durante los turnos del equipo rival, los jugadores rivales Marcados por este jugador no pueden usar las habilidades Defensa ni Meter la bota.
 
-HABILIDADES TRAS IMPLEMENTAR PASAR:
+☣️- DEFENSA (pruebas desde 10-09-2026)
+Este jugador siempre puede ofrecer apoyos tanto ofensivos como defensivos en las acciones de Placaje, sin importar por cuántos jugadores rivales esté siendo Marcado.
+
+☣️- METER LA BOTA (pruebas desde 10-09-2026)
+Este jugador puede prestar apoyos ofensivos cuando un compañero realiza una acción de Falta sin importar cuántos Jugadores rivales estén Marcando a este jugador.
+
+ECHARSE A UN LADO
+
+// HABILIDADES TRAS IMPLEMENTAR PASAR: //
 PARTENUBES
 PASE SEGURO
 PASE A LO LOCO

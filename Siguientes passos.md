@@ -1,3 +1,6 @@
+Version 14 de WEB, está OK antes de meter el pase
+PARA CAMBIAR AL BALON POR UNO SPIKED, HACER PNG fondo transparente de 64x64 o 128x128
+
 ☣️ACCION DE PASAR - Redactar todo y ver como hacerlo lo forma bonita
 
 ** INICIO: Previsión 10-09 ó 11-09 REALIZADO FECHA:

@@ -159,6 +159,7 @@ function setTeamTextColor(team, mode){
 let blitzUsedByTeam = { A: false, B: false };
 let handoffUsedByTeam = { A: false, B: false };
 let foulUsedByTeam = { A: false, B: false };
+let passUsedByTeam = { A: false, B: false };
 let pendingFoulContext = null; // { foulerId, targetId, offAssists, defAssists, modifier, doubleDetected }
 let secureBallUsedByTeam = { A: false, B: false };
 let pendingSecureBall = null;
@@ -309,7 +310,7 @@ function snapshotState(){
     koQueue, pendingKo, teamRace, customColorsEnabled, teamCustomColor, teamTextColor, openingKickoffDone, firstHalfKickingTeam, pitchBackgroundUrl, pitchBackgroundExact, teamStaff, teamRerollsLeft, kickoffPendingOOBAfterEvent,
     ballBounceActive, pendingCatch, pendingBallDrop, pendingDriveStart,
     pendingKickPlacement, kickoffBounceStep, kickoffKickingTeam, kickoffReceivingTeam, freeCatchTeam, placingBallFree, kickoffTargetRow, kickoffTargetCol,
-    blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp, chainPushStack, secureBallUsedByTeam, pendingSecureBall, secureBallActivePlayer, handoffUsedByTeam, pendingHandoffChoice, foulUsedByTeam, pendingFoulContext,
+    blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp, chainPushStack, secureBallUsedByTeam, pendingSecureBall, secureBallActivePlayer, handoffUsedByTeam, pendingHandoffChoice, foulUsedByTeam, pendingFoulContext, passUsedByTeam,
     secureBallModalOpen: document.getElementById('secureBallModal').classList.contains('show'),
     matchEndModalOpen: document.getElementById('matchEndModal').classList.contains('show'),
     forcejearModalOpen: document.getElementById('forcejearModal').classList.contains('show'),
@@ -499,6 +500,7 @@ function applyRemoteState(payload){
   secureBallUsedByTeam = payload.secureBallUsedByTeam || { A:false, B:false };
   handoffUsedByTeam = payload.handoffUsedByTeam || { A:false, B:false };
   foulUsedByTeam = payload.foulUsedByTeam || { A:false, B:false };
+  passUsedByTeam = payload.passUsedByTeam || { A:false, B:false };
   pendingFoulContext = payload.pendingFoulContext || null;
   pendingHandoffChoice = payload.pendingHandoffChoice || null;
   secureBallActivePlayer = payload.secureBallActivePlayer;
@@ -1309,10 +1311,27 @@ function renderPitch(){
   const posMap = {};
   players.filter(p=>p.onPitch).forEach(p=> posMap[p.row+'_'+p.col]=p );
 
+  const passOriginPlayer = (phase==='live' && selected!==null && declaredAction==='pass')
+    ? players.find(x=>x.id===selected) : null;
+  const passZoneNeighbor = (r,c)=>{
+    if(r<0||r>=ROWS||c<0||c>=COLS) return -2;
+    return passRangeZone(r-passOriginPlayer.row, c-passOriginPlayer.col);
+  };
+
   for(let r=0;r<ROWS;r++){
     for(let c=0;c<COLS;c++){
       const cell = document.createElement('div');
       cell.className = cellClass(r,c);
+      if(passOriginPlayer){
+        const z = passRangeZone(r-passOriginPlayer.row, c-passOriginPlayer.col);
+        if(z!==-1){
+          const color = PASS_ZONE_COLORS[z];
+          if(passZoneNeighbor(r-1,c)!==z) cell.style.borderTop = '3px solid ' + color;
+          if(passZoneNeighbor(r+1,c)!==z) cell.style.borderBottom = '3px solid ' + color;
+          if(passZoneNeighbor(r,c-1)!==z) cell.style.borderLeft = '3px solid ' + color;
+          if(passZoneNeighbor(r,c+1)!==z) cell.style.borderRight = '3px solid ' + color;
+        }
+      }
       if(customColorsEnabled){
         if(c===0 && teamCustomColor.A){
           const base = teamCustomColor.A, dark = shadeColor(base, -20);
@@ -1343,7 +1362,7 @@ function renderPitch(){
           highlightPush = true;
           highlightPushFree = freeActive;
         }
-      } else if(phase==='live' && selected!==null && (declaredAction==='move' || declaredAction==='blitz' || declaredAction==='secureball' || declaredAction==='handoff' || declaredAction==='foul')){
+      } else if(phase==='live' && selected!==null && (declaredAction==='move' || declaredAction==='blitz' || declaredAction==='secureball' || declaredAction==='handoff' || declaredAction==='foul' || declaredAction==='pass')){
         const p = players.find(x=>x.id===selected);
         if(p && inAdjacentReach(p,r,c) && !occupiedBy(r,c)){
           highlightable = true;
@@ -1622,6 +1641,28 @@ function canHandoff(p){
   return Math.max(Math.abs(ball.row-p.row), Math.abs(ball.col-p.col)) <= reach;
 }
 
+const PASS_RANGE_LIMITS = [3, 6, 10, 13]; // rápido, corto, largo, bomba (casillas, Chebyshev)
+const PASS_ZONE_COLORS = ['#4caf50', '#ffd54f', '#ff9800', '#e53935'];
+function passRangeZone(dr, dc){
+  const dist = Math.max(Math.abs(dr), Math.abs(dc));
+  for(let z=0; z<PASS_RANGE_LIMITS.length; z++){
+    if(dist<=PASS_RANGE_LIMITS[z]) return z;
+  }
+  return -1; // fuera de alcance
+}
+
+function canPass(p){
+  if(passUsedByTeam[p.team]) return false;
+  if(moveMode(p)===null) return false;
+  const reach = playerMoveReach(p);
+  if(ball.carrierId!==null){
+    if(ball.carrierId!==p.id) return false;
+    return true;
+  }
+  if(ball.row===null) return false;
+  return Math.max(Math.abs(ball.row-p.row), Math.abs(ball.col-p.col)) <= reach;
+}
+
 function canFoul(p){
   if(foulUsedByTeam[p.team]) return false;
   if(moveMode(p)===null) return false;
@@ -1642,6 +1683,7 @@ function getActionMenuOptionsFor(p){
     if(!blitzUsedByTeam[p.team]) opts.push({ icon:'⚡', label:'Levantar/Blitz', fn:'actionMenuStandBlitz' });
     if(canSecureBall(p)) opts.push({ icon:'🔒', label:'Levantar/Asegurar', fn:'actionMenuStandSecureBall' });
     if(!handoffUsedByTeam[p.team]) opts.push({ icon:'🤝', label:'Levantar/Entrega', fn:'actionMenuStandHandoff' });
+    if(!passUsedByTeam[p.team]) opts.push({ icon:'🎯', label:'Levantar/Pase', fn:'actionMenuStandPass' });
     opts.push({ icon:'🥊', label:'Levantar/Falta', fn:'actionMenuStandFoul' });
     if(playerHasSkill(p, 'salto', 'jump up')){
       opts.push({ icon:'🤸', label:'Salto+Placar', fn:'actionMenuJumpUp' });
@@ -1660,6 +1702,9 @@ function getActionMenuOptionsFor(p){
   }
   if(!p.rooted && canHandoff(p)){
     opts.push({ icon:'🤝', label:'Entrega', fn:'actionMenuHandoff' });
+  }
+  if(!p.rooted && canPass(p)){
+    opts.push({ icon:'🎯', label:'Pase', fn:'actionMenuPass' });
   }
   if(canFoul(p)){
     opts.push({ icon:'🥊', label:'Falta', fn:'actionMenuFoul' });
@@ -1754,6 +1799,28 @@ function actionMenuSecureBall(){
   secureBallUsedByTeam[p.team] = true; // se gasta al declarar, aunque el chequeo de rasgo falle después
   log('🔒 ' + teamName(p.team) + ' declara su Asegurar Balón de este turno (' + p.name + ').');
   runTraitCheckThen(p, 'secureball');
+}
+
+function actionMenuPass(){
+  const id = pendingActionMenuPlayer;
+  closeActionMenu();
+  const p = players.find(x=>x.id===id);
+  if(!p) return;
+  selected = id;
+  passUsedByTeam[p.team] = true; // se gasta al declarar, aunque el chequeo de rasgo falle después
+  log('🎯 ' + teamName(p.team) + ' declara su Pase de este turno (' + p.name + ').');
+  runTraitCheckThen(p, 'pass');
+}
+
+function actionMenuStandPass(){
+  const id = pendingActionMenuPlayer;
+  closeActionMenu();
+  const p = players.find(x=>x.id===id);
+  if(!p) return;
+  selected = id;
+  passUsedByTeam[p.team] = true;
+  log('🎯 ' + teamName(p.team) + ' declara su Pase de este turno (' + p.name + ', levantándose).');
+  runTraitCheckThen(p, 'standpass');
 }
 
 function actionMenuHandoff(){
@@ -1972,7 +2039,7 @@ function cellClicked(r,c){
   }
 
   // live phase — step by step movement
-  if(selected!==null && (declaredAction==='move' || declaredAction==='blitz' || declaredAction==='secureball' || declaredAction==='handoff' || declaredAction==='foul')){
+  if(selected!==null && (declaredAction==='move' || declaredAction==='blitz' || declaredAction==='secureball' || declaredAction==='handoff' || declaredAction==='foul' || declaredAction==='pass')){
     const p = players.find(x=>x.id===selected);
     if(p && inAdjacentReach(p,r,c) && !occupiedBy(r,c)){
       const fromR=p.row, fromC=p.col;
@@ -3291,6 +3358,11 @@ function proceedDeclaredAction(p, actionLabel){
     renderPitch(); renderRosters(); renderSelInfo();
     updateStatus(p.name + ' declara Entrega de Balón — mueve hasta quedar adyacente a un compañero en pie.');
     broadcastState();
+  } else if(actionLabel==='pass'){
+    declaredAction = 'pass';
+    renderPitch(); renderRosters(); renderSelInfo();
+    updateStatus(p.name + ' declara Pase — mueve y luego click derecho para lanzar.');
+    broadcastState();
   } else if(actionLabel==='foul'){
     declaredAction = 'foul';
     renderPitch(); renderRosters(); renderSelInfo();
@@ -3317,6 +3389,12 @@ function proceedDeclaredAction(p, actionLabel){
     declaredAction = 'handoff';
     renderPitch(); renderRosters(); renderSelInfo();
     updateStatus(p.name + ' declara Entrega de Balón — mueve hasta quedar adyacente a un compañero en pie.');
+    broadcastState();
+  } else if(actionLabel==='standpass'){
+    standUp();
+    declaredAction = 'pass';
+    renderPitch(); renderRosters(); renderSelInfo();
+    updateStatus(p.name + ' declara Pase — mueve y luego click derecho para lanzar.');
     broadcastState();
   } else if(actionLabel==='standfoul'){
     standUp();
@@ -4315,6 +4393,7 @@ function beginTurn(team){
   secureBallUsedByTeam[team] = false;
   handoffUsedByTeam[team] = false;
   foulUsedByTeam[team] = false;
+  passUsedByTeam[team] = false;
   secureBallActivePlayer = null;
   players.filter(p=>p.team===team).forEach(p=>{
     p.activated = false;

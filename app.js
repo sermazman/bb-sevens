@@ -1326,10 +1326,11 @@ function renderPitch(){
         const z = passRangeZone(r-passOriginPlayer.row, c-passOriginPlayer.col);
         if(z!==-1){
           const color = PASS_ZONE_COLORS[z];
-          if(passZoneNeighbor(r-1,c)!==z) cell.style.borderTop = '3px solid ' + color;
-          if(passZoneNeighbor(r+1,c)!==z) cell.style.borderBottom = '3px solid ' + color;
-          if(passZoneNeighbor(r,c-1)!==z) cell.style.borderLeft = '3px solid ' + color;
-          if(passZoneNeighbor(r,c+1)!==z) cell.style.borderRight = '3px solid ' + color;
+          const isOuterEdge = (nz)=> nz<z || nz===-1 || nz===-2;
+          if(isOuterEdge(passZoneNeighbor(r-1,c))) cell.style.borderTop = '3px solid ' + color;
+          if(isOuterEdge(passZoneNeighbor(r+1,c))) cell.style.borderBottom = '3px solid ' + color;
+          if(isOuterEdge(passZoneNeighbor(r,c-1))) cell.style.borderLeft = '3px solid ' + color;
+          if(isOuterEdge(passZoneNeighbor(r,c+1))) cell.style.borderRight = '3px solid ' + color;
         }
       }
       if(customColorsEnabled){
@@ -1641,10 +1642,11 @@ function canHandoff(p){
   return Math.max(Math.abs(ball.row-p.row), Math.abs(ball.col-p.col)) <= reach;
 }
 
-const PASS_RANGE_LIMITS = [3, 6, 10, 13]; // rápido, corto, largo, bomba (casillas, Chebyshev)
+const PASS_RANGE_LIMITS = [3, 6, 10, 13]; // rápido, corto, largo, bomba (casillas)
 const PASS_ZONE_COLORS = ['#4caf50', '#ffd54f', '#ff9800', '#e53935'];
 function passRangeZone(dr, dc){
-  const dist = Math.max(Math.abs(dr), Math.abs(dc));
+  const a = Math.abs(dr), b = Math.abs(dc);
+  const dist = Math.max(a,b) + Math.floor(Math.min(a,b)/2); // aproximación redondeada (diamante) a la plantilla oficial
   for(let z=0; z<PASS_RANGE_LIMITS.length; z++){
     if(dist<=PASS_RANGE_LIMITS[z]) return z;
   }

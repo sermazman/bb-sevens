@@ -1,6 +1,6 @@
 ☣️ACCION DE PASAR - Redactar todo y ver como hacerlo lo forma bonita
 
-** INICIO: Previsión 08-09 ó 09-09 REALIZADO FECHA:
+** INICIO: Previsión 10-09 ó 11-09 REALIZADO FECHA:
 
 INCLUIR RESTO DE STAFF EN ROSTERS y APP GENERAL (buscar huecos para Incentivos por el Futuro)
 
@@ -33,6 +33,10 @@ Cuando este jugador realiza una acción de Placaje (normal o placaje cuando marc
 - EQUILIBRIO FIRME (OK 10-09-2026 // TIRADA AUTOMATICA, VER HISTORIAL)
 - GARRAS (OK 10-09-2026)
 - EL BALON ES MIO (OK 10-09-2026) - No deja pasar ni entregar la pelota.
+- LLAVE DE BRAZO (OK 11-09-2026)
+Si un jugador rival se Cae por haber fallado su intento de esquivar, saltar o brincar desde una casilla en la Zona de defensa de este jugador, este jugador puede aplicar un modificador de +1 en la tirada de Armadura y si la pasa sin aplicarlo, lo aplica en la de Heridas (es como lo de Golpe Mortífero). Si un Jugador intenta salir de una casilla en la Zona de defensa de varios jugadores con esta habilidad, solo uno de ellos podrá utilizarla.
+- DEJADA (OK 11-09-2026) 
+Cuando este jugador sea el portador del balón y realice una acción de Movimiento, puede elegir "dejar el balón", colocándolo en cualquier casilla que abandone durante dicha acción de Movimiento. Esto no provoca un cambio de turno. El balón quedará en la casilla que abandone tras declarar la Dejada por lo que yo haría sería que mientras que el jugador con la habilidad dejada esté haciendo su Movimiento, si pinchamos sobre el con el boton derecho que salte solo la opcion en la ruleta de Dejada para activar esta habilidad... o como podemos proceder?
 
 ☣️☣️☣️¿¿¿ EN PRUEBAS ??? (las habilidades con guión, están en Pruebas)
 
@@ -40,15 +44,8 @@ Cuando este jugador realiza una acción de Placaje (normal o placaje cuando marc
 
 ☣️- ATRAPAR (pruebas desde 03-09-2026)
 
-☣️- DEJADA (pruebas desde 08-09-2026 // bien y afinandolo) 
-Cuando este jugador sea el portador del balón y realice una acción de Movimiento, puede elegir "dejar el balón", colocándolo en cualquier casilla que abandone durante dicha acción de Movimiento. Esto no provoca un cambio de turno.
-El balón quedará en la casilla que abandone tras declarar la Dejada por lo que yo haría sería que mientras que el jugador con la habilidad dejada esté haciendo su Movimiento, si pinchamos sobre el con el boton derecho que salte solo la opcion en la ruleta de Dejada para activar esta habilidad... o como podemos proceder?
-
-☣️- CABEZA DURA (pruebas desde 08-09-2026 - Sale aviso de que tiene esta habilidad)
+☣️- CABEZA DURA (pruebas desde 08-09-2026 - Sale aviso de que tiene esta habilidad, no se optimiza hasta que se tire automaticamente Heridas)
 De momento, avisar en el modal cuando se haga una tirada de Heridas contra ese jugador en letras de color rojo que tiene "Jugador con CABEZA DURA" para avisarnos al elegir el resultado
-
-☣️- LLAVE DE BRAZO (pruebas desde 10-09-2026)
-Si un jugador rival se Cae por haber fallado su intento de esquivar, saltar o brincar desde una casilla en la Zona de defensa de este jugador, este jugador puede aplicar un modificador de +1 en la tirada de Armadura y si la pasa sin aplicarlo, lo aplica en la de Heridas (es como lo de Golpe Mortífero). Si un Jugador intenta salir de una casilla en la Zona de defensa de varios jugadores con esta habilidad, solo uno de ellos podrá utilizarla.
 
 ☣️- ROMPER DEFENSAS (pruebas desde 10-09-2026)
 Durante los turnos del equipo rival, los jugadores rivales Marcados por este jugador no pueden usar las habilidades Defensa ni Meter la bota.

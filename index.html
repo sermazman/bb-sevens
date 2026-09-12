@@ -525,6 +525,16 @@
   </div>
 </div>
 
+<div class="modal-back" id="passModal">
+  <div class="modal">
+    <h2>🎯 PASE</h2>
+    <p id="passText">Tirada de precisión.</p>
+    <div class="die-face" id="passDie" style="margin:0 auto 10px auto;">–</div>
+    <div id="passResultText" class="check-result"></div>
+    <button class="primary full" id="passRollBtn" onclick="rollPassDie()">Tirar D6</button>
+  </div>
+</div>
+
 <div class="modal-back" id="secureBallModal">
   <div class="modal">
     <h2>🔒 ASEGURAR BALÓN</h2>
@@ -542,7 +552,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
-<script src="app.js?v=20250908-16"></script>
+<script src="app.js?v=20250908-18"></script>
 
 </body>
 </html>

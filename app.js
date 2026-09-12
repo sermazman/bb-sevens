@@ -160,6 +160,9 @@ let blitzUsedByTeam = { A: false, B: false };
 let handoffUsedByTeam = { A: false, B: false };
 let foulUsedByTeam = { A: false, B: false };
 let passUsedByTeam = { A: false, B: false };
+let passThrowWheelActive = false;
+let pendingPassTargetSelection = null; // { passerId }
+let pendingPassRoll = null; // { passerId, targetR, targetC, zone, totalPenalty }
 let pendingFoulContext = null; // { foulerId, targetId, offAssists, defAssists, modifier, doubleDetected }
 let secureBallUsedByTeam = { A: false, B: false };
 let pendingSecureBall = null;
@@ -308,7 +311,7 @@ function snapshotState(){
     players, ball, phase, state, pendingTD, pendingDodge, pendingGfi, armorForPlayer, nextId,
     mySelected: selected, myDeclaredAction: declaredAction,
     koQueue, pendingKo, teamRace, customColorsEnabled, teamCustomColor, teamTextColor, openingKickoffDone, firstHalfKickingTeam, pitchBackgroundUrl, pitchBackgroundExact, teamStaff, teamRerollsLeft, kickoffPendingOOBAfterEvent,
-    ballBounceActive, pendingCatch, pendingBallDrop, pendingDriveStart,
+    ballBounceActive, pendingCatch, pendingBallDrop, pendingDriveStart, pendingPassRoll,
     pendingKickPlacement, kickoffBounceStep, kickoffKickingTeam, kickoffReceivingTeam, freeCatchTeam, placingBallFree, kickoffTargetRow, kickoffTargetCol,
     blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp, chainPushStack, secureBallUsedByTeam, pendingSecureBall, secureBallActivePlayer, handoffUsedByTeam, pendingHandoffChoice, foulUsedByTeam, pendingFoulContext, passUsedByTeam,
     secureBallModalOpen: document.getElementById('secureBallModal').classList.contains('show'),
@@ -388,6 +391,11 @@ function snapshotState(){
     followUpModalOpen: document.getElementById('followUpModal').classList.contains('show'),
     followUpText: document.getElementById('followUpText').textContent,
     catchModalOpen: document.getElementById('catchModal').classList.contains('show'),
+    passModalOpen: document.getElementById('passModal').classList.contains('show'),
+    passText: document.getElementById('passText').textContent,
+    passDie: document.getElementById('passDie').textContent,
+    passResultText: document.getElementById('passResultText').textContent,
+    passResultClass: document.getElementById('passResultText').className,
     catchText: document.getElementById('catchText').textContent,
     catchDieText: document.getElementById('catchDie').textContent,
     pendingJumpUpCheck,
@@ -479,6 +487,7 @@ function applyRemoteState(payload){
   document.getElementById('colorsOffBtn').classList.toggle('active', !customColorsEnabled);
   ballBounceActive = !!payload.ballBounceActive;
   pendingCatch = payload.pendingCatch;
+  pendingPassRoll = payload.pendingPassRoll;
   pendingBallDrop = payload.pendingBallDrop;
   pendingDriveStart = payload.pendingDriveStart;
   pendingKickPlacement = payload.pendingKickPlacement;
@@ -642,6 +651,11 @@ function applyRemoteState(payload){
   document.getElementById('followUpModal').classList.toggle('show', !!payload.followUpModalOpen);
 
   document.getElementById('catchText').textContent = payload.catchText || '';
+  document.getElementById('passModal').classList.toggle('show', !!payload.passModalOpen);
+  document.getElementById('passText').textContent = payload.passText || '';
+  document.getElementById('passDie').textContent = payload.passDie || '–';
+  document.getElementById('passResultText').textContent = payload.passResultText || '';
+  document.getElementById('passResultText').className = payload.passResultClass || 'check-result';
   document.getElementById('catchDie').textContent = payload.catchDieText || '–';
   catchRerollUsed = !!payload.catchRerollUsed;
   if(pendingCatch && pendingCatch.lastSuccess !== undefined){
@@ -719,6 +733,7 @@ function anyModalOpen(){
          document.getElementById('secureBallModal').classList.contains('show') ||
          document.getElementById('matchEndModal').classList.contains('show') ||
          document.getElementById('forcejearModal').classList.contains('show') ||
+         document.getElementById('passModal').classList.contains('show') ||
          pendingActionMenuPlayer !== null ||
          document.getElementById('traitCheckModal').classList.contains('show') ||
          document.getElementById('turnoverOverlay').classList.contains('show');
@@ -1326,11 +1341,11 @@ function renderPitch(){
         const z = passRangeZone(r-passOriginPlayer.row, c-passOriginPlayer.col);
         if(z!==-1){
           const color = PASS_ZONE_COLORS[z];
-          const isOuterEdge = (nz)=> nz<z || nz===-1 || nz===-2;
-          if(isOuterEdge(passZoneNeighbor(r-1,c))) cell.style.borderTop = '3px solid ' + color;
-          if(isOuterEdge(passZoneNeighbor(r+1,c))) cell.style.borderBottom = '3px solid ' + color;
-          if(isOuterEdge(passZoneNeighbor(r,c-1))) cell.style.borderLeft = '3px solid ' + color;
-          if(isOuterEdge(passZoneNeighbor(r,c+1))) cell.style.borderRight = '3px solid ' + color;
+          const isOwnOuterEdge = (nz)=> nz>z || nz===-1 || nz===-2;
+          if(isOwnOuterEdge(passZoneNeighbor(r-1,c))) cell.style.borderTop = '3px solid ' + color;
+          if(isOwnOuterEdge(passZoneNeighbor(r+1,c))) cell.style.borderBottom = '3px solid ' + color;
+          if(isOwnOuterEdge(passZoneNeighbor(r,c-1))) cell.style.borderLeft = '3px solid ' + color;
+          if(isOwnOuterEdge(passZoneNeighbor(r,c+1))) cell.style.borderRight = '3px solid ' + color;
         }
       }
       if(customColorsEnabled){
@@ -1570,6 +1585,14 @@ function handleTokenRightClick(id){
   if(phase!=='live' || anyModalOpen()) return;
   const p = players.find(x=>x.id===id);
   if(!p || p.team!==state.active) return;
+  if(selected===id && ball.carrierId===id && declaredAction==='pass'){
+    passThrowWheelActive = true;
+    pendingActionMenuPlayer = id;
+    renderActionMenu();
+    renderSelInfo();
+    broadcastState();
+    return;
+  }
   if(selected===id && ball.carrierId===id &&
      (declaredAction==='move' || declaredAction==='blitz' || declaredAction==='handoff') &&
      playerHasSkill(p, 'dejada')){
@@ -1677,6 +1700,9 @@ function getActionMenuOptionsFor(p){
   if(dejadaWheelActive && ball.carrierId===p.id && playerHasSkill(p, 'dejada')){
     return [{ icon:'📍', label:'Dejada', fn:'actionMenuDejada' }];
   }
+  if(passThrowWheelActive && ball.carrierId===p.id){
+    return [{ icon:'🎯', label:'Lanzar Pase', fn:'actionMenuThrowPass' }];
+  }
   if(p.condition==='tumbado'){
     // "Ruleta de Tumbados" — levantarse ya cuenta como activación, así que cada opción pasa por su propio chequeo de rasgo.
     const opts = [];
@@ -1753,6 +1779,7 @@ function closeActionMenu(){
   if(el) el.remove();
   pendingActionMenuPlayer = null;
   dejadaWheelActive = false;
+  passThrowWheelActive = false;
   broadcastState();
 }
 
@@ -1922,6 +1949,17 @@ function actionMenuJumpUp(){
   jumpUpBlitzCheck();
 }
 
+function actionMenuThrowPass(){
+  const id = pendingActionMenuPlayer;
+  closeActionMenu();
+  const p = players.find(x=>x.id===id);
+  if(!p || ball.carrierId!==p.id) return;
+  pendingPassTargetSelection = { passerId: p.id };
+  updateStatus(p.name + ': elegid la casilla objetivo del pase (dentro del contorno de color).');
+  renderPitch(); renderSelInfo();
+  broadcastState();
+}
+
 function actionMenuDejada(){
   const id = pendingActionMenuPlayer;
   const savedDeclaredAction = declaredAction;
@@ -1953,6 +1991,12 @@ function unstickState(){
   pendingFoulContext = null;
   pendingForcejearChoice = null;
   document.getElementById('forcejearModal').classList.remove('show');
+  pendingPassTargetSelection = null;
+  pendingPassRoll = null;
+  pendingPassTurnoverMode = null;
+  pendingPassOriginalTeam = null;
+  passThrowWheelActive = false;
+  document.getElementById('passModal').classList.remove('show');
   pendingManualStatus = null;
   armorForPlayer = null; pendingArmorQueue = [];
   golpeMortiferoUsedOnArmor = false;
@@ -1988,6 +2032,17 @@ function endActivation(id){
 }
 
 function cellClicked(r,c){
+  if(pendingPassTargetSelection){
+    const passer = players.find(x=>x.id===pendingPassTargetSelection.passerId);
+    if(!passer){ pendingPassTargetSelection = null; broadcastState(); return; }
+    const zone = passRangeZone(r-passer.row, c-passer.col);
+    if(zone===-1){
+      updateStatus('Esa casilla está fuera del alcance máximo de pase.');
+      return;
+    }
+    declarePassTarget(passer, r, c, zone);
+    return;
+  }
   if(placingBallFree){
     placingBallFree = false;
     ball.carrierId = null;
@@ -2086,6 +2141,19 @@ function completeStep(p, r, c, consume){
 }
 
 function tokenClicked(id){
+  if(pendingPassTargetSelection){
+    const passer = players.find(x=>x.id===pendingPassTargetSelection.passerId);
+    const target = players.find(x=>x.id===id);
+    if(passer && target){
+      const zone = passRangeZone(target.row-passer.row, target.col-passer.col);
+      if(zone===-1){
+        updateStatus('Esa casilla está fuera del alcance máximo de pase.');
+      } else {
+        declarePassTarget(passer, target.row, target.col, zone);
+      }
+    }
+    return;
+  }
   if(pendingManualStatus!==null){
     applyManualStatus(id);
     return;
@@ -3407,6 +3475,124 @@ function proceedDeclaredAction(p, actionLabel){
   }
 }
 
+const PASS_ZONE_NAMES = ['Pase Rápido', 'Pase Corto', 'Pase Largo', 'Bomba Larga'];
+const PASS_ZONE_PENALTIES = [0, 1, 2, 3];
+
+function declarePassTarget(passer, targetR, targetC, zone){
+  pendingPassTargetSelection = null;
+  const markers = countOpponentTackleZones(passer.row, passer.col, passer.team);
+  const totalPenalty = PASS_ZONE_PENALTIES[zone] + markers;
+  pendingPassRoll = { passerId: passer.id, targetR, targetC, zone, totalPenalty };
+  const target = parseAgTarget(passer.ag);
+  document.getElementById('passText').textContent = PASS_ZONE_NAMES[zone] + ' de ' + passer.name +
+    ' — necesita ' + target + '+ (AG' + (passer.ag ?? '?') + ', modificador -' + totalPenalty +
+    (markers>0 ? ' = -' + PASS_ZONE_PENALTIES[zone] + ' por el rango, -' + markers + ' por marcaje' : ' por el rango') + '). Tirad 1D6.';
+  document.getElementById('passDie').textContent = '–';
+  document.getElementById('passResultText').textContent = '';
+  document.getElementById('passResultText').className = 'check-result';
+  document.getElementById('passModal').classList.add('show');
+  declaredAction = null;
+  selected = null;
+  renderPitch(); renderRosters(); renderSelInfo();
+  broadcastState();
+}
+
+function rollPassDie(){
+  if(!pendingPassRoll) return;
+  const raw = Math.floor(Math.random()*6)+1;
+  const modified = raw - pendingPassRoll.totalPenalty;
+  const passer = players.find(x=>x.id===pendingPassRoll.passerId);
+  const target = parseAgTarget(passer.ag);
+  let outcome;
+  if(raw===6) outcome = 'preciso';
+  else if(raw===1 || modified<=1) outcome = 'perdido';
+  else if(modified>=target) outcome = 'preciso';
+  else outcome = 'impreciso';
+  document.getElementById('passDie').textContent = raw;
+  const resEl = document.getElementById('passResultText');
+  resEl.textContent = outcome==='preciso' ? '✅ PRECISO' : (outcome==='impreciso' ? '➖ IMPRECISO' : '❌ BALÓN PERDIDO');
+  resEl.className = 'check-result ' + (outcome==='preciso' ? 'ok' : 'fail');
+  log('🎲 Pase de ' + passer.name + ': ' + raw + ' - ' + pendingPassRoll.totalPenalty + ' = ' + modified + ' (necesitaba ' + target + '+) → ' + outcome.toUpperCase());
+  broadcastState();
+  setTimeout(()=>{
+    document.getElementById('passModal').classList.remove('show');
+    resolvePassOutcome(passer, outcome);
+  }, 900);
+}
+
+let pendingPassTurnoverMode = null; // null | 'always' | 'ifNotTeam'
+let pendingPassOriginalTeam = null;
+
+function finalizePassTurnoverIfNeeded(){
+  if(pendingPassTurnoverMode==='always'){
+    pendingPassTurnoverMode = null;
+    pendingPassOriginalTeam = null;
+    autoTurnoverThenEndTurn();
+  } else if(pendingPassTurnoverMode==='ifNotTeam'){
+    const team = pendingPassOriginalTeam;
+    pendingPassTurnoverMode = null;
+    pendingPassOriginalTeam = null;
+    const carrier = ball.carrierId!==null ? players.find(x=>x.id===ball.carrierId) : null;
+    if(!carrier || carrier.team!==team){
+      autoTurnoverThenEndTurn();
+    }
+  }
+}
+
+function resolvePassOutcome(passer, outcome){
+  const { targetR, targetC } = pendingPassRoll;
+  pendingPassRoll = null;
+  ball.carrierId = null;
+  pendingPassOriginalTeam = passer.team;
+  if(outcome==='perdido'){
+    pendingPassTurnoverMode = 'always';
+    log('🏈 ¡BALÓN PERDIDO! El balón cae y rebota desde la casilla de ' + passer.name + '. Cambio de turno.');
+    resolvePassFinalLanding(passer.row, passer.col, true);
+    return;
+  }
+  pendingPassTurnoverMode = 'ifNotTeam';
+  if(outcome==='impreciso'){
+    log('🏈 Pase impreciso — se desvía 3 veces desde la casilla objetivo.');
+    let r = targetR, c = targetC;
+    for(let i=0;i<3;i++){
+      const dirRoll = Math.floor(Math.random()*8)+1;
+      const off = kickoffDirOffset(dirRoll);
+      r += off.dr; c += off.dc;
+      log('🎲 Desvío ' + (i+1) + '/3: D8=' + dirRoll + '.');
+    }
+    resolvePassFinalLanding(r, c, true);
+    return;
+  }
+  log('🎯 ¡Pase preciso! El balón aterriza en la casilla objetivo.');
+  resolvePassFinalLanding(targetR, targetC, true);
+}
+
+function resolvePassFinalLanding(r, c, mustBounceOnceIfEmpty){
+  r = Math.max(0, Math.min(ROWS-1, r));
+  c = Math.max(0, Math.min(COLS-1, c));
+  const occ = occupiedBy(r,c);
+  if(occ && occ.condition==='standing'){
+    ball.row = r; ball.col = c;
+    renderPitch(); renderRosters(); renderSelInfo();
+    broadcastState();
+    openCatchModal(occ, false, false, mustBounceOnceIfEmpty ? 0 : 1, mustBounceOnceIfEmpty ? '' : 'pase', false);
+    pendingCatch.isPassCatch = true;
+    return;
+  }
+  if(occ || mustBounceOnceIfEmpty){
+    const dirRoll = Math.floor(Math.random()*8)+1;
+    const off = kickoffDirOffset(dirRoll);
+    log('🎲 Rebote' + (occ ? (' sobre ' + occ.name + ' (' + occ.condition + ')') : '') + ': D8=' + dirRoll + '.');
+    resolvePassFinalLanding(r+off.dr, c+off.dc, false);
+    return;
+  }
+  ball.row = r; ball.col = c;
+  renderPitch(); renderRosters(); renderSelInfo();
+  log('🏈 El balón queda suelto en el campo.');
+  broadcastState();
+  finalizePassTurnoverIfNeeded();
+}
+
 function parseAgTarget(agStr){
   const n = parseInt(agStr, 10);
   return isNaN(n) ? 4 : n;
@@ -3580,17 +3766,18 @@ function resolveCatch(success){
   const p = players.find(x=>x.id===pendingCatch.playerId);
   const wasVoluntary = !!pendingCatch.voluntary;
   const isHandoffCatch = !!pendingCatch.useAtraparSkill;
+  const isPassCatch = !!pendingCatch.isPassCatch;
   document.getElementById('catchModal').classList.remove('show');
   pendingCatch = null;
   if(p && success){
     ball.carrierId = p.id;
-    log(isHandoffCatch ? ('🏈 ' + p.name + ' atrapa la entrega de balón.') : ('🏈 ' + p.name + ' recoge el balón.'));
+    log(isHandoffCatch ? ('🏈 ' + p.name + ' atrapa la entrega de balón.') : (isPassCatch ? ('🏈 ' + p.name + ' atrapa el pase.') : ('🏈 ' + p.name + ' recoge el balón.')));
     renderPitch(); renderRosters();
     broadcastState();
     checkTouchdown(p);
     if(!pendingTD) checkDriveStartAfterBounce();
   } else if(p){
-    log((isHandoffCatch ? ('🏈 ' + p.name + ' falla al atrapar la entrega') : ('🏈 ' + p.name + ' falla la recogida')) + ' — el balón rebota.' + (wasVoluntary ? ' Cambio de turno.' : ''));
+    log((isHandoffCatch ? ('🏈 ' + p.name + ' falla al atrapar la entrega') : (isPassCatch ? ('🏈 ' + p.name + ' falla al atrapar el pase') : ('🏈 ' + p.name + ' falla la recogida'))) + ' — el balón rebota.' + (wasVoluntary ? ' Cambio de turno.' : ''));
     broadcastState();
     startBallBounce();
     if(wasVoluntary) autoTurnoverThenEndTurn();
@@ -3600,6 +3787,7 @@ function resolveCatch(success){
 }
 
 function checkDriveStartAfterBounce(){
+  finalizePassTurnoverIfNeeded();
   if(pendingDriveStart){
     const team = pendingDriveStart;
     pendingDriveStart = null;

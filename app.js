@@ -163,6 +163,8 @@ let passUsedByTeam = { A: false, B: false };
 let passThrowWheelActive = false;
 let pendingPassTargetSelection = null; // { passerId }
 let pendingPassRoll = null; // { passerId, targetR, targetC, zone, totalPenalty }
+let pendingInterceptionChoice = null; // { landR, landC, outcome, candidateIds }
+let pendingInterceptionRoll = null; // { interceptorId, target, outcome }
 let pendingFoulContext = null; // { foulerId, targetId, offAssists, defAssists, modifier, doubleDetected }
 let secureBallUsedByTeam = { A: false, B: false };
 let pendingSecureBall = null;
@@ -392,6 +394,13 @@ function snapshotState(){
     followUpText: document.getElementById('followUpText').textContent,
     catchModalOpen: document.getElementById('catchModal').classList.contains('show'),
     passModalOpen: document.getElementById('passModal').classList.contains('show'),
+    interceptModalOpen: document.getElementById('interceptModal').classList.contains('show'),
+    interceptText: document.getElementById('interceptText').textContent,
+    interceptDie: document.getElementById('interceptDie').textContent,
+    interceptResultText: document.getElementById('interceptResultText').textContent,
+    interceptResultClass: document.getElementById('interceptResultText').className,
+    interceptChoicePanelVisible: document.getElementById('interceptChoicePanel').style.display==='block',
+    pendingInterceptionChoice, pendingInterceptionRoll,
     passText: document.getElementById('passText').textContent,
     passDie: document.getElementById('passDie').textContent,
     passResultText: document.getElementById('passResultText').textContent,
@@ -652,6 +661,14 @@ function applyRemoteState(payload){
 
   document.getElementById('catchText').textContent = payload.catchText || '';
   document.getElementById('passModal').classList.toggle('show', !!payload.passModalOpen);
+  document.getElementById('interceptModal').classList.toggle('show', !!payload.interceptModalOpen);
+  document.getElementById('interceptText').textContent = payload.interceptText || '';
+  document.getElementById('interceptDie').textContent = payload.interceptDie || '–';
+  document.getElementById('interceptResultText').textContent = payload.interceptResultText || '';
+  document.getElementById('interceptResultText').className = payload.interceptResultClass || 'check-result';
+  document.getElementById('interceptChoicePanel').style.display = payload.interceptChoicePanelVisible ? 'block' : 'none';
+  pendingInterceptionChoice = payload.pendingInterceptionChoice || null;
+  pendingInterceptionRoll = payload.pendingInterceptionRoll || null;
   document.getElementById('passText').textContent = payload.passText || '';
   document.getElementById('passDie').textContent = payload.passDie || '–';
   document.getElementById('passResultText').textContent = payload.passResultText || '';
@@ -734,6 +751,7 @@ function anyModalOpen(){
          document.getElementById('matchEndModal').classList.contains('show') ||
          document.getElementById('forcejearModal').classList.contains('show') ||
          document.getElementById('passModal').classList.contains('show') ||
+         document.getElementById('interceptModal').classList.contains('show') ||
          pendingActionMenuPlayer !== null ||
          document.getElementById('traitCheckModal').classList.contains('show') ||
          document.getElementById('turnoverOverlay').classList.contains('show');
@@ -1411,9 +1429,10 @@ function renderPitch(){
         const handoffClass = isValidHandoffTarget(occ.id) ? ' handoff-target' : '';
         const foulClass = isValidFoulTarget(occ.id) ? ' foul-target' : '';
         const ferocityClass = isValidFerocityTarget(occ.id) ? ' ferocity-target' : '';
+        const interceptClass = isValidInterceptTarget(occ.id) ? ' intercept-target' : '';
         const freeCatchClass = (freeCatchTeam===occ.team && occ.onPitch && occ.condition==='standing') ? ' free-catch-target' : '';
         const showActivated = occ.activated && phase==='live' && occ.team===state.active;
-        t.className = 'token' + (occ.id===selected?' selected':'') + (showActivated?' activated':'') + condClass + targetClass + handoffClass + foulClass + ferocityClass + freeCatchClass;
+        t.className = 'token' + (occ.id===selected?' selected':'') + (showActivated?' activated':'') + condClass + targetClass + handoffClass + foulClass + ferocityClass + interceptClass + freeCatchClass;
         t.dataset.playerId = occ.id;
         t.style.background = tokenColorFor(occ);
         t.style.color = textColorFor(occ);
@@ -2015,6 +2034,10 @@ function unstickState(){
   pendingPassOriginalTeam = null;
   passThrowWheelActive = false;
   document.getElementById('passModal').classList.remove('show');
+  pendingInterceptionChoice = null;
+  pendingInterceptionRoll = null;
+  document.getElementById('interceptModal').classList.remove('show');
+  document.getElementById('interceptChoicePanel').style.display = 'none';
   pendingManualStatus = null;
   armorForPlayer = null; pendingArmorQueue = [];
   golpeMortiferoUsedOnArmor = false;
@@ -2159,6 +2182,10 @@ function completeStep(p, r, c, consume){
 }
 
 function tokenClicked(id){
+  if(isValidInterceptTarget(id)){
+    attemptInterception(id);
+    return;
+  }
   if(pendingPassTargetSelection){
     const passer = players.find(x=>x.id===pendingPassTargetSelection.passerId);
     const target = players.find(x=>x.id===id);
@@ -2385,6 +2412,27 @@ function isValidBlockTarget(defenderId){
   return defender.onPitch && defender.team!==attacker.team &&
     (defender.condition==='standing' || defender.condition==='despistado') &&
     Math.max(Math.abs(defender.row-attacker.row), Math.abs(defender.col-attacker.col))===1;
+}
+
+function playersNearPassLine(fromR, fromC, toR, toC, excludeTeam){
+  // Aproxima el "pasillo" de la regla de alcance física: rivales en pie a máx. 1 casilla de la línea recta.
+  const candidates = [];
+  const steps = Math.max(Math.abs(toR-fromR), Math.abs(toC-fromC), 1) * 2;
+  for(let i=0; i<=steps; i++){
+    const r = fromR + (toR-fromR) * i / steps;
+    const c = fromC + (toC-fromC) * i / steps;
+    players.forEach(p2=>{
+      if(!p2.onPitch || p2.team===excludeTeam || p2.condition!=='standing') return;
+      if(candidates.includes(p2)) return;
+      const dist = Math.max(Math.abs(p2.row-r), Math.abs(p2.col-c));
+      if(dist<=1) candidates.push(p2);
+    });
+  }
+  return candidates;
+}
+
+function isValidInterceptTarget(id){
+  return !!pendingInterceptionChoice && pendingInterceptionChoice.candidateIds.includes(id);
 }
 
 function isValidFerocityTarget(targetId){
@@ -3509,6 +3557,7 @@ function declarePassTarget(passer, targetR, targetC, zone){
   document.getElementById('passResultText').textContent = '';
   document.getElementById('passResultText').className = 'check-result';
   document.getElementById('passModal').classList.add('show');
+  passer.activated = true;
   declaredAction = null;
   selected = null;
   renderPitch(); renderRosters(); renderSelInfo();
@@ -3518,24 +3567,100 @@ function declarePassTarget(passer, targetR, targetC, zone){
 function rollPassDie(){
   if(!pendingPassRoll) return;
   const raw = Math.floor(Math.random()*6)+1;
-  const modified = raw - pendingPassRoll.totalPenalty;
+  finishPassRoll(raw);
+}
+
+function finishPassRoll(raw){
   const passer = players.find(x=>x.id===pendingPassRoll.passerId);
+  const modified = raw - pendingPassRoll.totalPenalty;
   const target = parseAgTarget(passer.ag);
   let outcome;
   if(raw===6) outcome = 'preciso';
   else if(raw===1 || modified<=1) outcome = 'perdido';
   else if(modified>=target) outcome = 'preciso';
   else outcome = 'impreciso';
+  pendingPassRoll.lastOutcome = outcome;
   document.getElementById('passDie').textContent = raw;
   const resEl = document.getElementById('passResultText');
   resEl.textContent = outcome==='preciso' ? '✅ PRECISO' : (outcome==='impreciso' ? '➖ IMPRECISO' : '❌ BALÓN PERDIDO');
   resEl.className = 'check-result ' + (outcome==='preciso' ? 'ok' : 'fail');
   log('🎲 Pase de ' + passer.name + ': ' + raw + ' - ' + pendingPassRoll.totalPenalty + ' = ' + modified + ' (necesitaba ' + target + '+) → ' + outcome.toUpperCase());
+  document.getElementById('passRollBtn').style.display = 'none';
   broadcastState();
-  setTimeout(()=>{
+  renderPassActionRow(passer, outcome);
+}
+
+function renderPassActionRow(passer, outcome){
+  const row = document.getElementById('passActionRow');
+  row.innerHTML = '';
+  if(outcome==='preciso' || pendingPassRoll.rerollUsed){
+    row.style.display = 'none';
+    broadcastState();
+    setTimeout(()=>{
+      document.getElementById('passModal').classList.remove('show');
+      resolvePassOutcome(passer, outcome);
+    }, outcome==='preciso' ? 900 : 300);
+    return;
+  }
+  row.style.display = 'flex';
+  const hasPasarSkill = playerHasSkill(passer, 'pasar', 'pass') && !passer.passSkillUsedThisTurn;
+  if(hasPasarSkill){
+    const btn = document.createElement('button');
+    btn.textContent = '🔁 Usar Pasar (repite gratis)';
+    btn.onclick = ()=> usePassReroll(true);
+    row.appendChild(btn);
+  } else if((teamRerollsLeft[passer.team] || 0) > 0){
+    const btn = document.createElement('button');
+    btn.textContent = '🔄 Usar Reroll de equipo (quedan ' + teamRerollsLeft[passer.team] + ')';
+    btn.onclick = ()=> usePassReroll(false);
+    row.appendChild(btn);
+  }
+  const acceptBtn = document.createElement('button');
+  acceptBtn.textContent = 'Aceptar resultado';
+  acceptBtn.className = 'primary';
+  acceptBtn.onclick = ()=>{
+    row.style.display = 'none';
     document.getElementById('passModal').classList.remove('show');
+    broadcastState();
     resolvePassOutcome(passer, outcome);
-  }, 900);
+  };
+  row.appendChild(acceptBtn);
+  broadcastState();
+}
+
+function usePassReroll(isSkill){
+  if(!pendingPassRoll) return;
+  pendingPassRoll.rerollUsed = true;
+  const passer = players.find(x=>x.id===pendingPassRoll.passerId);
+  if(isSkill){
+    passer.passSkillUsedThisTurn = true;
+    log('🔁 ' + passer.name + ' repite gratis con su habilidad Pasar.');
+  } else {
+    teamRerollsLeft[passer.team] = Math.max(0, (teamRerollsLeft[passer.team]||0) - 1);
+    log('🔄 ' + teamName(passer.team) + ' gasta un reroll — quedan ' + teamRerollsLeft[passer.team] + '.');
+    renderStaffPanels();
+  }
+  document.getElementById('passActionRow').style.display = 'none';
+  document.getElementById('passRollBtn').style.display = 'block';
+  document.getElementById('passResultText').textContent = '';
+  document.getElementById('passResultText').className = 'check-result';
+  document.getElementById('passDie').textContent = '–';
+  broadcastState();
+}
+
+function scatterFrom(r, c, steps){
+  let curR = r, curC = c;
+  for(let i=0;i<steps;i++){
+    const dirRoll = Math.floor(Math.random()*8)+1;
+    const off = kickoffDirOffset(dirRoll);
+    log('🎲 Desvío ' + (i+1) + '/' + steps + ': D8=' + dirRoll + '.');
+    const nr = curR + off.dr, nc = curC + off.dc;
+    if(nr<0 || nr>=ROWS || nc<0 || nc>=COLS){
+      return { outOfBounds:true, exitR:nr, exitC:nc, fromR:curR, fromC:curC };
+    }
+    curR = nr; curC = nc;
+  }
+  return { outOfBounds:false, r:curR, c:curC };
 }
 
 let pendingPassTurnoverMode = null; // null | 'always' | 'ifNotTeam'
@@ -3565,24 +3690,112 @@ function resolvePassOutcome(passer, outcome){
   if(outcome==='perdido'){
     pendingPassTurnoverMode = 'always';
     log('🏈 ¡BALÓN PERDIDO! El balón cae y rebota desde la casilla de ' + passer.name + '. Cambio de turno.');
-    resolvePassFinalLanding(passer.row, passer.col, true);
+    const scatter = scatterFrom(passer.row, passer.col, 1);
+    if(scatter.outOfBounds){
+      log('🏈 El balón sale del campo al rebotar — se produce una devolución.');
+      resolveThrowIn(scatter.exitR, scatter.exitC, scatter.fromR, scatter.fromC, 0);
+    } else {
+      resolvePassFinalLanding(scatter.r, scatter.c, false);
+    }
     return;
   }
   pendingPassTurnoverMode = 'ifNotTeam';
   if(outcome==='impreciso'){
     log('🏈 Pase impreciso — se desvía 3 veces desde la casilla objetivo.');
-    let r = targetR, c = targetC;
-    for(let i=0;i<3;i++){
-      const dirRoll = Math.floor(Math.random()*8)+1;
-      const off = kickoffDirOffset(dirRoll);
-      r += off.dr; c += off.dc;
-      log('🎲 Desvío ' + (i+1) + '/3: D8=' + dirRoll + '.');
+    const scatter = scatterFrom(targetR, targetC, 3);
+    if(scatter.outOfBounds){
+      log('🏈 El balón sale del campo al escorarse — se produce una devolución.');
+      resolveThrowIn(scatter.exitR, scatter.exitC, scatter.fromR, scatter.fromC, 0);
+      return;
     }
-    resolvePassFinalLanding(r, c, true);
+    finishPassLandingWithIntercept(passer, scatter.r, scatter.c, outcome);
     return;
   }
   log('🎯 ¡Pase preciso! El balón aterriza en la casilla objetivo.');
-  resolvePassFinalLanding(targetR, targetC, true);
+  finishPassLandingWithIntercept(passer, targetR, targetC, outcome);
+}
+
+function finishPassLandingWithIntercept(passer, landR, landC, outcome){
+  const candidates = playersNearPassLine(passer.row, passer.col, landR, landC, passer.team);
+  if(candidates.length>0){
+    pendingInterceptionChoice = { landR, landC, outcome, candidateIds: candidates.map(p=>p.id) };
+    updateStatus('¿Algún rival intenta interceptar el pase? (resaltados en azul, click en uno, o "sin intercepción").');
+    document.getElementById('interceptChoicePanel').style.display = 'block';
+    renderPitch(); renderSelInfo();
+    broadcastState();
+    return;
+  }
+  resolvePassFinalLanding(landR, landC, true);
+}
+
+function declineInterception(){
+  if(!pendingInterceptionChoice) return;
+  const { landR, landC } = pendingInterceptionChoice;
+  pendingInterceptionChoice = null;
+  document.getElementById('interceptChoicePanel').style.display = 'none';
+  log('🖐️ Ningún rival intenta interceptar — el pase continúa.');
+  renderPitch();
+  broadcastState();
+  resolvePassFinalLanding(landR, landC, true);
+}
+
+function attemptInterception(id){
+  if(!pendingInterceptionChoice) return;
+  const interceptor = players.find(x=>x.id===id);
+  if(!interceptor) return;
+  const outcome = pendingInterceptionChoice.outcome;
+  document.getElementById('interceptChoicePanel').style.display = 'none';
+  const zonePenalty = outcome==='preciso' ? 3 : 2;
+  const markers = countOpponentTackleZones(interceptor.row, interceptor.col, interceptor.team);
+  const target = parseAgTarget(interceptor.ag) + zonePenalty + markers;
+  pendingInterceptionRoll = { interceptorId: interceptor.id, target };
+  document.getElementById('interceptText').textContent = interceptor.name + ' intenta interceptar — necesita ' + target + '+ (AG' + (interceptor.ag ?? '?') +
+    ' -' + zonePenalty + ' por ser ' + (outcome==='preciso' ? 'un pase preciso' : 'un pase impreciso') +
+    (markers>0 ? (', -' + markers + ' por marcaje') : '') + '). Tirad 1D6.';
+  document.getElementById('interceptDie').textContent = '–';
+  document.getElementById('interceptResultText').textContent = '';
+  document.getElementById('interceptResultText').className = 'check-result';
+  document.getElementById('interceptModal').classList.add('show');
+  renderPitch();
+  broadcastState();
+}
+
+function rollInterceptDie(){
+  if(!pendingInterceptionRoll) return;
+  const raw = Math.floor(Math.random()*6)+1;
+  const interceptor = players.find(x=>x.id===pendingInterceptionRoll.interceptorId);
+  const success = raw===6 ? true : raw>=pendingInterceptionRoll.target;
+  document.getElementById('interceptDie').textContent = raw;
+  const resEl = document.getElementById('interceptResultText');
+  resEl.textContent = success ? '✅ ¡INTERCEPTADO!' : '❌ FALLADO';
+  resEl.className = 'check-result ' + (success ? 'ok' : 'fail');
+  log('🎲 Intercepción de ' + (interceptor ? interceptor.name : '?') + ': ' + raw + ' (necesitaba ' + pendingInterceptionRoll.target + '+) → ' + (success ? 'CONSEGUIDA' : 'FALLADA'));
+  broadcastState();
+  setTimeout(()=>{
+    document.getElementById('interceptModal').classList.remove('show');
+    resolveInterceptionResult(interceptor, success);
+  }, 900);
+}
+
+function resolveInterceptionResult(interceptor, success){
+  const { landR, landC } = pendingInterceptionChoice;
+  pendingInterceptionRoll = null;
+  pendingInterceptionChoice = null;
+  if(success && interceptor){
+    ball.carrierId = interceptor.id;
+    log('🖐️ ¡' + interceptor.name + ' intercepta el pase!');
+    pendingPassTurnoverMode = null;
+    pendingPassOriginalTeam = null;
+    renderPitch(); renderRosters(); renderSelInfo();
+    broadcastState();
+    checkTouchdown(interceptor);
+    if(!pendingTD) autoTurnoverThenEndTurn();
+    return;
+  }
+  log('🖐️ ' + (interceptor ? interceptor.name : 'El rival') + ' falla el intento de intercepción — el pase continúa.');
+  renderPitch();
+  broadcastState();
+  resolvePassFinalLanding(landR, landC, true);
 }
 
 function resolvePassFinalLanding(r, c, mustBounceOnceIfEmpty){
@@ -4089,7 +4302,7 @@ function checkActionButtons(prefix, success, p){
       btn.onclick = ()=> useCheckReroll(prefix, false);
       actionRow.appendChild(btn);
     }
-    if(playerHasSkill(p, 'profesional', 'pro') && !p.proRerollUsedThisTurn){
+    if(playerHasSkill(p, 'profesional', 'pro') && !p.proRerollUsedThisTurn && selected===p.id){
       const btn = document.createElement('button');
       btn.textContent = '🎓 Usar Profesional (3+ para poder repetir)';
       btn.onclick = ()=> useProReroll(prefix);
@@ -4525,7 +4738,16 @@ function closeArmorModal(){
       resolveThrowIn(info.exitR, info.exitC, info.r, info.c, 0);
     } else {
       log('🏈 Se le cae el balón.');
-      startBallBounce();
+      const dirRoll = Math.floor(Math.random()*8)+1;
+      const off = kickoffDirOffset(dirRoll);
+      log('🎲 Rebote: D8=' + dirRoll + '.');
+      const nr = info.r+off.dr, nc = info.c+off.dc;
+      if(nr<0 || nr>=ROWS || nc<0 || nc>=COLS){
+        log('🏈 El balón sale del campo al rebotar — el Público lo devuelve.');
+        resolveThrowIn(nr, nc, info.r, info.c, 0);
+      } else {
+        resolveBounce(nr, nc);
+      }
     }
   }
   if(pendingTurnoverAfterResolve){
@@ -4612,6 +4834,7 @@ function beginTurn(team){
     p.proRerollUsedThisTurn = false;
     p.justStoodThisActivation = false;
     p.catchSkillUsedThisTurn = false;
+    p.passSkillUsedThisTurn = false;
   });
   renderScoreboard(); renderRosters(); renderPitch();
   updateStatus('Turno de ' + teamName(team));

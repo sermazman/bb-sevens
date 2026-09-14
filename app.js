@@ -1665,15 +1665,33 @@ function canHandoff(p){
   return Math.max(Math.abs(ball.row-p.row), Math.abs(ball.col-p.col)) <= reach;
 }
 
-const PASS_RANGE_LIMITS = [3, 6, 10, 13]; // rápido, corto, largo, bomba (casillas)
+const PASS_RANGE_LIMITS = [3, 6, 10, 13]; // rápido, corto, largo, bomba (casillas) — ya no se usa para calcular, solo de referencia
 const PASS_ZONE_COLORS = ['#4caf50', '#ffd54f', '#ff9800', '#e53935'];
+// Tabla exacta de la plantilla de pase (un cuarto: dr,dc de 0 a 14; el resto se obtiene por simetría de espejo).
+// Cada carácter: V=rápido A=corto N=largo R=bomba F=fuera de alcance. Datos dados por el usuario, fila 0 = casilla del lanzador.
+const PASS_RANGE_TABLE = [
+  "VVVVAAANNNNRRRF",
+  "VVVVAAANNNNRRRF",
+  "VVVAAAANNNNRRRF",
+  "VVAAAAANNNRRRFF",
+  "AAAAAANNNNRRRFF",
+  "AAAAANNNNRRRFFF",
+  "AAAANNNNNRRRFFF",
+  "NNNNNNNNRRRFFFF",
+  "NNNNNNNRRRRFFFF",
+  "NNNNNRRRRRFFFFF",
+  "NNNRRRRRRFFFFFF",
+  "RRRRRRRFFFFFFFF",
+  "RRRRRFFFFFFFFFF",
+  "RRRFFFFFFFFFFFF",
+  "FFFFFFFFFFFFFFF"
+];
+const PASS_LETTER_TO_ZONE = { V:0, A:1, N:2, R:3, F:-1 };
 function passRangeZone(dr, dc){
-  const a = Math.abs(dr), b = Math.abs(dc);
-  const dist = Math.max(a,b) + Math.floor(Math.min(a,b)/2); // aproximación redondeada (diamante) a la plantilla oficial
-  for(let z=0; z<PASS_RANGE_LIMITS.length; z++){
-    if(dist<=PASS_RANGE_LIMITS[z]) return z;
-  }
-  return -1; // fuera de alcance
+  const a = Math.min(Math.abs(dr), 14);
+  const b = Math.min(Math.abs(dc), 14);
+  const letter = PASS_RANGE_TABLE[a][b];
+  return PASS_LETTER_TO_ZONE[letter];
 }
 
 function canPass(p){

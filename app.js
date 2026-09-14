@@ -405,6 +405,7 @@ function snapshotState(){
     passDie: document.getElementById('passDie').textContent,
     passResultText: document.getElementById('passResultText').textContent,
     passResultClass: document.getElementById('passResultText').className,
+    passRollBtnVisible: document.getElementById('passRollBtn').style.display==='block',
     catchText: document.getElementById('catchText').textContent,
     catchDieText: document.getElementById('catchDie').textContent,
     pendingJumpUpCheck,
@@ -673,6 +674,9 @@ function applyRemoteState(payload){
   document.getElementById('passDie').textContent = payload.passDie || '–';
   document.getElementById('passResultText').textContent = payload.passResultText || '';
   document.getElementById('passResultText').className = payload.passResultClass || 'check-result';
+  document.getElementById('passRollBtn').style.display = payload.passRollBtnVisible ? 'block' : 'none';
+  document.getElementById('passActionRow').style.display = 'none';
+  document.getElementById('passActionRow').innerHTML = '';
   document.getElementById('catchDie').textContent = payload.catchDieText || '–';
   catchRerollUsed = !!payload.catchRerollUsed;
   if(pendingCatch && pendingCatch.lastSuccess !== undefined){
@@ -3438,6 +3442,7 @@ function startFoulOn(fouler, target){
 
 function resolveHandoffTo(p, target){
   ball.carrierId = null;
+  ball.row = target.row; ball.col = target.col;
   log('🤝 ' + p.name + ' entrega el balón a ' + target.name + '.');
   renderRosters(); renderPitch(); renderSelInfo();
   broadcastState();
@@ -3556,6 +3561,9 @@ function declarePassTarget(passer, targetR, targetC, zone){
   document.getElementById('passDie').textContent = '–';
   document.getElementById('passResultText').textContent = '';
   document.getElementById('passResultText').className = 'check-result';
+  document.getElementById('passRollBtn').style.display = 'block';
+  document.getElementById('passActionRow').style.display = 'none';
+  document.getElementById('passActionRow').innerHTML = '';
   document.getElementById('passModal').classList.add('show');
   passer.activated = true;
   declaredAction = null;

@@ -1411,6 +1411,12 @@ function renderPitch(){
         if(p && isLegalSetupCell(p.team,r,c)) highlightable = true;
       }
       if(highlightable) cell.classList.add(highlightKickZone ? 'kick-zone' : (highlightPush ? (highlightPushFree ? 'push-option-free' : 'push-option') : (highlightBounce ? 'bounce-target' : (highlightGfi ? 'reachable-gfi' : 'reachable'))));
+      if(pendingInterceptionChoice){
+        const occHere = posMap[r+'_'+c];
+        if(occHere && pendingInterceptionChoice.candidateIds.includes(occHere.id)){
+          cell.classList.add('intercept-cell');
+        }
+      }
       if(phase==='live' && remoteSelected!==null && remoteSelected!==selected && (remoteDeclaredAction==='move' || remoteDeclaredAction==='blitz' || remoteDeclaredAction==='secureball' || remoteDeclaredAction==='handoff')){
         const rp = players.find(x=>x.id===remoteSelected);
         if(rp && inAdjacentReach(rp,r,c) && !occupiedBy(r,c)){
@@ -3814,7 +3820,7 @@ function resolvePassFinalLanding(r, c, mustBounceOnceIfEmpty){
     ball.row = r; ball.col = c;
     renderPitch(); renderRosters(); renderSelInfo();
     broadcastState();
-    openCatchModal(occ, false, false, mustBounceOnceIfEmpty ? 0 : 1, mustBounceOnceIfEmpty ? '' : 'pase', false);
+    openCatchModal(occ, false, false, mustBounceOnceIfEmpty ? 0 : 1, mustBounceOnceIfEmpty ? '' : 'pase', true, 'atrapar el pase');
     pendingCatch.isPassCatch = true;
     return;
   }
@@ -3960,7 +3966,7 @@ function resolveBounce(r,c){
   }
 }
 
-function openCatchModal(p, noModifiers, voluntary, extraPenalty, extraReason, useAtraparSkill){
+function openCatchModal(p, noModifiers, voluntary, extraPenalty, extraReason, useAtraparSkill, catchVerb){
   const markers = noModifiers ? 0 : countOpponentTackleZones(p.row, p.col, p.team);
   const extra = noModifiers ? 0 : (extraPenalty || 0);
   const target = noModifiers ? parseAgTarget(p.ag) : parseAgTarget(p.ag) + markers + extra;
@@ -3975,9 +3981,8 @@ function openCatchModal(p, noModifiers, voluntary, extraPenalty, extraReason, us
     if(extra>0) parts.push('-1 por ser ' + (extraReason || 'recogida especial'));
     modText = `(AG${p.ag ?? '?'}${parts.length ? ' ' + parts.join(' ') : ', sin modificadores'})`;
   }
-  document.getElementById('catchText').textContent = useAtraparSkill
-    ? `${p.name} intenta atrapar la entrega de balón — necesita ${target}+ ${modText}. Tirad D6.`
-    : `${p.name} intenta recoger el balón — necesita ${target}+ ${modText}. Tirad D6.`;
+  const verb = catchVerb || (useAtraparSkill ? 'atrapar la entrega de balón' : 'recoger el balón');
+  document.getElementById('catchText').textContent = `${p.name} intenta ${verb} — necesita ${target}+ ${modText}. Tirad D6.`;
   document.getElementById('catchDie').textContent = '–';
   document.getElementById('catchResultText').textContent = '';
   document.getElementById('catchResultText').className = 'check-result';

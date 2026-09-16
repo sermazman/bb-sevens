@@ -2890,9 +2890,24 @@ function applyBlockOutcome(kind){
   const offsets = computePushOffsets(attacker.row, attacker.col, defender.row, defender.col);
   pendingPush = { attackerId: attacker.id, defenderId: defender.id, kind, isBlitz, offsets, freePush: !!attacker.freePushOverride };
   document.getElementById('pushControlPanel').style.display = 'block';
-  document.getElementById('pushControlText').textContent = attacker.freePushOverride
-    ? 'Empuje libre activado: elegid cualquiera de las 8 casillas adyacentes para ' + defender.name + '.'
-    : 'Elegid una de las 3 casillas resaltadas para ' + defender.name + ' (según la dirección del placaje) — puede empujar en cadena si hay otro jugador ahí.';
+  let hasEmptyAdjacent = false;
+  for(let dr=-1; dr<=1 && !hasEmptyAdjacent; dr++){
+    for(let dc=-1; dc<=1 && !hasEmptyAdjacent; dc++){
+      if(dr===0 && dc===0) continue;
+      const rr = defender.row+dr, cc = defender.col+dc;
+      if(rr<0||rr>=ROWS||cc<0||cc>=COLS) continue;
+      if(!occupiedBy(rr,cc)) hasEmptyAdjacent = true;
+    }
+  }
+  const hasSideStep = !attacker.freePushOverride && playerHasSkill(defender, 'echarse a un lado', 'side step') && hasEmptyAdjacent;
+  if(hasSideStep){
+    alert('⚠️ ' + defender.name + ' tiene ECHARSE A UN LADO.\n\nEs el EQUIPO DE ' + teamName(defender.team).toUpperCase() + ' (el del propio jugador empujado) quien elige a qué casilla desocupada adyacente se mueve — no el equipo atacante.');
+    document.getElementById('pushControlText').textContent = '🔀 Echarse a un Lado: el equipo de ' + defender.name + ' elige cualquier casilla desocupada adyacente (resaltadas).';
+  } else {
+    document.getElementById('pushControlText').textContent = attacker.freePushOverride
+      ? 'Empuje libre activado: elegid cualquiera de las 8 casillas adyacentes para ' + defender.name + '.'
+      : 'Elegid una de las 3 casillas resaltadas para ' + defender.name + ' (según la dirección del placaje) — puede empujar en cadena si hay otro jugador ahí.';
+  }
   document.getElementById('pushFreeToggleBtn').textContent = attacker.freePushOverride ? '🔒 Desactivar empuje libre' : '🔓 Activar todos los empujes';
   document.getElementById('pushFreeToggleBtn').classList.toggle('active-toggle', !!attacker.freePushOverride);
   renderRosters(); renderPitch(); renderSelInfo();
@@ -2951,6 +2966,17 @@ function toggleFreePushDuringPush(){
 }
 
 function currentPushTargets(mover, offsets, freePush){
+  if(mover && !freePush && playerHasSkill(mover, 'echarse a un lado', 'side step')){
+    const sideStepOptions = [];
+    for(let dr=-1; dr<=1; dr++) for(let dc=-1; dc<=1; dc++){
+      if(dr===0 && dc===0) continue;
+      const rr = mover.row+dr, cc = mover.col+dc;
+      if(rr<0 || rr>=ROWS || cc>=COLS || cc<0) continue;
+      if(!occupiedBy(rr,cc)) sideStepOptions.push({ row: rr, col: cc });
+    }
+    if(sideStepOptions.length>0) return sideStepOptions;
+    // sin casillas libres adyacentes: la habilidad no se puede usar, cae al empuje normal
+  }
   if(freePush){
     const list = [];
     for(let dr=-1; dr<=1; dr++) for(let dc=-1; dc<=1; dc++){
@@ -3560,7 +3586,8 @@ const PASS_ZONE_PENALTIES = [0, 1, 2, 3];
 
 function declarePassTarget(passer, targetR, targetC, zone){
   pendingPassTargetSelection = null;
-  const markers = countOpponentTackleZones(passer.row, passer.col, passer.team);
+  const hasNerviosPass = playerHasSkill(passer, 'nervios de acero', 'nerves of steel');
+  const markers = hasNerviosPass ? 0 : countOpponentTackleZones(passer.row, passer.col, passer.team);
   const totalPenalty = PASS_ZONE_PENALTIES[zone] + markers;
   pendingPassRoll = { passerId: passer.id, targetR, targetC, zone, totalPenalty };
   const target = parseAgTarget(passer.ag);
@@ -3593,14 +3620,15 @@ function finishPassRoll(raw){
   const target = parseAgTarget(passer.ag);
   let outcome;
   if(raw===6) outcome = 'preciso';
-  else if(raw===1 || modified<=1) outcome = 'perdido';
+  else if(raw===1) outcome = playerHasSkill(passer, 'pase seguro', 'safe pass') ? 'safepass' : 'perdido';
+  else if(modified<=1) outcome = 'perdido';
   else if(modified>=target) outcome = 'preciso';
   else outcome = 'impreciso';
   pendingPassRoll.lastOutcome = outcome;
   document.getElementById('passDie').textContent = raw;
   const resEl = document.getElementById('passResultText');
-  resEl.textContent = outcome==='preciso' ? '✅ PRECISO' : (outcome==='impreciso' ? '➖ IMPRECISO' : '❌ BALÓN PERDIDO');
-  resEl.className = 'check-result ' + (outcome==='preciso' ? 'ok' : 'fail');
+  resEl.textContent = outcome==='preciso' ? '✅ PRECISO' : (outcome==='safepass' ? '🛡️ PASE SEGURO — SIN BALÓN PERDIDO' : (outcome==='impreciso' ? '➖ IMPRECISO' : '❌ BALÓN PERDIDO'));
+  resEl.className = 'check-result ' + (outcome==='preciso' || outcome==='safepass' ? 'ok' : 'fail');
   log('🎲 Pase de ' + passer.name + ': ' + raw + ' - ' + pendingPassRoll.totalPenalty + ' = ' + modified + ' (necesitaba ' + target + '+) → ' + outcome.toUpperCase());
   document.getElementById('passRollBtn').style.display = 'none';
   broadcastState();
@@ -3610,13 +3638,13 @@ function finishPassRoll(raw){
 function renderPassActionRow(passer, outcome){
   const row = document.getElementById('passActionRow');
   row.innerHTML = '';
-  if(outcome==='preciso' || pendingPassRoll.rerollUsed){
+  if(outcome==='preciso' || outcome==='safepass' || pendingPassRoll.rerollUsed){
     row.style.display = 'none';
     broadcastState();
     setTimeout(()=>{
       document.getElementById('passModal').classList.remove('show');
       resolvePassOutcome(passer, outcome);
-    }, outcome==='preciso' ? 900 : 300);
+    }, (outcome==='preciso' || outcome==='safepass') ? 900 : 300);
     return;
   }
   row.style.display = 'flex';
@@ -3702,6 +3730,12 @@ function finalizePassTurnoverIfNeeded(){
 function resolvePassOutcome(passer, outcome){
   const { targetR, targetC } = pendingPassRoll;
   pendingPassRoll = null;
+  if(outcome==='safepass'){
+    log('🛡️ ' + passer.name + ' evita el Balón Perdido con Pase Seguro — mantiene la posesión y su activación termina. Sin cambio de turno.');
+    renderRosters(); renderPitch(); renderSelInfo();
+    broadcastState();
+    return;
+  }
   ball.carrierId = null;
   ballInFlight = true;
   pendingPassOriginalTeam = passer.team;
@@ -3734,7 +3768,7 @@ function resolvePassOutcome(passer, outcome){
 }
 
 function finishPassLandingWithIntercept(passer, landR, landC, outcome){
-  const candidates = playersNearPassLine(passer.row, passer.col, landR, landC, passer.team);
+  const candidates = playerHasSkill(passer, 'partenubes', 'cloud burster') ? [] : playersNearPassLine(passer.row, passer.col, landR, landC, passer.team);
   if(candidates.length>0){
     pendingInterceptionChoice = { landR, landC, outcome, candidateIds: candidates.map(p=>p.id) };
     updateStatus('¿Algún rival intenta interceptar el pase? (resaltados en azul, click en uno, o "sin intercepción").');
@@ -3966,7 +4000,9 @@ function resolveBounce(r,c){
     return;
   }
   if(occ.condition==='standing'){
-    openCatchModal(occ, false, false, 1, 'rebote');
+    const inPassChain = pendingPassTurnoverMode!==null;
+    openCatchModal(occ, false, false, 1, inPassChain ? '' : 'rebote', inPassChain, inPassChain ? 'atrapar el pase' : undefined);
+    if(inPassChain) pendingCatch.isPassCatch = true;
   } else {
     log('🏈 El balón bota sobre ' + occ.name + ' (' + occ.condition + ') y sigue botando.');
     startBallBounce();
@@ -3974,7 +4010,8 @@ function resolveBounce(r,c){
 }
 
 function openCatchModal(p, noModifiers, voluntary, extraPenalty, extraReason, useAtraparSkill, catchVerb){
-  const markers = noModifiers ? 0 : countOpponentTackleZones(p.row, p.col, p.team);
+  const hasNerviosCatch = playerHasSkill(p, 'nervios de acero', 'nerves of steel');
+  const markers = (noModifiers || hasNerviosCatch) ? 0 : countOpponentTackleZones(p.row, p.col, p.team);
   const extra = noModifiers ? 0 : (extraPenalty || 0);
   const target = noModifiers ? parseAgTarget(p.ag) : parseAgTarget(p.ag) + markers + extra;
   pendingCatch = { playerId: p.id, target, voluntary: !!voluntary, useAtraparSkill: !!useAtraparSkill };

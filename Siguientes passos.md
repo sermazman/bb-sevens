@@ -3,7 +3,7 @@ PARA CAMBIAR AL BALON POR UNO SPIKED, HACER PNG fondo transparente de 64x64 o 12
 
 ☣️ACCION DE PASAR - Redactar todo y ver como hacerlo lo forma bonita
 
-** INICIO: Previsión 10-09 ó 11-09 REALIZADO FECHA:
+** INICIO: 11-09 REALIZADO FECHA:
 
 INCLUIR RESTO DE STAFF EN ROSTERS y APP GENERAL (buscar huecos para Incentivos por el Futuro)
 
@@ -59,15 +59,24 @@ Este jugador siempre puede ofrecer apoyos tanto ofensivos como defensivos en las
 ☣️- METER LA BOTA (pruebas desde 10-09-2026)
 Este jugador puede prestar apoyos ofensivos cuando un compañero realiza una acción de Falta sin importar cuántos Jugadores rivales estén Marcando a este jugador.
 
-ECHARSE A UN LADO
+☣️- PARTENUBES (pruebas desde 16-09-2026)
+Cuando un jugador con esta habilidad realiza una acción de Pase, los jugadores rivales no pueden intentar interceptar el balón.
+
+☣️- PASE SEGURO (pruebas desde 16-09-2026)
+Si este Jugador saca un 1 natural al realizar un chequeo de Pase, no se producirá un balón perdido. En lugar de eso, este jugador mantendrá la posesión del balón y su activación terminará de inmediato. Eso no provoca un cambio de turno.
+
+☣️- NERVIOS DE ACERO (pruebas desde 16-09-2026)
+Este jugador puede ignorar todos los modificadores por estar siendo Marcado al hacer un chequeo de Agilidad para atrapar el balón, o al hacer un chequeo de Pase para pasar el balón.
+
+☣️- ECHARSE A UN LADO (pruebas desde 16-09-2026)
+Si este jugador es empujado por cualquier motivo, en lugar de que el Entrenador rival elija a qué casilla es empujado, el Entrenador de este jugador podrá elegir cualquler casilla desocupada adyacente a este jugador, y este jugador será empujado a dicha casilla. Si no hay casillas desocupadas adyacentes, esta habilidad no puede usarse. 
+Aqui hay que poner bien claro en un MODAL de aviso el equipo responsable de decidir a donde se mueve, para evitar confusiones. El equipo que decide es el del propio jugador que tiene esa habilidad.
 
 // HABILIDADES TRAS IMPLEMENTAR PASAR: //
-PARTENUBES
-PASE SEGURO
+
 PASE A LO LOCO
 RECEPCIÓN HERÓICA
 ANIMOSIDAD
-NERVIOS DE ACERO
 
 @@@@@@@@@@@@@@@@@@@ EQUIPOS @@@@@@@@@@@@@@@@@@@
  - PDTE PASAR A SHEETS: HALFLING, GOBLIN, SLANN, SNOTLINGS

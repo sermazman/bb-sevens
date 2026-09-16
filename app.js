@@ -163,6 +163,7 @@ let passUsedByTeam = { A: false, B: false };
 let passThrowWheelActive = false;
 let pendingPassTargetSelection = null; // { passerId }
 let pendingPassRoll = null; // { passerId, targetR, targetC, zone, totalPenalty }
+let ballInFlight = false; // true entre "el balón deja las manos del lanzador" y "aterriza de verdad" — evita pintarlo en una posición vieja
 let pendingInterceptionChoice = null; // { landR, landC, outcome, candidateIds }
 let pendingInterceptionRoll = null; // { interceptorId, target, outcome }
 let pendingFoulContext = null; // { foulerId, targetId, offAssists, defAssists, modifier, doubleDetected }
@@ -310,7 +311,7 @@ function snapshotState(){
   if(!Array.isArray(players)){ console.error('[BB7] players estaba corrompido (' + players + ') — reparado a lista vacía.'); players = []; }
   if(!ball || typeof ball!=='object'){ console.error('[BB7] ball estaba corrompido (' + ball + ') — reparado a valores por defecto.'); ball = { carrierId:null, row:null, col:null }; }
   return {
-    players, ball, phase, state, pendingTD, pendingDodge, pendingGfi, armorForPlayer, nextId,
+    players, ball, ballInFlight, phase, state, pendingTD, pendingDodge, pendingGfi, armorForPlayer, nextId,
     mySelected: selected, myDeclaredAction: declaredAction,
     koQueue, pendingKo, teamRace, customColorsEnabled, teamCustomColor, teamTextColor, openingKickoffDone, firstHalfKickingTeam, pitchBackgroundUrl, pitchBackgroundExact, teamStaff, teamRerollsLeft, kickoffPendingOOBAfterEvent,
     ballBounceActive, pendingCatch, pendingBallDrop, pendingDriveStart, pendingPassRoll,
@@ -464,6 +465,7 @@ function applyRemoteState(payload){
   remoteSelected = payload.mySelected!==undefined ? payload.mySelected : null;
   remoteDeclaredAction = payload.myDeclaredAction || null;
   ball = payload.ball;
+  ballInFlight = !!payload.ballInFlight;
   phase = payload.phase;
   state = payload.state;
   pendingTD = payload.pendingTD;
@@ -1469,7 +1471,7 @@ function renderPitch(){
         cell.appendChild(t);
       }
 
-      if(ball.carrierId===null && ball.row===r && ball.col===c){
+      if(!ballInFlight && ball.carrierId===null && ball.row===r && ball.col===c){
         const looseBall = document.createElement('div');
         looseBall.className = 'loose-ball';
         looseBall.textContent = '🏈';
@@ -2057,6 +2059,7 @@ function unstickState(){
   placingBallFree = false;
   pendingKickPlacement = false; kickoffBounceStep = false;
   ballBounceActive = false;
+  ballInFlight = false;
   kickoffTargetRow = null; kickoffTargetCol = null;
   blitzActivePlayer = null;
   secureBallActivePlayer = null;
@@ -3700,6 +3703,7 @@ function resolvePassOutcome(passer, outcome){
   const { targetR, targetC } = pendingPassRoll;
   pendingPassRoll = null;
   ball.carrierId = null;
+  ballInFlight = true;
   pendingPassOriginalTeam = passer.team;
   if(outcome==='perdido'){
     pendingPassTurnoverMode = 'always';
@@ -3739,18 +3743,18 @@ function finishPassLandingWithIntercept(passer, landR, landC, outcome){
     broadcastState();
     return;
   }
-  resolvePassFinalLanding(landR, landC, true);
+  resolvePassFinalLanding(landR, landC, outcome==='preciso');
 }
 
 function declineInterception(){
   if(!pendingInterceptionChoice) return;
-  const { landR, landC } = pendingInterceptionChoice;
+  const { landR, landC, outcome } = pendingInterceptionChoice;
   pendingInterceptionChoice = null;
   document.getElementById('interceptChoicePanel').style.display = 'none';
   log('🖐️ Ningún rival intenta interceptar — el pase continúa.');
   renderPitch();
   broadcastState();
-  resolvePassFinalLanding(landR, landC, true);
+  resolvePassFinalLanding(landR, landC, outcome==='preciso');
 }
 
 function attemptInterception(id){
@@ -3792,11 +3796,12 @@ function rollInterceptDie(){
 }
 
 function resolveInterceptionResult(interceptor, success){
-  const { landR, landC } = pendingInterceptionChoice;
+  const { landR, landC, outcome } = pendingInterceptionChoice;
   pendingInterceptionRoll = null;
   pendingInterceptionChoice = null;
   if(success && interceptor){
     ball.carrierId = interceptor.id;
+    ballInFlight = false;
     log('🖐️ ¡' + interceptor.name + ' intercepta el pase!');
     pendingPassTurnoverMode = null;
     pendingPassOriginalTeam = null;
@@ -3809,7 +3814,7 @@ function resolveInterceptionResult(interceptor, success){
   log('🖐️ ' + (interceptor ? interceptor.name : 'El rival') + ' falla el intento de intercepción — el pase continúa.');
   renderPitch();
   broadcastState();
-  resolvePassFinalLanding(landR, landC, true);
+  resolvePassFinalLanding(landR, landC, outcome==='preciso');
 }
 
 function resolvePassFinalLanding(r, c, mustBounceOnceIfEmpty){
@@ -3817,6 +3822,7 @@ function resolvePassFinalLanding(r, c, mustBounceOnceIfEmpty){
   c = Math.max(0, Math.min(COLS-1, c));
   const occ = occupiedBy(r,c);
   if(occ && occ.condition==='standing'){
+    ballInFlight = false;
     ball.row = r; ball.col = c;
     renderPitch(); renderRosters(); renderSelInfo();
     broadcastState();
@@ -3831,6 +3837,7 @@ function resolvePassFinalLanding(r, c, mustBounceOnceIfEmpty){
     resolvePassFinalLanding(r+off.dr, c+off.dc, false);
     return;
   }
+  ballInFlight = false;
   ball.row = r; ball.col = c;
   renderPitch(); renderRosters(); renderSelInfo();
   log('🏈 El balón queda suelto en el campo.');

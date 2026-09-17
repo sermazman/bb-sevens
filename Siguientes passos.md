@@ -40,12 +40,17 @@ Cuando este jugador realiza una acción de Placaje (normal o placaje cuando marc
 Si un jugador rival se Cae por haber fallado su intento de esquivar, saltar o brincar desde una casilla en la Zona de defensa de este jugador, este jugador puede aplicar un modificador de +1 en la tirada de Armadura y si la pasa sin aplicarlo, lo aplica en la de Heridas (es como lo de Golpe Mortífero). Si un Jugador intenta salir de una casilla en la Zona de defensa de varios jugadores con esta habilidad, solo uno de ellos podrá utilizarla.
 - DEJADA (OK 11-09-2026) 
 Cuando este jugador sea el portador del balón y realice una acción de Movimiento, puede elegir "dejar el balón", colocándolo en cualquier casilla que abandone durante dicha acción de Movimiento. Esto no provoca un cambio de turno. El balón quedará en la casilla que abandone tras declarar la Dejada por lo que yo haría sería que mientras que el jugador con la habilidad dejada esté haciendo su Movimiento, si pinchamos sobre el con el boton derecho que salte solo la opcion en la ruleta de Dejada para activar esta habilidad... o como podemos proceder?
+- PARTENUBES (OK 17-09-2026 - Se sigue probando)
+Cuando un jugador con esta habilidad realiza una acción de Pase, los jugadores rivales no pueden intentar interceptar el balón.
+- ECHARSE A UN LADO (OK 17-09-2026 - funciona pero falta aviso en modal "bonito")
+Si este jugador es empujado por cualquier motivo, en lugar de que el Entrenador rival elija a qué casilla es empujado, el Entrenador de este jugador podrá elegir cualquler casilla desocupada adyacente a este jugador, y este jugador será empujado a dicha casilla. Si no hay casillas desocupadas adyacentes, esta habilidad no puede usarse. 
+Aqui hay que poner bien claro en un MODAL de aviso el equipo responsable de decidir a donde se mueve, para evitar confusiones. El equipo que decide es el del propio jugador que tiene esa habilidad.
 
-☣️☣️☣️¿¿¿ EN PRUEBAS ??? (las habilidades con guión, están en Pruebas)
+☣️☣️☣️¿¿¿ EN PRUEBAS ??? (las habilidades con guión, están en Pruebas) ☣️☣️☣️
 
 ☣️- PROFESIONAL (pruebas desde 01-09-2026) Ok con recoger balón // PDTE de dados bloqueo / Esquivar / A por Ellos
 
-☣️- ATRAPAR (pruebas desde 03-09-2026)
+☣️- ATRAPAR (pruebas desde 03-09-2026) - 17-09-26 funciona pero falta mas testeo
 
 ☣️- CABEZA DURA (pruebas desde 08-09-2026 - Sale aviso de que tiene esta habilidad, no se optimiza hasta que se tire automaticamente Heridas)
 De momento, avisar en el modal cuando se haga una tirada de Heridas contra ese jugador en letras de color rojo que tiene "Jugador con CABEZA DURA" para avisarnos al elegir el resultado
@@ -59,18 +64,12 @@ Este jugador siempre puede ofrecer apoyos tanto ofensivos como defensivos en las
 ☣️- METER LA BOTA (pruebas desde 10-09-2026)
 Este jugador puede prestar apoyos ofensivos cuando un compañero realiza una acción de Falta sin importar cuántos Jugadores rivales estén Marcando a este jugador.
 
-☣️- PARTENUBES (pruebas desde 16-09-2026)
-Cuando un jugador con esta habilidad realiza una acción de Pase, los jugadores rivales no pueden intentar interceptar el balón.
-
 ☣️- PASE SEGURO (pruebas desde 16-09-2026)
 Si este Jugador saca un 1 natural al realizar un chequeo de Pase, no se producirá un balón perdido. En lugar de eso, este jugador mantendrá la posesión del balón y su activación terminará de inmediato. Eso no provoca un cambio de turno.
 
 ☣️- NERVIOS DE ACERO (pruebas desde 16-09-2026)
 Este jugador puede ignorar todos los modificadores por estar siendo Marcado al hacer un chequeo de Agilidad para atrapar el balón, o al hacer un chequeo de Pase para pasar el balón.
 
-☣️- ECHARSE A UN LADO (pruebas desde 16-09-2026)
-Si este jugador es empujado por cualquier motivo, en lugar de que el Entrenador rival elija a qué casilla es empujado, el Entrenador de este jugador podrá elegir cualquler casilla desocupada adyacente a este jugador, y este jugador será empujado a dicha casilla. Si no hay casillas desocupadas adyacentes, esta habilidad no puede usarse. 
-Aqui hay que poner bien claro en un MODAL de aviso el equipo responsable de decidir a donde se mueve, para evitar confusiones. El equipo que decide es el del propio jugador que tiene esa habilidad.
 
 // HABILIDADES TRAS IMPLEMENTAR PASAR: //
 

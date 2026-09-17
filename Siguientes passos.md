@@ -70,6 +70,18 @@ Si este Jugador saca un 1 natural al realizar un chequeo de Pase, no se producir
 ☣️- NERVIOS DE ACERO (pruebas desde 16-09-2026)
 Este jugador puede ignorar todos los modificadores por estar siendo Marcado al hacer un chequeo de Agilidad para atrapar el balón, o al hacer un chequeo de Pase para pasar el balón.
 
+☣️- ESCURRIDIZO (pruebas desde 17-09-2026 - falta Tabla Heridas Escurridizo)
+Cuando este jugador intente esquivar, no sufre modificadores negativos a su chequeo de Agilidad por estar siendo Marcado por jugadores rivales.
+Además, este jugador aplica un modificador de-1 a su chequeo de Agilidad al intentar interceptar el balón.
+
+☣️- CANIJO (pruebas desde 17-09-2026)
+Este jugador puede aplicar un modificador de +1 a sus chequeos de Agilidad para intentar esquivar. Aparte de esto, si un jugador rival intenta esquivar moviéndose a una casilla en la zona de defensa de este jugador, este jugador no aplicará un modificador de -1 al chequeo de Agilidad del jugador rival por estarlo Marcando.
+
+☣️- APUÑALAR (pruebas desde 17-09-2026)
+Cuando este jugador es activado, puede declarar una acción especial de Apuñalar; no hay límite al número de jugadores que pueden declarar esta acción especial cada turno. Cuando este jugador realiza una acción de Apuñalar, elige a un jugador rival En pie y adyacente a él, y haz una tirada de Armadura contra dicho jugador rival. Esta tirada de Armadura no puede modificarse de ningún modo. Si la armadura del jugador rival se rompe, haz una tirada de Heridas contra él. Este jugador puede usar la acción especial de Apuñalar para reemplazar la acción de Placaje que forma parte de una acción de Penetración. pero su activación finalizará igualmente una vez resuelta la acción especial de Apuñalar.
+
+☣️- ROBAR BALON (pruebas desde 17-09-2026)
+Cuando este jugador realice una acción de Placaje (o placaje dentro de BLITZ) contra un jugador rival que sea el portador del balón, si el jugador rivales empujado dejará caer el balón en la casilla a la que sea empujado, y el balón rebotará desde ella una vez. Dicho rebote ocurre antes de que el jugador rival quede Tumbado boca arriba (si eso es sucede) pero después de que este jugador elija si hacer movimiento de impulso. Hay que tenerlo bien definido esta habilidad por los pasos a seguir en el rebote del balon.
 
 // HABILIDADES TRAS IMPLEMENTAR PASAR: //
 

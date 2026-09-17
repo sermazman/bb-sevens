@@ -320,6 +320,9 @@ function snapshotState(){
     secureBallModalOpen: document.getElementById('secureBallModal').classList.contains('show'),
     matchEndModalOpen: document.getElementById('matchEndModal').classList.contains('show'),
     forcejearModalOpen: document.getElementById('forcejearModal').classList.contains('show'),
+    infoModalOpen: document.getElementById('infoModal').classList.contains('show'),
+    infoModalTitle: document.getElementById('infoModalTitle').textContent,
+    infoModalText: document.getElementById('infoModalText').textContent,
     forcejearText: document.getElementById('forcejearText').textContent,
     pendingForcejearChoice,
     matchEndText: document.getElementById('matchEndText').textContent,
@@ -370,6 +373,7 @@ function snapshotState(){
     injuryBlockVisible: document.getElementById('injuryBlock').style.display==='block',
     garrasWarningVisible: document.getElementById('garrasWarning').style.display==='block',
     cabezaDuraWarningVisible: document.getElementById('cabezaDuraWarning').style.display==='block',
+    escurridizoWarningVisible: document.getElementById('escurridizoWarning').style.display==='block',
     injuryDie1: document.getElementById('injuryDie1').textContent,
     injuryDie2: document.getElementById('injuryDie2').textContent,
     injurySum: document.getElementById('injurySum').textContent,
@@ -543,6 +547,9 @@ function applyRemoteState(payload){
   document.getElementById('matchEndText').textContent = payload.matchEndText || '';
   document.getElementById('forcejearText').textContent = payload.forcejearText || '';
   document.getElementById('forcejearModal').classList.toggle('show', !!payload.forcejearModalOpen);
+  document.getElementById('infoModal').classList.toggle('show', !!payload.infoModalOpen);
+  document.getElementById('infoModalTitle').textContent = payload.infoModalTitle || '';
+  document.getElementById('infoModalText').textContent = payload.infoModalText || '';
   pendingForcejearChoice = payload.pendingForcejearChoice || null;
   document.getElementById('matchEndModal').classList.toggle('show', !!payload.matchEndModalOpen);
   // pendingActionMenuPlayer y declaredAction son estado de interacción LOCAL de cada navegador
@@ -623,6 +630,7 @@ function applyRemoteState(payload){
   document.getElementById('injuryBlock').style.display = payload.injuryBlockVisible ? 'block' : 'none';
   document.getElementById('garrasWarning').style.display = payload.garrasWarningVisible ? 'block' : 'none';
   document.getElementById('cabezaDuraWarning').style.display = payload.cabezaDuraWarningVisible ? 'block' : 'none';
+  document.getElementById('escurridizoWarning').style.display = payload.escurridizoWarningVisible ? 'block' : 'none';
   document.getElementById('injuryDie1').textContent = payload.injuryDie1 || '–';
   document.getElementById('injuryDie2').textContent = payload.injuryDie2 || '–';
   document.getElementById('injurySum').textContent = payload.injurySum || 'Suma: –';
@@ -756,6 +764,7 @@ function anyModalOpen(){
          document.getElementById('secureBallModal').classList.contains('show') ||
          document.getElementById('matchEndModal').classList.contains('show') ||
          document.getElementById('forcejearModal').classList.contains('show') ||
+         document.getElementById('infoModal').classList.contains('show') ||
          document.getElementById('passModal').classList.contains('show') ||
          document.getElementById('interceptModal').classList.contains('show') ||
          pendingActionMenuPlayer !== null ||
@@ -863,9 +872,11 @@ function showInfoModal(title, text){
   document.getElementById('infoModalTitle').textContent = title;
   document.getElementById('infoModalText').textContent = text;
   document.getElementById('infoModal').classList.add('show');
+  broadcastState();
 }
 function closeInfoModal(){
   document.getElementById('infoModal').classList.remove('show');
+  broadcastState();
 }
 
 function presetPositions(team){
@@ -1440,11 +1451,12 @@ function renderPitch(){
         const targetClass = isValidBlockTarget(occ.id) ? ' block-target' : '';
         const handoffClass = isValidHandoffTarget(occ.id) ? ' handoff-target' : '';
         const foulClass = isValidFoulTarget(occ.id) ? ' foul-target' : '';
+        const apunalarClass = isValidApunalarTarget(occ.id) ? ' apunalar-target' : '';
         const ferocityClass = isValidFerocityTarget(occ.id) ? ' ferocity-target' : '';
         const interceptClass = isValidInterceptTarget(occ.id) ? ' intercept-target' : '';
         const freeCatchClass = (freeCatchTeam===occ.team && occ.onPitch && occ.condition==='standing') ? ' free-catch-target' : '';
         const showActivated = occ.activated && phase==='live' && occ.team===state.active;
-        t.className = 'token' + (occ.id===selected?' selected':'') + (showActivated?' activated':'') + condClass + targetClass + handoffClass + foulClass + ferocityClass + interceptClass + freeCatchClass;
+        t.className = 'token' + (occ.id===selected?' selected':'') + (showActivated?' activated':'') + condClass + targetClass + handoffClass + foulClass + apunalarClass + ferocityClass + interceptClass + freeCatchClass;
         t.dataset.playerId = occ.id;
         t.style.background = tokenColorFor(occ);
         t.style.color = textColorFor(occ);
@@ -1691,9 +1703,13 @@ function canHandoff(p){
     // Un compañero (no portador): necesita poder llegar junto al portador.
     return Math.max(Math.abs(carrier.row-p.row), Math.abs(carrier.col-p.col)) <= reach+1;
   }
-  // Balón suelto: cualquier jugador puede intentarlo si su movimiento (+ a por ellos) le permite llegar a la casilla del balón.
+  // Balón suelto: hace falta poder llegar hasta él y, con el movimiento que quede, llegar además junto a un compañero.
   if(ball.row===null) return false;
-  return Math.max(Math.abs(ball.row-p.row), Math.abs(ball.col-p.col)) <= reach;
+  const distToBall = Math.max(Math.abs(ball.row-p.row), Math.abs(ball.col-p.col));
+  if(distToBall > reach) return false;
+  const remainingAfterBall = reach - distToBall;
+  return players.some(p2 => p2.onPitch && p2.id!==p.id && p2.team===p.team && p2.condition==='standing' &&
+    Math.max(Math.abs(p2.row-ball.row), Math.abs(p2.col-ball.col)) <= remainingAfterBall+1);
 }
 
 const PASS_RANGE_LIMITS = [3, 6, 10, 13]; // rápido, corto, largo, bomba (casillas) — ya no se usa para calcular, solo de referencia
@@ -1737,6 +1753,12 @@ function canPass(p){
   return Math.max(Math.abs(ball.row-p.row), Math.abs(ball.col-p.col)) <= reach;
 }
 
+function canApunalar(p){
+  if(!playerHasSkill(p, 'apuñalar', 'stab')) return false;
+  return players.some(p2 => p2.onPitch && p2.team!==p.team && p2.condition==='standing' &&
+    Math.max(Math.abs(p2.row-p.row), Math.abs(p2.col-p.col))===1);
+}
+
 function canFoul(p){
   if(foulUsedByTeam[p.team]) return false;
   if(moveMode(p)===null) return false;
@@ -1762,6 +1784,9 @@ function getActionMenuOptionsFor(p){
     if(!handoffUsedByTeam[p.team]) opts.push({ icon:'🤝', label:'Levantar/Entrega', fn:'actionMenuStandHandoff' });
     if(!passUsedByTeam[p.team]) opts.push({ icon:'🎯', label:'Levantar/Pase', fn:'actionMenuStandPass' });
     opts.push({ icon:'🥊', label:'Levantar/Falta', fn:'actionMenuStandFoul' });
+    if(canApunalar(p)){
+      opts.push({ icon:'🔪', label:'Levantar/Apuñalar', fn:'actionMenuStandApunalar' });
+    }
     if(playerHasSkill(p, 'salto', 'jump up')){
       opts.push({ icon:'🤸', label:'Salto+Placar', fn:'actionMenuJumpUp' });
     }
@@ -1774,6 +1799,9 @@ function getActionMenuOptionsFor(p){
     if(!blitzUsedByTeam[p.team]) opts.push({ icon:'⚡', label:'Blitz', fn:'actionMenuBlitz' });
   }
   opts.push({ icon:'⚔️', label:'Placar', fn:'actionMenuBlock' });
+  if(canApunalar(p)){
+    opts.push({ icon:'🔪', label:'Apuñalar', fn:'actionMenuApunalar' });
+  }
   if(!p.rooted && canSecureBall(p)){
     opts.push({ icon:'🔒', label:'Asegurar', fn:'actionMenuSecureBall' });
   }
@@ -1923,6 +1951,31 @@ function actionMenuStandHandoff(){
   runTraitCheckThen(p, 'standhandoff');
 }
 
+function actionMenuApunalar(){
+  const id = pendingActionMenuPlayer;
+  closeActionMenu();
+  const p = players.find(x=>x.id===id);
+  if(!p) return;
+  selected = id;
+  declaredAction = 'apunalar';
+  updateStatus(p.name + ' declara Apuñalar — elegid al rival adyacente (resaltado).');
+  renderPitch(); renderSelInfo();
+  broadcastState();
+}
+
+function actionMenuStandApunalar(){
+  const id = pendingActionMenuPlayer;
+  closeActionMenu();
+  const p = players.find(x=>x.id===id);
+  if(!p) return;
+  standUp();
+  selected = id;
+  declaredAction = 'apunalar';
+  updateStatus(p.name + ' declara Apuñalar — elegid al rival adyacente (resaltado).');
+  renderPitch(); renderSelInfo();
+  broadcastState();
+}
+
 function actionMenuFoul(){
   const id = pendingActionMenuPlayer;
   closeActionMenu();
@@ -2053,6 +2106,9 @@ function unstickState(){
   pendingManualStatus = null;
   armorForPlayer = null; pendingArmorQueue = [];
   golpeMortiferoUsedOnArmor = false;
+  llaveDeBrazoUsedOnArmor = false;
+  pendingApunalarContext = null;
+  pendingRobarBalonContinuation = null;
   pendingPush = null; chainPushStack = [];
   pendingFollowUp = null;
   freeCatchTeam = null;
@@ -2231,6 +2287,12 @@ function tokenClicked(id){
   }
   if(blitzActivePlayer!==null && isValidBlockTarget(id)){
     chooseBlockTarget(id);
+    return;
+  }
+  if(isValidApunalarTarget(id)){
+    const attacker = players.find(x=>x.id===selected);
+    const target = players.find(x=>x.id===id);
+    startApunalarOn(attacker, target);
     return;
   }
   if(isValidFoulTarget(id)){
@@ -2454,6 +2516,15 @@ function isValidFerocityTarget(targetId){
   const target = players.find(x=>x.id===targetId);
   if(!attacker || !target || attacker.id===target.id) return false;
   return target.onPitch && target.team===attacker.team && target.condition==='standing' &&
+    Math.max(Math.abs(target.row-attacker.row), Math.abs(target.col-attacker.col))===1;
+}
+
+function isValidApunalarTarget(targetId){
+  if(declaredAction!=='apunalar' || selected===null) return false;
+  const attacker = players.find(x=>x.id===selected);
+  const target = players.find(x=>x.id===targetId);
+  if(!attacker || !target) return false;
+  return target.onPitch && target.team!==attacker.team && target.condition==='standing' &&
     Math.max(Math.abs(target.row-attacker.row), Math.abs(target.col-attacker.col))===1;
 }
 
@@ -2901,7 +2972,7 @@ function applyBlockOutcome(kind){
   }
   const hasSideStep = !attacker.freePushOverride && playerHasSkill(defender, 'echarse a un lado', 'side step') && hasEmptyAdjacent;
   if(hasSideStep){
-    alert('⚠️ ' + defender.name + ' tiene ECHARSE A UN LADO.\n\nEs el EQUIPO DE ' + teamName(defender.team).toUpperCase() + ' (el del propio jugador empujado) quien elige a qué casilla desocupada adyacente se mueve — no el equipo atacante.');
+    showInfoModal('🔀 ECHARSE A UN LADO', defender.name + ' tiene esta habilidad. Es el EQUIPO DE ' + teamName(defender.team).toUpperCase() + ' (el del propio jugador empujado) quien elige a qué casilla desocupada adyacente se mueve — no el equipo atacante.');
     document.getElementById('pushControlText').textContent = '🔀 Echarse a un Lado: el equipo de ' + defender.name + ' elige cualquier casilla desocupada adyacente (resaltadas).';
   } else {
     document.getElementById('pushControlText').textContent = attacker.freePushOverride
@@ -3457,6 +3528,19 @@ function startRefereeArgument(fouler){
   autoTurnoverThenEndTurn();
 }
 
+let pendingApunalarContext = null; // { attackerId, targetId }
+
+function startApunalarOn(attacker, target){
+  attacker.activated = true;
+  selected = null;
+  declaredAction = null;
+  pendingApunalarContext = { attackerId: attacker.id, targetId: target.id };
+  log('🔪 ' + attacker.name + ' Apuñala a ' + target.name + ' — tirada de Armadura sin modificadores.');
+  renderRosters(); renderPitch(); renderSelInfo();
+  broadcastState();
+  openArmorModal(target);
+}
+
 function startFoulOn(fouler, target){
   const offAssisters = getAssistingPlayers(fouler.team, target.id, fouler.id, 'foulOff');
   const defAssisters = getAssistingPlayers(target.team, fouler.id, target.id, 'foulDef');
@@ -3799,11 +3883,13 @@ function attemptInterception(id){
   document.getElementById('interceptChoicePanel').style.display = 'none';
   const zonePenalty = outcome==='preciso' ? 3 : 2;
   const markers = countOpponentTackleZones(interceptor.row, interceptor.col, interceptor.team);
-  const target = parseAgTarget(interceptor.ag) + zonePenalty + markers;
+  const escurridizoPenalty = playerHasSkill(interceptor, 'escurridizo', 'diving tackle immune', 'slippery') ? 1 : 0;
+  const target = parseAgTarget(interceptor.ag) + zonePenalty + markers + escurridizoPenalty;
   pendingInterceptionRoll = { interceptorId: interceptor.id, target };
   document.getElementById('interceptText').textContent = interceptor.name + ' intenta interceptar — necesita ' + target + '+ (AG' + (interceptor.ag ?? '?') +
     ' -' + zonePenalty + ' por ser ' + (outcome==='preciso' ? 'un pase preciso' : 'un pase impreciso') +
-    (markers>0 ? (', -' + markers + ' por marcaje') : '') + '). Tirad 1D6.';
+    (markers>0 ? (', -' + markers + ' por marcaje') : '') +
+    (escurridizoPenalty>0 ? ', -1 por Escurridizo' : '') + '). Tirad 1D6.';
   document.getElementById('interceptDie').textContent = '–';
   document.getElementById('interceptResultText').textContent = '';
   document.getElementById('interceptResultText').className = 'check-result';
@@ -3894,7 +3980,36 @@ let llaveDeBrazoMap = {}; // { fallingPlayerId: opponentId } — Llave de Brazo 
 let golpeMortiferoUsedOnArmor = false;
 let llaveDeBrazoUsedOnArmor = false;
 
+let pendingRobarBalonContinuation = null; // { attackerId, defenderId, fallKind, directInjuryPlayerId, isBlitz } — el 'info' original de finishPushSequence
+
 function finishPushSequence(info){
+  if(!info) return;
+  const attacker = players.find(x=>x.id===info.attackerId);
+  const defender = players.find(x=>x.id===info.defenderId);
+
+  if(attacker && defender && ball.carrierId===defender.id && playerHasSkill(attacker, 'robar balón', 'strip ball')){
+    ball.carrierId = null;
+    log('🏈 Robar Balón: ' + defender.name + ' deja caer el balón en su casilla al ser empujado por ' + attacker.name + '.');
+    pendingRobarBalonContinuation = info;
+    const dirRoll = Math.floor(Math.random()*8)+1;
+    const off = kickoffDirOffset(dirRoll);
+    log('🎲 Rebote (Robar Balón): D8=' + dirRoll + '.');
+    const nr = defender.row + off.dr, nc = defender.col + off.dc;
+    renderPitch();
+    broadcastState();
+    if(nr<0 || nr>=ROWS || nc<0 || nc>=COLS){
+      log('🏈 El balón sale del campo al rebotar — se produce una devolución.');
+      resolveThrowIn(nr, nc, defender.row, defender.col, 0);
+    } else {
+      resolveBounce(nr, nc);
+    }
+    return; // la caída/heridas del empujado se retoma en cuanto el rebote quede resuelto del todo
+  }
+
+  continueFinishPushSequenceAfterSteal(info);
+}
+
+function continueFinishPushSequenceAfterSteal(info){
   if(!info) return;
   const attacker = players.find(x=>x.id===info.attackerId);
 
@@ -4076,6 +4191,11 @@ function resolveCatch(success){
 
 function checkDriveStartAfterBounce(){
   finalizePassTurnoverIfNeeded();
+  if(pendingRobarBalonContinuation){
+    const info = pendingRobarBalonContinuation;
+    pendingRobarBalonContinuation = null;
+    continueFinishPushSequenceAfterSteal(info);
+  }
   if(pendingDriveStart){
     const team = pendingDriveStart;
     pendingDriveStart = null;
@@ -4313,6 +4433,13 @@ function countOpponentTackleZones(r,c,team){
     Math.max(Math.abs(p2.row-r), Math.abs(p2.col-c))===1).length;
 }
 
+function countDodgeTackleZones(r,c,team){
+  // Como countOpponentTackleZones, pero un jugador con Canijo no cuenta como zona de marcaje para esquivas rivales.
+  return players.filter(p2 => p2.onPitch && p2.team!==team && p2.condition==='standing' &&
+    !playerHasSkill(p2, 'canijo', 'puny') &&
+    Math.max(Math.abs(p2.row-r), Math.abs(p2.col-c))===1).length;
+}
+
 function opponentTackleZonePlayers(r,c,team){
   return players.filter(p2 => p2.onPitch && p2.team!==team && p2.condition==='standing' &&
     Math.max(Math.abs(p2.row-r), Math.abs(p2.col-c))===1);
@@ -4432,14 +4559,17 @@ function useCheckReroll(prefix, isSkill){
 }
 
 function openDodgeModal(p, toR, toC, fromGfi){
-  const tz = countOpponentTackleZones(toR, toC, p.team);
-  const target = parseAgTarget(p.ag) + tz;
+  const hasEscurridizo = playerHasSkill(p, 'escurridizo', 'diving tackle immune', 'slippery');
+  const hasCanijo = playerHasSkill(p, 'canijo', 'puny');
+  const tz = hasEscurridizo ? 0 : countDodgeTackleZones(toR, toC, p.team);
+  const canijoBonus = hasCanijo ? 1 : 0;
+  const target = parseAgTarget(p.ag) + tz - canijoBonus;
   pendingDodge = { playerId:p.id, toR, toC, fromGfi: !!fromGfi, target };
   dodgeRerollUsed = false;
   const msg = (fromGfi
     ? `${p.name} ha superado "a por ellos" pero esa casilla también sale de una zona de marcaje rival. `
     : `${p.name} sale de una zona de marcaje rival. `)
-    + `Necesita ${target}+ (AG${p.ag ?? '?'} + ${tz} zona(s) de marcaje en destino). Tirad D6.`;
+    + `Necesita ${target}+ (AG${p.ag ?? '?'}${hasEscurridizo ? ', Escurridizo ignora el marcaje' : ' + ' + tz + ' zona(s) de marcaje en destino'}${hasCanijo ? ', -1 por Canijo' : ''}). Tirad D6.`;
   document.getElementById('dodgeText').textContent = msg;
   document.getElementById('dodgeDie').textContent = '–';
   document.getElementById('dodgeResultText').textContent = '';
@@ -4599,6 +4729,7 @@ function openInjuryDirect(p){
   document.getElementById('armorPassRow').style.display='none';
   document.getElementById('injuryBlock').style.display='block';
   document.getElementById('cabezaDuraWarning').style.display = playerHasSkill(p, 'cabeza dura', 'thick skull') ? 'block' : 'none';
+  document.getElementById('escurridizoWarning').style.display = playerHasSkill(p, 'escurridizo', 'diving tackle immune', 'slippery') ? 'block' : 'none';
   document.getElementById('injuryDie1').textContent='–';
   document.getElementById('injuryDie2').textContent='–';
   document.getElementById('injurySum').textContent='Suma: –';
@@ -4612,6 +4743,15 @@ function rollArmor(){
   document.getElementById('armorDie1').textContent=d1;
   document.getElementById('armorDie2').textContent=d2;
   const p = players.find(x=>x.id===armorForPlayer);
+
+  const isApunalarRoll = pendingApunalarContext && pendingApunalarContext.targetId===armorForPlayer;
+  if(isApunalarRoll){
+    document.getElementById('armorSum').textContent = 'Suma: ' + sum + ' (Apuñalar — sin modificadores posibles)';
+    log('🔪 Armadura de Apuñalar (' + (p?p.name:'?') + '): ' + d1 + ' + ' + d2 + ' = ' + sum + ' — sin modificadores.');
+    document.getElementById('armorPassRow').style.display='block';
+    broadcastState();
+    return;
+  }
 
   const isFoulRoll = pendingFoulContext && pendingFoulContext.targetId===armorForPlayer;
   if(isFoulRoll && d1===d2){
@@ -4676,6 +4816,7 @@ function armorResult(broken){
     document.getElementById('armorPassRow').style.display='none';
     document.getElementById('injuryBlock').style.display='block';
     document.getElementById('cabezaDuraWarning').style.display = playerHasSkill(p, 'cabeza dura', 'thick skull') ? 'block' : 'none';
+    document.getElementById('escurridizoWarning').style.display = playerHasSkill(p, 'escurridizo', 'diving tackle immune', 'slippery') ? 'block' : 'none';
     log('🛡️ Armadura ROTA' + (p?(' — '+p.name):'') + '. Tirad heridas.');
   } else {
     if(p){
@@ -4778,6 +4919,9 @@ function closeArmorModal(){
   if(resolvedPlayerId!==null) delete golpeMortiferoMap[resolvedPlayerId];
   llaveDeBrazoUsedOnArmor = false;
   if(resolvedPlayerId!==null) delete llaveDeBrazoMap[resolvedPlayerId];
+  if(pendingApunalarContext && pendingApunalarContext.targetId===resolvedPlayerId){
+    pendingApunalarContext = null;
+  }
   broadcastState();
   if(pendingArmorQueue && pendingArmorQueue.length>0){
     processNextArmorInQueue();

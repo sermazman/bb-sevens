@@ -4962,12 +4962,13 @@ function armorResult(broken){
     }
     showInjuryBlockAfterArmorBroken(p);
   } else {
-    if(p){
+    const isApunalarRoll = p && pendingApunalarContext && pendingApunalarContext.targetId===p.id;
+    if(p && !isApunalarRoll){
       const wasAlreadyDown = pendingFoulContext && pendingFoulContext.targetId===p.id && (p.condition==='tumbado' || p.condition==='aturdido');
       if(!wasAlreadyDown) p.condition = 'tumbado';
       p.rooted = false;
     }
-    log('🛡️ Armadura aguanta' + (p?(' — '+p.name+'.'):'.'));
+    log('🛡️ Armadura aguanta' + (p?(' — '+p.name+(isApunalarRoll ? ', sigue en pie (Apuñalar no lo tumba).' : '.')):'.'));
     renderRosters(); renderPitch(); renderSelInfo();
     closeArmorModal();
   }

@@ -45,8 +45,27 @@ ESTUPIDO / REALMENTE ESTUPIDO / IRA DESCONTROLADA / FEROCIDAD ANIMAL (OK)
 
 ☣️- ROBAR BALON (pruebas desde 17-09-2026) Cuando este jugador realice una acción de Placaje (o placaje dentro de BLITZ) contra un jugador rival que sea el portador del balón, si el jugador rivales empujado dejará caer el balón en la casilla a la que sea empujado, y el balón rebotará desde ella una vez. Dicho rebote ocurre antes de que el jugador rival quede Tumbado boca arriba (si eso es sucede) pero después de que este jugador elija si hacer movimiento de impulso. Hay que tenerlo bien definido esta habilidad por los pasos a seguir en el rebote del balon.
 
+☣️- REGENERACION (desde 23-09-2026)
+Cuando este jugador sufra una Lesión, antes de hacer su tirada de Lesiones, tira 1D6. Con 1-3, el jugador sufre la Lesión de manera normal. Con 4+, en cambio, el jugador se regenera, la Lesión se ignora y este jugador es colocado en la zona de Reservas de su equipo.
+
+☣️- RECEPCIÓN HERÓICA (desde 23-09-2026)
+Este jugador puede intentar atrapar el balón si cae en una casilla de su zona de defensa debido a un pase, una patada inicial o una devolución. Esta habilidad no le permite Intentar atrapar el balón si este rebota hasta
+una casilla de su zona de defensa. Además, este jugador puede aplicar un modificador de +1 a su chequeo de Agilidad al intentar atrapar el balón como parte de una acción de Pase si está en la casilla objetivo del mismo.
+
 // HABILIDADES TRAS IMPLEMENTAR PASAR: //
 HUMANOIDE BALA (tras poner lanzar compañero de equipo)
+
 PASE A LO LOCO 
-RECEPCIÓN HERÓICA 
+Cuando este jugador realice una acción de Pase o una acción especial de Lanzar una bomba, puede declarar cualquier casilla del campo como casilla objetivo en lugar de usar la regla de pases. Haz un chequeo de Pase de
+forma normal, tratando el lanzamiento corno una Bomba larga y cualquier resultado de pase preciso como un pase impreciso. Un Pase a lo loco no puede interceptarse.
+
 ANIMOSIDAD
+
+SIEMPRE HAMBRIENTO
+
+PROYECTIL VOMITO
+
+
+LANZAR COMPAÑERO
+
+

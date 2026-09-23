@@ -166,6 +166,7 @@ let pendingPassRoll = null; // { passerId, targetR, targetC, zone, totalPenalty 
 let ballInFlight = false; // true entre "el balón deja las manos del lanzador" y "aterriza de verdad" — evita pintarlo en una posición vieja
 let pendingInterceptionChoice = null; // { landR, landC, outcome, candidateIds }
 let pendingInterceptionRoll = null; // { interceptorId, target, outcome }
+let pendingHeroicReception = null; // { landR, landC, candidateIds, resumeKind: 'pass'|'kickoff'|'throwin', resumeData }
 let pendingFoulContext = null; // { foulerId, targetId, offAssists, defAssists, modifier, doubleDetected }
 let secureBallUsedByTeam = { A: false, B: false };
 let pendingSecureBall = null;
@@ -371,6 +372,11 @@ function snapshotState(){
     armorRollBtnVisible: document.getElementById('armorRollBtn').style.display!=='none',
     crowdPushMode,
     injuryBlockVisible: document.getElementById('injuryBlock').style.display==='block',
+    regenRowVisible: document.getElementById('regenRow').style.display==='block',
+    regenDieText: document.getElementById('regenDie').textContent,
+    regenResultText: document.getElementById('regenResultText').textContent,
+    regenResultClass: document.getElementById('regenResultText').className,
+    regenRollBtnVisible: document.getElementById('regenRollBtn').style.display!=='none',
     garrasWarningVisible: document.getElementById('garrasWarning').style.display==='block',
     cabezaDuraWarningVisible: document.getElementById('cabezaDuraWarning').style.display==='block',
     escurridizoWarningVisible: document.getElementById('escurridizoWarning').style.display==='block',
@@ -406,6 +412,8 @@ function snapshotState(){
     interceptResultClass: document.getElementById('interceptResultText').className,
     interceptChoicePanelVisible: document.getElementById('interceptChoicePanel').style.display==='block',
     pendingInterceptionChoice, pendingInterceptionRoll,
+    heroicReceptionPanelVisible: document.getElementById('heroicReceptionPanel').style.display==='block',
+    pendingHeroicReception,
     passText: document.getElementById('passText').textContent,
     passDie: document.getElementById('passDie').textContent,
     passResultText: document.getElementById('passResultText').textContent,
@@ -628,6 +636,11 @@ function applyRemoteState(payload){
   document.getElementById('armorRollBtn').style.display = (payload.armorRollBtnVisible===false) ? 'none' : 'block';
   crowdPushMode = !!payload.crowdPushMode;
   document.getElementById('injuryBlock').style.display = payload.injuryBlockVisible ? 'block' : 'none';
+  document.getElementById('regenRow').style.display = payload.regenRowVisible ? 'block' : 'none';
+  document.getElementById('regenDie').textContent = payload.regenDieText || '–';
+  document.getElementById('regenResultText').textContent = payload.regenResultText || '';
+  document.getElementById('regenResultText').className = payload.regenResultClass || 'check-result';
+  document.getElementById('regenRollBtn').style.display = (payload.regenRollBtnVisible===false) ? 'none' : 'block';
   document.getElementById('garrasWarning').style.display = payload.garrasWarningVisible ? 'block' : 'none';
   document.getElementById('cabezaDuraWarning').style.display = payload.cabezaDuraWarningVisible ? 'block' : 'none';
   document.getElementById('escurridizoWarning').style.display = payload.escurridizoWarningVisible ? 'block' : 'none';
@@ -680,6 +693,8 @@ function applyRemoteState(payload){
   document.getElementById('interceptChoicePanel').style.display = payload.interceptChoicePanelVisible ? 'block' : 'none';
   pendingInterceptionChoice = payload.pendingInterceptionChoice || null;
   pendingInterceptionRoll = payload.pendingInterceptionRoll || null;
+  document.getElementById('heroicReceptionPanel').style.display = payload.heroicReceptionPanelVisible ? 'block' : 'none';
+  pendingHeroicReception = payload.pendingHeroicReception || null;
   document.getElementById('passText').textContent = payload.passText || '';
   document.getElementById('passDie').textContent = payload.passDie || '–';
   document.getElementById('passResultText').textContent = payload.passResultText || '';
@@ -767,6 +782,7 @@ function anyModalOpen(){
          document.getElementById('infoModal').classList.contains('show') ||
          document.getElementById('passModal').classList.contains('show') ||
          document.getElementById('interceptModal').classList.contains('show') ||
+         document.getElementById('heroicReceptionPanel').style.display==='block' ||
          pendingActionMenuPlayer !== null ||
          document.getElementById('traitCheckModal').classList.contains('show') ||
          document.getElementById('turnoverOverlay').classList.contains('show');
@@ -1454,9 +1470,10 @@ function renderPitch(){
         const apunalarClass = isValidApunalarTarget(occ.id) ? ' apunalar-target' : '';
         const ferocityClass = isValidFerocityTarget(occ.id) ? ' ferocity-target' : '';
         const interceptClass = isValidInterceptTarget(occ.id) ? ' intercept-target' : '';
+        const heroicReceptionClass = isValidHeroicReceptionTarget(occ.id) ? ' heroic-reception-target' : '';
         const freeCatchClass = (freeCatchTeam===occ.team && occ.onPitch && occ.condition==='standing') ? ' free-catch-target' : '';
         const showActivated = occ.activated && phase==='live' && occ.team===state.active;
-        t.className = 'token' + (occ.id===selected?' selected':'') + (showActivated?' activated':'') + condClass + targetClass + handoffClass + foulClass + apunalarClass + ferocityClass + interceptClass + freeCatchClass;
+        t.className = 'token' + (occ.id===selected?' selected':'') + (showActivated?' activated':'') + condClass + targetClass + handoffClass + foulClass + apunalarClass + ferocityClass + interceptClass + heroicReceptionClass + freeCatchClass;
         t.dataset.playerId = occ.id;
         t.style.background = tokenColorFor(occ);
         t.style.color = textColorFor(occ);
@@ -1610,6 +1627,8 @@ function resolveThrowIn(exitR, exitC, fromR, fromC, depth){
   } else if(occ){
     log('🏈 La devolución aterriza sobre ' + occ.name + ' (' + occ.condition + ') y sigue botando.');
     startBallBounce();
+  } else if(offerHeroicReception(landR, landC, 'throwin', {})){
+    // el flujo continúa cuando el Entrenador decida (attemptHeroicReception / declineHeroicReception)
   } else {
     log('🏈 La devolución queda suelta en el campo.');
     checkDriveStartAfterBounce();
@@ -2108,6 +2127,9 @@ function unstickState(){
   golpeMortiferoUsedOnArmor = false;
   llaveDeBrazoUsedOnArmor = false;
   pendingApunalarContext = null;
+  document.getElementById('regenRow').style.display = 'none';
+  pendingHeroicReception = null;
+  document.getElementById('heroicReceptionPanel').style.display = 'none';
   pendingRobarBalonContinuation = null;
   pendingPush = null; chainPushStack = [];
   pendingFollowUp = null;
@@ -2253,6 +2275,10 @@ function completeStep(p, r, c, consume){
 function tokenClicked(id){
   if(isValidInterceptTarget(id)){
     attemptInterception(id);
+    return;
+  }
+  if(isValidHeroicReceptionTarget(id)){
+    attemptHeroicReception(id);
     return;
   }
   if(pendingPassTargetSelection){
@@ -3349,10 +3375,20 @@ function positionBorderColor(p){
   return match ? match.color : null;
 }
 
+function normalizeSkillText(s){
+  // NFC normaliza combinaciones de acentos (p.ej. "n"+"~" vs "ñ" precompuesta) y luego quitamos
+  // los diacríticos por completo, para que una diferencia de codificación invisible en el JSON
+  // del equipo (habitual al copiar/pegar desde Excel/Word) nunca impida detectar una habilidad
+  // que el usuario ve perfectamente escrita en pantalla.
+  return (s || '')
+    .normalize('NFC')
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
 function playerHasSkill(p, ...keywords){
   if(!p || !p.skills) return false;
-  const lower = p.skills.map(s => (s||'').toLowerCase());
-  return keywords.some(k => lower.some(s => s.includes(k)));
+  const lower = p.skills.map(normalizeSkillText);
+  return keywords.some(k => { const nk = normalizeSkillText(k); return lower.some(s => s.includes(nk)); });
 }
 
 function checkEquilibrioFirme(p){
@@ -3937,7 +3973,91 @@ function resolveInterceptionResult(interceptor, success){
   resolvePassFinalLanding(landR, landC, outcome==='preciso');
 }
 
-function resolvePassFinalLanding(r, c, mustBounceOnceIfEmpty){
+// ---------- Recepción Heroica ----------
+// "Este jugador puede intentar atrapar el balón si cae en una casilla de su zona de defensa (adyacente a él)
+// debido a un pase, una patada inicial o una devolución. No aplica si el balón rebota hasta esa casilla."
+function hasRecepcionHeroica(p){
+  return !!p && playerHasSkill(p, 'recepción heroica', 'recepcion heroica', 'heroic reception');
+}
+
+function findHeroicReceptionCandidates(r, c){
+  return players.filter(p => p.onPitch && p.condition==='standing' &&
+    Math.max(Math.abs(p.row-r), Math.abs(p.col-c))===1 &&
+    hasRecepcionHeroica(p));
+}
+
+// Devuelve true si se ha ofrecido el intento (y por tanto el flujo se detiene aquí a esperar al Entrenador);
+// false si no hay candidatos y el llamador debe continuar con la resolución normal.
+function offerHeroicReception(r, c, resumeKind, resumeData){
+  const candidates = findHeroicReceptionCandidates(r, c);
+  if(candidates.length===0) return false;
+  pendingHeroicReception = { landR: r, landC: c, candidateIds: candidates.map(p=>p.id), resumeKind, resumeData: resumeData || {} };
+  updateStatus('🌟 Recepción Heroica: ¿algún jugador resaltado en dorado intenta atrapar el balón?');
+  document.getElementById('heroicReceptionPanel').style.display = 'block';
+  renderPitch(); renderSelInfo();
+  broadcastState();
+  return true;
+}
+
+function isValidHeroicReceptionTarget(id){
+  return !!pendingHeroicReception && pendingHeroicReception.candidateIds.includes(id);
+}
+
+function resumeAfterHeroicReceptionDecline(landR, landC, resumeKind, resumeData){
+  if(resumeKind==='pass'){
+    if(resumeData.mustBounceOnceIfEmpty){
+      const dirRoll = Math.floor(Math.random()*8)+1;
+      const off = kickoffDirOffset(dirRoll);
+      log('🎲 Rebote: D8=' + dirRoll + '.');
+      resolvePassFinalLanding(landR+off.dr, landC+off.dc, false, false);
+    } else {
+      ballInFlight = false;
+      ball.row = landR; ball.col = landC;
+      renderPitch(); renderRosters(); renderSelInfo();
+      log('🏈 El balón queda suelto en el campo.');
+      broadcastState();
+      finalizePassTurnoverIfNeeded();
+    }
+  } else if(resumeKind==='kickoff'){
+    log('🏈 El balón queda en el campo tras el saque.');
+    checkDriveStartAfterBounce();
+  } else if(resumeKind==='throwin'){
+    log('🏈 La devolución queda suelta en el campo.');
+    checkDriveStartAfterBounce();
+  }
+}
+
+function declineHeroicReception(){
+  if(!pendingHeroicReception) return;
+  const { landR, landC, resumeKind, resumeData } = pendingHeroicReception;
+  pendingHeroicReception = null;
+  document.getElementById('heroicReceptionPanel').style.display = 'none';
+  log('🏈 Sin intento de Recepción Heroica — el balón sigue su curso.');
+  renderPitch();
+  broadcastState();
+  resumeAfterHeroicReceptionDecline(landR, landC, resumeKind, resumeData);
+}
+
+function attemptHeroicReception(id){
+  if(!pendingHeroicReception || !pendingHeroicReception.candidateIds.includes(id)) return;
+  const candidate = players.find(x=>x.id===id);
+  if(!candidate) return;
+  const { landR, landC, resumeKind } = pendingHeroicReception;
+  pendingHeroicReception = null;
+  document.getElementById('heroicReceptionPanel').style.display = 'none';
+  ball.carrierId = null;
+  ballInFlight = false;
+  ball.row = landR; ball.col = landC;
+  renderPitch();
+  broadcastState();
+  const noModifiers = (resumeKind==='kickoff');
+  const extraPenalty = (resumeKind==='throwin') ? 1 : 0;
+  const extraReason = (resumeKind==='throwin') ? 'devolución' : '';
+  openCatchModal(candidate, noModifiers, false, extraPenalty, extraReason, true, 'atrapar el balón (Recepción Heroica)', 0, 'heroic');
+}
+
+function resolvePassFinalLanding(r, c, mustBounceOnceIfEmpty, isDirectLanding){
+  if(isDirectLanding===undefined) isDirectLanding = true;
   r = Math.max(0, Math.min(ROWS-1, r));
   c = Math.max(0, Math.min(COLS-1, c));
   const occ = occupiedBy(r,c);
@@ -3946,15 +4066,18 @@ function resolvePassFinalLanding(r, c, mustBounceOnceIfEmpty){
     ball.row = r; ball.col = c;
     renderPitch(); renderRosters(); renderSelInfo();
     broadcastState();
-    openCatchModal(occ, false, false, mustBounceOnceIfEmpty ? 0 : 1, mustBounceOnceIfEmpty ? '' : 'pase', true, 'atrapar el pase');
-    pendingCatch.isPassCatch = true;
+    const rhBonus = (mustBounceOnceIfEmpty && hasRecepcionHeroica(occ)) ? 1 : 0;
+    openCatchModal(occ, false, false, mustBounceOnceIfEmpty ? 0 : 1, mustBounceOnceIfEmpty ? '' : 'pase', true, 'atrapar el pase', rhBonus, 'pass');
     return;
+  }
+  if(!occ && isDirectLanding){
+    if(offerHeroicReception(r, c, 'pass', { mustBounceOnceIfEmpty })) return;
   }
   if(occ || mustBounceOnceIfEmpty){
     const dirRoll = Math.floor(Math.random()*8)+1;
     const off = kickoffDirOffset(dirRoll);
     log('🎲 Rebote' + (occ ? (' sobre ' + occ.name + ' (' + occ.condition + ')') : '') + ': D8=' + dirRoll + '.');
-    resolvePassFinalLanding(r+off.dr, c+off.dc, false);
+    resolvePassFinalLanding(r+off.dr, c+off.dc, false, false);
     return;
   }
   ballInFlight = false;
@@ -4116,20 +4239,20 @@ function resolveBounce(r,c){
   }
   if(occ.condition==='standing'){
     const inPassChain = pendingPassTurnoverMode!==null;
-    openCatchModal(occ, false, false, 1, inPassChain ? '' : 'rebote', inPassChain, inPassChain ? 'atrapar el pase' : undefined);
-    if(inPassChain) pendingCatch.isPassCatch = true;
+    openCatchModal(occ, false, false, 1, inPassChain ? '' : 'rebote', inPassChain, inPassChain ? 'atrapar el pase' : undefined, 0, inPassChain ? 'pass' : 'pickup');
   } else {
     log('🏈 El balón bota sobre ' + occ.name + ' (' + occ.condition + ') y sigue botando.');
     startBallBounce();
   }
 }
 
-function openCatchModal(p, noModifiers, voluntary, extraPenalty, extraReason, useAtraparSkill, catchVerb){
+function openCatchModal(p, noModifiers, voluntary, extraPenalty, extraReason, useAtraparSkill, catchVerb, rhBonus, catchKind){
   const hasNerviosCatch = playerHasSkill(p, 'nervios de acero', 'nerves of steel');
   const markers = (noModifiers || hasNerviosCatch) ? 0 : countOpponentTackleZones(p.row, p.col, p.team);
   const extra = noModifiers ? 0 : (extraPenalty || 0);
-  const target = noModifiers ? parseAgTarget(p.ag) : parseAgTarget(p.ag) + markers + extra;
-  pendingCatch = { playerId: p.id, target, voluntary: !!voluntary, useAtraparSkill: !!useAtraparSkill };
+  const bonus = noModifiers ? 0 : (rhBonus || 0);
+  const target = noModifiers ? parseAgTarget(p.ag) : parseAgTarget(p.ag) + markers + extra - bonus;
+  pendingCatch = { playerId: p.id, target, voluntary: !!voluntary, useAtraparSkill: !!useAtraparSkill, catchKind: catchKind || (useAtraparSkill ? 'handoff' : 'pickup') };
   catchRerollUsed = false;
   let modText;
   if(noModifiers){
@@ -4138,6 +4261,7 @@ function openCatchModal(p, noModifiers, voluntary, extraPenalty, extraReason, us
     const parts = [];
     if(markers>0) parts.push('-1 por cada rival marcándole (' + markers + ')');
     if(extra>0) parts.push('-1 por ser ' + (extraReason || 'recogida especial'));
+    if(bonus>0) parts.push('+1 por Recepción Heroica (en la casilla objetivo)');
     modText = `(AG${p.ag ?? '?'}${parts.length ? ' ' + parts.join(' ') : ', sin modificadores'})`;
   }
   const verb = catchVerb || (useAtraparSkill ? 'atrapar la entrega de balón' : 'recoger el balón');
@@ -4168,19 +4292,20 @@ function resolveCatch(success){
   if(!pendingCatch){ broadcastState(); return; }
   const p = players.find(x=>x.id===pendingCatch.playerId);
   const wasVoluntary = !!pendingCatch.voluntary;
-  const isHandoffCatch = !!pendingCatch.useAtraparSkill;
-  const isPassCatch = !!pendingCatch.isPassCatch;
+  const kind = pendingCatch.catchKind || (pendingCatch.useAtraparSkill ? 'handoff' : 'pickup');
   document.getElementById('catchModal').classList.remove('show');
   pendingCatch = null;
+  const successVerb = kind==='handoff' ? 'atrapa la entrega de balón' : kind==='pass' ? 'atrapa el pase' : kind==='heroic' ? 'atrapa el balón (¡Recepción Heroica!)' : 'recoge el balón';
+  const failVerb = kind==='handoff' ? 'falla al atrapar la entrega' : kind==='pass' ? 'falla al atrapar el pase' : kind==='heroic' ? 'falla el intento de Recepción Heroica' : 'falla la recogida';
   if(p && success){
     ball.carrierId = p.id;
-    log(isHandoffCatch ? ('🏈 ' + p.name + ' atrapa la entrega de balón.') : (isPassCatch ? ('🏈 ' + p.name + ' atrapa el pase.') : ('🏈 ' + p.name + ' recoge el balón.')));
+    log('🏈 ' + p.name + ' ' + successVerb + '.');
     renderPitch(); renderRosters();
     broadcastState();
     checkTouchdown(p);
     if(!pendingTD) checkDriveStartAfterBounce();
   } else if(p){
-    log((isHandoffCatch ? ('🏈 ' + p.name + ' falla al atrapar la entrega') : (isPassCatch ? ('🏈 ' + p.name + ' falla al atrapar el pase') : ('🏈 ' + p.name + ' falla la recogida'))) + ' — el balón rebota.' + (wasVoluntary ? ' Cambio de turno.' : ''));
+    log('🏈 ' + p.name + ' ' + failVerb + ' — el balón rebota.' + (wasVoluntary ? ' Cambio de turno.' : ''));
     broadcastState();
     startBallBounce();
     if(wasVoluntary) autoTurnoverThenEndTurn();
@@ -4394,6 +4519,8 @@ function resolveKickoffBounce(r,c){
   const occ = occupiedBy(finalR, finalC);
   if(occ && occ.condition==='standing'){
     openCatchModal(occ, true);
+  } else if(!occ && offerHeroicReception(finalR, finalC, 'kickoff', {})){
+    // el flujo continúa cuando el Entrenador decida (attemptHeroicReception / declineHeroicReception)
   } else {
     log('🏈 El balón queda en el campo tras el saque.');
     checkDriveStartAfterBounce();
@@ -4810,14 +4937,30 @@ function rollArmor(){
   broadcastState();
 }
 
+function showInjuryBlockAfterArmorBroken(p){
+  document.getElementById('regenRow').style.display='none';
+  document.getElementById('injuryBlock').style.display='block';
+  document.getElementById('cabezaDuraWarning').style.display = playerHasSkill(p, 'cabeza dura', 'thick skull') ? 'block' : 'none';
+  document.getElementById('escurridizoWarning').style.display = playerHasSkill(p, 'escurridizo', 'diving tackle immune', 'slippery') ? 'block' : 'none';
+  log('🛡️ Armadura ROTA' + (p?(' — '+p.name):'') + '. Tirad heridas.');
+  broadcastState();
+}
+
 function armorResult(broken){
   const p = players.find(x=>x.id===armorForPlayer);
   if(broken){
     document.getElementById('armorPassRow').style.display='none';
-    document.getElementById('injuryBlock').style.display='block';
-    document.getElementById('cabezaDuraWarning').style.display = playerHasSkill(p, 'cabeza dura', 'thick skull') ? 'block' : 'none';
-    document.getElementById('escurridizoWarning').style.display = playerHasSkill(p, 'escurridizo', 'diving tackle immune', 'slippery') ? 'block' : 'none';
-    log('🛡️ Armadura ROTA' + (p?(' — '+p.name):'') + '. Tirad heridas.');
+    if(p && playerHasSkill(p, 'regeneración', 'regeneracion', 'regenerate')){
+      document.getElementById('regenDie').textContent = '–';
+      document.getElementById('regenResultText').textContent = '';
+      document.getElementById('regenResultText').className = 'check-result';
+      document.getElementById('regenRollBtn').style.display = 'block';
+      document.getElementById('regenRow').style.display = 'block';
+      log('🛡️ Armadura ROTA — ' + p.name + ' tiene Regeneración, tira 1D6 antes de la Lesión.');
+      broadcastState();
+      return;
+    }
+    showInjuryBlockAfterArmorBroken(p);
   } else {
     if(p){
       const wasAlreadyDown = pendingFoulContext && pendingFoulContext.targetId===p.id && (p.condition==='tumbado' || p.condition==='aturdido');
@@ -4829,6 +4972,39 @@ function armorResult(broken){
     closeArmorModal();
   }
   broadcastState();
+}
+
+function rollRegenDie(){
+  const p = players.find(x=>x.id===armorForPlayer);
+  const roll = Math.floor(Math.random()*6)+1;
+  document.getElementById('regenDie').textContent = roll;
+  document.getElementById('regenRollBtn').style.display = 'none';
+  const success = roll>=4;
+  const resEl = document.getElementById('regenResultText');
+  resEl.textContent = success ? '✅ ¡SE REGENERA!' : '❌ No se regenera';
+  resEl.className = 'check-result ' + (success ? 'ok' : 'fail');
+  log('🎲 Regeneración de ' + (p?p.name:'?') + ': ' + roll + (success ? ' (4+) — se regenera, la Lesión se ignora y pasa a Reservas.' : ' (1-3) — sufre la Lesión con normalidad.'));
+  broadcastState();
+  setTimeout(()=>{
+    if(success){
+      resolveRegenerationSuccess();
+    } else {
+      document.getElementById('regenRow').style.display = 'none';
+      showInjuryBlockAfterArmorBroken(players.find(x=>x.id===armorForPlayer));
+    }
+  }, 700);
+}
+
+function resolveRegenerationSuccess(){
+  const p = players.find(x=>x.id===armorForPlayer);
+  document.getElementById('regenRow').style.display = 'none';
+  if(p){
+    p.onPitch = false; p.row = null; p.col = null; p.condition = 'standing'; p.rooted = false;
+    if(ball.carrierId===p.id) ball.carrierId = null;
+    log('🔁 ' + p.name + ' se REGENERA — la Lesión se ignora, vuelve a la zona de Reservas de su equipo.');
+  }
+  renderRosters(); renderPitch(); renderSelInfo();
+  closeArmorModal();
 }
 
 function rollInjury(){
@@ -4914,6 +5090,7 @@ function closeArmorModal(){
   const resolvedPlayerId = armorForPlayer;
   document.getElementById('armorModal').classList.remove('show');
   document.getElementById('garrasWarning').style.display = 'none';
+  document.getElementById('regenRow').style.display = 'none';
   armorForPlayer = null;
   golpeMortiferoUsedOnArmor = false;
   if(resolvedPlayerId!==null) delete golpeMortiferoMap[resolvedPlayerId];

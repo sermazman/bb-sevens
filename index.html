@@ -366,6 +366,14 @@
       </div>
     </div>
 
+    <div id="regenRow" style="display:none; margin-top:12px; border-top:1px solid var(--panel-line); padding-top:12px;">
+      <h3 style="margin-bottom:6px; color:var(--gold);">🔁 REGENERACIÓN</h3>
+      <p id="regenText" style="font-size:13px; color:#cfc3a8; margin:0 0 10px 0;">Antes de la Lesión, este jugador puede regenerarse. Con 1-3 sufre la Lesión con normalidad; con 4+ se regenera y va a Reservas.</p>
+      <div class="die-face" id="regenDie" style="margin:0 auto 10px auto;">–</div>
+      <div id="regenResultText" class="check-result"></div>
+      <button class="primary full" id="regenRollBtn" onclick="rollRegenDie()">Tirar D6 (Regeneración)</button>
+    </div>
+
     <div id="injuryBlock" style="display:none; margin-top:14px; border-top:1px solid var(--panel-line); padding-top:12px;">
       <h3 style="margin-bottom:6px; color:var(--gold);">TIRADA DE HERIDAS</h3>
       <div id="cabezaDuraWarning" style="display:none; color:var(--bad); font-weight:800; text-align:center; margin-bottom:8px;">⚠️ Jugador con CABEZA DURA</div>
@@ -541,6 +549,11 @@
   <button onclick="declineInterception()">Sin intercepción, continuar</button>
 </div>
 
+<div id="heroicReceptionPanel" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:610; background:var(--panel); border:2px solid var(--gold); border-radius:8px; padding:12px 16px; text-align:center;">
+  <div class="small-note" style="margin-bottom:8px;">🌟 RECEPCIÓN HEROICA: el balón ha caído junto a un jugador resaltado en dorado — puede intentar atraparlo (click en él), o:</div>
+  <button onclick="declineHeroicReception()">Sin intento, continuar</button>
+</div>
+
 <div class="modal-back" id="passModal">
   <div class="modal">
     <h2>🎯 PASE</h2>
@@ -569,7 +582,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
-<script src="app.js?v=20250908-27"></script>
+<script src="app.js?v=20260923-1"></script>
 
 </body>
 </html>

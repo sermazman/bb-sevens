@@ -346,6 +346,18 @@
   </div>
 </div>
 
+<div class="modal-back" id="blitzStabModal">
+  <div class="modal">
+    <h2>PENETRACIÓN</h2>
+    <p id="blitzStabText">Este jugador tiene Apuñalar. ¿Placaje normal o Apuñalar (sustituye al Placaje)?</p>
+    <div class="row" style="justify-content:center; gap:10px; margin-top:10px;">
+      <button onclick="blitzStabChoosePlacaje()">⚔️ Placaje</button>
+      <button class="danger" onclick="blitzStabChooseApunalar()">🔪 Apuñalar</button>
+    </div>
+    <button class="full" style="margin-top:10px;" onclick="closeBlitzStabChoice()">Cancelar</button>
+  </div>
+</div>
+
 <div class="modal-back" id="armorModal">
   <div class="modal">
     <h2>ARMADURA</h2>
@@ -582,7 +594,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
-<script src="app.js?v=20260925-1"></script>
+<script src="app.js?v=20260925-2"></script>
 
 </body>
 </html>

@@ -173,6 +173,7 @@ let pendingSecureBall = null;
 let secureBallActivePlayer = null;
 let blitzActivePlayer = null;
 let blockTargeting = null;   // attacker id currently choosing an adjacent target
+let pendingBlitzStabChoice = null; // { attackerId, targetId } — elegir Placaje o Apuñalar al llegar al rival en un Blitz
 let activeBlock = null;      // { attackerId, defenderId, isBlitz }
 let blockDiceRolled = false;
 let pendingArmorQueue = [];
@@ -364,6 +365,7 @@ function snapshotState(){
     catchRerollUsed,
     secureBallRerollUsed,
     armorModalOpen: document.getElementById('armorModal').classList.contains('show'),
+    blitzStabModalOpen: document.getElementById('blitzStabModal').classList.contains('show'),
     armorText: document.getElementById('armorText').textContent,
     armorDie1: document.getElementById('armorDie1').textContent,
     armorDie2: document.getElementById('armorDie2').textContent,
@@ -650,6 +652,7 @@ function applyRemoteState(payload){
   document.getElementById('injuryDie2').textContent = payload.injuryDie2 || '–';
   document.getElementById('injurySum').textContent = payload.injurySum || 'Suma: –';
   document.getElementById('armorModal').classList.toggle('show', !!payload.armorModalOpen);
+  document.getElementById('blitzStabModal').classList.toggle('show', !!payload.blitzStabModalOpen);
 
   document.getElementById('koText').textContent = payload.koText || '';
   document.getElementById('koDie').textContent = payload.koDieText || '–';
@@ -2314,7 +2317,12 @@ function tokenClicked(id){
     return;
   }
   if(blitzActivePlayer!==null && isValidBlockTarget(id)){
-    chooseBlockTarget(id);
+    const blitzAttacker = players.find(x=>x.id===blitzActivePlayer);
+    if(blitzAttacker && playerHasSkill(blitzAttacker, 'apuñalar', 'stab')){
+      openBlitzStabChoice(id);
+    } else {
+      chooseBlockTarget(id);
+    }
     return;
   }
   if(isValidApunalarTarget(id)){
@@ -2629,6 +2637,56 @@ function executeBlockHit(attacker, defender, isBlitz){
     }
   } else {
     proceedToBlockDice(attacker, defender, false);
+  }
+}
+
+// ---------- Apuñalar como sustituto del Placaje en un Blitz (Penetración) ----------
+function openBlitzStabChoice(defenderId){
+  if(blitzActivePlayer===null) return;
+  pendingBlitzStabChoice = { attackerId: blitzActivePlayer, targetId: defenderId };
+  document.getElementById('blitzStabModal').classList.add('show');
+  broadcastState();
+}
+
+function closeBlitzStabChoice(){
+  pendingBlitzStabChoice = null;
+  document.getElementById('blitzStabModal').classList.remove('show');
+  broadcastState();
+}
+
+function blitzStabChoosePlacaje(){
+  if(!pendingBlitzStabChoice) return;
+  const targetId = pendingBlitzStabChoice.targetId;
+  pendingBlitzStabChoice = null;
+  document.getElementById('blitzStabModal').classList.remove('show');
+  broadcastState();
+  chooseBlockTarget(targetId);
+}
+
+function blitzStabChooseApunalar(){
+  if(!pendingBlitzStabChoice) return;
+  const { attackerId, targetId } = pendingBlitzStabChoice;
+  pendingBlitzStabChoice = null;
+  document.getElementById('blitzStabModal').classList.remove('show');
+  const attacker = players.find(x=>x.id===attackerId);
+  const defender = players.find(x=>x.id===targetId);
+  blitzActivePlayer = null;
+  if(!attacker || !defender){ broadcastState(); renderPitch(); return; }
+  executeApunalarHit(attacker, defender, true);
+}
+
+function executeApunalarHit(attacker, defender, isBlitz){
+  if(isBlitz){
+    if((attacker.remainingMove ?? attacker.ma) >= 1){
+      attacker.remainingMove -= 1;
+      renderRosters(); renderSelInfo();
+      broadcastState();
+      startApunalarOn(attacker, defender);
+    } else {
+      openGfiModal(attacker, attacker.row, attacker.col, false, null, defender.id);
+    }
+  } else {
+    startApunalarOn(attacker, defender);
   }
 }
 
@@ -4754,13 +4812,15 @@ function resolveDodge(success){
   }
 }
 
-function openGfiModal(p, toR, toC, chainDodge, blockDefenderId){
-  pendingGfi = { playerId:p.id, toR, toC, chainDodge: !!chainDodge, blockDefenderId: blockDefenderId || null };
+function openGfiModal(p, toR, toC, chainDodge, blockDefenderId, stabDefenderId){
+  pendingGfi = { playerId:p.id, toR, toC, chainDodge: !!chainDodge, blockDefenderId: blockDefenderId || null, stabDefenderId: stabDefenderId || null };
   gfiRerollUsed = false;
   const attempt = (p.gfiUsed ?? 0) + 1;
   let msg = `${p.name} intenta "a por ellos" — casilla extra ${attempt}/${maxGfiFor(p)}. Necesita 2+ (solo falla con un 1). Tirad D6.`;
   if(blockDefenderId){
     msg = `${p.name} ya no le queda MA para el placaje del Blitz — tirad D6 "a por ellos" para intentarlo igualmente (necesita 2+).`;
+  } else if(stabDefenderId){
+    msg = `${p.name} ya no le queda MA para el Apuñalar del Blitz — tirad D6 "a por ellos" para intentarlo igualmente (necesita 2+).`;
   } else if(chainDodge){
     msg += ' Esa casilla también sale de una zona de marcaje: si supera esto, tocará esquivar justo después.';
   }
@@ -4789,7 +4849,7 @@ function rollGfiDie(){
 
 function resolveGfi(success){
   if(!pendingGfi) return;
-  const { playerId, toR, toC, chainDodge, blockDefenderId } = pendingGfi;
+  const { playerId, toR, toC, chainDodge, blockDefenderId, stabDefenderId } = pendingGfi;
   const p = players.find(x=>x.id===playerId);
   document.getElementById('gfiModal').classList.remove('show');
   pendingGfi = null;
@@ -4802,6 +4862,14 @@ function resolveGfi(success){
       renderRosters(); renderPitch(); renderSelInfo();
       broadcastState();
       if(defender){ proceedToBlockDice(p, defender, true); }
+      return;
+    }
+    if(stabDefenderId){
+      p.gfiUsed = (p.gfiUsed ?? 0) + 1;
+      const defender = players.find(x=>x.id===stabDefenderId);
+      renderRosters(); renderPitch(); renderSelInfo();
+      broadcastState();
+      if(defender){ startApunalarOn(p, defender); }
       return;
     }
     if(chainDodge){

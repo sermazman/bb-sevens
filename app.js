@@ -369,6 +369,7 @@ function snapshotState(){
     armorDie2: document.getElementById('armorDie2').textContent,
     armorSum: document.getElementById('armorSum').textContent,
     armorPassRowVisible: document.getElementById('armorPassRow').style.display==='block',
+    armorNoBtnText: document.getElementById('armorNoBtn') ? document.getElementById('armorNoBtn').textContent : 'NO — sigue tumbado',
     armorRollBtnVisible: document.getElementById('armorRollBtn').style.display!=='none',
     crowdPushMode,
     injuryBlockVisible: document.getElementById('injuryBlock').style.display==='block',
@@ -633,6 +634,7 @@ function applyRemoteState(payload){
   document.getElementById('armorDie2').textContent = payload.armorDie2 || '–';
   document.getElementById('armorSum').textContent = payload.armorSum || 'Suma: –';
   document.getElementById('armorPassRow').style.display = payload.armorPassRowVisible ? 'block' : 'none';
+  { const armorNoBtnSync = document.getElementById('armorNoBtn'); if(armorNoBtnSync) armorNoBtnSync.textContent = payload.armorNoBtnText || 'NO — sigue tumbado'; }
   document.getElementById('armorRollBtn').style.display = (payload.armorRollBtnVisible===false) ? 'none' : 'block';
   crowdPushMode = !!payload.crowdPushMode;
   document.getElementById('injuryBlock').style.display = payload.injuryBlockVisible ? 'block' : 'none';
@@ -4837,6 +4839,8 @@ function openArmorModal(p){
   document.getElementById('armorDie2').textContent='–';
   document.getElementById('armorSum').textContent='Suma: –';
   document.getElementById('armorPassRow').style.display='none';
+  const armorNoBtn0 = document.getElementById('armorNoBtn');
+  if(armorNoBtn0) armorNoBtn0.textContent = 'NO — sigue tumbado';
   document.getElementById('injuryBlock').style.display='none';
   document.getElementById('injuryDie1').textContent='–';
   document.getElementById('injuryDie2').textContent='–';
@@ -4872,6 +4876,10 @@ function rollArmor(){
   const p = players.find(x=>x.id===armorForPlayer);
 
   const isApunalarRoll = pendingApunalarContext && pendingApunalarContext.targetId===armorForPlayer;
+  const armorNoBtn = document.getElementById('armorNoBtn');
+  if(armorNoBtn){
+    armorNoBtn.textContent = isApunalarRoll ? 'NO — sigue en pie' : 'NO — sigue tumbado';
+  }
   if(isApunalarRoll){
     document.getElementById('armorSum').textContent = 'Suma: ' + sum + ' (Apuñalar — sin modificadores posibles)';
     log('🔪 Armadura de Apuñalar (' + (p?p.name:'?') + '): ' + d1 + ' + ' + d2 + ' = ' + sum + ' — sin modificadores.');

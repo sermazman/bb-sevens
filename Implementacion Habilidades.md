@@ -20,13 +20,15 @@ ESTUPIDO / REALMENTE ESTUPIDO / IRA DESCONTROLADA / FEROCIDAD ANIMAL (OK)
 * PARTENUBES (OK 17-09-2026 - Se sigue probando) Cuando un jugador con esta habilidad realiza una acción de Pase, los jugadores rivales no pueden intentar interceptar el balón.
 * PLACAR (OK)
 
-☣️☣️☣️¿¿¿ EN PRUEBAS ??? (las habilidades con guión, están en Pruebas) ☣️☣️☣️
+_________ SOLO SALE AVISO, NO ESTÁ AUTOMATIZADO 100% ___________
+☣️- CABEZA DURA (pruebas desde 08-09-2026 - Sale aviso de que tiene esta habilidad, no se optimiza hasta que se tire automaticamente Heridas) De momento, avisar en el modal cuando se haga una tirada de Heridas contra ese jugador en letras de color rojo que tiene "Jugador con CABEZA DURA" para avisarnos al elegir el resultado
+
+
+☣️☣️☣️__________ ¿¿¿ EN PRUEBAS ??? (las habilidades con guión, están en Pruebas) __________☣️☣️☣️
 
 ☣️- PROFESIONAL (pruebas desde 01-09-2026) Ok con recoger balón // PDTE de dados bloqueo / Esquivar / A por Ellos
 
 ☣️- ATRAPAR (pruebas desde 03-09-2026) - 17-09-26 funciona pero falta mas testeo
-
-☣️- CABEZA DURA (pruebas desde 08-09-2026 - Sale aviso de que tiene esta habilidad, no se optimiza hasta que se tire automaticamente Heridas) De momento, avisar en el modal cuando se haga una tirada de Heridas contra ese jugador en letras de color rojo que tiene "Jugador con CABEZA DURA" para avisarnos al elegir el resultado
 
 ☣️- ROMPER DEFENSAS (pruebas desde 10-09-2026) Durante los turnos del equipo rival, los jugadores rivales Marcados por este jugador no pueden usar las habilidades Defensa ni Meter la bota.
 
@@ -51,14 +53,17 @@ Cuando este jugador sufra una Lesión, antes de hacer su tirada de Lesiones, tir
 Este jugador puede intentar atrapar el balón si cae en una casilla de su zona de defensa debido a un pase, una patada inicial o una devolución. Esta habilidad no le permite Intentar atrapar el balón si este rebota hasta
 una casilla de su zona de defensa. Además, este jugador puede aplicar un modificador de +1 a su chequeo de Agilidad al intentar atrapar el balón como parte de una acción de Pase si está en la casilla objetivo del mismo.
 
-// HABILIDADES TRAS IMPLEMENTAR PASAR: //
-HUMANOIDE BALA (tras poner lanzar compañero de equipo)
-
-PASE A LO LOCO 
+☣️- PASE A LO LOCO (desde 28-09-2026)
 Cuando este jugador realice una acción de Pase o una acción especial de Lanzar una bomba, puede declarar cualquier casilla del campo como casilla objetivo en lugar de usar la regla de pases. Haz un chequeo de Pase de
 forma normal, tratando el lanzamiento corno una Bomba larga y cualquier resultado de pase preciso como un pase impreciso. Un Pase a lo loco no puede interceptarse.
 
-ANIMOSIDAD
+☣️- ANIMOSIDAD (desde 28-09-2026)
+Cuando este jugador intente realizar una acción de Pase o de Entregar el balón a un compañero con la misma clave que se indica entre paréntesis, tira 1D6. Con un 1, el jugador se niega a realizar la acción y su activación
+termina de Inmediato.
+Algunos Jugadores pueden tener Animosidad (todos), en cuyo caso esta regla se aplica a todos sus compañeros de equipo, sin Importar las claves que tengan.
+
+// HABILIDADES TRAS IMPLEMENTAR PASAR: //
+HUMANOIDE BALA (tras poner lanzar compañero de equipo)
 
 SIEMPRE HAMBRIENTO
 
@@ -66,5 +71,4 @@ PROYECTIL VOMITO
 
 
 LANZAR COMPAÑERO
-
 

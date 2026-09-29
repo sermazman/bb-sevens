@@ -643,3 +643,5 @@ button.full{width:100%; margin-top:6px;}
 }
 .conn-dot{display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--bad); margin-right:6px;}
 .conn-dot.on{background:var(--good);}
+
+:root{ --css-version: "S_V29"; }

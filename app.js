@@ -5950,3 +5950,5 @@ if(document.readyState==='complete' || document.readyState==='interactive'){ set
   const badge = document.getElementById('versionBadge');
   if(badge) badge.textContent = 'v' + v;
 })();
+
+window.APP_JS_VERSION = 'A_V29';

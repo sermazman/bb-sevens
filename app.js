@@ -17,6 +17,8 @@ let remoteDeclaredAction = null;
 let pendingTraitCheck = null; // { playerId, actionLabel, trait }
 let pendingFerocityAttack = null; // { attackerId }
 let pendingHandoffChoice = null; // { fromId }
+let pendingAnimosity = null;      // { playerId, receiverId, kind:'pass'|'handoff', ctx, roll, success } — tirada de Animosidad en curso
+let pendingHailMaryChoice = null; // { passerId, r, c, zone } — elegir Pase normal o Pase a lo loco
 let pendingManualStatus = null; // 'standing' | 'tumbado' | 'aturdido' | 'despistado' | 'ko' | 'injured' | 'injuredGrave' | 'dead'
 let placing = null;    // player id currently being placed/repositioned (SETUP phase)
 let phase = 'setup';   // 'setup' | 'live'
@@ -318,7 +320,7 @@ function snapshotState(){
     koQueue, pendingKo, teamRace, customColorsEnabled, teamCustomColor, teamTextColor, openingKickoffDone, firstHalfKickingTeam, pitchBackgroundUrl, pitchBackgroundExact, teamStaff, teamRerollsLeft, kickoffPendingOOBAfterEvent,
     ballBounceActive, pendingCatch, pendingBallDrop, pendingDriveStart, pendingPassRoll,
     pendingKickPlacement, kickoffBounceStep, kickoffKickingTeam, kickoffReceivingTeam, freeCatchTeam, placingBallFree, kickoffTargetRow, kickoffTargetCol,
-    blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp, chainPushStack, secureBallUsedByTeam, pendingSecureBall, secureBallActivePlayer, handoffUsedByTeam, pendingHandoffChoice, foulUsedByTeam, pendingFoulContext, passUsedByTeam,
+    blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp, chainPushStack, secureBallUsedByTeam, pendingSecureBall, secureBallActivePlayer, handoffUsedByTeam, pendingHandoffChoice, pendingAnimosity, pendingHailMaryChoice, foulUsedByTeam, pendingFoulContext, passUsedByTeam,
     secureBallModalOpen: document.getElementById('secureBallModal').classList.contains('show'),
     matchEndModalOpen: document.getElementById('matchEndModal').classList.contains('show'),
     forcejearModalOpen: document.getElementById('forcejearModal').classList.contains('show'),
@@ -539,6 +541,9 @@ function applyRemoteState(payload){
   passUsedByTeam = payload.passUsedByTeam || { A:false, B:false };
   pendingFoulContext = payload.pendingFoulContext || null;
   pendingHandoffChoice = payload.pendingHandoffChoice || null;
+  pendingAnimosity = payload.pendingAnimosity || null;
+  pendingHailMaryChoice = payload.pendingHailMaryChoice || null;
+  renderAnimosityModal(); renderHailMaryModal();
   secureBallActivePlayer = payload.secureBallActivePlayer;
   pendingSecureBall = payload.pendingSecureBall;
   document.getElementById('secureBallText').textContent = payload.secureBallText || '';
@@ -789,6 +794,7 @@ function anyModalOpen(){
          document.getElementById('interceptModal').classList.contains('show') ||
          document.getElementById('heroicReceptionPanel').style.display==='block' ||
          pendingActionMenuPlayer !== null ||
+         pendingAnimosity !== null || pendingHailMaryChoice !== null ||
          document.getElementById('traitCheckModal').classList.contains('show') ||
          document.getElementById('turnoverOverlay').classList.contains('show');
 }
@@ -2081,7 +2087,8 @@ function actionMenuThrowPass(){
   const p = players.find(x=>x.id===id);
   if(!p || ball.carrierId!==p.id) return;
   pendingPassTargetSelection = { passerId: p.id };
-  updateStatus(p.name + ': elegid la casilla objetivo del pase (dentro del contorno de color).');
+  updateStatus(p.name + ': elegid la casilla objetivo del pase (dentro del contorno de color)' +
+    (playerHasSkill(p, 'pase a lo loco', 'hail mary pass') ? ' — o cualquier casilla del campo con Pase a lo loco.' : '.'));
   renderPitch(); renderSelInfo();
   broadcastState();
 }
@@ -2113,6 +2120,9 @@ function unstickState(){
   activeBlock = null; blockTargeting = null; blockDiceRolled = false; currentBlockDiceIndices = [];
   pendingTraitCheck = null;
   pendingFerocityAttack = null;
+  pendingAnimosity = null;
+  pendingHailMaryChoice = null;
+  pendingBlitzStabChoice = null;
   pendingHandoffChoice = null;
   pendingFoulContext = null;
   pendingForcejearChoice = null;
@@ -2172,12 +2182,7 @@ function cellClicked(r,c){
   if(pendingPassTargetSelection){
     const passer = players.find(x=>x.id===pendingPassTargetSelection.passerId);
     if(!passer){ pendingPassTargetSelection = null; broadcastState(); return; }
-    const zone = passRangeZone(r-passer.row, c-passer.col);
-    if(zone===-1){
-      updateStatus('Esa casilla está fuera del alcance máximo de pase.');
-      return;
-    }
-    declarePassTarget(passer, r, c, zone);
+    handlePassTargetChosen(passer, r, c);
     return;
   }
   if(placingBallFree){
@@ -2290,12 +2295,7 @@ function tokenClicked(id){
     const passer = players.find(x=>x.id===pendingPassTargetSelection.passerId);
     const target = players.find(x=>x.id===id);
     if(passer && target){
-      const zone = passRangeZone(target.row-passer.row, target.col-passer.col);
-      if(zone===-1){
-        updateStatus('Esa casilla está fuera del alcance máximo de pase.');
-      } else {
-        declarePassTarget(passer, target.row, target.col, zone);
-      }
+      handlePassTargetChosen(passer, target.row, target.col);
     }
     return;
   }
@@ -2345,6 +2345,10 @@ function tokenClicked(id){
     const clicked = players.find(x=>x.id===id);
     const carrier = ball.carrierId===mover.id ? mover : clicked;
     const receiver = ball.carrierId===mover.id ? clicked : mover;
+    if(carrier.id===mover.id && animosityAppliesTo(mover, receiver)){
+      openAnimosityCheck(mover, receiver, 'handoff', { moverId: mover.id, carrierId: carrier.id, receiverId: receiver.id });
+      return;
+    }
     mover.activated = true;
     selected = null;
     declaredAction = null;
@@ -3764,14 +3768,172 @@ function proceedDeclaredAction(p, actionLabel){
 const PASS_ZONE_NAMES = ['Pase Rápido', 'Pase Corto', 'Pase Largo', 'Bomba Larga'];
 const PASS_ZONE_PENALTIES = [0, 1, 2, 3];
 
-function declarePassTarget(passer, targetR, targetC, zone){
+// ---------- Habilidad: Pase a lo loco ----------
+function handlePassTargetChosen(passer, r, c){
+  const zone = passRangeZone(r-passer.row, c-passer.col);
+  const hasHailMary = playerHasSkill(passer, 'pase a lo loco', 'hail mary pass');
+  if(zone===-1){
+    if(hasHailMary){ declarePassTarget(passer, r, c, 3, true); } // fuera de alcance: solo posible con Pase a lo loco (Bomba larga)
+    else { updateStatus('Esa casilla está fuera del alcance máximo de pase.'); }
+    return;
+  }
+  if(hasHailMary){ openHailMaryChoice(passer, r, c, zone); return; } // dentro de alcance: puede elegir entre pase normal o a lo loco
+  declarePassTarget(passer, r, c, zone, false);
+}
+
+function openHailMaryChoice(passer, r, c, zone){
+  pendingPassTargetSelection = null;
+  pendingHailMaryChoice = { passerId: passer.id, r, c, zone };
+  renderHailMaryModal();
+  broadcastState();
+}
+
+function renderHailMaryModal(){
+  const m = document.getElementById('hailMaryModal');
+  if(!m) return;
+  if(!pendingHailMaryChoice){ m.classList.remove('show'); return; }
+  const p = players.find(x=>x.id===pendingHailMaryChoice.passerId);
+  document.getElementById('hailMaryText').textContent = (p ? p.name : 'Este jugador') +
+    ' tiene Pase a lo loco. ¿Pase normal (' + PASS_ZONE_NAMES[pendingHailMaryChoice.zone] + ') o Pase a lo loco (Bomba larga, preciso = impreciso, sin intercepción)?';
+  m.classList.add('show');
+}
+
+function hailMaryChooseNormal(){
+  if(!pendingHailMaryChoice) return;
+  const h = pendingHailMaryChoice; pendingHailMaryChoice = null;
+  renderHailMaryModal();
+  const passer = players.find(x=>x.id===h.passerId);
+  if(!passer){ broadcastState(); return; }
+  declarePassTarget(passer, h.r, h.c, h.zone, false);
+}
+
+function hailMaryChooseWild(){
+  if(!pendingHailMaryChoice) return;
+  const h = pendingHailMaryChoice; pendingHailMaryChoice = null;
+  renderHailMaryModal();
+  const passer = players.find(x=>x.id===h.passerId);
+  if(!passer){ broadcastState(); return; }
+  declarePassTarget(passer, h.r, h.c, 3, true);
+}
+
+function hailMaryCancel(){
+  if(!pendingHailMaryChoice) return;
+  const h = pendingHailMaryChoice; pendingHailMaryChoice = null;
+  pendingPassTargetSelection = { passerId: h.passerId }; // vuelve a elegir casilla objetivo
+  renderHailMaryModal();
+  renderPitch(); renderSelInfo();
+  broadcastState();
+}
+
+// ---------- Habilidad: Animosidad ----------
+function animosityEntries(p){
+  return (p && p.skills ? p.skills : []).filter(s=>{ const n = normalizeSkillText(s); return n.includes('animosidad') || n.includes('animosity'); });
+}
+
+// Texto donde buscar la clave: habilidades/claves del jugador (sin sus propias Animosidades) + posición.
+function keywordHaystack(p){
+  const parts = (p.skills || []).filter(s=>{ const n = normalizeSkillText(s); return !(n.includes('animosidad') || n.includes('animosity')); });
+  if(p.position) parts.push(p.position);
+  return parts.map(normalizeSkillText);
+}
+
+function animosityAppliesTo(passer, receiver){
+  if(!passer || !receiver || passer.id===receiver.id || passer.team!==receiver.team) return false;
+  const entries = animosityEntries(passer);
+  if(entries.length===0) return false;
+  const hay = keywordHaystack(receiver);
+  return entries.some(s=>{
+    const m = String(s).match(/\(([^)]*)\)/);
+    const inner = m ? normalizeSkillText(m[1]).trim() : '';
+    if(inner==='' || inner==='todos' || inner==='todas' || inner==='all') return true; // Animosidad (todos)
+    return inner.split(/,|\/|\by\b|\bo\b|\band\b|\bor\b/).map(x=>x.trim()).filter(Boolean).some(k=> hay.some(h=>h.includes(k)));
+  });
+}
+
+function openAnimosityCheck(passer, receiver, kind, ctx){
+  pendingAnimosity = { playerId: passer.id, receiverId: receiver.id, kind, ctx: ctx || {} };
+  renderAnimosityModal();
+  broadcastState();
+}
+
+function renderAnimosityModal(){
+  const m = document.getElementById('animosityModal');
+  if(!m) return;
+  if(!pendingAnimosity){ m.classList.remove('show'); return; }
+  const a = pendingAnimosity;
+  const p = players.find(x=>x.id===a.playerId);
+  const r = players.find(x=>x.id===a.receiverId);
+  const what = a.kind==='handoff' ? 'entregar el balón a' : 'pasar el balón a';
+  const rolled = (a.roll!==undefined && a.roll!==null);
+  document.getElementById('animosityText').textContent = (p ? p.name : 'Este jugador') + ' tiene Animosidad y quiere ' + what + ' ' +
+    (r ? r.name : 'un compañero') + '. Con un 1 se niega y su activación termina. Tirada única. Tirad D6.';
+  document.getElementById('animosityDie').textContent = rolled ? a.roll : '–';
+  const res = document.getElementById('animosityResultText');
+  res.textContent = !rolled ? '' : (a.success ? '✅ ACEPTA' : '❌ SE NIEGA');
+  res.className = 'check-result' + (!rolled ? '' : (a.success ? ' ok' : ' fail'));
+  document.getElementById('animosityRollBtn').style.display = rolled ? 'none' : 'block';
+  document.getElementById('animosityContinueBtn').style.display = rolled ? 'block' : 'none';
+  m.classList.add('show');
+}
+
+function rollAnimosity(){
+  if(!pendingAnimosity || (pendingAnimosity.roll!==undefined && pendingAnimosity.roll!==null)) return;
+  const raw = Math.floor(Math.random()*6)+1;
+  pendingAnimosity.roll = raw;
+  pendingAnimosity.success = raw!==1;
+  const p = players.find(x=>x.id===pendingAnimosity.playerId);
+  log('🎲 Animosidad de ' + (p ? p.name : '?') + ': ' + raw + ' → ' + (raw===1 ? 'SE NIEGA' : 'ACEPTA'));
+  renderAnimosityModal();
+  broadcastState();
+}
+
+function continueAnimosity(){
+  if(!pendingAnimosity || pendingAnimosity.roll===undefined || pendingAnimosity.roll===null) return;
+  const a = pendingAnimosity;
+  pendingAnimosity = null;
+  renderAnimosityModal();
+  const p = players.find(x=>x.id===a.playerId);
+  if(!p){ broadcastState(); return; }
+  if(!a.success){
+    const r = players.find(x=>x.id===a.receiverId);
+    p.activated = true; selected = null; declaredAction = null;
+    log('🙅 ' + p.name + ' se niega a ' + (a.kind==='handoff' ? 'entregar el balón' : 'pasar el balón') + (r ? ' a ' + r.name : '') +
+      ' por Animosidad — su activación termina. Conserva el balón, sin cambio de turno.');
+    renderRosters(); renderPitch(); renderSelInfo();
+    broadcastState();
+    return;
+  }
+  if(a.kind==='pass'){
+    startPassRoll(p, a.ctx.targetR, a.ctx.targetC, a.ctx.zone, !!a.ctx.hailMary);
+  } else if(a.kind==='handoff'){
+    const mover = players.find(x=>x.id===a.ctx.moverId);
+    const carrier = players.find(x=>x.id===a.ctx.carrierId);
+    const receiver = players.find(x=>x.id===a.ctx.receiverId);
+    if(!mover || !carrier || !receiver){ broadcastState(); return; }
+    mover.activated = true; selected = null; declaredAction = null;
+    resolveHandoffTo(carrier, receiver);
+  }
+}
+
+function declarePassTarget(passer, targetR, targetC, zone, hailMary){
+  pendingPassTargetSelection = null;
+  // Animosidad: si en la casilla objetivo hay un compañero afectado, hay que tirar antes de lanzar.
+  const receiver = players.find(x=>x.onPitch && x.row===targetR && x.col===targetC && x.id!==passer.id);
+  if(receiver && animosityAppliesTo(passer, receiver)){
+    openAnimosityCheck(passer, receiver, 'pass', { targetR, targetC, zone, hailMary: !!hailMary });
+    return;
+  }
+  startPassRoll(passer, targetR, targetC, zone, hailMary);
+}
+
+function startPassRoll(passer, targetR, targetC, zone, hailMary){
   pendingPassTargetSelection = null;
   const hasNerviosPass = playerHasSkill(passer, 'nervios de acero', 'nerves of steel');
   const markers = hasNerviosPass ? 0 : countOpponentTackleZones(passer.row, passer.col, passer.team);
   const totalPenalty = PASS_ZONE_PENALTIES[zone] + markers;
-  pendingPassRoll = { passerId: passer.id, targetR, targetC, zone, totalPenalty };
+  pendingPassRoll = { passerId: passer.id, targetR, targetC, zone, totalPenalty, hailMary: !!hailMary };
   const target = parseAgTarget(passer.ag);
-  document.getElementById('passText').textContent = PASS_ZONE_NAMES[zone] + ' de ' + passer.name +
+  document.getElementById('passText').textContent = (hailMary ? 'PASE A LO LOCO (' + PASS_ZONE_NAMES[zone] + ')' : PASS_ZONE_NAMES[zone]) + ' de ' + passer.name +
     ' — necesita ' + target + '+ (AG' + (passer.ag ?? '?') + ', modificador -' + totalPenalty +
     (markers>0 ? ' = -' + PASS_ZONE_PENALTIES[zone] + ' por el rango, -' + markers + ' por marcaje' : ' por el rango') + '). Tirad 1D6.';
   document.getElementById('passDie').textContent = '–';
@@ -3804,10 +3966,12 @@ function finishPassRoll(raw){
   else if(modified<=1) outcome = 'perdido';
   else if(modified>=target) outcome = 'preciso';
   else outcome = 'impreciso';
+  let hailMaryDowngrade = false;
+  if(pendingPassRoll.hailMary && outcome==='preciso'){ outcome = 'impreciso'; hailMaryDowngrade = true; }
   pendingPassRoll.lastOutcome = outcome;
   document.getElementById('passDie').textContent = raw;
   const resEl = document.getElementById('passResultText');
-  resEl.textContent = outcome==='preciso' ? '✅ PRECISO' : (outcome==='safepass' ? '🛡️ PASE SEGURO — SIN BALÓN PERDIDO' : (outcome==='impreciso' ? '➖ IMPRECISO' : '❌ BALÓN PERDIDO'));
+  resEl.textContent = outcome==='preciso' ? '✅ PRECISO' : (outcome==='safepass' ? '🛡️ PASE SEGURO — SIN BALÓN PERDIDO' : (outcome==='impreciso' ? (hailMaryDowngrade ? '➖ IMPRECISO (Pase a lo loco: el preciso cuenta como impreciso)' : '➖ IMPRECISO') : '❌ BALÓN PERDIDO'));
   resEl.className = 'check-result ' + (outcome==='preciso' || outcome==='safepass' ? 'ok' : 'fail');
   log('🎲 Pase de ' + passer.name + ': ' + raw + ' - ' + pendingPassRoll.totalPenalty + ' = ' + modified + ' (necesitaba ' + target + '+) → ' + outcome.toUpperCase());
   document.getElementById('passRollBtn').style.display = 'none';
@@ -3908,7 +4072,7 @@ function finalizePassTurnoverIfNeeded(){
 }
 
 function resolvePassOutcome(passer, outcome){
-  const { targetR, targetC } = pendingPassRoll;
+  const { targetR, targetC, hailMary } = pendingPassRoll;
   pendingPassRoll = null;
   if(outcome==='safepass'){
     log('🛡️ ' + passer.name + ' evita el Balón Perdido con Pase Seguro — mantiene la posesión y su activación termina. Sin cambio de turno.');
@@ -3940,15 +4104,16 @@ function resolvePassOutcome(passer, outcome){
       resolveThrowIn(scatter.exitR, scatter.exitC, scatter.fromR, scatter.fromC, 0);
       return;
     }
-    finishPassLandingWithIntercept(passer, scatter.r, scatter.c, outcome);
+    finishPassLandingWithIntercept(passer, scatter.r, scatter.c, outcome, hailMary);
     return;
   }
   log('🎯 ¡Pase preciso! El balón aterriza en la casilla objetivo.');
-  finishPassLandingWithIntercept(passer, targetR, targetC, outcome);
+  finishPassLandingWithIntercept(passer, targetR, targetC, outcome, hailMary);
 }
 
-function finishPassLandingWithIntercept(passer, landR, landC, outcome){
-  const candidates = playerHasSkill(passer, 'partenubes', 'cloud burster') ? [] : playersNearPassLine(passer.row, passer.col, landR, landC, passer.team);
+function finishPassLandingWithIntercept(passer, landR, landC, outcome, noIntercept){
+  if(noIntercept){ log('🙏 Un Pase a lo loco no puede interceptarse.'); }
+  const candidates = (noIntercept || playerHasSkill(passer, 'partenubes', 'cloud burster')) ? [] : playersNearPassLine(passer.row, passer.col, landR, landC, passer.team);
   if(candidates.length>0){
     pendingInterceptionChoice = { landR, landC, outcome, candidateIds: candidates.map(p=>p.id) };
     updateStatus('¿Algún rival intenta interceptar el pase? (resaltados en azul, click en uno, o "sin intercepción").');
@@ -5679,6 +5844,18 @@ function cancelActiveModal(modalId){
       pendingTraitCheck = null;
       log('❌ Chequeo de rasgo cancelado manualmente.');
       break;
+    case 'animosityModal': {
+      const a = pendingAnimosity; pendingAnimosity = null;
+      if(a && a.kind==='pass'){ pendingPassTargetSelection = { passerId: a.playerId }; }
+      log('❌ Tirada de Animosidad cancelada manualmente.');
+      break;
+    }
+    case 'hailMaryModal': {
+      const h = pendingHailMaryChoice; pendingHailMaryChoice = null;
+      if(h){ pendingPassTargetSelection = { passerId: h.passerId }; }
+      log('❌ Elección de Pase a lo loco cancelada manualmente.');
+      break;
+    }
     case 'armorModal':
       armorForPlayer = null; pendingArmorQueue = [];
       log('❌ Tirada de armadura cancelada manualmente.');

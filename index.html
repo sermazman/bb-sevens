@@ -358,6 +358,29 @@
   </div>
 </div>
 
+<div class="modal-back" id="animosityModal">
+  <div class="modal">
+    <h2>🙅 ANIMOSIDAD</h2>
+    <p id="animosityText">Tirada de Animosidad.</p>
+    <div class="die-face" id="animosityDie" style="margin:0 auto 6px auto;">–</div>
+    <div id="animosityResultText" class="check-result"></div>
+    <button class="primary full" id="animosityRollBtn" onclick="rollAnimosity()">Tirar D6</button>
+    <button class="full" id="animosityContinueBtn" onclick="continueAnimosity()" style="display:none; margin-top:10px;">Continuar</button>
+  </div>
+</div>
+
+<div class="modal-back" id="hailMaryModal">
+  <div class="modal">
+    <h2>🙏 PASE A LO LOCO</h2>
+    <p id="hailMaryText">¿Pase normal o Pase a lo loco?</p>
+    <div class="row" style="justify-content:center; gap:10px; margin-top:10px;">
+      <button onclick="hailMaryChooseNormal()">🎯 Pase normal</button>
+      <button class="danger" onclick="hailMaryChooseWild()">🙏 A lo loco</button>
+    </div>
+    <button class="full" style="margin-top:10px;" onclick="hailMaryCancel()">Cancelar</button>
+  </div>
+</div>
+
 <div class="modal-back" id="armorModal">
   <div class="modal">
     <h2>ARMADURA</h2>
@@ -594,7 +617,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
-<script src="app.js?v=20260925-2"></script>
+<script src="app.js?v=20260925-3"></script>
 
 </body>
 </html>

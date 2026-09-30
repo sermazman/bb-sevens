@@ -5940,15 +5940,16 @@ function setupModalEnhancements(){
 document.addEventListener('DOMContentLoaded', setupModalEnhancements);
 if(document.readyState==='complete' || document.readyState==='interactive'){ setupModalEnhancements(); }
 
-(function showVersionBadge(){
-  const scripts = document.querySelectorAll('script[src*="app.js"]');
-  let v = '?';
-  scripts.forEach(s=>{
-    const m = s.src.match(/[?&]v=([^&]+)/);
-    if(m) v = m[1];
-  });
-  const badge = document.getElementById('versionBadge');
-  if(badge) badge.textContent = 'v' + v;
-})();
+window.APP_JS_VERSION = 'A_V29'; // ← sube este número cada vez que edites app.js
 
-window.APP_JS_VERSION = 'A_V29';
+(function showVersionBadge(){
+  const wVersion = document.documentElement.dataset.wVersion || 'W_?';
+  const aVersion = window.APP_JS_VERSION || 'A_?';
+  let sVersion = 'S_?';
+  try{
+    const raw = getComputedStyle(document.documentElement).getPropertyValue('--css-version');
+    if(raw) sVersion = raw.trim().replace(/^["']|["']$/g, '');
+  }catch(e){}
+  const badge = document.getElementById('versionBadge');
+  if(badge) badge.textContent = wVersion + ' ' + aVersion + ' ' + sVersion;
+})();

@@ -2346,8 +2346,7 @@ function tokenClicked(id){
     const carrier = ball.carrierId===mover.id ? mover : clicked;
     const receiver = ball.carrierId===mover.id ? clicked : mover;
     if(carrier.id===mover.id && animosityAppliesTo(mover, receiver)){
-      openAnimosityCheck(mover, receiver, 'handoff', { moverId: mover.id, carrierId: carrier.id, receiverId: receiver.id });
-      return;
+      if(!resolveAnimosityCheck(mover, receiver, 'handoff')) return;
     }
     mover.activated = true;
     selected = null;
@@ -3850,6 +3849,19 @@ function animosityAppliesTo(passer, receiver){
   });
 }
 
+function resolveAnimosityCheck(passer, receiver, kind){
+  const raw = Math.floor(Math.random()*6)+1;
+  const success = raw!==1;
+  log('🎲 Animosidad de ' + passer.name + ' (' + (kind==='handoff' ? 'entrega a ' : 'pase a ') + receiver.name + '): ' + raw + ' → ' + (success ? 'ACEPTA' : 'SE NIEGA'));
+  if(!success){
+    passer.activated = true; selected = null; declaredAction = null;
+    updateStatus('🙅 ' + passer.name + ' se niega por Animosidad a ' + (kind==='handoff' ? 'entregar el balón a ' : 'pasar el balón a ') + receiver.name + ' — su activación termina. Conserva el balón, sin cambio de turno.');
+    renderRosters(); renderPitch(); renderSelInfo();
+    broadcastState();
+  }
+  return success;
+}
+
 function openAnimosityCheck(passer, receiver, kind, ctx){
   pendingAnimosity = { playerId: passer.id, receiverId: receiver.id, kind, ctx: ctx || {} };
   renderAnimosityModal();
@@ -3920,8 +3932,7 @@ function declarePassTarget(passer, targetR, targetC, zone, hailMary){
   // Animosidad: si en la casilla objetivo hay un compañero afectado, hay que tirar antes de lanzar.
   const receiver = players.find(x=>x.onPitch && x.row===targetR && x.col===targetC && x.id!==passer.id);
   if(receiver && animosityAppliesTo(passer, receiver)){
-    openAnimosityCheck(passer, receiver, 'pass', { targetR, targetC, zone, hailMary: !!hailMary });
-    return;
+    if(!resolveAnimosityCheck(passer, receiver, 'pass')) return;
   }
   startPassRoll(passer, targetR, targetC, zone, hailMary);
 }
@@ -5940,7 +5951,7 @@ function setupModalEnhancements(){
 document.addEventListener('DOMContentLoaded', setupModalEnhancements);
 if(document.readyState==='complete' || document.readyState==='interactive'){ setupModalEnhancements(); }
 
-window.APP_JS_VERSION = 'A_V29'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V30'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

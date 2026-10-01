@@ -346,8 +346,9 @@ button.full{width:100%; margin-top:6px;}
   box-shadow:0 2px 3px rgba(0,0,0,0.5);
   user-select:none;
   line-height:1;
+  z-index:10;
 }
-.token.selected{outline:2px solid #fff; outline-offset:1px; z-index:5;}
+.token.selected{outline:2px solid #fff; outline-offset:1px; z-index:15;}
 .token.activated{opacity:0.45;}
 .token.tumbado, .token.aturdido, .token.despistado{opacity:0.55;}
 .token.block-target{outline:2px solid var(--bad); outline-offset:2px; cursor:pointer; animation:pulseTarget 1s ease-in-out infinite;}
@@ -645,4 +646,4 @@ button.full{width:100%; margin-top:6px;}
 .conn-dot.on{background:var(--good);}
 
 /* --- Versión del archivo (para el badge de verificación en el pie) --- */
-:root{ --css-version: "S_V29"; }
+:root{ --css-version: "S_V30"; }

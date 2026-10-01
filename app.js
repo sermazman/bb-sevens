@@ -3844,7 +3844,7 @@ function animosityAppliesTo(passer, receiver){
   return entries.some(s=>{
     const m = String(s).match(/\(([^)]*)\)/);
     const inner = m ? normalizeSkillText(m[1]).trim() : '';
-    if(inner==='' || inner==='todos' || inner==='todas' || inner==='all') return true; // Animosidad (todos)
+    if(inner==='' || inner.includes('todo') || inner.includes('toda') || inner.includes('all')) return true; // Animosidad (todos / todo el equipo / all)
     return inner.split(/,|\/|\by\b|\bo\b|\band\b|\bor\b/).map(x=>x.trim()).filter(Boolean).some(k=> hay.some(h=>h.includes(k)));
   });
 }
@@ -5951,7 +5951,7 @@ function setupModalEnhancements(){
 document.addEventListener('DOMContentLoaded', setupModalEnhancements);
 if(document.readyState==='complete' || document.readyState==='interactive'){ setupModalEnhancements(); }
 
-window.APP_JS_VERSION = 'A_V30'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V31'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

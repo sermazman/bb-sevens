@@ -19,6 +19,10 @@ ESTUPIDO / REALMENTE ESTUPIDO / IRA DESCONTROLADA / FEROCIDAD ANIMAL (OK)
 * MANOS SEGURAS (OK)
 * PARTENUBES (OK 17-09-2026 - Se sigue probando) Cuando un jugador con esta habilidad realiza una acción de Pase, los jugadores rivales no pueden intentar interceptar el balón.
 * PLACAR (OK)
+* ANIMOSIDAD (OK 02-10-2026)
+Cuando este jugador intente realizar una acción de Pase o de Entregar el balón a un compañero con la misma clave que se indica entre paréntesis, tira 1D6. Con un 1, el jugador se niega a realizar la acción y su activación
+termina de Inmediato.
+Algunos Jugadores pueden tener Animosidad (todos), en cuyo caso esta regla se aplica a todos sus compañeros de equipo, sin Importar las claves que tengan.
 
 _________ SOLO SALE AVISO, NO ESTÁ AUTOMATIZADO 100% ___________
 ☣️- CABEZA DURA (pruebas desde 08-09-2026 - Sale aviso de que tiene esta habilidad, no se optimiza hasta que se tire automaticamente Heridas) De momento, avisar en el modal cuando se haga una tirada de Heridas contra ese jugador en letras de color rojo que tiene "Jugador con CABEZA DURA" para avisarnos al elegir el resultado
@@ -57,10 +61,6 @@ una casilla de su zona de defensa. Además, este jugador puede aplicar un modifi
 Cuando este jugador realice una acción de Pase o una acción especial de Lanzar una bomba, puede declarar cualquier casilla del campo como casilla objetivo en lugar de usar la regla de pases. Haz un chequeo de Pase de
 forma normal, tratando el lanzamiento corno una Bomba larga y cualquier resultado de pase preciso como un pase impreciso. Un Pase a lo loco no puede interceptarse.
 
-☣️- ANIMOSIDAD (desde 28-09-2026)
-Cuando este jugador intente realizar una acción de Pase o de Entregar el balón a un compañero con la misma clave que se indica entre paréntesis, tira 1D6. Con un 1, el jugador se niega a realizar la acción y su activación
-termina de Inmediato.
-Algunos Jugadores pueden tener Animosidad (todos), en cuyo caso esta regla se aplica a todos sus compañeros de equipo, sin Importar las claves que tengan.
 
 // HABILIDADES TRAS IMPLEMENTAR PASAR: //
 HUMANOIDE BALA (tras poner lanzar compañero de equipo)

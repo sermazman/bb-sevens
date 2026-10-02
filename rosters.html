@@ -335,6 +335,14 @@
       </label>
       <span class="small-note" id="posLimitStatusNote"></span>
     </div>
+
+    <div class="pos-limit-row" style="margin-top:6px; padding-top:6px; border-top:none;">
+      <label class="pos-limit-label">
+        <input type="checkbox" id="disableBudgetLimitCheck" onchange="onDisableBudgetLimitChange(this.checked)">
+        Desactivar límite de presupuesto (máx. 600.000 po)
+      </label>
+      <span class="small-note" id="budgetLimitStatusNote"></span>
+    </div>
   </div>
 
 </div>
@@ -351,6 +359,8 @@
 let team = { teamName: 'Nuevo Equipo', race: '', color: '#c0392b', textColor: 'auto', rerolls: 0, players: [] };
 let uid = 1;
 let disablePosLimit = false; // solo de sesión: no se guarda en el JSON del equipo
+let disableBudgetLimit = false; // solo de sesión: no se guarda en el JSON del equipo
+const TEAM_BUDGET_CAP = 600000;
 
 const FALLBACK_RACES = ["Amazon","Black Orc","Bretonia","Chaos Chosen","Chaos Dwarf","Chaos Renegades","Dark Elf","Dwarf","Elfos Silvanos","Elven Union","Gnome","Goblin","Halfling","High Elf","Human","Imperial Nobility","Khorne","Lizardman","Necromantic","Norse","Nurgle","Ogre","Old World Alliance","Orcs","Shambling Undead","Skaven","Slann","Snotling","Tomb King","Underworld Denizens","Vampire"];
 
@@ -657,6 +667,12 @@ function onDisablePosLimitChange(checked){
   if(note) note.textContent = checked ? '⚠️ Límite desactivado: puedes elegir cualquier cantidad de no-Línea.' : '';
 }
 
+function onDisableBudgetLimitChange(checked){
+  disableBudgetLimit = checked;
+  const note = document.getElementById('budgetLimitStatusNote');
+  if(note) note.textContent = checked ? '⚠️ Límite desactivado: sin tope de presupuesto.' : '';
+}
+
 function claveCategory(clave){
   if(!clave) return null;
   const norm = clave.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -689,6 +705,17 @@ function onPositionChange(_uid, value){
       }).length;
       if(nonLineCount >= 4){
         showFormationModal('Máximo 4 jugadores sin Clave Línea', 'Ya tienes 4 jugadores en la plantilla cuya Clave no es "Línea". La posición "' + value + '" también sería no-Línea (' + entry.clave + '), y en Sevens el máximo permitido es 4.\n\nSi necesitas superarlo, marca la casilla "Desactivar límite de posicionales" al final de este panel.');
+        renderPlayers();
+        return;
+      }
+    }
+    if(!disableBudgetLimit && entry){
+      const oldEntry = p.position ? findCatalogEntry(team.race, p.position) : null;
+      const oldPrice = (oldEntry && oldEntry.prize != null) ? oldEntry.prize : 0;
+      const newPrice = entry.prize != null ? entry.prize : 0;
+      const projected = computeTeamValue().total - oldPrice + newPrice;
+      if(projected > TEAM_BUDGET_CAP){
+        showFormationModal('Presupuesto máximo superado', 'Elegir "' + value + '" dejaría el valor de equipo en ' + projected.toLocaleString('es-ES') + ' po, por encima del máximo de ' + TEAM_BUDGET_CAP.toLocaleString('es-ES') + ' po.\n\nSi necesitas superarlo, marca la casilla "Desactivar límite de presupuesto" al final de este panel.');
         renderPlayers();
         return;
       }
@@ -776,6 +803,14 @@ function computeTeamValue(){
 }
 
 function changeRerolls(delta){
+  if(delta > 0 && !disableBudgetLimit){
+    const price = rerollPriceForRace(team.race);
+    const projected = computeTeamValue().total + price;
+    if(projected > TEAM_BUDGET_CAP){
+      showFormationModal('Presupuesto máximo superado', 'Añadir otra Segunda Oportunidad dejaría el valor de equipo en ' + projected.toLocaleString('es-ES') + ' po, por encima del máximo de ' + TEAM_BUDGET_CAP.toLocaleString('es-ES') + ' po.\n\nSi necesitas superarlo, marca la casilla "Desactivar límite de presupuesto" al final del panel de jugadores.');
+      return;
+    }
+  }
   team.rerolls = Math.max(0, (team.rerolls || 0) + delta);
   renderStaffPanel();
   scheduleJsonRefresh();

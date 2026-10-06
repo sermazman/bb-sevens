@@ -1,0 +1,158 @@
+{
+  "teamName": "Real Nobleza",
+  "race": "Imperial Nobility",
+  "color": "#b8325b",
+  "textColor": "#ffc800",
+  "staff": {
+    "rerolls": {
+      "clave": "reroll",
+      "count": 1,
+      "pricePerUnit": 100000,
+      "total": 100000
+    }
+  },
+  "players": [
+    {
+      "num": 1,
+      "name": "Von Adler",
+      "position": "Noble Blitzer",
+      "ma": 7,
+      "st": 3,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "9+",
+      "skills": [
+        "Placar",
+        "Atrapar",
+        "Profesional",
+        "Human - Blitzer"
+      ]
+    },
+    {
+      "num": 2,
+      "name": "Von Otto",
+      "position": "Noble Blitzer",
+      "ma": 7,
+      "st": 3,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "9+",
+      "skills": [
+        "Placar",
+        "Atrapar",
+        "Profesional",
+        "Human - Blitzer"
+      ]
+    },
+    {
+      "num": 3,
+      "name": "Sir Reginald",
+      "position": "Imperial Thrower",
+      "ma": 6,
+      "st": 3,
+      "ag": "3+",
+      "pa": "2+",
+      "av": "9+",
+      "skills": [
+        "Pasar",
+        "Pase y Seguir",
+        "Profesional",
+        "Human - Lanzador"
+      ]
+    },
+    {
+      "num": 4,
+      "name": "Hans",
+      "position": "Imperial Retainer",
+      "ma": 6,
+      "st": 3,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "8+",
+      "skills": [
+        "Zafarse",
+        "Human - Linea"
+      ]
+    },
+    {
+      "num": 5,
+      "name": "Jean-Claude",
+      "position": "Imperial Retainer",
+      "ma": 6,
+      "st": 3,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "8+",
+      "skills": [
+        "Zafarse",
+        "Human - Linea"
+      ]
+    },
+    {
+      "num": 6,
+      "name": "Balthazar",
+      "position": "Imperial Retainer",
+      "ma": 6,
+      "st": 3,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "8+",
+      "skills": [
+        "Zafarse",
+        "Human - Linea"
+      ]
+    },
+    {
+      "num": 7,
+      "name": "Egidius",
+      "position": "Bodyguard",
+      "ma": 6,
+      "st": 3,
+      "ag": "3+",
+      "pa": "5+",
+      "av": "9+",
+      "skills": [
+        "Mantenerse firme",
+        "Forcejear",
+        "Human - Defensor"
+      ]
+    }
+  ],
+  "formation": [
+    {
+      "num": 1,
+      "col": 9,
+      "row": 0
+    },
+    {
+      "num": 2,
+      "col": 1,
+      "row": 0
+    },
+    {
+      "num": 3,
+      "col": 5,
+      "row": 0
+    },
+    {
+      "num": 4,
+      "col": 6,
+      "row": 0
+    },
+    {
+      "num": 5,
+      "col": 2,
+      "row": 0
+    },
+    {
+      "num": 6,
+      "col": 8,
+      "row": 0
+    },
+    {
+      "num": 7,
+      "col": 4,
+      "row": 0
+    }
+  ]
+}

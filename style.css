@@ -167,14 +167,14 @@ button.full{width:100%; margin-top:6px;}
 .sb-team-main{text-align:center;}
 .sb-team .label{font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#a99b7f;}
 .sb-team .sb-race{font-size:9.5px; letter-spacing:0.5px; color:#6b6152; min-height:12px; margin-top:1px;}
-.sb-veterano-badge{width:16px; height:16px; margin:3px auto 0 auto;}
+.sb-veterano-badge{width:18px; height:18px; flex:0 0 auto;}
 .sb-veterano-badge img{width:100%; height:100%; display:block;}
-.sb-veterano-badge .fallback-star{font-size:14px; line-height:1; color:var(--gold);}
+.sb-veterano-badge .fallback-star{font-size:16px; line-height:1; color:var(--gold);}
 .sb-team .score{font-family:'JetBrains Mono'; font-weight:800; font-size:34px; color:var(--gold);}
 .sb-mid{text-align:center; padding:0 10px;}
 .sb-mid .half{font-size:10px; letter-spacing:2px; text-transform:uppercase; color:#a99b7f;}
-.sb-mid .turns{font-family:'JetBrains Mono'; font-size:13px; margin-top:2px;}
-.turn-dot{display:inline-block; width:9px; height:9px; border-radius:50%; vertical-align:middle;}
+.sb-mid .turns{font-family:'JetBrains Mono'; font-size:20px; font-weight:800; margin-top:4px;}
+.turn-dot{display:inline-block; width:13px; height:13px; border-radius:50%; vertical-align:middle;}
 #turnDotA{background:var(--team-a);}
 #turnDotB{background:var(--team-b);}
 .active-flag{
@@ -656,4 +656,4 @@ button.full{width:100%; margin-top:6px;}
 .conn-dot.on{background:var(--good);}
 
 /* --- Versión del archivo (para el badge de verificación en el pie) --- */
-:root{ --css-version: "S_V31"; }
+:root{ --css-version: "S_V32"; }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-w-version="W_V30">
+<html lang="es" data-w-version="W_V31">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -111,12 +111,12 @@
               <button onclick="adjustReroll('A', 1)">+1</button>
             </span>
           </div>
+          <div class="sb-veterano-badge" id="sbVeteranoA" style="display:none;" title="Equipo con Veterano(s)">
+            <img src="icons/veterano.png" alt="Veterano" onerror="this.outerHTML='<span class=&quot;fallback-star&quot;>⭐</span>'">
+          </div>
           <div class="sb-team-main">
             <div class="label" id="sbNameA">Rojo</div>
             <div class="sb-race mono" id="sbRaceA"></div>
-            <div class="sb-veterano-badge" id="sbVeteranoA" style="display:none;" title="Equipo con Veterano(s)">
-              <img src="icons/veterano.png" alt="Veterano" onerror="this.outerHTML='<span class=&quot;fallback-star&quot;>⭐</span>'">
-            </div>
             <div class="score mono" id="scoreA">0</div>
           </div>
         </div>
@@ -131,10 +131,10 @@
           <div class="sb-team-main">
             <div class="label" id="sbNameB">Azul</div>
             <div class="sb-race mono" id="sbRaceB"></div>
-            <div class="sb-veterano-badge" id="sbVeteranoB" style="display:none;" title="Equipo con Veterano(s)">
-              <img src="icons/veterano.png" alt="Veterano" onerror="this.outerHTML='<span class=&quot;fallback-star&quot;>⭐</span>'">
-            </div>
             <div class="score mono" id="scoreB">0</div>
+          </div>
+          <div class="sb-veterano-badge" id="sbVeteranoB" style="display:none;" title="Equipo con Veterano(s)">
+            <img src="icons/veterano.png" alt="Veterano" onerror="this.outerHTML='<span class=&quot;fallback-star&quot;>⭐</span>'">
           </div>
           <div class="sb-reroll" id="sbRerollB" style="display:flex;">
             <span class="sb-reroll-label">RR</span>

@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sevens Pitch — Editor de Plantillas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+  /* Ajustes propios de esta página, siguiendo la misma paleta de style.css */
+  .rw{max-width:1600px; margin:0 auto;}
+
+  /* ---- Tabla de jugadores ---- */
+  .roster-table{
+    background:linear-gradient(180deg, var(--panel-2), var(--panel));
+    border:1px solid var(--panel-line);
+    border-radius:6px;
+    overflow-x:auto;
+  }
+  .rt-row{
+    display:grid;
+    grid-template-columns: 50px 1.5fr 1.2fr 50px 50px 55px 55px 55px 80px 1.9fr 85px 36px;
+    gap:10px;
+    align-items:center;
+    padding:11px 14px;
+    border-bottom:1px solid var(--panel-line);
+    min-width:1080px;
+  }
+  .rt-row:last-child{border-bottom:none;}
+  .rt-row.rt-head{
+    font-size:10.5px; text-transform:uppercase; letter-spacing:1px; color:#a99b7f;
+    padding:8px 12px; background:#100e0c; border-radius:6px 6px 0 0;
+  }
+  .rt-row.rt-body:nth-child(even){background:rgba(255,255,255,0.02);}
+  .rt-row-empty{opacity:0.5;}
+  .rt-row-empty > div:nth-child(3){opacity:1;}
+  .rt-row-empty select{border-color:var(--gold);}
+  .rt-row input{margin-bottom:0; padding:6px 7px; font-size:13px;}
+  .rt-row input.mono{font-family:'JetBrains Mono', monospace;}
+  .pc-remove{
+    background:none; border:1px solid var(--bad); color:var(--bad);
+    padding:6px 0; width:34px; font-size:13px;
+  }
+  .pc-skills-cell{min-width:0;}
+  .access-hint{
+    font-family:'JetBrains Mono', monospace; font-size:11px; color:#a99b7f;
+    background:#100e0c; border:1px solid var(--panel-line); border-radius:4px;
+    padding:4px 6px; text-align:center; white-space:nowrap; cursor:help;
+  }
+  .access-hint.access-empty{color:#5a5145;}
+  .clave-hint{
+    font-size:10.5px; color:var(--gold); margin-top:3px; text-align:center;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-height:13px;
+  }
+  .pos-limit-row{
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    margin-top:14px; padding-top:12px; border-top:1px solid var(--panel-line);
+  }
+  .pos-limit-label{
+    display:flex; align-items:center; gap:8px; font-size:12.5px; color:#cfc3a8;
+    cursor:pointer; user-select:none;
+  }
+  .pos-limit-label input[type=checkbox]{width:16px; height:16px; margin:0; cursor:pointer;}
+  .skill-tags{display:flex; flex-wrap:wrap; gap:5px; margin-bottom:5px;}
+  .skill-tag{
+    background:#100e0c; border:1px solid var(--gold); color:var(--gold);
+    border-radius:12px; padding:3px 10px; font-size:11.5px; display:flex; align-items:center; gap:6px;
+  }
+  .skill-tag button{
+    border:none; background:none; color:var(--bad); padding:0; font-size:13px; cursor:pointer;
+  }
+  /* Colores por categoría de habilidad */
+  .skill-tag.cat-general{border-color:#d8a94b; color:#d8a94b;}
+  .skill-tag.cat-agilidad{border-color:#7cbf5a; color:#7cbf5a;}
+  .skill-tag.cat-pase{border-color:#4a90c4; color:#6bb1e6;}
+  .skill-tag.cat-fuerza{border-color:#d1793a; color:#e0904f;}
+  .skill-tag.cat-triquinuelas{border-color:#9b6fd1; color:#b28fe0;}
+  .skill-tag.cat-mutacion{border-color:#4bbfb0; color:#4bbfb0;}
+  .skill-tag.cat-personalizada{border-color:#6b6152; color:#a99b7f;}
+  .skill-tag.cat-veterano{background:#d8a94b; border-color:#d8a94b; color:#1c1712; font-weight:700;}
+  .skill-add-row{display:flex; gap:6px;}
+  .skill-add-row select{margin-bottom:0; flex:1; min-width:0;}
+  .veteran-row{
+    display:flex; align-items:center; gap:7px; margin-top:6px; font-size:11.5px; color:#d8a94b;
+    user-select:none;
+  }
+  .veteran-row input[type=checkbox]{width:14px; height:14px; margin:0; cursor:pointer;}
+  .veteran-row label{cursor:pointer;}
+  input.ma-veteran{color:#e0453f !important; font-weight:800 !important;}
+  .skill-add-row button{white-space:nowrap; padding:6px 8px;}
+  .cat-legend{display:flex; flex-wrap:wrap; gap:12px; margin-top:4px;}
+  .cat-legend-item{display:flex; align-items:center; gap:5px; font-size:11.5px; color:#a99b7f;}
+  .cat-legend-dot{width:9px; height:9px; border-radius:50%; flex-shrink:0;}
+  .cat-legend-item.cat-general .cat-legend-dot{background:#d8a94b;}
+  .cat-legend-item.cat-agilidad .cat-legend-dot{background:#7cbf5a;}
+  .cat-legend-item.cat-pase .cat-legend-dot{background:#4a90c4;}
+  .cat-legend-item.cat-fuerza .cat-legend-dot{background:#d1793a;}
+  .cat-legend-item.cat-triquinuelas .cat-legend-dot{background:#9b6fd1;}
+  .cat-legend-item.cat-mutacion .cat-legend-dot{background:#4bbfb0;}
+  .jsonbox{
+    background:#100e0c; border:1px solid var(--panel-line); border-radius:6px;
+    padding:10px; font-family:'JetBrains Mono', monospace; font-size:11.5px;
+    color:#a99b7f; max-height:260px; overflow:auto; white-space:pre-wrap; word-break:break-word;
+  }
+  .lib-item{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:8px 10px; border:1px solid var(--panel-line); border-radius:4px; margin-bottom:6px;
+  }
+  .lib-item span{font-size:13px;}
+  .top-actions{display:flex; gap:8px; flex-wrap:wrap;}
+  .badge-count{
+    display:inline-block; background:var(--gold); color:#1c1712; font-weight:700;
+    font-family:'JetBrains Mono', monospace; letter-spacing:0.3px;
+    border-radius:10px; padding:2px 9px; font-size:12.5px; margin-left:8px;
+  }
+  .badge-value{
+    display:inline-block; background:#12283a; color:#7ec8ff; font-weight:700;
+    font-family:'JetBrains Mono', monospace; letter-spacing:0.3px;
+    border-radius:10px; padding:2px 9px; font-size:12.5px; margin-left:8px;
+  }
+  a.backlink{color:#a99b7f; text-decoration:none; font-size:12px;}
+  a.backlink:hover{color:var(--gold);}
+
+  /* ---- Fila de dos columnas (leyenda de habilidades + color de equipo) ---- */
+  .two-col-row{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  @media (max-width:800px){ .two-col-row{grid-template-columns:1fr;} }
+
+  .team-color-compact{display:flex; align-items:flex-end; gap:12px; flex-wrap:wrap;}
+  .tcc-field{display:flex; flex-direction:column; gap:3px;}
+  .tcc-field label{font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:#a99b7f; margin-bottom:0;}
+  .tcc-field input[type=color]{width:46px; height:30px; padding:1px; cursor:pointer; margin-bottom:0;}
+  .tcc-field select{width:auto; margin-bottom:0; padding:5px 7px; font-size:12px;}
+  .tcc-preview{margin-left:auto;}
+  .token-chip.token-preview-sm{width:42px; height:42px; font-size:15px; border-width:2px;}
+
+  /* ---- Panel Datos del equipo, subdividido ---- */
+  .team-data-grid{display:grid; grid-template-columns:1fr 1fr; gap:24px;}
+  @media (max-width:800px){ .team-data-grid{grid-template-columns:1fr;} }
+  .staff-col{border-left:1px solid var(--panel-line); padding-left:24px;}
+  @media (max-width:800px){ .staff-col{border-left:none; padding-left:0; border-top:1px solid var(--panel-line); padding-top:14px;} }
+  .staff-row{display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
+  .staff-row-label{display:flex; flex-direction:column; gap:2px; flex:1; min-width:140px;}
+  .staff-row-label span:first-child{font-size:13px;}
+  .stepper{display:flex; align-items:center; gap:8px; flex-shrink:0;}
+  .stepper button{
+    width:28px; height:28px; padding:0; font-size:16px; line-height:1;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .stepper-value{min-width:20px; text-align:center; font-size:15px; font-weight:700; color:var(--gold);}
+  .staff-row-total{min-width:80px; text-align:right; color:#a99b7f; font-size:13px; flex-shrink:0;}
+
+  /* ---- División tabla de jugadores / colocación predefinida ---- */
+  .roster-split{display:grid; grid-template-columns: 1fr 400px; gap:16px; align-items:start;}
+  @media (max-width:1200px){ .roster-split{grid-template-columns:1fr;} }
+  .roster-table-wrap{min-width:0;}
+
+  .formation-col{
+    background:#100e0c; border:1px solid var(--panel-line); border-radius:6px; padding:12px;
+  }
+  .formation-col h3{font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--gold); margin:0 0 6px 0;}
+  .formation-bench{
+    display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; min-height:34px;
+    padding:6px; background:#1c1917; border:1px dashed var(--panel-line); border-radius:4px;
+  }
+  .formation-token{
+    position:relative;
+    width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono', monospace; font-weight:800; font-size:12px;
+    border:3px solid rgba(0,0,0,0.4); box-shadow:0 2px 3px rgba(0,0,0,0.5); cursor:pointer; flex-shrink:0;
+  }
+  .formation-token.selected{outline:2px solid var(--gold); outline-offset:2px;}
+  .veteran-star{
+    position:absolute; top:-6px; left:-6px; width:14px; height:14px;
+    filter:drop-shadow(0 1px 1px rgba(0,0,0,0.8)); pointer-events:none;
+  }
+  .formation-grid{
+    display:grid;
+    grid-template-columns: repeat(11, 1fr);
+    grid-template-rows: repeat(7, 30px);
+    gap:2px;
+    background:var(--turf-1);
+    border:1px solid var(--panel-line); border-radius:4px; padding:4px;
+  }
+  .fcell{
+    background:var(--turf-2); position:relative; border-radius:2px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .fcell.los-row{box-shadow: inset 0 3px 0 var(--chalk);}
+  .fcell.los-row.lateral{box-shadow: inset 0 3px 0 var(--chalk), inset 0 0 0 1px rgba(216,169,75,0.5);}
+  .fcell.central-los{box-shadow: inset 0 3px 0 var(--chalk), inset 0 0 0 2px rgba(216,169,75,0.65);}
+  .fcell.lateral{background:#2a4726;}
+  .fcell.endzone{
+    background:repeating-linear-gradient(135deg, var(--endzone-a), var(--endzone-a) 4px, #6b2727 4px, #6b2727 8px);
+    cursor:default;
+  }
+  .fcell .formation-token{position:absolute; inset:1px; width:auto; height:auto; cursor:pointer;}
+</style>
+</head>
+<body>
+
+<div class="rw">
+  <header class="top" style="border-bottom:2px solid var(--panel-line); padding-bottom:12px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+    <div>
+      <h1 style="font-size:26px; color:var(--gold);">Sevens Pitch</h1>
+      <div class="sub" style="font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#a99b7f;">Editor de plantillas</div>
+    </div>
+    <a class="backlink" href="index.html">← Volver al tablero</a>
+  </header>
+
+  <div class="two-col-row">
+    <div class="panel">
+      <h2>📁 Cargar / Guardar</h2>
+      <div class="top-actions">
+        <button onclick="document.getElementById('fileImport').click()">📁 Cargar Equipo</button>
+        <input type="file" id="fileImport" accept="application/json" style="display:none" onchange="importFile(this)">
+        <button onclick="newTeam()">🆕 Plantilla en blanco</button>
+        <button class="primary" onclick="exportTeamJSON()">💾 Descargar Equipo</button>
+        <button onclick="exportTeamPDF()">🖨 Descargar PDF</button>
+      </div>
+      <div class="small-note" style="margin-top:8px;">El archivo de equipo generado aquí es 100% compatible con el botón "Cargar Equipo" del tablero principal (mismo formato: teamName / race / players[]).</div>
+    </div>
+
+    <div class="panel" id="libraryPanel">
+      <h2>📚 Librería de plantillas <span class="badge-count" id="libCount">0</span></h2>
+      <div class="row" style="align-items:flex-end;">
+        <div style="flex:1;">
+          <label>Selecciona una plantilla</label>
+          <select id="librarySelect"><option value="">Cargando plantillas...</option></select>
+        </div>
+        <button class="primary" onclick="loadSelectedTemplate()" style="flex:0 0 auto; margin-bottom:8px;">📥 Cargar</button>
+      </div>
+      <div class="small-note" id="libraryStatus" style="margin-top:6px;"></div>
+    </div>
+  </div>
+
+  <div class="two-col-row">
+    <div class="panel" id="skillLegendPanel">
+      <h2>🎨 Categorías de habilidades</h2>
+      <div class="cat-legend" id="catLegend"></div>
+      <div class="small-note" style="margin-top:6px;">Al añadir una habilidad se elige de esta lista, así todo el mundo usa el mismo texto exacto. La categoría de cada una queda registrada para futuras funciones (filtros, estadísticas, etc.).</div>
+    </div>
+
+    <div class="panel" id="teamColorPanel">
+      <h2>🎨 Color del equipo</h2>
+      <div class="team-color-compact">
+        <div class="tcc-field">
+          <label>Fondo</label>
+          <input type="color" id="teamColorInput" value="#c0392b" oninput="onTeamColorChange(this.value)">
+        </div>
+        <div class="tcc-field">
+          <label>Número</label>
+          <select id="textColorMode" onchange="onTextColorModeChange(this.value)">
+            <option value="auto">Auto</option>
+            <option value="custom">Manual</option>
+          </select>
+        </div>
+        <div class="tcc-field" id="customColorField" style="display:none;">
+          <label>&nbsp;</label>
+          <input type="color" id="teamTextColorInput" value="#ffffff" oninput="onTeamTextColorChange(this.value)">
+        </div>
+        <div class="tcc-preview">
+          <div class="token-chip token-preview-sm" id="tokenPreview">7</div>
+        </div>
+      </div>
+      <div class="small-note" style="margin-top:6px;">"Auto" calcula blanco o negro según el contraste con el fondo.</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Datos del equipo</h2>
+    <div class="team-data-grid">
+      <div class="team-data-col">
+        <div class="row">
+          <div>
+            <label>Nombre del equipo</label>
+            <input type="text" id="teamNameInput" value="Nuevo Equipo" oninput="scheduleJsonRefresh()">
+          </div>
+          <div>
+            <label>Raza</label>
+            <select id="teamRaceInput" onchange="onTeamRaceChange(this.value)">
+              <option value="">-- Elige una raza --</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="team-data-col staff-col">
+        <h3 style="margin-top:0;">Staff de equipo</h3>
+        <div class="staff-row">
+          <div class="staff-row-label">
+            <span>Segundas Oportunidades</span>
+            <span class="small-note" id="rerollPriceHint" style="margin:0;"></span>
+          </div>
+          <div class="stepper">
+            <button type="button" onclick="changeRerolls(-1)">−</button>
+            <span class="mono stepper-value" id="rerollCount">0</span>
+            <button type="button" onclick="changeRerolls(1)">+</button>
+          </div>
+          <div class="mono staff-row-total" id="rerollTotalText">0 po</div>
+        </div>
+        <div class="small-note" style="margin-top:8px;">Aquí irá añadiéndose el resto del staff (animadoras, entrenadores asistentes, apotecario...).</div>
+        <div class="small-note" id="staffCatalogStatus" style="margin-top:4px;">Cargando catálogo de staff...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Jugadores <span class="badge-count" id="playerCount">0/11</span><span class="badge-value" id="teamValueBadge">0 po</span></h2>
+    <div class="small-note" id="raceRequiredNote" style="margin-bottom:8px;">Elige primero una raza arriba para poder asignar posiciones a los 11 huecos.</div>
+    <div class="roster-split">
+      <div class="roster-table-wrap">
+        <div class="roster-table">
+          <div class="rt-row rt-head">
+            <div>Núm.</div>
+            <div>Nombre</div>
+            <div>Posición</div>
+            <div>MA</div>
+            <div>ST</div>
+            <div>AG</div>
+            <div>PA</div>
+            <div>AV</div>
+            <div>Precio</div>
+            <div>Habilidades</div>
+            <div>Acceso</div>
+            <div></div>
+          </div>
+          <div id="playersList"></div>
+        </div>
+      </div>
+
+      <div class="formation-col">
+        <h3>🏟 Colocación predefinida</h3>
+        <div class="small-note" style="margin-bottom:8px;">Clic en un jugador de abajo y luego en una casilla del campo. Clic en una ficha ya colocada para quitarla.</div>
+        <div class="formation-bench" id="formationBench"></div>
+        <div class="formation-grid" id="formationGrid"></div>
+        <div class="small-note" id="formationValidation" style="margin-top:8px;"></div>
+        <button onclick="clearFormation()" style="margin-top:8px; width:100%;">🔄 Vaciar colocación</button>
+      </div>
+    </div>
+
+    <div class="pos-limit-row">
+      <label class="pos-limit-label">
+        <input type="checkbox" id="disablePosLimitCheck" onchange="onDisablePosLimitChange(this.checked)">
+        Desactivar límite de posicionales (máx. 4 sin Clave Línea)
+      </label>
+      <span class="small-note" id="posLimitStatusNote"></span>
+    </div>
+
+    <div class="pos-limit-row" style="margin-top:6px; padding-top:6px; border-top:none;">
+      <label class="pos-limit-label">
+        <input type="checkbox" id="disableBudgetLimitCheck" onchange="onDisableBudgetLimitChange(this.checked)">
+        Desactivar límite de presupuesto (máx. 600.000 po)
+      </label>
+      <span class="small-note" id="budgetLimitStatusNote"></span>
+    </div>
+  </div>
+
+</div>
+
+<div class="modal-back" id="formationWarnModal">
+  <div class="modal">
+    <h2 id="formationWarnTitle">⚠️ Aviso</h2>
+    <p id="formationWarnText">Texto del aviso.</p>
+    <button class="primary full" onclick="closeFormationWarnModal()">Entendido</button>
+  </div>
+</div>
+
+<script>
+let team = { teamName: 'Nuevo Equipo', race: '', color: '#c0392b', textColor: 'auto', rerolls: 0, players: [] };
+let uid = 1;
+let disablePosLimit = false; // solo de sesión: no se guarda en el JSON del equipo
+let disableBudgetLimit = false; // solo de sesión: no se guarda en el JSON del equipo
+const TEAM_BUDGET_CAP = 600000;
+
+const FALLBACK_RACES = ["Amazon","Black Orc","Bretonia","Chaos Chosen","Chaos Dwarf","Chaos Renegades","Dark Elf","Dwarf","Elfos Silvanos","Elven Union","Gnome","Goblin","Halfling","High Elf","Human","Imperial Nobility","Khorne","Lizardman","Necromantic","Norse","Nurgle","Ogre","Old World Alliance","Orcs","Shambling Undead","Skaven","Slann","Snotling","Tomb King","Underworld Denizens","Vampire"];
+
+let POSITIONS_CATALOG = [];
+let POSITIONS_BY_RACE = {};
+let CATALOG_LOOKUP = {};
+
+let STAFF_CATALOG = {
+  rerolls: { clave: 'reroll', label: 'Segunda Oportunidad', basePrice: 50000, sevensMultiplier: 2, byRace: {} }
+};
+
+function rerollBasePriceForRace(race){
+  const cfg = STAFF_CATALOG.rerolls;
+  if(cfg.byRace){
+    const targetKey = normKey(race);
+    const foundKey = Object.keys(cfg.byRace).find(k => normKey(k) === targetKey);
+    if(foundKey) return cfg.byRace[foundKey];
+  }
+  return cfg.basePrice;
+}
+
+function rerollPriceForRace(race){
+  const cfg = STAFF_CATALOG.rerolls;
+  const base = rerollBasePriceForRace(race);
+  const mult = cfg.sevensMultiplier != null ? cfg.sevensMultiplier : 2;
+  return base * mult;
+}
+
+async function loadStaffCatalog(){
+  const statusEl = document.getElementById('staffCatalogStatus');
+  try{
+    const res = await fetch('rosters/staff.json');
+    if(!res.ok) throw new Error('http ' + res.status);
+    const data = await res.json();
+    if(data.rerolls) STAFF_CATALOG.rerolls = Object.assign({}, STAFF_CATALOG.rerolls, data.rerolls);
+    console.info('[staff.json] cargado. byRace:', STAFF_CATALOG.rerolls.byRace);
+    const raceCount = Object.keys(STAFF_CATALOG.rerolls.byRace || {}).length;
+    if(statusEl) statusEl.textContent = 'Catálogo de staff cargado (' + raceCount + ' razas con precio propio de reroll).';
+    renderStaffPanel();
+  } catch(err){
+    console.warn('[staff.json] no se pudo cargar, usando valores por defecto embebidos:', err.message);
+    if(statusEl) statusEl.textContent = 'No se pudo leer rosters/staff.json (' + err.message + '); usando precio genérico por defecto.';
+    renderStaffPanel();
+  }
+}
+
+function normKey(s){ return (s || '').trim().toLowerCase(); }
+function catalogKey(race, type){ return normKey(race) + '||' + normKey(type); }
+
+function findCatalogEntry(race, position){
+  return CATALOG_LOOKUP[catalogKey(race, position)] || null;
+}
+
+function populateRaceSelect(races){
+  const sel = document.getElementById('teamRaceInput');
+  const current = team.race;
+  sel.innerHTML = '<option value="">-- Elige una raza --</option>' + races.map(r => `<option value="${r}">${r}</option>`).join('');
+  sel.value = current || '';
+}
+populateRaceSelect(FALLBACK_RACES);
+
+function updateRaceRequiredNote(){
+  const note = document.getElementById('raceRequiredNote');
+  if(note) note.style.display = team.race ? 'none' : 'block';
+}
+
+async function loadPositionsCatalog(){
+  try{
+    const res = await fetch('rosters/positions.json');
+    if(!res.ok) throw new Error('http ' + res.status);
+    const data = await res.json();
+    POSITIONS_CATALOG = data;
+    POSITIONS_BY_RACE = {};
+    CATALOG_LOOKUP = {};
+    data.forEach(entry => {
+      if(!POSITIONS_BY_RACE[entry.race]) POSITIONS_BY_RACE[entry.race] = [];
+      POSITIONS_BY_RACE[entry.race].push(entry.type);
+      CATALOG_LOOKUP[catalogKey(entry.race, entry.type)] = entry;
+    });
+    populateRaceSelect(Object.keys(POSITIONS_BY_RACE).sort());
+    renderPlayers();
+  } catch(err){
+    // Sin catálogo: la raza se puede elegir de la lista básica, pero no habrá
+    // desplegable de posiciones ni columna "Acceso" / CLAVE en la exportación.
+  }
+}
+
+// Catálogo de habilidades embebido (fallback si no se puede leer rosters/skills.json,
+// por ejemplo al abrir el archivo en local en vez de online).
+const DEFAULT_SKILL_CATALOG = {
+  "General": ["Agallas", "Equilibrio Firme", "Forcejear", "Furia*", "Manos seguras", "Patada", "Placaje defensivo", "◆Placar", "Profesional", "Provocar", "Robar balón", "Zafarse"],
+  "Agilidad": ["Atrapar", "Echarse a un lado", "En pie de un salto", "Esprintar", "◆Esquivar", "Golpe a la carrera", "Pies Firmes", "Placaje heroico", "Proteger el cuero", "Recepción heroica", "Romper defensas", "Saltar"],
+  "Pase": ["Atento al balón", "Cañonero", "Líder", "Nervios de acero", "Parte nubes", "Pasar", "Pasar y Seguir", "Pase a lo loco", "Pase precipitado", "Pase seguro", "Patada despeje", "Precisión"],
+  "Fuerza": ["Abrirse paso", "Apartar", "Brazo fuerte", "Cabeza dura", "◆Defensa", "◆Golpe mortífero", "Imparable", "Llave de brazo", "Luchador", "Mantenerse firme", "Ojo de halcón", "Placaje múltiple"],
+  "Triquiñuelas": ["Agresor discreto", "Crujir", "Dejada", "Falta rápida", "Furtivo", "Innovador violento", "Jugar sucio", "Meter la bota", "Perseguir", "Piquete de ojos", "Saboteador", "Vuelo letal"],
+  "Mutación": ["Apariencia", "Boca monstruosa", "Brazos adicionales", "Cola prensil", "Cuernos", "Dos cabezas", "Garras", "Mano grande", "Piel férrea", "Piernas muy largas", "Presencia", "Tentáculos"]
+};
+
+const CATEGORY_CLASS = {
+  "General": "cat-general",
+  "Agilidad": "cat-agilidad",
+  "Pase": "cat-pase",
+  "Fuerza": "cat-fuerza",
+  "Triquiñuelas": "cat-triquinuelas",
+  "Mutación": "cat-mutacion"
+};
+
+let SKILL_CATALOG = DEFAULT_SKILL_CATALOG;
+let SKILL_TO_CATEGORY = {};
+
+function rebuildSkillIndex(){
+  SKILL_TO_CATEGORY = {};
+  Object.entries(SKILL_CATALOG).forEach(([cat, list]) => {
+    list.forEach(name => { SKILL_TO_CATEGORY[name] = cat; });
+  });
+}
+rebuildSkillIndex();
+
+function renderCatLegend(){
+  const el = document.getElementById('catLegend');
+  el.innerHTML = Object.keys(SKILL_CATALOG).map(cat =>
+    `<span class="cat-legend-item ${CATEGORY_CLASS[cat] || ''}"><span class="cat-legend-dot"></span>${cat}</span>`
+  ).join('');
+}
+renderCatLegend();
+
+async function loadSkillCatalog(){
+  try{
+    const res = await fetch('rosters/skills.json');
+    if(!res.ok) throw new Error('no skills.json');
+    const data = await res.json();
+    SKILL_CATALOG = data;
+    rebuildSkillIndex();
+    renderCatLegend();
+    renderPlayers();
+  } catch(err){
+    // Se queda con DEFAULT_SKILL_CATALOG, sin avisar: es un fallback normal en local.
+  }
+}
+
+function buildEmptySlots(){
+  const slots = [];
+  for(let i = 1; i <= 11; i++){
+    slots.push({ _uid: uid++, num: i, name: '', position: '', ma: '', st: '', ag: '', pa: '', av: '', skills: [], formation: null });
+  }
+  return slots;
+}
+
+function stripTrailingClave(position, skillsArr){
+  const entry = findCatalogEntry(team.race, position);
+  if(entry && entry.clave && skillsArr.length && skillsArr[skillsArr.length - 1] === entry.clave){
+    return skillsArr.slice(0, -1);
+  }
+  return skillsArr;
+}
+
+function newTeam(){
+  const hasData = team.players && team.players.some(p => p.position || p.name);
+  if(hasData && !confirm('Esto borra la plantilla actual sin guardar. ¿Continuar?')) return;
+  team = { teamName: 'Nuevo Equipo', race: '', color: '#c0392b', textColor: 'auto', rerolls: 0, players: buildEmptySlots() };
+  document.getElementById('teamNameInput').value = team.teamName;
+  populateRaceSelect(Object.keys(POSITIONS_BY_RACE).length ? Object.keys(POSITIONS_BY_RACE).sort() : FALLBACK_RACES);
+  syncColorUI();
+  updateRaceRequiredNote();
+  renderPlayers();
+  renderStaffPanel();
+}
+
+function loadTeamData(data){
+  team.teamName = data.teamName || 'Equipo sin nombre';
+  team.race = data.race || '';
+  team.color = data.color || '#c0392b';
+  team.textColor = data.textColor || 'auto';
+  team.rerolls = (data.staff && data.staff.rerolls && data.staff.rerolls.count) || 0;
+
+  const slots = buildEmptySlots();
+  const used = new Set();
+  (data.players || []).forEach(pd => {
+    const n = parseInt(pd.num);
+    let idx = (!isNaN(n) && n >= 1 && n <= 11 && !used.has(n - 1)) ? (n - 1) : -1;
+    if(idx === -1) idx = slots.findIndex((s, i) => !used.has(i) && !s.position);
+    if(idx === -1) return; // más de 11 jugadores en el archivo: se descartan los sobrantes
+    used.add(idx);
+    const rawSkills = Array.isArray(pd.skills) ? [...pd.skills] : [];
+    slots[idx] = {
+      _uid: uid++,
+      num: pd.num ?? (idx + 1),
+      name: pd.name || '',
+      position: pd.position || '',
+      ma: pd.ma ?? '',
+      st: pd.st ?? '',
+      ag: pd.ag ?? '',
+      pa: pd.pa ?? '',
+      av: pd.av ?? '',
+      skills: stripTrailingClave(pd.position || '', rawSkills),
+      formation: null
+    };
+  });
+  if(Array.isArray(data.formation)){
+    data.formation.forEach(f => {
+      const slot = slots.find(s => s.position && String(s.num) === String(f.num));
+      if(slot && f.col != null && f.row != null) slot.formation = { col: f.col, row: f.row };
+    });
+  }
+  team.players = slots;
+
+  document.getElementById('teamNameInput').value = team.teamName;
+  populateRaceSelect(Object.keys(POSITIONS_BY_RACE).length ? Object.keys(POSITIONS_BY_RACE).sort() : FALLBACK_RACES);
+  syncColorUI();
+  updateRaceRequiredNote();
+  renderPlayers();
+  renderStaffPanel();
+}
+
+// ---------- Color de equipo / ficha de ejemplo ----------
+function autoTextColor(hex){
+  if(!hex) return '#ffffff';
+  const c = hex.replace('#','');
+  if(c.length !== 6) return '#ffffff';
+  const r = parseInt(c.substr(0,2),16), g = parseInt(c.substr(2,2),16), b = parseInt(c.substr(4,2),16);
+  const yiq = (r*299 + g*587 + b*114) / 1000;
+  return yiq >= 140 ? '#1c1712' : '#ffffff';
+}
+
+function renderTokenPreview(){
+  const chip = document.getElementById('tokenPreview');
+  if(!chip) return;
+  const bg = team.color || '#c0392b';
+  const txt = (!team.textColor || team.textColor === 'auto') ? autoTextColor(bg) : team.textColor;
+  chip.style.background = bg;
+  chip.style.color = txt;
+}
+
+function syncColorUI(){
+  document.getElementById('teamColorInput').value = team.color || '#c0392b';
+  const isAuto = !team.textColor || team.textColor === 'auto';
+  document.getElementById('textColorMode').value = isAuto ? 'auto' : 'custom';
+  const customField = document.getElementById('customColorField');
+  const customInput = document.getElementById('teamTextColorInput');
+  customField.style.display = isAuto ? 'none' : 'flex';
+  if(!isAuto) customInput.value = team.textColor;
+  renderTokenPreview();
+}
+
+function onTeamColorChange(val){
+  team.color = val;
+  renderTokenPreview();
+  scheduleJsonRefresh();
+}
+
+function onTextColorModeChange(mode){
+  const customField = document.getElementById('customColorField');
+  const customInput = document.getElementById('teamTextColorInput');
+  if(mode === 'auto'){
+    team.textColor = 'auto';
+    customField.style.display = 'none';
+  } else {
+    team.textColor = customInput.value || autoTextColor(team.color);
+    customInput.value = team.textColor;
+    customField.style.display = 'flex';
+  }
+  renderTokenPreview();
+  scheduleJsonRefresh();
+}
+
+function onTeamTextColorChange(val){
+  team.textColor = val;
+  renderTokenPreview();
+  scheduleJsonRefresh();
+}
+
+function importFile(inputEl){
+  const file = inputEl.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    let data;
+    try{ data = JSON.parse(e.target.result); }
+    catch(err){ alert('El archivo no es un Equipo válido.'); return; }
+    if(!data.players || !Array.isArray(data.players)){ alert('El archivo de Equipo debe tener jugadores.'); return; }
+    loadTeamData(data);
+  };
+  reader.readAsText(file);
+  inputEl.value = '';
+}
+
+function onTeamRaceChange(value){
+  const hasFilled = team.players.some(p => p.position);
+  if(hasFilled && !confirm('Cambiar de raza vacía los 11 huecos de jugadores (las posiciones no coinciden entre razas). ¿Continuar?')){
+    document.getElementById('teamRaceInput').value = team.race;
+    return;
+  }
+  team.race = value;
+  team.players = buildEmptySlots();
+  updateRaceRequiredNote();
+  renderPlayers();
+  renderStaffPanel();
+  scheduleJsonRefresh();
+}
+
+function onDisablePosLimitChange(checked){
+  disablePosLimit = checked;
+  const note = document.getElementById('posLimitStatusNote');
+  if(note) note.textContent = checked ? '⚠️ Límite desactivado: puedes elegir cualquier cantidad de no-Línea.' : '';
+}
+
+function onDisableBudgetLimitChange(checked){
+  disableBudgetLimit = checked;
+  const note = document.getElementById('budgetLimitStatusNote');
+  if(note) note.textContent = checked ? '⚠️ Límite desactivado: sin tope de presupuesto.' : '';
+}
+
+function claveCategory(clave){
+  if(!clave) return null;
+  const norm = clave.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  return norm.includes('linea') ? 'linea' : 'otra';
+}
+
+function clearVeteranState(p){
+  if(!p.veteran) return;
+  if(typeof p.ma === 'number') p.ma = p.ma + 1;
+  p.skills = p.skills.filter(s => s !== 'Veterano');
+  p.veteran = false;
+}
+
+function onPositionChange(_uid, value){
+  const p = findPlayer(_uid);
+  if(!p) return;
+  if(!value){
+    clearVeteranState(p);
+    p.position = ''; p.ma = ''; p.st = ''; p.ag = ''; p.pa = ''; p.av = ''; p.skills = []; p.formation = null;
+    renderPlayers();
+    return;
+  }
+  if(value !== p.position){
+    const entry = findCatalogEntry(team.race, value);
+    if(entry && entry.qty != null){
+      const currentCount = team.players.filter(pl => pl.position === value).length;
+      if(currentCount >= entry.qty){
+        showFormationModal('Máximo de esa posición alcanzado', 'Ya tienes el máximo permitido de "' + value + '" para esta raza (' + entry.qty + ').');
+        renderPlayers();
+        return;
+      }
+    }
+    if(!disablePosLimit && entry && claveCategory(entry.clave) === 'otra'){
+      const nonLineCount = team.players.filter(pl => {
+        if(pl === p || !pl.position) return false;
+        const e = findCatalogEntry(team.race, pl.position);
+        return e && claveCategory(e.clave) === 'otra';
+      }).length;
+      if(nonLineCount >= 4){
+        showFormationModal('Máximo 4 jugadores sin Clave Línea', 'Ya tienes 4 jugadores en la plantilla cuya Clave no es "Línea". La posición "' + value + '" también sería no-Línea (' + entry.clave + '), y en Sevens el máximo permitido es 4.\n\nSi necesitas superarlo, marca la casilla "Desactivar límite de posicionales" al final de este panel.');
+        renderPlayers();
+        return;
+      }
+    }
+    if(!disableBudgetLimit && entry){
+      const oldEntry = p.position ? findCatalogEntry(team.race, p.position) : null;
+      const oldPrice = (oldEntry && oldEntry.prize != null) ? oldEntry.prize : 0;
+      const newPrice = entry.prize != null ? entry.prize : 0;
+      const projected = computeTeamValue().total - oldPrice + newPrice;
+      if(projected > TEAM_BUDGET_CAP){
+        showFormationModal('Presupuesto máximo superado', 'Elegir "' + value + '" dejaría el valor de equipo en ' + projected.toLocaleString('es-ES') + ' po, por encima del máximo de ' + TEAM_BUDGET_CAP.toLocaleString('es-ES') + ' po.\n\nSi necesitas superarlo, marca la casilla "Desactivar límite de presupuesto" al final de este panel.');
+        renderPlayers();
+        return;
+      }
+    }
+  }
+  const entry = findCatalogEntry(team.race, value);
+  p.position = value;
+  p.veteran = false;
+  if(entry){
+    p.ma = entry.ma ?? '';
+    p.st = entry.st ?? '';
+    p.ag = entry.ag != null ? entry.ag + '+' : '';
+    p.pa = entry.pa != null ? entry.pa + '+' : '';
+    p.av = entry.av != null ? entry.av + '+' : '';
+    p.skills = Array.isArray(entry.skills) ? [...entry.skills] : [];
+  }
+  renderPlayers();
+}
+
+function toggleVeteran(_uid, checked){
+  const p = findPlayer(_uid);
+  if(!p) return;
+  if(checked){
+    const other = team.players.find(pl => pl !== p && pl.veteran);
+    if(other){
+      showFormationModal('Solo puede haber un Veterano', 'Ya tienes a "' + (other.name || ('#' + other.num)) + '" marcado como Veterano. Solo un jugador por equipo puede tener este estatus.\n\nQuita primero el Veterano del otro jugador si quieres asignárselo a este.');
+      renderPlayers();
+      return;
+    }
+    p.veteran = true;
+    if(typeof p.ma === 'number') p.ma = p.ma - 1;
+    if(!p.skills.includes('Veterano')) p.skills.push('Veterano');
+  } else {
+    clearVeteranState(p);
+  }
+  renderPlayers();
+}
+
+function clearSlot(_uid){
+  const p = findPlayer(_uid);
+  if(!p) return;
+  if(!confirm('¿Vaciar este hueco de jugador?')) return;
+  clearVeteranState(p);
+  p.name = ''; p.position = ''; p.ma = ''; p.st = ''; p.ag = ''; p.pa = ''; p.av = ''; p.skills = []; p.formation = null;
+  renderPlayers();
+}
+
+function findPlayer(_uid){ return team.players.find(p => p._uid === _uid); }
+
+function updateField(_uid, field, value){
+  const p = findPlayer(_uid);
+  if(!p) return;
+  p[field] = value;
+  scheduleJsonRefresh();
+}
+
+function addSkillFromCatalog(_uid, selectEl){
+  const val = selectEl.value;
+  if(!val) return;
+  const p = findPlayer(_uid);
+  if(!p) return;
+  if(!p.skills.includes(val)) p.skills.push(val);
+  selectEl.value = '';
+  renderPlayers();
+}
+
+function addCustomSkill(_uid){
+  const val = prompt('Nombre de la habilidad personalizada (no está en el catálogo estándar):');
+  if(!val || !val.trim()) return;
+  const p = findPlayer(_uid);
+  if(!p) return;
+  p.skills.push(val.trim());
+  renderPlayers();
+}
+
+function removeSkill(_uid, idx){
+  const p = findPlayer(_uid);
+  if(!p) return;
+  p.skills.splice(idx, 1);
+  renderPlayers();
+}
+
+function positionOptionsFor(race, current, counts){
+  const list = POSITIONS_BY_RACE[race] || [];
+  return list.map(type => {
+    const entry = findCatalogEntry(race, type);
+    const qty = entry && entry.qty != null ? entry.qty : null;
+    const count = (counts && counts[type]) || 0;
+    const isSelf = type === current;
+    const atMax = !isSelf && qty != null && count >= qty;
+    const label = qty != null ? `${type} (${count}/${qty})` : type;
+    return `<option value="${type}" ${type === current ? 'selected' : ''} ${atMax ? 'disabled' : ''}>${label}</option>`;
+  }).join('');
+}
+
+function computeTeamValue(){
+  let total = 0, missing = 0;
+  team.players.forEach(p => {
+    if(!p.position) return;
+    const entry = findCatalogEntry(team.race, p.position);
+    if(entry && entry.prize != null) total += entry.prize;
+    else missing++;
+  });
+  total += (team.rerolls || 0) * rerollPriceForRace(team.race);
+  return { total, missing };
+}
+
+function changeRerolls(delta){
+  if(delta > 0 && !disableBudgetLimit){
+    const price = rerollPriceForRace(team.race);
+    const projected = computeTeamValue().total + price;
+    if(projected > TEAM_BUDGET_CAP){
+      showFormationModal('Presupuesto máximo superado', 'Añadir otra Segunda Oportunidad dejaría el valor de equipo en ' + projected.toLocaleString('es-ES') + ' po, por encima del máximo de ' + TEAM_BUDGET_CAP.toLocaleString('es-ES') + ' po.\n\nSi necesitas superarlo, marca la casilla "Desactivar límite de presupuesto" al final del panel de jugadores.');
+      return;
+    }
+  }
+  team.rerolls = Math.max(0, (team.rerolls || 0) + delta);
+  renderStaffPanel();
+  scheduleJsonRefresh();
+}
+
+function renderStaffPanel(){
+  const countEl = document.getElementById('rerollCount');
+  const priceHintEl = document.getElementById('rerollPriceHint');
+  const totalEl = document.getElementById('rerollTotalText');
+  if(!countEl) return;
+  const price = rerollPriceForRace(team.race);
+  const base = rerollBasePriceForRace(team.race);
+  countEl.textContent = team.rerolls || 0;
+  priceHintEl.textContent = price.toLocaleString('es-ES') + ' po/ud. (base ' + base.toLocaleString('es-ES') + ' ×2 Sevens)';
+  totalEl.textContent = ((team.rerolls || 0) * price).toLocaleString('es-ES') + ' po';
+  const tv = computeTeamValue();
+  const tvEl = document.getElementById('teamValueBadge');
+  if(tvEl) tvEl.textContent = tv.total.toLocaleString('es-ES') + ' po' + (tv.missing ? ' (+' + tv.missing + ' sin precio)' : '');
+}
+
+function skillSelectOptionsHtml(){
+  return Object.entries(SKILL_CATALOG).map(([cat, list]) =>
+    `<optgroup label="${cat}">${list.map(s => `<option value="${s}">${s}</option>`).join('')}</optgroup>`
+  ).join('');
+}
+
+function renderPlayers(){
+  const el = document.getElementById('playersList');
+  el.innerHTML = '';
+  const raceChosen = !!team.race;
+  const counts = {};
+  team.players.forEach(pl => { if(pl.position) counts[pl.position] = (counts[pl.position] || 0) + 1; });
+  team.players.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'rt-row rt-body' + (p.position ? '' : ' rt-row-empty');
+    const skillsHtml = p.skills.map((s, idx) => {
+      if(s === 'Veterano'){
+        return `<span class="skill-tag cat-veterano" title="Veterano">${s}</span>`;
+      }
+      const cat = SKILL_TO_CATEGORY[s];
+      const catClass = cat ? (CATEGORY_CLASS[cat] || '') : 'cat-personalizada';
+      const title = cat ? cat : 'Personalizada';
+      return `<span class="skill-tag ${catClass}" title="${title}">${s} <button onclick="removeSkill(${p._uid}, ${idx})">✕</button></span>`;
+    }).join('');
+    const catEntry = findCatalogEntry(team.race, p.position);
+    const accessText = catEntry && catEntry.primSec ? catEntry.primSec : '–';
+    const accessTitle = catEntry && catEntry.primSec ? 'Acceso a habilidades según posición (Primaria / Secundaria)' : 'Sin dato de acceso para esta raza/posición en el catálogo';
+    const priceText = catEntry && catEntry.prize != null ? catEntry.prize.toLocaleString('es-ES') : '–';
+    const isLinea = catEntry && claveCategory(catEntry.clave) === 'linea';
+    const veteranRowHtml = isLinea
+      ? `<div class="veteran-row">
+          <input type="checkbox" id="vet-${p._uid}" ${p.veteran ? 'checked' : ''} onchange="toggleVeteran(${p._uid}, this.checked)">
+          <label for="vet-${p._uid}">Veterano</label>
+        </div>`
+      : '';
+    div.innerHTML = `
+      <div><input type="text" class="mono" value="${p.num}" oninput="updateField(${p._uid}, 'num', this.value)"></div>
+      <div>
+        <input type="text" value="${p.name}" placeholder="Nombre" oninput="updateField(${p._uid}, 'name', this.value)">
+        ${veteranRowHtml}
+      </div>
+      <div>
+        <select onchange="onPositionChange(${p._uid}, this.value)" ${raceChosen ? '' : 'disabled'}>
+          <option value="" ${!p.position ? 'selected' : ''}>${raceChosen ? '— vacío —' : 'Elige raza'}</option>
+          ${raceChosen ? positionOptionsFor(team.race, p.position, counts) : ''}
+        </select>
+        <div class="clave-hint mono" title="Clave de esta posición (categoría de la ficha en Sevens)">${catEntry && catEntry.clave ? catEntry.clave : ''}</div>
+      </div>
+      <div><input type="text" class="mono${p.veteran ? ' ma-veteran' : ''}" value="${p.ma}" oninput="updateField(${p._uid}, 'ma', this.value)"></div>
+      <div><input type="text" class="mono" value="${p.st}" oninput="updateField(${p._uid}, 'st', this.value)"></div>
+      <div><input type="text" class="mono" value="${p.ag}" oninput="updateField(${p._uid}, 'ag', this.value)"></div>
+      <div><input type="text" class="mono" value="${p.pa}" oninput="updateField(${p._uid}, 'pa', this.value)"></div>
+      <div><input type="text" class="mono" value="${p.av}" oninput="updateField(${p._uid}, 'av', this.value)"></div>
+      <div><span class="mono access-hint" style="cursor:default;" title="Precio de esta posición según el catálogo">${priceText}</span></div>
+      <div class="pc-skills-cell">
+        <div class="skill-tags">${skillsHtml}</div>
+        <div class="skill-add-row">
+          <select onchange="addSkillFromCatalog(${p._uid}, this)">
+            <option value="">+ habilidad...</option>
+            ${skillSelectOptionsHtml()}
+          </select>
+          <button onclick="addCustomSkill(${p._uid})" title="Habilidad personalizada, fuera del catálogo">✎</button>
+        </div>
+      </div>
+      <div><span class="access-hint ${catEntry ? '' : 'access-empty'}" title="${accessTitle}">${accessText}</span></div>
+      <div><button class="pc-remove" onclick="clearSlot(${p._uid})" title="Vaciar este hueco">✕</button></div>`;
+    el.appendChild(div);
+  });
+  const filled = team.players.filter(p => p.position).length;
+  document.getElementById('playerCount').textContent = filled + '/11';
+  const tv = computeTeamValue();
+  const tvEl = document.getElementById('teamValueBadge');
+  if(tvEl){
+    tvEl.textContent = tv.total.toLocaleString('es-ES') + ' po' + (tv.missing ? ' (+' + tv.missing + ' sin precio)' : '');
+  }
+  renderFormation();
+  scheduleJsonRefresh();
+}
+
+// ---------- Colocación predefinida (mini-campo 11 x 7) ----------
+let selectedFormationNum = null;
+
+function showFormationModal(title, text){
+  document.getElementById('formationWarnTitle').textContent = title;
+  document.getElementById('formationWarnText').textContent = text;
+  document.getElementById('formationWarnModal').classList.add('show');
+}
+function closeFormationWarnModal(){
+  document.getElementById('formationWarnModal').classList.remove('show');
+}
+
+const POSITION_BORDER_COLORS = [
+  { keys:['línea', 'linea', 'lineman'], color:'#9e9e9e' },          // gris
+  { keys:['lanzador', 'thrower'], color:'#f5f5f5' },                // blanco
+  { keys:['blitzer'], color:'#e53935' },                            // rojo
+  { keys:['defensor', 'blocker'], color:'#43a047' },                // verde
+  { keys:['receptor', 'catcher'], color:'#fdd835' },                // amarillo
+  { keys:['grandullón', 'grandullon', 'big guy'], color:'#0089E8' }, // azul
+  { keys:['especial', 'special'], color:'#8e44ad' },                // morado
+  { keys:['corredor', 'runner'], color:'#f39c12' },                 // naranja
+  { keys:['starplayer', 'star player'], color:'#d4af37' }           // dorado
+];
+
+function normText(s){
+  return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+function getPositionBorderColor(clave){
+  if(!clave) return null;
+  const norm = normText(clave);
+  for(const cat of POSITION_BORDER_COLORS){
+    if(cat.keys.some(k => norm.includes(normText(k)))) return cat.color;
+  }
+  return null;
+}
+
+function formationTokenHtml(p){
+  const bg = team.color || '#c0392b';
+  const txt = (!team.textColor || team.textColor === 'auto') ? autoTextColor(bg) : team.textColor;
+  const catEntry = findCatalogEntry(team.race, p.position);
+  const borderColor = (catEntry && getPositionBorderColor(catEntry.clave)) || bg;
+  const cls = 'formation-token' + (selectedFormationNum === p.num ? ' selected' : '');
+  const label = p.name ? (p.name + ' (' + p.position + ')') : p.position;
+  const star = p.veteran ? `<img class="veteran-star" src="icons/veterano.png" alt="Veterano" title="Veterano">` : '';
+  return `<div class="${cls}" style="background:${bg}; color:${txt}; border-color:${borderColor};" title="#${p.num} ${label}" onclick="event.stopPropagation(); onFormationTokenClick(${p.num})">${p.num}${star}</div>`;
+}
+
+function renderFormation(){
+  const bench = document.getElementById('formationBench');
+  const grid = document.getElementById('formationGrid');
+  if(!bench || !grid) return;
+
+  const placedNums = new Set(team.players.filter(p => p.position && p.formation).map(p => p.num));
+  const benchPlayers = team.players.filter(p => p.position && !p.formation);
+  bench.innerHTML = benchPlayers.length
+    ? benchPlayers.map(p => formationTokenHtml(p)).join('')
+    : '<span class="small-note">Todos los jugadores colocados en el campo.</span>';
+
+  grid.innerHTML = '';
+  for(let row = 0; row < 7; row++){
+    for(let col = 0; col < 11; col++){
+      const isEndzone = row === 6;
+      const isLos = row === 0;
+      const isLateral = !isEndzone && (col <= 1 || col >= 9);
+      const isCentralLos = isLos && col >= 2 && col <= 8;
+      const cell = document.createElement('div');
+      cell.className = 'fcell' + (isEndzone ? ' endzone' : '') + (isLos ? ' los-row' : '') + (isLateral ? ' lateral' : '') + (isCentralLos ? ' central-los' : '');
+      if(!isEndzone) cell.setAttribute('onclick', `onFormationCellClick(${row}, ${col})`);
+      const occupant = team.players.find(p => p.formation && p.formation.row === row && p.formation.col === col);
+      if(occupant) cell.innerHTML = formationTokenHtml(occupant);
+      grid.appendChild(cell);
+    }
+  }
+  updateFormationValidation();
+}
+
+function onFormationTokenClick(num){
+  const p = team.players.find(pl => pl.position && pl.num == num);
+  if(!p) return;
+  if(p.formation){
+    p.formation = null;
+    selectedFormationNum = null;
+  } else {
+    selectedFormationNum = (selectedFormationNum === num) ? null : num;
+  }
+  renderFormation();
+  scheduleJsonRefresh();
+}
+
+function onFormationCellClick(row, col){
+  if(selectedFormationNum == null) return;
+  const p = team.players.find(pl => pl.position && pl.num == selectedFormationNum);
+  if(!p) return;
+
+  const currentlyPlaced = team.players.filter(pl => pl.formation).length;
+  if(currentlyPlaced >= 7){
+    showFormationModal('Máximo 7 jugadores en el campo', 'En Sevens solo pueden estar 7 jugadores colocados a la vez, aunque la plantilla tenga hasta 11. Quita a alguien del campo antes de añadir otro.');
+    return;
+  }
+
+  const isLateral = row < 6 && (col <= 1 || col >= 9);
+  if(isLateral){
+    const side = col <= 1 ? 'izquierdo' : 'derecho';
+    const alreadyThere = team.players.some(pl =>
+      pl !== p && pl.formation && pl.formation.row < 6 &&
+      (col <= 1 ? pl.formation.col <= 1 : pl.formation.col >= 9)
+    );
+    if(alreadyThere){
+      showFormationModal('Máximo 1 jugador por lateral', 'Ya hay un jugador colocado en el lateral ' + side + ' del campo (las 2 columnas de ese lado). Solo se permite 1 ahí.');
+      return;
+    }
+  }
+
+  const occupying = team.players.find(pl => pl.formation && pl.formation.row === row && pl.formation.col === col);
+  if(occupying && occupying !== p) occupying.formation = null;
+
+  p.formation = { row, col };
+  selectedFormationNum = null;
+  renderFormation();
+  scheduleJsonRefresh();
+
+  const nowPlaced = team.players.filter(pl => pl.formation).length;
+  if(nowPlaced === 7){
+    const centralLos = team.players.filter(pl => pl.formation && pl.formation.row === 0 && pl.formation.col >= 2 && pl.formation.col <= 8).length;
+    if(centralLos < 3){
+      showFormationModal('Línea de scrimmage incompleta', 'Ya tienes 7 jugadores en el campo, pero solo hay ' + centralLos + ' en la zona central de la línea de scrimmage (mínimo 3, las 7 casillas centrales). Reorganiza antes de dar por buena la colocación.');
+    }
+  }
+}
+
+function updateFormationValidation(){
+  const el = document.getElementById('formationValidation');
+  if(!el) return;
+  const placedTotal = team.players.filter(p => p.formation).length;
+  const centralLos = team.players.filter(p => p.formation && p.formation.row === 0 && p.formation.col >= 2 && p.formation.col <= 8).length;
+  const fieldPlayers = team.players.filter(p => p.formation && p.formation.row < 6);
+  const leftCount = fieldPlayers.filter(p => p.formation.col <= 1).length;
+  const rightCount = fieldPlayers.filter(p => p.formation.col >= 9).length;
+
+  const errors = [];
+  if(centralLos < 3) errors.push('❗ Mínimo 3 en el centro de la línea de scrimmage (' + centralLos + '/3).');
+  if(leftCount > 1) errors.push('❗ Máximo 1 jugador en el lateral izquierdo.');
+  if(rightCount > 1) errors.push('❗ Máximo 1 jugador en el lateral derecho.');
+
+  let html = '<div class="mono" style="color:#a99b7f;">Jugadores en el campo: ' + placedTotal + '/7</div>';
+  html += errors.map(m => `<div style="color:var(--bad);">${m}</div>`).join('');
+  if(!errors.length) html += '<div style="color:var(--good);">✔ Colocación válida.</div>';
+  el.innerHTML = html;
+}
+
+function clearFormation(){
+  if(!team.players.some(p => p.formation)) return;
+  if(!confirm('¿Vaciar toda la colocación predefinida?')) return;
+  team.players.forEach(p => { p.formation = null; });
+  selectedFormationNum = null;
+  renderFormation();
+  scheduleJsonRefresh();
+}
+
+document.getElementById('teamNameInput').addEventListener('input', (e) => { team.teamName = e.target.value; scheduleJsonRefresh(); });
+document.getElementById('teamRaceInput').addEventListener('input', (e) => { team.race = e.target.value; renderPlayers(); });
+
+function skillsWithClave(p){
+  const entry = findCatalogEntry(team.race, p.position);
+  const list = [...(p.skills || [])];
+  if(entry && entry.clave) list.push(entry.clave);
+  return list;
+}
+
+function buildExportData(){
+  const filled = team.players.filter(p => p.position);
+  const rerollCount = team.rerolls || 0;
+  const rerollPrice = rerollPriceForRace(team.race);
+  return {
+    teamName: team.teamName,
+    race: team.race,
+    color: team.color || '#c0392b',
+    textColor: team.textColor || 'auto',
+    staff: {
+      rerolls: {
+        clave: STAFF_CATALOG.rerolls.clave,
+        count: rerollCount,
+        pricePerUnit: rerollPrice,
+        total: rerollCount * rerollPrice
+      }
+    },
+    players: filled.map(p => ({
+      num: isNaN(parseInt(p.num)) ? p.num : parseInt(p.num),
+      name: p.name,
+      position: p.position,
+      ma: isNaN(parseFloat(p.ma)) ? p.ma : parseFloat(p.ma),
+      st: p.st, ag: p.ag, pa: p.pa, av: p.av,
+      skills: skillsWithClave(p)
+    })),
+    formation: filled.filter(p => p.formation).map(p => ({
+      num: isNaN(parseInt(p.num)) ? p.num : parseInt(p.num),
+      col: p.formation.col,
+      row: p.formation.row
+    }))
+  };
+}
+
+function scheduleJsonRefresh(){ /* sin vista previa por ahora; se mantiene por si se reactiva más adelante */ }
+
+function exportTeamJSON(){
+  const data = buildExportData();
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (team.teamName || 'equipo').replace(/\s+/g,'_') + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function hexToRgbArr(hex){
+  const c = (hex || '#c0392b').replace('#','');
+  if(c.length !== 6) return [192,57,43];
+  return [parseInt(c.substr(0,2),16), parseInt(c.substr(2,2),16), parseInt(c.substr(4,2),16)];
+}
+
+function exportTeamPDF(){
+  if(!window.jspdf){ alert('No se pudo cargar la librería de PDF (revisa la conexión a internet).'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const teamColor = hexToRgbArr(team.color);
+  const pageWidth = doc.internal.pageSize.getWidth();
+
+  // Cabecera con el color del equipo
+  doc.setFillColor(...teamColor);
+  doc.rect(0, 0, pageWidth, 24, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(20);
+  doc.text(team.teamName || 'Equipo sin nombre', 14, 14);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(team.race || '', 14, 20);
+
+  doc.setFontSize(9);
+  doc.text('Sevens Pitch · ' + new Date().toLocaleDateString('es-ES'), pageWidth - 14, 20, { align: 'right' });
+
+  const tv = computeTeamValue();
+  doc.setTextColor(30,26,20);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Valor de equipo: ' + tv.total.toLocaleString('es-ES') + ' po', 14, 27);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  const rerollCount = team.rerolls || 0;
+  doc.text('Segundas Oportunidades: ' + rerollCount + ' (' + (rerollCount * rerollPriceForRace(team.race)).toLocaleString('es-ES') + ' po)', pageWidth - 14, 27, { align: 'right' });
+
+  const rows = team.players.filter(p => p.position).map(p => [
+    p.num, p.name, p.position, p.ma, p.st, p.ag, p.pa, p.av, skillsWithClave(p).join(', ')
+  ]);
+
+  doc.autoTable({
+    startY: 34,
+    head: [['#','Nombre','Posición','MA','ST','AG','PA','AV','Habilidades']],
+    body: rows,
+    styles: { font: 'helvetica', fontSize: 9, cellPadding: 2.4, valign: 'middle', textColor: [30,26,20] },
+    headStyles: { fillColor: teamColor, textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [244,240,231] },
+    columnStyles: {
+      0: { cellWidth: 8, halign: 'center' },
+      2: { cellWidth: 32 },
+      3: { cellWidth: 10, halign: 'center' },
+      4: { cellWidth: 10, halign: 'center' },
+      5: { cellWidth: 12, halign: 'center' },
+      6: { cellWidth: 12, halign: 'center' },
+      7: { cellWidth: 12, halign: 'center' }
+    },
+    margin: { left: 14, right: 14 }
+  });
+
+  const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 34;
+  doc.setFontSize(8);
+  doc.setTextColor(120,120,120);
+  doc.text(rows.length + ' jugadores en plantilla', 14, finalY + 8);
+
+  const fname = (team.teamName || 'equipo').replace(/\s+/g,'_') + '.pdf';
+  doc.save(fname);
+}
+
+// ---------- Librería de plantillas (fetch de /rosters/index.json) ----------
+async function loadLibrary(){
+  const select = document.getElementById('librarySelect');
+  const status = document.getElementById('libraryStatus');
+  try{
+    const res = await fetch('rosters/index.json');
+    if(!res.ok) throw new Error('rosters/index.json respondió ' + res.status);
+    const files = await res.json();
+    document.getElementById('libCount').textContent = files.length;
+    if(!files.length){
+      select.innerHTML = '<option value="">No hay plantillas en /rosters/</option>';
+      return;
+    }
+    // Mejor esfuerzo: leer cada archivo para mostrar nombre de equipo en vez del nombre de fichero.
+    const entries = await Promise.all(files.map(async fname => {
+      try{
+        const r = await fetch('rosters/' + fname);
+        if(!r.ok) throw new Error('http ' + r.status);
+        const d = await r.json();
+        const label = (d.teamName || fname) + (d.race ? ' — ' + d.race : '');
+        return { fname, label };
+      } catch(e){
+        return { fname, label: fname + ' (no se pudo leer)' };
+      }
+    }));
+    select.innerHTML = '<option value="">-- Selecciona una plantilla --</option>' +
+      entries.map(en => `<option value="${en.fname}">${en.label}</option>`).join('');
+    status.textContent = '';
+  } catch(err){
+    select.innerHTML = '<option value="">No disponible</option>';
+    status.textContent = 'No se pudo leer rosters/index.json (' + err.message + '). Normal si abres el archivo en local en vez de publicarlo online.';
+  }
+}
+
+function loadSelectedTemplate(){
+  const fname = document.getElementById('librarySelect').value;
+  if(!fname){ alert('Selecciona antes una plantilla de la lista.'); return; }
+  loadFromLibrary(fname);
+}
+
+async function loadFromLibrary(fname){
+  const status = document.getElementById('libraryStatus');
+  try{
+    const res = await fetch('rosters/' + fname);
+    if(!res.ok) throw new Error('http ' + res.status);
+    const data = await res.json();
+    if(!data.players || !Array.isArray(data.players)){ throw new Error('el archivo de Equipo no tiene jugadores'); }
+    loadTeamData(data);
+    status.textContent = 'Cargado: ' + fname;
+  } catch(err){
+    status.textContent = 'No se pudo cargar rosters/' + fname + ' (' + err.message + ')';
+    alert('No se pudo cargar rosters/' + fname + '\n' + err.message);
+  }
+}
+
+// init
+newTeam();
+loadLibrary();
+loadSkillCatalog();
+loadPositionsCatalog();
+loadStaffCatalog();
+</script>
+</body>
+</html>

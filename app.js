@@ -789,6 +789,7 @@ function anyModalOpen(){
          document.getElementById('secureBallModal').classList.contains('show') ||
          document.getElementById('matchEndModal').classList.contains('show') ||
          document.getElementById('forcejearModal').classList.contains('show') ||
+         document.getElementById('veteranoBlockModal').classList.contains('show') ||
          document.getElementById('infoModal').classList.contains('show') ||
          document.getElementById('passModal').classList.contains('show') ||
          document.getElementById('interceptModal').classList.contains('show') ||
@@ -1506,6 +1507,13 @@ function renderPitch(){
           dot.className='carrier-dot';
           t.appendChild(dot);
         }
+        if(playerHasSkill(occ, 'veterano', 'veteran')){
+          const star = document.createElement('div');
+          star.className = 'veterano-star';
+          star.title = 'Veterano';
+          star.innerHTML = '<img src="icons/veterano.png" alt="Veterano" onerror="this.outerHTML=\'<span class=&quot;fallback-star&quot;>⭐</span>\'">';
+          t.appendChild(star);
+        }
         t.onclick=(e)=>{ e.stopPropagation(); tokenClicked(occ.id); };
         t.oncontextmenu=(e)=>{ e.preventDefault(); e.stopPropagation(); handleTokenRightClick(occ.id); return false; };
         cell.appendChild(t);
@@ -2127,6 +2135,8 @@ function unstickState(){
   pendingFoulContext = null;
   pendingForcejearChoice = null;
   document.getElementById('forcejearModal').classList.remove('show');
+  pendingVeteranoBlockChoice = null;
+  document.getElementById('veteranoBlockModal').classList.remove('show');
   pendingPassTargetSelection = null;
   pendingPassRoll = null;
   pendingPassTurnoverMode = null;
@@ -2143,6 +2153,7 @@ function unstickState(){
   llaveDeBrazoUsedOnArmor = false;
   pendingApunalarContext = null;
   document.getElementById('regenRow').style.display = 'none';
+  pendingRegenInjuryKind = null;
   pendingHeroicReception = null;
   document.getElementById('heroicReceptionPanel').style.display = 'none';
   pendingRobarBalonContinuation = null;
@@ -2962,9 +2973,48 @@ function resolveForcejearChoice(useIt){
   resolveBothDownFall(attacker, defender, ctx.isBlitz, !!useIt);
 }
 
+let pendingVeteranoBlockChoice = null; // { kind } — resultado de bloqueo en espera de decisión de Veterano
+
 function applyBlockOutcome(kind){
   if(!activeBlock) return;
   if(!blockDiceRolled){ alert('Tirad primero los dados de placaje.'); return; }
+  const attackerCheck = players.find(x=>x.id===activeBlock.attackerId);
+  if((kind==='attackerDown' || kind==='bothDown') && attackerCheck && playerHasSkill(attackerCheck, 'veterano', 'veteran') && !attackerCheck.veteranoUsedThisMatch){
+    pendingVeteranoBlockChoice = { kind };
+    document.getElementById('veteranoBlockModal').classList.add('show');
+    broadcastState();
+    return;
+  }
+  applyBlockOutcomeConfirmed(kind);
+}
+
+function veteranoBlockChooseKeep(){
+  const choice = pendingVeteranoBlockChoice;
+  pendingVeteranoBlockChoice = null;
+  document.getElementById('veteranoBlockModal').classList.remove('show');
+  if(!choice){ broadcastState(); return; }
+  applyBlockOutcomeConfirmed(choice.kind);
+}
+
+function veteranoBlockChooseReroll(){
+  pendingVeteranoBlockChoice = null;
+  document.getElementById('veteranoBlockModal').classList.remove('show');
+  const attacker = activeBlock ? players.find(x=>x.id===activeBlock.attackerId) : null;
+  if(!attacker){ broadcastState(); return; }
+  attacker.veteranoUsedThisMatch = true;
+  const n = currentBlockDiceIndices.length;
+  const results = [];
+  for(let i=0;i<n;i++){ results.push(Math.floor(Math.random()*6)); }
+  currentBlockDiceIndices = results;
+  log('⭐ ' + attacker.name + ' usa VETERANO — repite la tirada de Placaje x' + n + ': ' + results.map(i=>BLOCK_FACES[i]).join(' / ') + ' (ya gastado para el resto del partido).');
+  blockProfesionalUsed = false;
+  profesionalPickMode = false;
+  renderBlockDice(results);
+  document.getElementById('blockProfesionalBtn').style.display = playerHasSkill(attacker, 'profesional', 'pro') ? 'block' : 'none';
+  broadcastState();
+}
+
+function applyBlockOutcomeConfirmed(kind){
   const attacker = players.find(x=>x.id===activeBlock.attackerId);
   const defender = players.find(x=>x.id===activeBlock.defenderId);
   const isBlitz = activeBlock.isBlitz;
@@ -4015,6 +4065,12 @@ function renderPassActionRow(passer, outcome){
     btn.onclick = ()=> usePassReroll(false);
     row.appendChild(btn);
   }
+  if(playerHasSkill(passer, 'veterano', 'veteran') && !passer.veteranoUsedThisMatch){
+    const vbtn = document.createElement('button');
+    vbtn.textContent = '⭐ Usar Veterano (repite, 1 vez/partido)';
+    vbtn.onclick = ()=> usePassVeteranoReroll();
+    row.appendChild(vbtn);
+  }
   const acceptBtn = document.createElement('button');
   acceptBtn.textContent = 'Aceptar resultado';
   acceptBtn.className = 'primary';
@@ -4040,6 +4096,20 @@ function usePassReroll(isSkill){
     log('🔄 ' + teamName(passer.team) + ' gasta un reroll — quedan ' + teamRerollsLeft[passer.team] + '.');
     renderStaffPanels();
   }
+  document.getElementById('passActionRow').style.display = 'none';
+  document.getElementById('passRollBtn').style.display = 'block';
+  document.getElementById('passResultText').textContent = '';
+  document.getElementById('passResultText').className = 'check-result';
+  document.getElementById('passDie').textContent = '–';
+  broadcastState();
+}
+
+function usePassVeteranoReroll(){
+  if(!pendingPassRoll) return;
+  pendingPassRoll.rerollUsed = true;
+  const passer = players.find(x=>x.id===pendingPassRoll.passerId);
+  passer.veteranoUsedThisMatch = true;
+  log('⭐ ' + passer.name + ' repite su tirada de Pase usando VETERANO (1 vez por partido).');
   document.getElementById('passActionRow').style.display = 'none';
   document.getElementById('passRollBtn').style.display = 'block';
   document.getElementById('passResultText').textContent = '';
@@ -4855,6 +4925,12 @@ function checkActionButtons(prefix, success, p){
       btn.onclick = ()=> useProReroll(prefix);
       actionRow.appendChild(btn);
     }
+    if(prefix==='catch' && playerHasSkill(p, 'veterano', 'veteran') && !p.veteranoUsedThisMatch){
+      const btn = document.createElement('button');
+      btn.textContent = '⭐ Usar Veterano (repite, 1 vez/partido)';
+      btn.onclick = ()=> useVeteranoReroll(prefix);
+      actionRow.appendChild(btn);
+    }
   }
 
   const acceptBtn = document.createElement('button');
@@ -4912,6 +4988,26 @@ function useCheckReroll(prefix, isSkill){
     const usedSkillLabel = (prefix==='catch' && pendingCatch && pendingCatch.useAtraparSkill) ? 'Atrapar' : 'Manos Seguras';
     log('🔁 ' + p.name + ' repite gratis con su habilidad ' + usedSkillLabel + ' (ya no podrá volver a usarla este turno).');
   }
+  pending.lastSuccess = undefined;
+  document.getElementById(prefix+'ActionRow').style.display = 'none';
+  document.getElementById(prefix+'RollBtn').style.display = 'block';
+  document.getElementById(prefix+'ResultText').textContent = '';
+  document.getElementById(prefix+'ResultText').className = 'check-result';
+  document.getElementById(prefix+'Die').textContent = '–';
+  broadcastState();
+}
+
+function useVeteranoReroll(prefix){
+  const pending = prefix==='dodge' ? pendingDodge : prefix==='gfi' ? pendingGfi : prefix==='secureBall' ? pendingSecureBall : pendingCatch;
+  if(!pending) return;
+  const p = players.find(x=>x.id===pending.playerId);
+  if(!p) return;
+  if(prefix==='dodge') dodgeRerollUsed = true;
+  else if(prefix==='gfi') gfiRerollUsed = true;
+  else if(prefix==='secureBall') secureBallRerollUsed = true;
+  else catchRerollUsed = true;
+  p.veteranoUsedThisMatch = true;
+  log('⭐ ' + p.name + ' repite la tirada usando VETERANO (1 vez por partido).');
   pending.lastSuccess = undefined;
   document.getElementById(prefix+'ActionRow').style.display = 'none';
   document.getElementById(prefix+'RollBtn').style.display = 'block';
@@ -5202,16 +5298,6 @@ function armorResult(broken){
   const p = players.find(x=>x.id===armorForPlayer);
   if(broken){
     document.getElementById('armorPassRow').style.display='none';
-    if(p && playerHasSkill(p, 'regeneración', 'regeneracion', 'regenerate')){
-      document.getElementById('regenDie').textContent = '–';
-      document.getElementById('regenResultText').textContent = '';
-      document.getElementById('regenResultText').className = 'check-result';
-      document.getElementById('regenRollBtn').style.display = 'block';
-      document.getElementById('regenRow').style.display = 'block';
-      log('🛡️ Armadura ROTA — ' + p.name + ' tiene Regeneración, tira 1D6 antes de la Lesión.');
-      broadcastState();
-      return;
-    }
     showInjuryBlockAfterArmorBroken(p);
   } else {
     const isApunalarRoll = p && pendingApunalarContext && pendingApunalarContext.targetId===p.id;
@@ -5224,6 +5310,20 @@ function armorResult(broken){
     renderRosters(); renderPitch(); renderSelInfo();
     closeArmorModal();
   }
+  broadcastState();
+}
+
+let pendingRegenInjuryKind = null; // kind pendiente de aplicar si la Regeneración (tras Heridas) falla
+
+function openRegenAfterInjury(p, kind){
+  pendingRegenInjuryKind = kind;
+  document.getElementById('injuryBlock').style.display = 'none';
+  document.getElementById('regenDie').textContent = '–';
+  document.getElementById('regenResultText').textContent = '';
+  document.getElementById('regenResultText').className = 'check-result';
+  document.getElementById('regenRollBtn').style.display = 'block';
+  document.getElementById('regenRow').style.display = 'block';
+  log('🛡️ Resultado de Heridas confirmado — ' + p.name + ' tiene Regeneración, tira 1D6 antes de aplicar la lesión.');
   broadcastState();
 }
 
@@ -5242,8 +5342,14 @@ function rollRegenDie(){
     if(success){
       resolveRegenerationSuccess();
     } else {
+      const kind = pendingRegenInjuryKind;
+      pendingRegenInjuryKind = null;
       document.getElementById('regenRow').style.display = 'none';
-      showInjuryBlockAfterArmorBroken(players.find(x=>x.id===armorForPlayer));
+      applyInjuryOutcome(p, kind);
+      crowdPushMode = false;
+      renderRosters(); renderPitch(); renderSelInfo();
+      closeArmorModal();
+      broadcastState();
     }
   }, 700);
 }
@@ -5251,6 +5357,7 @@ function rollRegenDie(){
 function resolveRegenerationSuccess(){
   const p = players.find(x=>x.id===armorForPlayer);
   document.getElementById('regenRow').style.display = 'none';
+  pendingRegenInjuryKind = null;
   if(p){
     p.onPitch = false; p.row = null; p.col = null; p.condition = 'standing'; p.rooted = false;
     if(ball.carrierId===p.id) ball.carrierId = null;
@@ -5290,39 +5397,47 @@ function rollInjury(){
   broadcastState();
 }
 
+function applyInjuryOutcome(p, kind){
+  if(!p) return;
+  if(kind==='aturdido'){
+    if(crowdPushMode){
+      p.condition='standing';
+      log('🌀 ' + p.name + ' vuelve al banquillo tras salir del campo, sin lesión.');
+    } else {
+      p.condition='aturdido';
+      log('🤕 ' + p.name + ' queda ATURDIDO.');
+    }
+  } else if(kind==='ko'){
+    p.condition='ko';
+    p.onPitch=false; p.row=null; p.col=null;
+    if(ball.carrierId===p.id) ball.carrierId=null;
+    log('😵 ' + p.name + ' queda INCONSCIENTE' + (crowdPushMode ? ' tras salir del campo.' : ' y sale del campo.'));
+  } else if(kind==='injured'){
+    p.condition='injured';
+    p.onPitch=false; p.row=null; p.col=null;
+    if(ball.carrierId===p.id) ball.carrierId=null;
+    log('🚑 ' + p.name + ' queda HERIDO (leve) — no puede seguir jugando este partido.');
+  } else if(kind==='injuredGrave'){
+    p.condition='injuredGrave';
+    p.onPitch=false; p.row=null; p.col=null;
+    if(ball.carrierId===p.id) ball.carrierId=null;
+    log('🚑 ' + p.name + ' sufre una HERIDA GRAVE — fuera del partido.');
+  } else if(kind==='dead'){
+    p.condition='dead';
+    p.onPitch=false; p.row=null; p.col=null;
+    if(ball.carrierId===p.id) ball.carrierId=null;
+    log('☠️ ' + p.name + ' ha MUERTO.');
+  }
+}
+
 function chooseInjury(kind){
   const p = players.find(x=>x.id===armorForPlayer);
-  if(p){
-    if(kind==='aturdido'){
-      if(crowdPushMode){
-        p.condition='standing';
-        log('🌀 ' + p.name + ' vuelve al banquillo tras salir del campo, sin lesión.');
-      } else {
-        p.condition='aturdido';
-        log('🤕 ' + p.name + ' queda ATURDIDO.');
-      }
-    } else if(kind==='ko'){
-      p.condition='ko';
-      p.onPitch=false; p.row=null; p.col=null;
-      if(ball.carrierId===p.id) ball.carrierId=null;
-      log('😵 ' + p.name + ' queda INCONSCIENTE' + (crowdPushMode ? ' tras salir del campo.' : ' y sale del campo.'));
-    } else if(kind==='injured'){
-      p.condition='injured';
-      p.onPitch=false; p.row=null; p.col=null;
-      if(ball.carrierId===p.id) ball.carrierId=null;
-      log('🚑 ' + p.name + ' queda HERIDO (leve) — no puede seguir jugando este partido.');
-    } else if(kind==='injuredGrave'){
-      p.condition='injuredGrave';
-      p.onPitch=false; p.row=null; p.col=null;
-      if(ball.carrierId===p.id) ball.carrierId=null;
-      log('🚑 ' + p.name + ' sufre una HERIDA GRAVE — fuera del partido.');
-    } else if(kind==='dead'){
-      p.condition='dead';
-      p.onPitch=false; p.row=null; p.col=null;
-      if(ball.carrierId===p.id) ball.carrierId=null;
-      log('☠️ ' + p.name + ' ha MUERTO.');
-    }
+  const isCasualtyResult = (kind==='injured' || kind==='injuredGrave' || kind==='dead'); // resultado 10/11/12
+  if(p && isCasualtyResult && playerHasSkill(p, 'regeneración', 'regeneracion', 'regenerate')){
+    openRegenAfterInjury(p, kind);
+    return;
   }
+  applyInjuryOutcome(p, kind);
   crowdPushMode = false;
   renderRosters(); renderPitch(); renderSelInfo();
   closeArmorModal();
@@ -5656,6 +5771,10 @@ function renderScoreboard(){
   document.getElementById('sbNameB').textContent = teamName('B');
   document.getElementById('sbRaceA').textContent = teamRace.A || '';
   document.getElementById('sbRaceB').textContent = teamRace.B || '';
+  const vetA = document.getElementById('sbVeteranoA');
+  const vetB = document.getElementById('sbVeteranoB');
+  if(vetA) vetA.style.display = players.some(p=>p.team==='A' && playerHasSkill(p, 'veterano', 'veteran')) ? 'block' : 'none';
+  if(vetB) vetB.style.display = players.some(p=>p.team==='B' && playerHasSkill(p, 'veterano', 'veteran')) ? 'block' : 'none';
   document.getElementById('halfNum').textContent = state.half;
   document.getElementById('turnA').textContent = Math.min(state.turns.A,6);
   document.getElementById('turnB').textContent = Math.min(state.turns.B,6);
@@ -5951,7 +6070,7 @@ function setupModalEnhancements(){
 document.addEventListener('DOMContentLoaded', setupModalEnhancements);
 if(document.readyState==='complete' || document.readyState==='interactive'){ setupModalEnhancements(); }
 
-window.APP_JS_VERSION = 'A_V31'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V32'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-w-version="W_V29">
+<html lang="es" data-w-version="W_V30">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -114,6 +114,9 @@
           <div class="sb-team-main">
             <div class="label" id="sbNameA">Rojo</div>
             <div class="sb-race mono" id="sbRaceA"></div>
+            <div class="sb-veterano-badge" id="sbVeteranoA" style="display:none;" title="Equipo con Veterano(s)">
+              <img src="icons/veterano.png" alt="Veterano" onerror="this.outerHTML='<span class=&quot;fallback-star&quot;>⭐</span>'">
+            </div>
             <div class="score mono" id="scoreA">0</div>
           </div>
         </div>
@@ -128,6 +131,9 @@
           <div class="sb-team-main">
             <div class="label" id="sbNameB">Azul</div>
             <div class="sb-race mono" id="sbRaceB"></div>
+            <div class="sb-veterano-badge" id="sbVeteranoB" style="display:none;" title="Equipo con Veterano(s)">
+              <img src="icons/veterano.png" alt="Veterano" onerror="this.outerHTML='<span class=&quot;fallback-star&quot;>⭐</span>'">
+            </div>
             <div class="score mono" id="scoreB">0</div>
           </div>
           <div class="sb-reroll" id="sbRerollB" style="display:flex;">
@@ -530,6 +536,17 @@
     <div class="row">
       <button class="primary" onclick="resolveForcejearChoice(true)">Sí, usar Forcejear</button>
       <button onclick="resolveForcejearChoice(false)">No</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="veteranoBlockModal">
+  <div class="modal">
+    <h2>⭐ VETERANO</h2>
+    <p id="veteranoBlockText">Este resultado derribaría al atacante por su propia acción de Placaje. ¿Usar VETERANO para repetir la tirada de dados de bloqueo (una vez por partido)?</p>
+    <div class="row">
+      <button class="danger" onclick="veteranoBlockChooseReroll()">⭐ Repetir tirada</button>
+      <button onclick="veteranoBlockChooseKeep()">Mantener resultado</button>
     </div>
   </div>
 </div>

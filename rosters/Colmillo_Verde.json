@@ -6,9 +6,9 @@
   "staff": {
     "rerolls": {
       "clave": "reroll",
-      "count": 0,
+      "count": 1,
       "pricePerUnit": 100000,
-      "total": 0
+      "total": 100000
     }
   },
   "players": [
@@ -16,12 +16,13 @@
       "num": 1,
       "name": "Grukk Bocafiera",
       "position": "Lineman",
-      "ma": 5,
+      "ma": 4,
       "st": 3,
       "ag": "3+",
       "pa": "4+",
       "av": "10+",
       "skills": [
+        "Veterano",
         "Linea - Orc"
       ]
     },
@@ -41,14 +42,16 @@
     {
       "num": 3,
       "name": "Morg Piel-Dura",
-      "position": "Lineman",
-      "ma": 5,
+      "position": "Blitzer",
+      "ma": 6,
       "st": 3,
       "ag": "3+",
       "pa": "4+",
       "av": "10+",
       "skills": [
-        "Linea - Orc"
+        "Placar",
+        "Abrirse paso",
+        "Blitzer - Orc"
       ]
     },
     {
@@ -86,36 +89,34 @@
     {
       "num": 6,
       "name": "Krunk Ojo-Ciego",
-      "position": "Thrower",
-      "ma": 6,
-      "st": 3,
-      "ag": "3+",
-      "pa": "3+",
-      "av": "9+",
+      "position": "Big Un Blocker",
+      "ma": 5,
+      "st": 4,
+      "ag": "4+",
+      "pa": "6+",
+      "av": "10+",
       "skills": [
-        "Manos seguras",
-        "Pasar",
-        "Lanzador - Orc"
+        "Cabeza Dura",
+        "Golper Mortífero",
+        "Provocar",
+        "Tembloroso",
+        "Defensor - Orc"
       ]
     },
     {
       "num": 7,
       "name": "Gorbash",
-      "position": "Troll",
-      "ma": 4,
-      "st": 5,
-      "ag": "5+",
-      "pa": "5+",
-      "av": "10+",
+      "position": "Goblin",
+      "ma": 6,
+      "st": 2,
+      "ag": "3+",
+      "pa": "3+",
+      "av": "8+",
       "skills": [
-        "Siempre Hambriento",
-        "Solitario (4+)",
-        "Realmente Estúpido",
-        "Lanzar Compañero",
-        "Golpe mortífero",
-        "Proyectil vómito",
-        "Regeneración",
-        "Grandullon - Orc"
+        "Esquivar",
+        "Humanoide bala",
+        "Escurridizo",
+        "Linea - Goblin"
       ]
     }
   ],
@@ -132,28 +133,28 @@
     },
     {
       "num": 3,
-      "col": 8,
+      "col": 7,
       "row": 0
     },
     {
       "num": 4,
-      "col": 6,
-      "row": 0
-    },
-    {
-      "num": 5,
       "col": 3,
       "row": 0
     },
     {
+      "num": 5,
+      "col": 4,
+      "row": 0
+    },
+    {
       "num": 6,
-      "col": 5,
+      "col": 6,
       "row": 0
     },
     {
       "num": 7,
-      "col": 4,
-      "row": 0
+      "col": 5,
+      "row": 1
     }
   ]
 }

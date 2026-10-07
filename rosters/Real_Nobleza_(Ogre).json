@@ -78,13 +78,14 @@
       "num": 5,
       "name": "Jean-Claude",
       "position": "Imperial Retainer",
-      "ma": 6,
+      "ma": 5,
       "st": 3,
       "ag": "3+",
       "pa": "4+",
       "av": "8+",
       "skills": [
         "Zafarse",
+        "Veterano",
         "Human - Linea"
       ]
     },

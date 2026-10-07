@@ -1,3 +1,5 @@
+REVISAR HABILIDADES DE: UNION ELFICA / OWA / REYES FUNERARIOS / ORCOS / SKAVENS / 
+
 @@@@@@@@@@@@@@@@@@@ HABILIDADES / RASGOS AUTOMATIZADAS @@@@@@@@@@@@@@@@@@@
 ESTUPIDO / REALMENTE ESTUPIDO / IRA DESCONTROLADA / FEROCIDAD ANIMAL (OK)
 
@@ -61,6 +63,9 @@ una casilla de su zona de defensa. Además, este jugador puede aplicar un modifi
 Cuando este jugador realice una acción de Pase o una acción especial de Lanzar una bomba, puede declarar cualquier casilla del campo como casilla objetivo en lugar de usar la regla de pases. Haz un chequeo de Pase de
 forma normal, tratando el lanzamiento corno una Bomba larga y cualquier resultado de pase preciso como un pase impreciso. Un Pase a lo loco no puede interceptarse.
 
+☣️- LUCHADOR
+
+☣️- PIES FIRMES
 
 // HABILIDADES TRAS IMPLEMENTAR PASAR: //
 HUMANOIDE BALA (tras poner lanzar compañero de equipo)

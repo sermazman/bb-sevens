@@ -80,8 +80,16 @@
   .skill-tag.cat-triquinuelas{border-color:#9b6fd1; color:#b28fe0;}
   .skill-tag.cat-mutacion{border-color:#4bbfb0; color:#4bbfb0;}
   .skill-tag.cat-personalizada{border-color:#6b6152; color:#a99b7f;}
+  .skill-tag.cat-veterano{background:#d8a94b; border-color:#d8a94b; color:#1c1712; font-weight:700;}
   .skill-add-row{display:flex; gap:6px;}
   .skill-add-row select{margin-bottom:0; flex:1; min-width:0;}
+  .veteran-row{
+    display:flex; align-items:center; gap:7px; margin-top:6px; font-size:11.5px; color:#d8a94b;
+    user-select:none;
+  }
+  .veteran-row input[type=checkbox]{width:14px; height:14px; margin:0; cursor:pointer;}
+  .veteran-row label{cursor:pointer;}
+  input.ma-veteran{color:#e0453f !important; font-weight:800 !important;}
   .skill-add-row button{white-space:nowrap; padding:6px 8px;}
   .cat-legend{display:flex; flex-wrap:wrap; gap:12px; margin-top:4px;}
   .cat-legend-item{display:flex; align-items:center; gap:5px; font-size:11.5px; color:#a99b7f;}
@@ -158,11 +166,16 @@
     padding:6px; background:#1c1917; border:1px dashed var(--panel-line); border-radius:4px;
   }
   .formation-token{
+    position:relative;
     width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center;
     font-family:'JetBrains Mono', monospace; font-weight:800; font-size:12px;
     border:3px solid rgba(0,0,0,0.4); box-shadow:0 2px 3px rgba(0,0,0,0.5); cursor:pointer; flex-shrink:0;
   }
   .formation-token.selected{outline:2px solid var(--gold); outline-offset:2px;}
+  .veteran-star{
+    position:absolute; top:-6px; left:-6px; width:14px; height:14px;
+    filter:drop-shadow(0 1px 1px rgba(0,0,0,0.8)); pointer-events:none;
+  }
   .formation-grid{
     display:grid;
     grid-template-columns: repeat(11, 1fr);
@@ -679,10 +692,18 @@ function claveCategory(clave){
   return norm.includes('linea') ? 'linea' : 'otra';
 }
 
+function clearVeteranState(p){
+  if(!p.veteran) return;
+  if(typeof p.ma === 'number') p.ma = p.ma + 1;
+  p.skills = p.skills.filter(s => s !== 'Veterano');
+  p.veteran = false;
+}
+
 function onPositionChange(_uid, value){
   const p = findPlayer(_uid);
   if(!p) return;
   if(!value){
+    clearVeteranState(p);
     p.position = ''; p.ma = ''; p.st = ''; p.ag = ''; p.pa = ''; p.av = ''; p.skills = []; p.formation = null;
     renderPlayers();
     return;
@@ -723,6 +744,7 @@ function onPositionChange(_uid, value){
   }
   const entry = findCatalogEntry(team.race, value);
   p.position = value;
+  p.veteran = false;
   if(entry){
     p.ma = entry.ma ?? '';
     p.st = entry.st ?? '';
@@ -734,10 +756,30 @@ function onPositionChange(_uid, value){
   renderPlayers();
 }
 
+function toggleVeteran(_uid, checked){
+  const p = findPlayer(_uid);
+  if(!p) return;
+  if(checked){
+    const other = team.players.find(pl => pl !== p && pl.veteran);
+    if(other){
+      showFormationModal('Solo puede haber un Veterano', 'Ya tienes a "' + (other.name || ('#' + other.num)) + '" marcado como Veterano. Solo un jugador por equipo puede tener este estatus.\n\nQuita primero el Veterano del otro jugador si quieres asignárselo a este.');
+      renderPlayers();
+      return;
+    }
+    p.veteran = true;
+    if(typeof p.ma === 'number') p.ma = p.ma - 1;
+    if(!p.skills.includes('Veterano')) p.skills.push('Veterano');
+  } else {
+    clearVeteranState(p);
+  }
+  renderPlayers();
+}
+
 function clearSlot(_uid){
   const p = findPlayer(_uid);
   if(!p) return;
   if(!confirm('¿Vaciar este hueco de jugador?')) return;
+  clearVeteranState(p);
   p.name = ''; p.position = ''; p.ma = ''; p.st = ''; p.ag = ''; p.pa = ''; p.av = ''; p.skills = []; p.formation = null;
   renderPlayers();
 }
@@ -847,6 +889,9 @@ function renderPlayers(){
     const div = document.createElement('div');
     div.className = 'rt-row rt-body' + (p.position ? '' : ' rt-row-empty');
     const skillsHtml = p.skills.map((s, idx) => {
+      if(s === 'Veterano'){
+        return `<span class="skill-tag cat-veterano" title="Veterano">${s}</span>`;
+      }
       const cat = SKILL_TO_CATEGORY[s];
       const catClass = cat ? (CATEGORY_CLASS[cat] || '') : 'cat-personalizada';
       const title = cat ? cat : 'Personalizada';
@@ -856,9 +901,19 @@ function renderPlayers(){
     const accessText = catEntry && catEntry.primSec ? catEntry.primSec : '–';
     const accessTitle = catEntry && catEntry.primSec ? 'Acceso a habilidades según posición (Primaria / Secundaria)' : 'Sin dato de acceso para esta raza/posición en el catálogo';
     const priceText = catEntry && catEntry.prize != null ? catEntry.prize.toLocaleString('es-ES') : '–';
+    const isLinea = catEntry && claveCategory(catEntry.clave) === 'linea';
+    const veteranRowHtml = isLinea
+      ? `<div class="veteran-row">
+          <input type="checkbox" id="vet-${p._uid}" ${p.veteran ? 'checked' : ''} onchange="toggleVeteran(${p._uid}, this.checked)">
+          <label for="vet-${p._uid}">Veterano</label>
+        </div>`
+      : '';
     div.innerHTML = `
       <div><input type="text" class="mono" value="${p.num}" oninput="updateField(${p._uid}, 'num', this.value)"></div>
-      <div><input type="text" value="${p.name}" placeholder="Nombre" oninput="updateField(${p._uid}, 'name', this.value)"></div>
+      <div>
+        <input type="text" value="${p.name}" placeholder="Nombre" oninput="updateField(${p._uid}, 'name', this.value)">
+        ${veteranRowHtml}
+      </div>
       <div>
         <select onchange="onPositionChange(${p._uid}, this.value)" ${raceChosen ? '' : 'disabled'}>
           <option value="" ${!p.position ? 'selected' : ''}>${raceChosen ? '— vacío —' : 'Elige raza'}</option>
@@ -866,7 +921,7 @@ function renderPlayers(){
         </select>
         <div class="clave-hint mono" title="Clave de esta posición (categoría de la ficha en Sevens)">${catEntry && catEntry.clave ? catEntry.clave : ''}</div>
       </div>
-      <div><input type="text" class="mono" value="${p.ma}" oninput="updateField(${p._uid}, 'ma', this.value)"></div>
+      <div><input type="text" class="mono${p.veteran ? ' ma-veteran' : ''}" value="${p.ma}" oninput="updateField(${p._uid}, 'ma', this.value)"></div>
       <div><input type="text" class="mono" value="${p.st}" oninput="updateField(${p._uid}, 'st', this.value)"></div>
       <div><input type="text" class="mono" value="${p.ag}" oninput="updateField(${p._uid}, 'ag', this.value)"></div>
       <div><input type="text" class="mono" value="${p.pa}" oninput="updateField(${p._uid}, 'pa', this.value)"></div>
@@ -941,7 +996,8 @@ function formationTokenHtml(p){
   const borderColor = (catEntry && getPositionBorderColor(catEntry.clave)) || bg;
   const cls = 'formation-token' + (selectedFormationNum === p.num ? ' selected' : '');
   const label = p.name ? (p.name + ' (' + p.position + ')') : p.position;
-  return `<div class="${cls}" style="background:${bg}; color:${txt}; border-color:${borderColor};" title="#${p.num} ${label}" onclick="event.stopPropagation(); onFormationTokenClick(${p.num})">${p.num}</div>`;
+  const star = p.veteran ? `<img class="veteran-star" src="icons/veterano.png" alt="Veterano" title="Veterano">` : '';
+  return `<div class="${cls}" style="background:${bg}; color:${txt}; border-color:${borderColor};" title="#${p.num} ${label}" onclick="event.stopPropagation(); onFormationTokenClick(${p.num})">${p.num}${star}</div>`;
 }
 
 function renderFormation(){
@@ -1243,5 +1299,6 @@ loadSkillCatalog();
 loadPositionsCatalog();
 loadStaffCatalog();
 </script>
+<div class="small-note" style="text-align:center; padding:14px 0 6px 0; opacity:0.55; font-family:'JetBrains Mono', monospace;">Build rosters.html: 07102026-0735</div>
 </body>
 </html>

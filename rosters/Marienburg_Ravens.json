@@ -1,0 +1,157 @@
+{
+  "teamName": "Marienburg Ravens",
+  "race": "Elven Union",
+  "color": "#7a46c8",
+  "textColor": "#ffd500",
+  "staff": {
+    "rerolls": {
+      "clave": "reroll",
+      "count": 0,
+      "pricePerUnit": 100000,
+      "total": 0
+    }
+  },
+  "players": [
+    {
+      "num": 1,
+      "name": "Pímenth \"OldYoungElf\"",
+      "position": "Lineman",
+      "ma": 5,
+      "st": 3,
+      "ag": "2+",
+      "pa": "3+",
+      "av": "8+",
+      "skills": [
+        "Dejada",
+        "Veterano",
+        "Elf - Linea"
+      ]
+    },
+    {
+      "num": 2,
+      "name": "Gobenroth \"Gullkiller\"",
+      "position": "Lineman",
+      "ma": 6,
+      "st": 3,
+      "ag": "2+",
+      "pa": "3+",
+      "av": "8+",
+      "skills": [
+        "Dejada",
+        "Elf - Linea"
+      ]
+    },
+    {
+      "num": 3,
+      "name": "Elarion \"GondelHook\"",
+      "position": "Thrower",
+      "ma": 6,
+      "st": 3,
+      "ag": "2+",
+      "pa": "2+",
+      "av": "8+",
+      "skills": [
+        "Pasar",
+        "Pase a lo loco",
+        "Elf - Lanzador"
+      ]
+    },
+    {
+      "num": 4,
+      "name": "Aelindor \"Blackwing\"",
+      "position": "Blitzer",
+      "ma": 7,
+      "st": 3,
+      "ag": "2+",
+      "pa": "3+",
+      "av": "9+",
+      "skills": [
+        "Placar",
+        "Echarse a un lado",
+        "Elf - Blitzer"
+      ]
+    },
+    {
+      "num": 5,
+      "name": "Therion \"Powerfists\"",
+      "position": "Blitzer",
+      "ma": 7,
+      "st": 3,
+      "ag": "2+",
+      "pa": "3+",
+      "av": "9+",
+      "skills": [
+        "Placar",
+        "Echarse a un lado",
+        "Elf - Blitzer"
+      ]
+    },
+    {
+      "num": 6,
+      "name": "Carlion \"Silvershadow\"",
+      "position": "Catcher",
+      "ma": 8,
+      "st": 3,
+      "ag": "2+",
+      "pa": "4+",
+      "av": "8+",
+      "skills": [
+        "Atrapar",
+        "Nervios de acero",
+        "Recepción heroica",
+        "Elf - Receptor"
+      ]
+    },
+    {
+      "num": 7,
+      "name": "Lethain \"Coincrawler\"",
+      "position": "Lineman",
+      "ma": 6,
+      "st": 3,
+      "ag": "2+",
+      "pa": "3+",
+      "av": "8+",
+      "skills": [
+        "Dejada",
+        "Elf - Linea"
+      ]
+    }
+  ],
+  "formation": [
+    {
+      "num": 1,
+      "col": 6,
+      "row": 0
+    },
+    {
+      "num": 2,
+      "col": 4,
+      "row": 0
+    },
+    {
+      "num": 3,
+      "col": 5,
+      "row": 0
+    },
+    {
+      "num": 4,
+      "col": 2,
+      "row": 0
+    },
+    {
+      "num": 5,
+      "col": 8,
+      "row": 0
+    },
+    {
+      "num": 6,
+      "col": 1,
+      "row": 0
+    },
+    {
+      "num": 7,
+      "col": 9,
+      "row": 0
+    }
+  ]
+}

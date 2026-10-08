@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gestor de Liga · Temporada 6</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;600&family=Oswald:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d1014; --panel:#151a21; --panel2:#1b222b; --line:#2a323e;
+  --text:#e9ecf0; --muted:#8c97a6; --good:#3fb97b; --bad:#e5534b; --warn:#e3b341;
+  --accent:#b30000; --accent-ink:#ffffff;
+  --f-title:'Anton',Impact,sans-serif; --f-ui:'Oswald',system-ui,sans-serif; --f-mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html{color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--f-ui);font-size:16px;line-height:1.35}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{margin:0;font-weight:400}
+.wrap{max-width:1280px;margin:0 auto;padding:0 16px 64px}
+
+/* barra superior */
+.topbar{background:var(--panel);border-bottom:3px solid var(--accent)}
+.topbar .wrap{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding-top:14px;padding-bottom:14px}
+.brand{font-family:var(--f-title);font-size:28px;letter-spacing:.04em;text-transform:uppercase}
+.brand small{display:block;font-family:var(--f-ui);font-size:13px;letter-spacing:.14em;color:var(--muted)}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.btn{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px 14px;cursor:pointer;letter-spacing:.04em;text-transform:uppercase;font-size:14px}
+.btn:hover:not(:disabled){border-color:var(--accent)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.primary:hover:not(:disabled){filter:brightness(1.15)}
+.btn.small{padding:3px 9px;font-size:13px}
+:focus-visible{outline:2px solid var(--warn);outline-offset:2px}
+
+/* vacío / carga */
+.drop{margin-top:48px;border:2px dashed var(--line);border-radius:10px;padding:56px 24px;text-align:center;color:var(--muted)}
+.drop.over{border-color:var(--accent);color:var(--text)}
+.drop h2{font-family:var(--f-title);font-size:30px;color:var(--text);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+
+/* cabecera de equipo */
+.teamhead{display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin:24px 0 16px}
+.badge-team{background:var(--accent);color:var(--accent-ink);font-family:var(--f-title);font-size:32px;text-transform:uppercase;letter-spacing:.04em;padding:6px 18px;border-radius:6px}
+.race{color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.tile .k{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.tile .v{font-family:var(--f-mono);font-size:20px;font-weight:600;margin-top:2px}
+.neg{color:var(--bad)}
+
+/* pestañas */
+.tabs{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.tab{background:none;border:0;border-bottom:3px solid transparent;padding:10px 16px;cursor:pointer;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.tab[aria-selected="true"]{color:var(--text);border-bottom-color:var(--accent)}
+.panel[hidden]{display:none}
+
+/* tablas */
+.tscroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{padding:7px 6px;text-align:center;white-space:nowrap;border-bottom:1px solid var(--line)}
+th{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:500;background:var(--panel2)}
+td.l,th.l{text-align:left}
+tr:last-child td{border-bottom:0}
+td.num{font-family:var(--f-mono)}
+td.skills{white-space:normal;text-align:left;min-width:170px;max-width:230px;color:#c7ced8;font-size:14px}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;border:1px solid}
+.pill.ok{color:var(--good);border-color:var(--good)}
+.pill.out{color:var(--bad);border-color:var(--bad)}
+tr.out td{opacity:.6}
+input[type=number],input[type=text],select,textarea{background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:6px 8px;width:100%}
+input[type=number]{font-family:var(--f-mono);text-align:right}
+td input[type=number]{width:64px}
+td.price input{width:92px}
+td select{width:auto;min-width:170px}
+textarea{resize:vertical;min-height:60px}
+
+/* formularios */
+fieldset{border:1px solid var(--line);border-radius:8px;background:var(--panel);margin:0 0 16px;padding:14px 16px}
+legend{padding:0 8px;font-family:var(--f-title);letter-spacing:.06em;text-transform:uppercase;font-size:18px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+label.f{display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+label.f>input,label.f>select{margin-top:4px;color:var(--text);text-transform:none;letter-spacing:0;font-size:16px}
+.hint{color:var(--muted);font-size:14px;margin:6px 0 0}
+.warn{color:var(--warn)}
+.sum{font-family:var(--f-mono)}
+.stat-table td:first-child{text-align:left}
+.stat-table input{width:80px}
+
+/* historial / retirados */
+.cards{display:grid;gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.card h3{font-family:var(--f-title);font-size:20px;letter-spacing:.04em;text-transform:uppercase;display:flex;flex-wrap:wrap;gap:10px;align-items:baseline}
+.res{font-family:var(--f-mono);font-size:18px}
+.res.win{color:var(--good)} .res.loss{color:var(--bad)} .res.draw{color:var(--warn)}
+.card ul{margin:8px 0 0;padding-left:18px;color:#c7ced8;font-size:15px}
+.meta{color:var(--muted);font-size:14px;margin-top:4px}
+.empty{color:var(--muted);padding:24px;text-align:center;border:1px dashed var(--line);border-radius:8px}
+
+/* equipo */
+.staffrow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.staffrow:last-child{border-bottom:0}
+.stepper{display:flex;align-items:center;gap:8px;font-family:var(--f-mono)}
+.two{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+dl.calc{margin:0}
+dl.calc div{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid var(--line)}
+dl.calc div:last-child{border-bottom:0}
+dl.calc dt{color:var(--muted)} dl.calc dd{margin:0;font-family:var(--f-mono)}
+dl.calc .total{font-weight:600}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--accent);padding:10px 18px;border-radius:8px;z-index:10;max-width:90vw}
+.toast[hidden]{display:none}
+.banner{background:#2a2312;border:1px solid var(--warn);color:var(--warn);padding:10px 14px;border-radius:8px;margin-bottom:16px}
+@media (max-width:600px){.brand{font-size:22px}.badge-team{font-size:24px}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand">Gestor de Liga<small>Temporada 6 · Blood Bowl Sevens</small></div>
+    <div class="actions">
+      <label class="btn" for="fileInput" style="cursor:pointer">Cargar equipo</label>
+      <input id="fileInput" type="file" accept=".json,application/json" hidden>
+      <button class="btn" id="undoBtn" type="button" disabled>Deshacer último partido</button>
+      <button class="btn primary" id="downloadBtn" type="button" disabled>Descargar para jugar</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap" id="app">
+  <div class="drop" id="drop">
+    <h2>Carga un equipo</h2>
+    <p>Arrastra aquí el JSON del equipo o usa «Cargar equipo».<br>Sirve el que sale de rosters.html (se inscribe en la liga) o uno que ya tenga la sección de liga.</p>
+  </div>
+</main>
+
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script>
+'use strict';
+/* =========================================================
+   Constantes de reglas (iguales que en el Excel Roster Sevens)
+   ========================================================= */
+const STAT_COLS = [
+  ['sprints','ESP'],['passes','CP'],['touchdowns','TD'],['deflections','DES'],['interceptions','INT'],
+  ['lightInjuries','HL'],['seriousInjuries','HG'],['deaths','RIP'],['mvp','MVP']
+];
+const SPP_VALUES = { sprints:1, passes:1, touchdowns:3, deflections:1, interceptions:2, lightInjuries:2, seriousInjuries:2, deaths:2, mvp:4 };
+const INJURY_OPTS = [
+  ['none','—'],['knockedOut','Inconsciente'],['lightInjury','Herido leve'],['seriousInjury','Herido grave'],['dead','Muerto']
+];
+const INJURY_LABEL = { knockedOut:'Inconsciente', lightInjury:'Herido leve', seriousInjury:'Herido grave', dead:'Muerto' };
+/* coste en SPP de cada mejora según su orden (1ª a 6ª):  pr/pc = primaria aleatoria/elegida, sr/sc = secundaria, st = característica */
+const IMPROVEMENT_COSTS = {
+  1:{pr:3, pc:6, sr:6, sc:12,st:18},
+  2:{pr:4, pc:8, sr:8, sc:14,st:20},
+  3:{pr:6, pc:12,sr:12,sc:18,st:24},
+  4:{pr:8, pc:16,sr:16,sc:22,st:28},
+  5:{pr:10,pc:20,sr:20,sc:26,st:32},
+  6:{pr:15,pc:30,sr:30,sc:40,st:50}
+};
+const DEFAULT_PRICES = { dedicatedFan:20000, cheerleader:20000, assistantCoach:20000, apothecary:null, bribe:100000 };
+const STAFF_ROWS = [
+  ['dedicatedFans','Fans devotos comprados',1],
+  ['cheerleaders','Animadoras',0],
+  ['assistantCoaches','Ayudantes de entrenador',0],
+  ['apothecary','Médico',0],
+  ['bribes','Sobornos',0]
+];
+
+/* =========================================================
+   Estado
+   ========================================================= */
+const state = { data:null, fileName:'equipo.json', dirty:false, history:[], tab:'roster' };
+const $ = (s,r=document)=>r.querySelector(s);
+const app = $('#app');
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => Number(n||0).toLocaleString('es-ES');
+const int = v => Math.max(0, parseInt(v,10) || 0);
+const clone = o => JSON.parse(JSON.stringify(o));
+
+function toast(msg){
+  const t=$('#toast'); t.textContent=msg; t.hidden=false;
+  clearTimeout(toast._t); toast._t=setTimeout(()=>t.hidden=true, 4500);
+}
+
+/* =========================================================
+   Cálculos
+   ========================================================= */
+const sppFromStats = s => STAT_COLS.reduce((t,[k])=>t+(s[k]||0)*SPP_VALUES[k],0);
+
+function impCost(imp, idx){
+  const row = IMPROVEMENT_COSTS[imp.order || idx+1]; if(!row) return 0;
+  if(imp.category==='stat') return row.st;
+  return row[(imp.category==='primary'?'p':'s') + (imp.selection==='random'?'r':'c')];
+}
+const sppSpent = p => (p.progression.improvements||[]).reduce((t,i,ix)=>t+impCost(i,ix),0);
+const impValue = p => (p.progression.improvements||[]).reduce((t,i)=>t+(i.valueExtra||0),0);
+function recalcSpp(p){ p.progression.sppUnspent = p.progression.sppTotal - sppSpent(p); }
+
+const L = () => state.data.league;
+const topPlayer = num => state.data.players.find(p=>p.num===num);
+const leaguePlayer = num => L().players.find(p=>p.num===num);
+const prices = () => Object.assign({}, DEFAULT_PRICES, (L().economy||{}).prices);
+
+function totals(){
+  const l=L(), m=l.matches, sum=(f)=>m.reduce((t,x)=>t+(f(x)||0),0);
+  const st = x=>x.statistics||{};
+  const r = { played:m.length, won:m.filter(x=>x.result.outcome==='win').length,
+    drawn:m.filter(x=>x.result.outcome==='draw').length, lost:m.filter(x=>x.result.outcome==='loss').length };
+  r.tdFor=sum(x=>x.result.teamScore); r.tdAgainst=sum(x=>x.result.opponentScore);
+  for(const k of ['lightInjuries','seriousInjuries','deaths','sentOff']){
+    r[k+'For']=sum(x=>st(x)[k+'For']); r[k+'Against']=sum(x=>st(x)[k+'Against']);
+  }
+  r.casFor=r.lightInjuriesFor+r.seriousInjuriesFor+r.deathsFor;
+  r.casAgainst=r.lightInjuriesAgainst+r.seriousInjuriesAgainst+r.deathsAgainst;
+  r.points=sum(x=>x.leaguePoints); r.earnings=sum(x=>x.earnings); r.spent=sum(x=>x.treasurySpent);
+  r.fansGained=sum(x=>x.dedicatedFansGained);
+  return r;
+}
+
+function economy(){
+  const l=L(), pr=prices(), s=l.staff, t=totals();
+  const rerolls = (state.data.staff && state.data.staff.rerolls && state.data.staff.rerolls.total) || 0;
+  const staffCost = Math.max(0,(s.dedicatedFans||1)-1)*pr.dedicatedFan + (s.cheerleaders||0)*pr.cheerleader
+                  + (s.assistantCoaches||0)*pr.assistantCoach + (s.apothecary||0)*(pr.apothecary||0) + (s.bribes||0)*pr.bribe;
+  const playersBase = l.players.reduce((a,p)=>a+(p.price||0),0);
+  const playersExtra = l.players.reduce((a,p)=>a+impValue(p),0);
+  const deadCost = l.retiredPlayers.filter(p=>p.reason==='dead').reduce((a,p)=>a+(p.price||0)+impValue(p),0);
+  const teamCost = staffCost + rerolls + playersBase + playersExtra;
+  const teamValue = staffCost + rerolls + l.players.filter(p=>p.status!=='missNextGame').reduce((a,p)=>a+(p.price||0)+impValue(p),0);
+  const start = (l.economy||{}).startingTreasury||0;
+  const treasury = start + t.earnings - t.spent - teamCost + playersExtra - deadCost;
+  return { rerolls, staffCost, playersBase, playersExtra, deadCost, teamCost, teamValue, start, treasury,
+           fans:(s.dedicatedFans||1)+t.fansGained, t };
+}
+
+/* =========================================================
+   Carga de equipo
+   ========================================================= */
+function textInk(hex){
+  const m=/^#?([0-9a-f]{6})$/i.exec(hex||''); if(!m) return '#fff';
+  const n=parseInt(m[1],16), r=n>>16, g=(n>>8)&255, b=n&255;
+  return ((r*299+g*587+b*114)/1000)>=150 ? '#111' : '#fff';
+}
+function applyTheme(){
+  const d=state.data, col=/^#[0-9a-f]{6}$/i.test(d.color||'')?d.color:'#b30000';
+  document.documentElement.style.setProperty('--accent',col);
+  document.documentElement.style.setProperty('--accent-ink', d.textColor && d.textColor!=='auto' ? d.textColor : textInk(col));
+}
+function emptyPlayerLeague(num, price){
+  return { num, price:price||0,
+    progression:{sppTotal:0,sppUnspent:0,improvements:[]},
+    statistics:Object.fromEntries(STAT_COLS.map(([k])=>[k,0])), injuries:[], status:'active' };
+}
+
+function loadText(text, name){
+  let d;
+  try{ d=JSON.parse(text); }catch(e){ toast('El archivo no es un JSON válido.'); return; }
+  if(!d || !Array.isArray(d.players)){ toast('Este JSON no parece un equipo (falta la lista de jugadores).'); return; }
+  if(d.league && d.league.schemaVersion!==2){ toast('La sección de liga de este archivo es de otra versión y no se puede abrir.'); return; }
+  state.data=d; state.history=[]; state.dirty=false; state.tab='roster';
+  state.fileName=(name||'equipo.json');
+  applyTheme();
+  if(!d.league){ renderEnroll(); updateButtons(); return; }
+  /* jugadores del equipo que aún no están en el registro de liga */
+  const l=d.league; l.players=l.players||[]; l.matches=l.matches||[]; l.retiredPlayers=l.retiredPlayers||[];
+  l.staff=l.staff||{}; l.economy=l.economy||{startingTreasury:0};
+  let added=0;
+  for(const p of d.players){ if(!leaguePlayer(p.num)){ l.players.push(emptyPlayerLeague(p.num,0)); added++; } }
+  l.players.forEach(recalcSpp);
+  renderAll(); updateButtons();
+  if(added) toast(`Se añadieron ${added} jugador(es) al registro de liga con precio 0: ajusta su precio en el Roster.`);
+}
+
+/* ---- inscripción de un equipo que viene de rosters.html ---- */
+function renderEnroll(){
+  const d=state.data;
+  app.innerHTML=`
+  <div class="teamhead"><span class="badge-team">${esc(d.teamName||'Equipo')}</span><span class="race">${esc(d.race||'')}</span></div>
+  <div class="banner">Este equipo todavía no está inscrito en la liga. Indica el precio de cada jugador y la tesorería inicial.</div>
+  <form id="enrollForm">
+    <fieldset><legend>Datos de inscripción</legend>
+      <div class="grid">
+        <label class="f">Temporada<input type="number" name="season" value="6" min="1"></label>
+        <label class="f">Tesorería inicial<input type="number" name="start" value="600000" min="0" step="10000"></label>
+        <label class="f">Identificador del equipo<input type="text" name="teamId" value="${esc((d.teamName||'equipo').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,''))}"></label>
+      </div>
+    </fieldset>
+    <fieldset><legend>Precio de los jugadores</legend>
+      <div class="tscroll"><table>
+        <thead><tr><th>#</th><th class="l">Jugador</th><th class="l">Posición</th><th>Precio</th></tr></thead>
+        <tbody>${d.players.map(p=>`<tr><td class="num">${p.num}</td><td class="l">${esc(p.name)}</td><td class="l">${esc(p.position)}</td>
+          <td class="price"><input type="number" min="0" step="5000" name="price_${p.num}" value="0" aria-label="Precio de ${esc(p.name)}"></td></tr>`).join('')}</tbody>
+      </table></div>
+      <p class="hint">Es el precio base de la posición (el que sale en la hoja «Teams» del Excel).</p>
+    </fieldset>
+    <button class="btn primary" type="submit">Inscribir equipo</button>
+  </form>`;
+  $('#enrollForm').addEventListener('submit',e=>{
+    e.preventDefault(); const f=new FormData(e.target);
+    d.league={ schemaVersion:2, season:int(f.get('season'))||6, teamId:String(f.get('teamId')||'').trim(),
+      economy:{startingTreasury:int(f.get('start')), prices:clone(DEFAULT_PRICES)},
+      staff:{dedicatedFans:1,cheerleaders:0,assistantCoaches:0,apothecary:0,bribes:0},
+      players:d.players.map(p=>emptyPlayerLeague(p.num,int(f.get('price_'+p.num)))),
+      matches:[], retiredPlayers:[] };
+    state.dirty=true; renderAll(); updateButtons(); toast('Equipo inscrito en la liga.');
+  });
+}
+
+/* =========================================================
+   Pintado
+   ========================================================= */
+const TABS=[['roster','Roster'],['match','Registrar partido'],['history','Historial'],['team','Equipo y economía'],['dead','Muertos y retirados']];
+
+function renderAll(){
+  const d=state.data;
+  app.innerHTML=`
+    <div class="teamhead"><span class="badge-team">${esc(d.teamName)}</span><span class="race">${esc(d.race||'')} · Temporada ${esc(L().season)}</span></div>
+    <div class="tiles" id="tiles"></div>
+    <div class="tabs" role="tablist">${TABS.map(([id,t])=>`<button class="tab" role="tab" data-tab="${id}" aria-selected="${state.tab===id}">${t}</button>`).join('')}</div>
+    ${TABS.map(([id])=>`<section class="panel" id="p-${id}" role="tabpanel" ${state.tab===id?'':'hidden'}></section>`).join('')}`;
+  renderTiles(); renderRoster(); renderMatchForm(); renderHistory(); renderTeam(); renderDead();
+}
+
+function renderTiles(){
+  const e=economy(), t=e.t;
+  const tile=(k,v,cls='')=>`<div class="tile"><div class="k">${k}</div><div class="v ${cls}">${v}</div></div>`;
+  $('#tiles').innerHTML =
+    tile('Jugados',t.played)+tile('G / E / P',`${t.won} / ${t.drawn} / ${t.lost}`)+tile('Puntos',t.points)+
+    tile('TD',`${t.tdFor} - ${t.tdAgainst}`)+tile('Fans',e.fans)+
+    tile('Tesorería',fmt(e.treasury),e.treasury<0?'neg':'')+tile('Coste equipo',fmt(e.teamCost))+tile('Valor equipo',fmt(e.teamValue));
+}
+
+function renderRoster(){
+  const rows=state.data.players.map(tp=>{
+    const lp=leaguePlayer(tp.num), s=lp.statistics, out=lp.status==='missNextGame';
+    const skills=[...(tp.skills||[])].join(', ');
+    return `<tr class="${out?'out':''}">
+      <td class="num">${tp.num}</td>
+      <td class="l"><strong>${esc(tp.name)}</strong><br><span class="race">${esc(tp.position)}</span></td>
+      <td class="num">${esc(tp.ma)}</td><td class="num">${esc(tp.st)}</td><td class="num">${esc(tp.ag)}</td><td class="num">${esc(tp.pa)}</td><td class="num">${esc(tp.av)}</td>
+      <td class="skills">${esc(skills)}</td>
+      ${STAT_COLS.map(([k])=>`<td class="num">${s[k]||0}</td>`).join('')}
+      <td class="num"><strong>${lp.progression.sppTotal}</strong> / ${lp.progression.sppUnspent}</td>
+      <td class="price"><input type="number" min="0" step="5000" value="${lp.price||0}" data-price="${tp.num}" aria-label="Precio de ${esc(tp.name)}"></td>
+      <td><select data-status="${tp.num}" aria-label="Estado de ${esc(tp.name)}">
+        <option value="active" ${!out?'selected':''}>Disponible</option>
+        <option value="missNextGame" ${out?'selected':''}>Baja próximo partido</option></select></td>
+    </tr>`;}).join('');
+  $('#p-roster').innerHTML=`
+    <div class="tscroll"><table>
+      <thead><tr><th>#</th><th class="l">Jugador</th><th>MO</th><th>FU</th><th>AG</th><th>PA</th><th>AR</th><th class="l">Habilidades</th>
+      ${STAT_COLS.map(([,t])=>`<th>${t}</th>`).join('')}<th>SPP tot / libres</th><th>Precio</th><th>Estado</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    <p class="hint">Precio y estado se pueden corregir a mano. Las estadísticas, los SPP y las lesiones se actualizan solos al registrar un partido.</p>`;
+}
+
+function renderMatchForm(){
+  const l=L(), n=l.matches.length+1;
+  const avail=state.data.players.filter(p=>leaguePlayer(p.num).status!=='missNextGame');
+  const out=state.data.players.filter(p=>leaguePlayer(p.num).status==='missNextGame');
+  const evRows=avail.map(p=>`<tr data-ev="${p.num}">
+      <td class="num">${p.num}</td><td class="l">${esc(p.name)}</td>
+      ${STAT_COLS.map(([k])=>`<td><input type="number" min="0" value="0" name="ev_${p.num}_${k}" data-evk="${k}" aria-label="${k} de ${esc(p.name)}"></td>`).join('')}
+      <td><select name="inj_${p.num}" aria-label="Lesión sufrida por ${esc(p.name)}">${INJURY_OPTS.map(([v,t])=>`<option value="${v}">${t}</option>`).join('')}</select></td>
+    </tr>`).join('');
+  const teamStat=(key,label)=>`<tr><td>${label}</td>
+      <td><input type="number" min="0" value="0" name="s_${key}For" id="s_${key}For" ${['lightInjuries','seriousInjuries','deaths'].includes(key)?'data-auto="1"':''}></td>
+      <td><input type="number" min="0" value="0" name="s_${key}Against"></td></tr>`;
+  $('#p-match').innerHTML=`
+    <form id="matchForm" autocomplete="off">
+      <fieldset><legend>Jornada ${n}</legend>
+        <div class="grid">
+          <label class="f">Oponente<input type="text" name="oppName" required></label>
+          <label class="f">Raza del oponente<input type="text" name="oppRace"></label>
+          <label class="f">Nuestros TD<input type="number" min="0" value="0" name="scoreFor" id="scoreFor"></label>
+          <label class="f">TD del oponente<input type="number" min="0" value="0" name="scoreAgainst"></label>
+        </div>
+        <p class="hint" id="tdCheck"></p>
+      </fieldset>
+      <fieldset><legend>Estadísticas del partido</legend>
+        <div class="tscroll"><table class="stat-table"><thead><tr><th class="l"></th><th>A favor</th><th>En contra</th></tr></thead><tbody>
+          ${teamStat('lightInjuries','Heridas leves (HL)')}${teamStat('seriousInjuries','Heridas graves (HG)')}${teamStat('deaths','Muertos (RIP)')}${teamStat('sentOff','Expulsados')}
+        </tbody></table></div>
+        <p class="hint">«A favor» de heridas se rellena con lo que sumen los jugadores; se puede corregir.</p>
+      </fieldset>
+      <fieldset><legend>Economía del partido</legend>
+        <div class="grid">
+          <label class="f">Fans devotos ganados<input type="number" min="0" value="0" name="fans"></label>
+          <label class="f">Ganancias<input type="number" min="0" step="10000" value="0" name="earnings"></label>
+          <label class="f">Tesorería gastada (incentivos)<input type="number" min="0" step="10000" value="0" name="spent"></label>
+          <label class="f">Puntos de liga<input type="number" min="0" value="0" name="points"></label>
+        </div>
+      </fieldset>
+      <fieldset><legend>Jugadores</legend>
+        <div class="tscroll"><table>
+          <thead><tr><th>#</th><th class="l">Jugador</th>${STAT_COLS.map(([,t])=>`<th>${t}</th>`).join('')}<th>Lesión sufrida</th></tr></thead>
+          <tbody>${evRows}</tbody></table></div>
+        <p class="hint">ESP, CP, TD, DES, INT, HL, HG, RIP y MVP son las acciones que dan SPP. «Lesión sufrida» es lo que le pasó al propio jugador.
+          ${out.length?`<br><span class="warn">No pueden jugar este partido (herido grave): ${out.map(p=>`#${p.num} ${esc(p.name)}`).join(', ')}. Volverán a estar disponibles al registrarlo.</span>`:''}</p>
+      </fieldset>
+      <fieldset><legend>Notas</legend><textarea name="notes" aria-label="Notas del partido"></textarea></fieldset>
+      <button class="btn primary" type="submit">Registrar partido</button>
+    </form>`;
+  updateTdCheck();
+}
+
+function renderHistory(){
+  const ms=L().matches;
+  if(!ms.length){ $('#p-history').innerHTML='<div class="empty">Todavía no hay partidos registrados.</div>'; return; }
+  const label={win:'Victoria',draw:'Empate',loss:'Derrota'};
+  $('#p-history').innerHTML='<div class="cards">'+[...ms].reverse().map(m=>{
+    const evs=(m.playerEvents||[]).map(ev=>{
+      const acts=STAT_COLS.filter(([k])=>ev[k]).map(([k,t])=>`${t}×${ev[k]}`).join(', ');
+      return `<li>#${ev.num} ${esc(ev.name||'')}${acts?': '+acts:''} · <strong>+${ev.sppEarned||0} SPP</strong>${ev.injurySuffered&&ev.injurySuffered!=='none'?` · <span class="warn">${INJURY_LABEL[ev.injurySuffered]}</span>`:''}</li>`;
+    }).join('');
+    const s=m.statistics||{};
+    return `<div class="card"><h3>${esc(m.id)} · vs ${esc(m.opponent.teamName)}
+        <span class="res ${m.result.outcome}">${m.result.teamScore} - ${m.result.opponentScore}</span><span class="pill ${m.result.outcome==='win'?'ok':m.result.outcome==='loss'?'out':''}">${label[m.result.outcome]}</span></h3>
+      <div class="meta">${esc(m.opponent.race||'')} · Puntos ${m.leaguePoints} · Ganancias ${fmt(m.earnings)} · Gastado ${fmt(m.treasurySpent)} · Fans +${m.dedicatedFansGained}
+        · HL ${s.lightInjuriesFor}-${s.lightInjuriesAgainst} · HG ${s.seriousInjuriesFor}-${s.seriousInjuriesAgainst} · RIP ${s.deathsFor}-${s.deathsAgainst} · Expulsados ${s.sentOffFor}-${s.sentOffAgainst}</div>
+      ${evs?`<ul>${evs}</ul>`:''}${m.notes?`<div class="meta">${esc(m.notes)}</div>`:''}</div>`;
+  }).join('')+'</div>';
+}
+
+function renderTeam(){
+  const e=economy(), t=e.t, pr=prices(), s=L().staff, rr=state.data.staff&&state.data.staff.rerolls;
+  const row=(key,label,val,min,price,extra='')=>`<div class="staffrow"><div>${label}<br><span class="race">${price===null?'No disponible para esta raza':fmt(price)+' c/u'}</span></div>
+      <div class="stepper"><button class="btn small" type="button" data-staff="${key}" data-d="-1" ${val<=min?'disabled':''} aria-label="Quitar ${label}">−</button>
+      <span style="min-width:2ch;text-align:center">${val}</span>
+      <button class="btn small" type="button" data-staff="${key}" data-d="1" ${price===null||(key==='apothecary'&&val>=1)?'disabled':''} aria-label="Añadir ${label}">+</button></div></div>`;
+  const priceOf={dedicatedFans:pr.dedicatedFan,cheerleaders:pr.cheerleader,assistantCoaches:pr.assistantCoach,apothecary:pr.apothecary,bribes:pr.bribe};
+  $('#p-team').innerHTML=`<div class="two">
+    <div class="card"><h3>Personal</h3>
+      ${rr?row('rerolls','Segundas oportunidades',rr.count,0,rr.pricePerUnit):''}
+      ${STAFF_ROWS.map(([k,lab,min])=>row(k,lab,s[k]??min,min,priceOf[k])).join('')}
+      <p class="hint">El primer fan devoto es gratis; los demás se pagan. Las segundas oportunidades se guardan en la parte del equipo que lee el juego.</p></div>
+    <div class="card"><h3>Economía</h3><dl class="calc">
+      <div><dt>Tesorería inicial</dt><dd>${fmt(e.start)}</dd></div>
+      <div><dt>+ Ganancias</dt><dd>${fmt(t.earnings)}</dd></div>
+      <div><dt>− Tesorería gastada (incentivos)</dt><dd>${fmt(t.spent)}</dd></div>
+      <div><dt>− Jugadores (precio base)</dt><dd>${fmt(e.playersBase)}</dd></div>
+      <div><dt>− Segundas oportunidades</dt><dd>${fmt(e.rerolls)}</dd></div>
+      <div><dt>− Personal</dt><dd>${fmt(e.staffCost)}</dd></div>
+      <div><dt>− Jugadores muertos</dt><dd>${fmt(e.deadCost)}</dd></div>
+      <div class="total"><dt>= Tesorería actual</dt><dd class="${e.treasury<0?'neg':''}">${fmt(e.treasury)}</dd></div>
+      <div><dt>Coste del equipo</dt><dd>${fmt(e.teamCost)}</dd></div>
+      <div><dt>Valor del equipo (sin lesionados)</dt><dd>${fmt(e.teamValue)}</dd></div></dl></div>
+    <div class="card"><h3>Totales de liga</h3><dl class="calc">
+      <div><dt>Partidos</dt><dd>${t.played} (${t.won}G ${t.drawn}E ${t.lost}P)</dd></div>
+      <div><dt>TD a favor / en contra</dt><dd>${t.tdFor} / ${t.tdAgainst}</dd></div>
+      <div><dt>Heridas totales</dt><dd>${t.casFor} / ${t.casAgainst}</dd></div>
+      <div><dt>· leves</dt><dd>${t.lightInjuriesFor} / ${t.lightInjuriesAgainst}</dd></div>
+      <div><dt>· graves</dt><dd>${t.seriousInjuriesFor} / ${t.seriousInjuriesAgainst}</dd></div>
+      <div><dt>· muertos</dt><dd>${t.deathsFor} / ${t.deathsAgainst}</dd></div>
+      <div><dt>Expulsados</dt><dd>${t.sentOffFor} / ${t.sentOffAgainst}</dd></div>
+      <div><dt>Puntos de liga</dt><dd>${t.points}</dd></div></dl></div></div>`;
+}
+
+function renderDead(){
+  const r=L().retiredPlayers;
+  if(!r.length){ $('#p-dead').innerHTML='<div class="empty">Nadie ha muerto ni se ha retirado.</div>'; return; }
+  $('#p-dead').innerHTML='<div class="cards">'+r.map(p=>`<div class="card"><h3>#${p.num} ${esc(p.name)} <span class="pill out">${p.reason==='dead'?'Muerto':'Retirado'}</span></h3>
+    <div class="meta">${esc(p.position)} · ${p.retiredAtMatch?'en '+esc(p.retiredAtMatch):''} · MO ${esc(p.attributes.ma)} FU ${esc(p.attributes.st)} AG ${esc(p.attributes.ag)} PA ${esc(p.attributes.pa)} AR ${esc(p.attributes.av)} · SPP ${p.progression.sppTotal}</div>
+    <div class="meta">${esc((p.skills||[]).join(', '))}</div>
+    <div class="meta">${STAT_COLS.map(([k,t])=>`${t} ${p.statistics[k]||0}`).join(' · ')}</div></div>`).join('')+'</div>';
+}
+
+/* =========================================================
+   Registro de un partido
+   ========================================================= */
+function updateTdCheck(){
+  const f=$('#matchForm'); if(!f) return;
+  let tds=0; f.querySelectorAll('input[data-evk="touchdowns"]').forEach(i=>tds+=int(i.value));
+  const sc=int($('#scoreFor').value), el=$('#tdCheck');
+  el.className='hint'+(tds!==sc?' warn':'');
+  el.textContent = tds===sc ? `TD de los jugadores: ${tds} (coincide con el marcador).` : `TD de los jugadores: ${tds}, pero el marcador es ${sc}. Revísalo antes de registrar.`;
+}
+function updateAutoSums(){
+  const f=$('#matchForm'); if(!f) return;
+  const sums={lightInjuries:0,seriousInjuries:0,deaths:0};
+  for(const k in sums) f.querySelectorAll(`input[data-evk="${k}"]`).forEach(i=>sums[k]+=int(i.value));
+  for(const k in sums){ const i=$('#s_'+k+'For'); if(i && !i.dataset.touched) i.value=sums[k]; }
+}
+
+function registerMatch(form){
+  const f=new FormData(form), l=L();
+  const oppName=String(f.get('oppName')||'').trim();
+  if(!oppName){ toast('Indica el nombre del oponente.'); return; }
+  const scoreFor=int(f.get('scoreFor')), scoreAgainst=int(f.get('scoreAgainst'));
+  const round=l.matches.length+1, id=`T${l.season}-J${String(round).padStart(2,'0')}`;
+  const outcome=scoreFor>scoreAgainst?'win':scoreFor<scoreAgainst?'loss':'draw';
+
+  /* eventos de los jugadores que participan */
+  const events=[]; let tdSum=0;
+  form.querySelectorAll('tr[data-ev]').forEach(tr=>{
+    const num=int(tr.dataset.ev), ev={num, name:topPlayer(num).name};
+    STAT_COLS.forEach(([k])=>ev[k]=int(f.get(`ev_${num}_${k}`)));
+    ev.injurySuffered=String(f.get('inj_'+num)||'none');
+    ev.sppEarned=sppFromStats(ev); tdSum+=ev.touchdowns;
+    if(ev.sppEarned>0 || ev.injurySuffered!=='none' || STAT_COLS.some(([k])=>ev[k])) events.push(ev);
+  });
+  const dying=events.filter(e=>e.injurySuffered==='dead');
+  let msg=`¿Registrar ${id} contra ${oppName} (${scoreFor}-${scoreAgainst})?`;
+  if(tdSum!==scoreFor) msg+=`\n\nAviso: los TD de los jugadores (${tdSum}) no coinciden con el marcador (${scoreFor}).`;
+  if(dying.length) msg+=`\n\nMueren: ${dying.map(e=>'#'+e.num+' '+e.name).join(', ')}. Pasarán a «Muertos y retirados».`;
+  if(!confirm(msg)) return;
+
+  state.history.push(JSON.stringify(state.data));
+
+  /* los que se perdían este partido vuelven a estar disponibles */
+  l.players.forEach(p=>{ if(p.status==='missNextGame'){ p.status='active'; p.injuries.forEach(i=>{ i.missNextGame=false; }); } });
+
+  /* aplicar eventos */
+  events.forEach(ev=>{
+    const p=leaguePlayer(ev.num);
+    STAT_COLS.forEach(([k])=>p.statistics[k]+=ev[k]);
+    p.progression.sppTotal+=ev.sppEarned;
+    if(ev.injurySuffered==='lightInjury') p.injuries.push({type:'lightInjury',matchId:id,missNextGame:false});
+    if(ev.injurySuffered==='seriousInjury'){ p.injuries.push({type:'seriousInjury',matchId:id,missNextGame:true}); p.status='missNextGame'; }
+  });
+  l.players.forEach(recalcSpp);
+
+  /* muertos: salen del roster y de la formación */
+  dying.forEach(ev=>{
+    const lp=leaguePlayer(ev.num), tp=topPlayer(ev.num);
+    lp.injuries.push({type:'dead',matchId:id,missNextGame:false});
+    l.retiredPlayers.push({ num:tp.num, name:tp.name, position:tp.position, reason:'dead', retiredAtMatch:id,
+      attributes:{ma:tp.ma,st:tp.st,ag:tp.ag,pa:tp.pa,av:tp.av}, skills:clone(tp.skills||[]), price:lp.price,
+      progression:clone(lp.progression), statistics:clone(lp.statistics), injuries:clone(lp.injuries) });
+    l.players=l.players.filter(p=>p.num!==ev.num);
+    state.data.players=state.data.players.filter(p=>p.num!==ev.num);
+    if(Array.isArray(state.data.formation)) state.data.formation=state.data.formation.filter(x=>x.num!==ev.num);
+  });
+
+  const S=k=>int(f.get('s_'+k));
+  l.matches.push({ id, round, opponent:{teamName:oppName, race:String(f.get('oppRace')||'').trim()},
+    result:{teamScore:scoreFor, opponentScore:scoreAgainst, outcome},
+    statistics:{ lightInjuriesFor:S('lightInjuriesFor'), lightInjuriesAgainst:S('lightInjuriesAgainst'),
+      seriousInjuriesFor:S('seriousInjuriesFor'), seriousInjuriesAgainst:S('seriousInjuriesAgainst'),
+      deathsFor:S('deathsFor'), deathsAgainst:S('deathsAgainst'), sentOffFor:S('sentOffFor'), sentOffAgainst:S('sentOffAgainst') },
+    dedicatedFansGained:int(f.get('fans')), treasurySpent:int(f.get('spent')), earnings:int(f.get('earnings')),
+    leaguePoints:int(f.get('points')), playerEvents:events, notes:String(f.get('notes')||'').trim() });
+
+  state.dirty=true; state.tab='roster'; renderAll(); updateButtons();
+  toast(`${id} registrado.`);
+}
+
+/* =========================================================
+   Eventos de la interfaz
+   ========================================================= */
+function updateButtons(){
+  $('#downloadBtn').disabled = !(state.data && state.data.league);
+  $('#undoBtn').disabled = !state.history.length;
+}
+function showTab(id){
+  state.tab=id;
+  document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===id)));
+  document.querySelectorAll('.panel').forEach(p=>p.hidden=(p.id!=='p-'+id));
+}
+
+app.addEventListener('click',e=>{
+  const tab=e.target.closest('[data-tab]'); if(tab){ showTab(tab.dataset.tab); return; }
+  const st=e.target.closest('[data-staff]');
+  if(st){
+    const key=st.dataset.staff, d=int(st.dataset.d.replace('-','')) * (st.dataset.d.startsWith('-')?-1:1);
+    if(key==='rerolls'){ const r=state.data.staff.rerolls; r.count=Math.max(0,r.count+d); r.total=r.count*r.pricePerUnit; }
+    else { const min=(STAFF_ROWS.find(x=>x[0]===key)||[0,0,0])[2]; L().staff[key]=Math.max(min,(L().staff[key]??min)+d); }
+    state.dirty=true; renderTiles(); renderTeam();
+  }
+});
+app.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.dataset.price){ leaguePlayer(int(t.dataset.price)).price=int(t.value); state.dirty=true; renderTiles(); renderTeam(); }
+  if(t.dataset.evk){ updateAutoSums(); updateTdCheck(); }
+  if(t.id==='scoreFor') updateTdCheck();
+  if(t.dataset.auto) t.dataset.touched='1';
+});
+app.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.dataset.status){
+    const p=leaguePlayer(int(t.dataset.status)); p.status=t.value; state.dirty=true;
+    if(t.value==='active') p.injuries.forEach(i=>{i.missNextGame=false;});
+    renderTiles(); renderRoster(); renderMatchForm(); renderTeam();
+  }
+});
+app.addEventListener('submit',e=>{ if(e.target.id==='matchForm'){ e.preventDefault(); registerMatch(e.target); } });
+
+$('#fileInput').addEventListener('change',e=>{
+  const file=e.target.files[0]; if(!file) return;
+  if(state.dirty && !confirm('Hay cambios sin descargar. ¿Cargar otro equipo igualmente?')){ e.target.value=''; return; }
+  file.text().then(t=>loadText(t,file.name)); e.target.value='';
+});
+const drop=$('#drop');
+['dragover','dragenter'].forEach(ev=>window.addEventListener(ev,e=>{ e.preventDefault(); drop&&drop.classList.add('over'); }));
+['dragleave','drop'].forEach(ev=>window.addEventListener(ev,e=>{ e.preventDefault(); drop&&drop.classList.remove('over'); }));
+window.addEventListener('drop',e=>{
+  const file=e.dataTransfer&&e.dataTransfer.files[0]; if(!file) return;
+  if(state.dirty && !confirm('Hay cambios sin descargar. ¿Cargar otro equipo igualmente?')) return;
+  file.text().then(t=>loadText(t,file.name));
+});
+
+$('#undoBtn').addEventListener('click',()=>{
+  if(!state.history.length) return;
+  if(!confirm('¿Deshacer el último partido registrado en esta sesión?')) return;
+  state.data=JSON.parse(state.history.pop()); applyTheme(); renderAll(); updateButtons(); state.dirty=true; toast('Último partido deshecho.');
+});
+
+$('#downloadBtn').addEventListener('click',()=>{
+  if(!state.data||!state.data.league) return;
+  const base=state.fileName.replace(/\.json$/i,'').replace(/_liga\d+$/i,'').replace(/-[0-9a-f]{8}$/i,'');
+  const name=`${base}_liga${state.data.league.season}.json`;
+  const blob=new Blob([JSON.stringify(state.data,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  state.dirty=false; toast('Descargado '+name);
+});
+
+window.addEventListener('beforeunload',e=>{ if(state.dirty){ e.preventDefault(); e.returnValue=''; } });
+</script>
+</body>
+</html>

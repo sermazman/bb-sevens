@@ -109,6 +109,13 @@ dl.calc div:last-child{border-bottom:0}
 dl.calc dt{color:var(--muted)} dl.calc dd{margin:0;font-family:var(--f-mono)}
 dl.calc .total{font-weight:600}
 
+.ghbar{background:var(--bg);border-bottom:1px solid var(--line);font-size:14px;color:var(--muted)}
+.ghbar .wrap{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding-top:6px;padding-bottom:6px}
+#ghStatus.ok{color:var(--good)} #ghStatus.bad{color:var(--bad)} #ghStatus.warn{color:var(--warn)}
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:20px;width:calc(100% - 32px);max-width:600px}
+dialog::backdrop{background:rgba(0,0,0,.65)}
+dialog h2{font-family:var(--f-title);text-transform:uppercase;letter-spacing:.04em;font-size:22px;margin-bottom:6px}
+code{font-family:var(--f-mono);font-size:.9em;color:#c7ced8}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--accent);padding:10px 18px;border-radius:8px;z-index:10;max-width:90vw}
 .toast[hidden]{display:none}
 .banner{background:#2a2312;border:1px solid var(--warn);color:var(--warn);padding:10px 14px;border-radius:8px;margin-bottom:16px}
@@ -123,11 +130,46 @@ dl.calc .total{font-weight:600}
     <div class="actions">
       <label class="btn" for="fileInput" style="cursor:pointer">Cargar equipo</label>
       <input id="fileInput" type="file" accept=".json,application/json" hidden>
+      <button class="btn" id="ghOpenBtn" type="button">Abrir de GitHub</button>
+      <button class="btn" id="ghCfgBtn" type="button">Ajustes GitHub</button>
       <button class="btn" id="undoBtn" type="button" disabled>Deshacer último partido</button>
       <button class="btn primary" id="downloadBtn" type="button" disabled>Descargar para jugar</button>
     </div>
   </div>
 </header>
+<div class="ghbar"><div class="wrap"><span id="ghStatus" aria-live="polite"></span>
+  <button class="btn small" id="ghSaveBtn" type="button" disabled>Guardar en GitHub ahora</button></div></div>
+
+<dialog id="ghCfg">
+  <form method="dialog" onsubmit="return false">
+    <h2>Guardado en GitHub</h2>
+    <p class="hint">Cada equipo se guarda como <code>carpeta/identificador.json</code> en tu repositorio. El token se queda solo en este navegador.</p>
+    <div class="grid">
+      <label class="f">Usuario<input type="text" id="cfgOwner"></label>
+      <label class="f">Repositorio<input type="text" id="cfgRepo"></label>
+      <label class="f">Rama<input type="text" id="cfgBranch"></label>
+      <label class="f">Carpeta de la temporada<input type="text" id="cfgFolder"></label>
+    </div>
+    <label class="f" style="margin-top:12px">Token de acceso<input type="password" id="cfgToken" autocomplete="off" placeholder="github_pat_…"></label>
+    <label style="display:block;margin-top:8px;font-size:14px"><input type="checkbox" id="cfgRemember"> Recordar el token en este navegador (si no, se olvida al cerrar la pestaña)</label>
+    <p class="hint" id="ghCfgMsg"></p>
+    <div class="actions" style="margin-top:12px">
+      <button class="btn" type="button" id="ghCfgTest">Probar conexión</button>
+      <button class="btn primary" type="button" id="ghCfgSave">Guardar ajustes</button>
+      <button class="btn" type="button" id="ghCfgClose">Cerrar</button>
+    </div>
+  </form>
+</dialog>
+<dialog id="ghOpen">
+  <form method="dialog" onsubmit="return false">
+    <h2>Equipos de la liga</h2>
+    <label class="f">Equipo<select id="ghOpenList"></select></label>
+    <div class="actions" style="margin-top:12px">
+      <button class="btn primary" type="button" id="ghOpenGo">Abrir</button>
+      <button class="btn" type="button" id="ghOpenClose">Cerrar</button>
+    </div>
+  </form>
+</dialog>
 
 <main class="wrap" id="app">
   <div class="drop" id="drop">
@@ -162,6 +204,9 @@ const IMPROVEMENT_COSTS = {
   6:{pr:15,pc:30,sr:30,sc:40,st:50}
 };
 const DEFAULT_PRICES = { dedicatedFan:20000, cheerleader:20000, assistantCoach:20000, apothecary:null, bribe:100000 };
+/* catálogo de posiciones (hoja Teams del Excel): sirve de respaldo si el JSON o rosters/positions.json no traen el precio */
+const CATALOG_PRICES = {"Amazon":{"Eagle Warrior Linewomen":50000,"Python Warrior Throwers":80000,"Piranha Warrior Blitzers":90000,"Jaguar Warrior Blockers":110000,"Journey Eagle Warrior Linewomen":50000},"Black Orc":{"Goblin Bruiser":45000,"Black Orc":90000,"Trained Troll":115000,"Journey Goblin":45000},"Bretonia":{"Squire":50000,"Knigth Catcher":85000,"Knigth Thrower":80000,"Grial Knigths":95000,"Journey Eagle Warrior Linewomen":50000},"Chaos Chosen":{"Beastman Lineman":55000,"Chaos Chosen":100000,"Troll":115000,"Ogre":140000,"Minotaur":150000,"Journey Beastman":55000},"Chaos Dwarf":{"Hobgoblin Lineman":40000,"Sneaky Stabba":60000,"Chaos Dwarf Blocker":70000,"Flamesmith":80000,"Bull Centaur":130000,"Minotaur":150000,"Journey Hobgoblin Lineman":40000},"Chaos Renegades":{"Human Renegade":50000,"Goblin Renegade":40000,"Orc Renegade":50000,"Skaven Renegade":50000,"Dark Elf Renegade":65000,"Human Thrower Renegade":75000,"Troll":115000,"Ogre":140000,"Minotaur":150000,"Rat Ogre":150000,"Journey Human Renegade":50000},"Dark Elf":{"Lineman":65000,"Runner":80000,"Assassin":90000,"Blitzer":105000,"Witch Elf":110000,"Journey Elf":65000},"Dwarf":{"Lineman":70000,"Runner":80000,"Blitzer":100000,"Troll Slayer":95000,"Deathroller":170000,"Journey Lineman":70000},"Elven Union":{"Lineman":65000,"Thrower":75000,"Catcher":100000,"Blitzer":115000,"Journey Elf":65000},"Goblin":{"Goblin":40000,"Bombardier":45000,"Looney":40000,"Doom Diver":60000,"Ooligan":65000,"Fanatic":70000,"Pogoer":75000,"Troll":115000,"Journey Goblin":40000},"Gnome":{"Lineman":40000,"Woodland Fox":50000,"Illusionist":50000,"Beastmaster":55000,"Altern Forest Treeman":120000,"Journey Lineman":40000},"Halfling":{"Halfling Hopeful":30000,"Halfling Catcher":55000,"Halfling Hefty":50000,"Forest Treeman":120000,"Journey Halfling":30000},"High Elf":{"Lineman":65000,"White Lion":110000,"Phoenix Warrior":90000,"Dragon Prince":110000,"Journey Elf":65000},"Human":{"Lineman":50000,"Halfling Hopeful":30000,"Catcher":75000,"Thrower":75000,"Blitzer":85000,"Ogre":140000,"Journeyman":50000},"Imperial Nobility":{"Imperial Retainer":45000,"Imperial Thrower":75000,"Noble Blitzer":90000,"Bodyguard":85000,"Ogre":140000,"Journeyman":45000},"Khorne":{"Bloodborn Marauder":50000,"Khorngor":70000,"Bloodseeker":105000,"Bloodspawn":160000,"Journey Bloodborn":50000},"Lizardman":{"Skink":60000,"Chameleon Skink":70000,"Saurus":90000,"Kroxigor":140000,"Journey Skink":60000},"Necromantic":{"Zombie Lineman":40000,"Ghoul Runner":75000,"Wraith":85000,"Flesh Golem":110000,"Werewolf":120000,"Raised Zombie":40000,"Journey Zombie":40000},"Norse":{"Raider Lineman":50000,"Beer Boar":20000,"Berserker":90000,"Valkyrie":95000,"Ulfwerner":105000,"Yhetee":140000,"Journeyman":50000},"Nurgle":{"Rotter":40000,"Pestigor":70000,"Bloater":110000,"Rotspawn":140000,"Journey Rotter":40000},"Ogre":{"Gnoblar Linemen":15000,"Ogre Blocker":140000,"Ogre Runt Punter":145000,"Journey Gnoblar":15000},"Old World Alliance":{"Human Lineman":50000,"Halfling Hopeful":30000,"Human Catcher":75000,"Dwarf Lineman":70000,"Human Thrower":75000,"Dwarf Runner":80000,"Human Blitzer":85000,"Dwarf Blitzer":100000,"Troll Slayer":95000,"Ogre":140000,"Altern Forest Treeman":120000,"Journeyman":50000},"Orcs":{"Lineman":50000,"Goblin":40000,"Thrower":75000,"Blitzer":85000,"Big Un Blocker":95000,"Troll":115000,"Journey Orc":50000},"Shambling Undead":{"Skeleton Lineman":40000,"Zombie Lineman":40000,"Ghoul Runner":75000,"Wight Blitzer":95000,"Mummy":125000,"Raised Zombie":40000,"Skeleton Journeyman":40000,"Zombie Journeyman":40000},"Slann":{"Lineman":60000,"Catcher":80000,"Blitzer":110000,"Kroxigor":140000,"Journey Slann":60000},"Skaven":{"ClanRat":50000,"Thrower":80000,"Gutter Runner":85000,"Blitzer":90000,"Rat Ogre":150000,"Journey ClanRat":50000},"Tomb King":{"Skeleton Lineman":40000,"Tomb King Thrower":65000,"Tomb King Blitzers":85000,"Tomb Guardian":115000,"Journey Skeleton":40000},"Snotling":{"Snotling":15000,"Fungus Flinga":30000,"Fun-hoppa":20000,"Stilty Runna":20000,"Pump Wagon":105000,"Trained Troll":115000,"Journey Snotling":15000},"Underworld Denizens":{"Goblin":40000,"Snotling":15000,"Skaven Clanrat":50000,"Skaven Thrower":80000,"Gutter Runner":85000,"Skaven Blitzer":90000,"Troll":115000,"Rat Ogre":150000,"Journey Goblin":40000},"Vampire":{"Thrall":40000,"Vampire Runner":100000,"Vampire Thrower":110000,"Vampire Blitzer":110000,"Vargheist":150000,"Journey Thrall":40000},"Elfos Silvanos":{"Lineman":65000,"Thrower":85000,"Catcher":90000,"Wardancer":130000,"Treeman":120000,"Journey Elf":65000}};
+const CATALOG_APOTHECARY = {"Amazon":80000,"Black Orc":80000,"Chaos Chosen":80000,"Chaos Dwarf":80000,"Chaos Renegades":80000,"Dark Elf":80000,"Dwarf":80000,"Elven Union":80000,"Goblin":80000,"Gnome":80000,"Halfling":80000,"High Elf":80000,"Human":80000,"Imperial Nobility":80000,"Khorne":50000,"Lizardman":80000,"Norse":80000,"Ogre":80000,"Old World Alliance":80000,"Slann":80000,"Skaven":80000,"Snotling":80000,"Underworld Denizens":80000,"Vampire":50000};
 const STAFF_ROWS = [
   ['dedicatedFans','Fans devotos comprados',1],
   ['cheerleaders','Animadoras',0],
@@ -173,7 +218,7 @@ const STAFF_ROWS = [
 /* =========================================================
    Estado
    ========================================================= */
-const state = { data:null, fileName:'equipo.json', dirty:false, history:[], tab:'roster' };
+const state = { data:null, fileName:'equipo.json', dirty:false, history:[], tab:'roster', remoteSha:null, saving:false, saveAgain:false, saveTimer:null, autosaveBlocked:false, reason:'' };
 const $ = (s,r=document)=>r.querySelector(s);
 const app = $('#app');
 
@@ -262,13 +307,13 @@ function loadText(text, name){
   try{ d=JSON.parse(text); }catch(e){ toast('El archivo no es un JSON válido.'); return; }
   if(!d || !Array.isArray(d.players)){ toast('Este JSON no parece un equipo (falta la lista de jugadores).'); return; }
   if(d.league && d.league.schemaVersion!==2){ toast('La sección de liga de este archivo es de otra versión y no se puede abrir.'); return; }
-  state.data=d; state.history=[]; state.dirty=false; state.tab='roster';
+  state.data=d; state.history=[]; state.dirty=false; state.tab='roster'; state.remoteSha=null; state.autosaveBlocked=false; clearTimeout(state.saveTimer);
   state.fileName=(name||'equipo.json');
   applyTheme();
   if(!d.league){ renderEnroll(); updateButtons(); return; }
   /* jugadores del equipo que aún no están en el registro de liga */
   const l=d.league; l.players=l.players||[]; l.matches=l.matches||[]; l.retiredPlayers=l.retiredPlayers||[];
-  l.staff=l.staff||{}; l.economy=l.economy||{startingTreasury:0};
+  l.staff=l.staff||{}; l.economy=l.economy||{startingTreasury:0}; if(!l.teamId) l.teamId=slug(d.teamName);
   let added=0;
   for(const p of d.players){ if(!leaguePlayer(p.num)){ l.players.push(emptyPlayerLeague(p.num,0)); added++; } }
   l.players.forEach(recalcSpp);
@@ -277,37 +322,106 @@ function loadText(text, name){
 }
 
 /* ---- inscripción de un equipo que viene de rosters.html ---- */
+const slug = t => String(t||'equipo').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+function lookupPrice(race,pos){
+  const rk=Object.keys(CATALOG_PRICES).find(k=>k.toLowerCase()===String(race||'').trim().toLowerCase()); if(!rk) return 0;
+  const r=CATALOG_PRICES[rk], p=String(pos||'').trim().toLowerCase(), pk=Object.keys(r).find(k=>k.toLowerCase()===p);
+  return pk?r[pk]:0;
+}
+function apothecaryFor(race){
+  const r=String(race||'').trim();
+  if(['Necromantic','Shambling Undead','Nurgle'].includes(r)) return 100000;
+  const k=Object.keys(CATALOG_APOTHECARY).find(x=>x.toLowerCase()===r.toLowerCase());
+  return k?CATALOG_APOTHECARY[k]:null;
+}
+const normTxt = t => String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,'');
+
+/* Busca el precio de cada posición en rosters/positions.json (si existe y tiene precios) */
+function walkLibrary(node, ctx, out){
+  if(Array.isArray(node)){ node.forEach(n=>walkLibrary(n,ctx,out)); return; }
+  if(!node || typeof node!=='object') return;
+  const labels=[...ctx];
+  for(const k of ['race','raza','team','teamName']) if(typeof node[k]==='string') labels.push(normTxt(node[k]));
+  const nm=['position','name','type','title','pos'].map(k=>node[k]).find(v=>typeof v==='string');
+  const pr=['price','cost','prize','precio','coste','value'].map(k=>node[k]).find(v=>typeof v==='number');
+  if(nm!==undefined && pr!==undefined) out.push({labels, name:normTxt(nm), price:pr});
+  for(const [k,v] of Object.entries(node)) walkLibrary(v,[...labels,normTxt(k)],out);
+}
+async function libraryPrices(d){
+  const found={};
+  try{
+    const r=await fetch('rosters/positions.json',{cache:'no-store'}); if(!r.ok) return found;
+    const entries=[]; walkLibrary(await r.json(),[],entries);
+    const race=normTxt(d.race);
+    for(const p of d.players){
+      const e=entries.find(x=>x.name===normTxt(p.position) && x.labels.includes(race));
+      if(e) found[p.num]= e.price<1000 ? e.price*1000 : e.price;
+    }
+  }catch(e){}
+  return found;
+}
+
 function renderEnroll(){
-  const d=state.data;
+  const d=state.data, rr=(d.staff&&d.staff.rerolls&&d.staff.rerolls.total)||0;
   app.innerHTML=`
   <div class="teamhead"><span class="badge-team">${esc(d.teamName||'Equipo')}</span><span class="race">${esc(d.race||'')}</span></div>
-  <div class="banner">Este equipo todavía no está inscrito en la liga. Indica el precio de cada jugador y la tesorería inicial.</div>
+  <div class="banner">Este equipo todavía no está inscrito en la liga. Comprueba el coste del equipo y fija el presupuesto inicial.</div>
   <form id="enrollForm">
     <fieldset><legend>Datos de inscripción</legend>
       <div class="grid">
         <label class="f">Temporada<input type="number" name="season" value="6" min="1"></label>
-        <label class="f">Tesorería inicial<input type="number" name="start" value="600000" min="0" step="10000"></label>
-        <label class="f">Identificador del equipo<input type="text" name="teamId" value="${esc((d.teamName||'equipo').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,''))}"></label>
+        <label class="f">Presupuesto inicial<input type="number" name="start" id="enrollStart" value="600000" min="0" step="10000"></label>
+        <label class="f">Identificador del equipo<input type="text" name="teamId" value="${esc(slug(d.teamName))}"></label>
       </div>
     </fieldset>
-    <fieldset><legend>Precio de los jugadores</legend>
+    <fieldset><legend>Coste del equipo</legend>
       <div class="tscroll"><table>
-        <thead><tr><th>#</th><th class="l">Jugador</th><th class="l">Posición</th><th>Precio</th></tr></thead>
-        <tbody>${d.players.map(p=>`<tr><td class="num">${p.num}</td><td class="l">${esc(p.name)}</td><td class="l">${esc(p.position)}</td>
-          <td class="price"><input type="number" min="0" step="5000" name="price_${p.num}" value="0" aria-label="Precio de ${esc(p.name)}"></td></tr>`).join('')}</tbody>
+        <thead><tr><th>#</th><th class="l">Jugador</th><th class="l">Posición</th><th>Precio</th><th class="l">Origen</th></tr></thead>
+        <tbody>${d.players.map(p=>{
+          const fromJson=(typeof p.price==='number'&&p.price>0), cat=fromJson?0:lookupPrice(d.race,p.position), known=fromJson?p.price:(cat||'');
+          return `<tr><td class="num">${p.num}</td><td class="l">${esc(p.name)}</td><td class="l">${esc(p.position)}</td>
+          <td class="price"><input type="number" min="0" step="5000" name="price_${p.num}" data-eprice="${p.num}" value="${known}" aria-label="Precio de ${esc(p.name)}"></td>
+          <td class="l"><span class="race" id="src_${p.num}">${fromJson?'del JSON':cat?'catálogo':''}</span></td></tr>`;}).join('')}</tbody>
       </table></div>
-      <p class="hint">Es el precio base de la posición (el que sale en la hoja «Teams» del Excel).</p>
+      <dl class="calc" id="enrollSummary" style="margin-top:12px"></dl>
+      <p class="hint" id="enrollHint"></p>
     </fieldset>
-    <button class="btn primary" type="submit">Inscribir equipo</button>
+    <button class="btn primary" type="submit" id="enrollBtn">Inscribir equipo</button>
   </form>`;
-  $('#enrollForm').addEventListener('submit',e=>{
-    e.preventDefault(); const f=new FormData(e.target);
-    d.league={ schemaVersion:2, season:int(f.get('season'))||6, teamId:String(f.get('teamId')||'').trim(),
-      economy:{startingTreasury:int(f.get('start')), prices:clone(DEFAULT_PRICES)},
+  const form=$('#enrollForm');
+  function recalc(){
+    let players=0; const missing=[];
+    d.players.forEach(p=>{ const v=int(form.elements['price_'+p.num].value); if(!v) missing.push(p.name); players+=v; });
+    const budget=int($('#enrollStart').value), cost=players+rr, left=budget-cost;
+    $('#enrollSummary').innerHTML=`
+      <div><dt>Presupuesto inicial</dt><dd>${fmt(budget)}</dd></div>
+      <div><dt>− Jugadores</dt><dd>${fmt(players)}</dd></div>
+      <div><dt>− Segundas oportunidades</dt><dd>${fmt(rr)}</dd></div>
+      <div class="total"><dt>= Tesorería al empezar</dt><dd class="${left<0?'neg':''}">${fmt(left)}</dd></div>`;
+    const hint=$('#enrollHint');
+    if(missing.length){ hint.className='hint warn'; hint.textContent='Faltan los precios de: '+missing.join(', ')+'.'; }
+    else if(left<0){ hint.className='hint warn'; hint.textContent='El coste del equipo supera el presupuesto inicial: sube el presupuesto o revisa el equipo.'; }
+    else { hint.className='hint'; hint.textContent='Todo cuadra.'; }
+    $('#enrollBtn').disabled=missing.length>0 || left<0;
+  }
+  form.addEventListener('input',e=>{ if(e.target.dataset.eprice){ const sp=$('#src_'+e.target.dataset.eprice); if(sp) sp.textContent='manual'; } recalc(); });
+  recalc();
+  /* precios que falten: se intentan sacar de la biblioteca de rosters */
+  if(d.players.some(p=>!(typeof p.price==='number'&&p.price>0))){
+    libraryPrices(d).then(found=>{
+      if(state.data!==d) return;
+      d.players.forEach(p=>{ const inp=form.elements['price_'+p.num]; const src=$('#src_'+p.num); if(inp && found[p.num] && src && src.textContent!=='manual' && src.textContent!=='del JSON'){ inp.value=found[p.num]; src.textContent='de la biblioteca'; } });
+      recalc();
+    });
+  }
+  form.addEventListener('submit',e=>{
+    e.preventDefault(); const f=new FormData(form);
+    d.league={ schemaVersion:2, season:int(f.get('season'))||6, teamId:slug(f.get('teamId')||d.teamName),
+      economy:{startingTreasury:int(f.get('start')), prices:Object.assign(clone(DEFAULT_PRICES),{apothecary:apothecaryFor(d.race)})},
       staff:{dedicatedFans:1,cheerleaders:0,assistantCoaches:0,apothecary:0,bribes:0},
       players:d.players.map(p=>emptyPlayerLeague(p.num,int(f.get('price_'+p.num)))),
       matches:[], retiredPlayers:[] };
-    state.dirty=true; renderAll(); updateButtons(); toast('Equipo inscrito en la liga.');
+    renderAll(); updateButtons(); markDirty('Liga T'+d.league.season+': inscrito '+d.teamName); toast('Equipo inscrito en la liga.');
   });
 }
 
@@ -546,7 +660,7 @@ function registerMatch(form){
     dedicatedFansGained:int(f.get('fans')), treasurySpent:int(f.get('spent')), earnings:int(f.get('earnings')),
     leaguePoints:int(f.get('points')), playerEvents:events, notes:String(f.get('notes')||'').trim() });
 
-  state.dirty=true; state.tab='roster'; renderAll(); updateButtons();
+  markDirty('Liga T'+l.season+' · '+id+' · '+state.data.teamName+' vs '+oppName); state.tab='roster'; renderAll(); updateButtons();
   toast(`${id} registrado.`);
 }
 
@@ -556,6 +670,7 @@ function registerMatch(form){
 function updateButtons(){
   $('#downloadBtn').disabled = !(state.data && state.data.league);
   $('#undoBtn').disabled = !state.history.length;
+  $('#ghSaveBtn').disabled = !(state.data && state.data.league);
 }
 function showTab(id){
   state.tab=id;
@@ -570,12 +685,12 @@ app.addEventListener('click',e=>{
     const key=st.dataset.staff, d=int(st.dataset.d.replace('-','')) * (st.dataset.d.startsWith('-')?-1:1);
     if(key==='rerolls'){ const r=state.data.staff.rerolls; r.count=Math.max(0,r.count+d); r.total=r.count*r.pricePerUnit; }
     else { const min=(STAFF_ROWS.find(x=>x[0]===key)||[0,0,0])[2]; L().staff[key]=Math.max(min,(L().staff[key]??min)+d); }
-    state.dirty=true; renderTiles(); renderTeam();
+    markDirty(); renderTiles(); renderTeam();
   }
 });
 app.addEventListener('input',e=>{
   const t=e.target;
-  if(t.dataset.price){ leaguePlayer(int(t.dataset.price)).price=int(t.value); state.dirty=true; renderTiles(); renderTeam(); }
+  if(t.dataset.price){ leaguePlayer(int(t.dataset.price)).price=int(t.value); markDirty(); renderTiles(); renderTeam(); }
   if(t.dataset.evk){ updateAutoSums(); updateTdCheck(); }
   if(t.id==='scoreFor') updateTdCheck();
   if(t.dataset.auto) t.dataset.touched='1';
@@ -583,7 +698,7 @@ app.addEventListener('input',e=>{
 app.addEventListener('change',e=>{
   const t=e.target;
   if(t.dataset.status){
-    const p=leaguePlayer(int(t.dataset.status)); p.status=t.value; state.dirty=true;
+    const p=leaguePlayer(int(t.dataset.status)); p.status=t.value; markDirty();
     if(t.value==='active') p.injuries.forEach(i=>{i.missNextGame=false;});
     renderTiles(); renderRoster(); renderMatchForm(); renderTeam();
   }
@@ -607,7 +722,7 @@ window.addEventListener('drop',e=>{
 $('#undoBtn').addEventListener('click',()=>{
   if(!state.history.length) return;
   if(!confirm('¿Deshacer el último partido registrado en esta sesión?')) return;
-  state.data=JSON.parse(state.history.pop()); applyTheme(); renderAll(); updateButtons(); state.dirty=true; toast('Último partido deshecho.');
+  state.data=JSON.parse(state.history.pop()); applyTheme(); renderAll(); updateButtons(); markDirty(); toast('Último partido deshecho.');
 });
 
 $('#downloadBtn').addEventListener('click',()=>{
@@ -619,6 +734,140 @@ $('#downloadBtn').addEventListener('click',()=>{
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
   state.dirty=false; toast('Descargado '+name);
 });
+
+/* =========================================================
+   Guardado en GitHub (API de contenidos)
+   ========================================================= */
+const GH_KEY='bbl_gh_settings', GH_TOKEN_KEY='bbl_gh_token';
+const GH_DEFAULTS={owner:'sermazman',repo:'sermazman.github.io',branch:'main',folder:'liga/t6/equipos',remember:false};
+function ghSettings(){
+  let st={}; try{ st=JSON.parse(localStorage.getItem(GH_KEY)||'{}'); }catch(e){}
+  let token=''; try{ token=sessionStorage.getItem(GH_TOKEN_KEY)||localStorage.getItem(GH_TOKEN_KEY)||''; }catch(e){}
+  return Object.assign({},GH_DEFAULTS,st,{token});
+}
+function ghStore(c){
+  try{ localStorage.setItem(GH_KEY,JSON.stringify({owner:c.owner,repo:c.repo,branch:c.branch,folder:c.folder,remember:c.remember})); }catch(e){}
+  try{ sessionStorage.removeItem(GH_TOKEN_KEY); localStorage.removeItem(GH_TOKEN_KEY); (c.remember?localStorage:sessionStorage).setItem(GH_TOKEN_KEY,c.token); }catch(e){}
+}
+const ghReady = ()=>{ const c=ghSettings(); return !!(c.token&&c.owner&&c.repo&&c.branch&&c.folder); };
+const ghFolder = c => c.folder.replace(/^\/+|\/+$/g,'');
+const ghApi = (c,path)=>`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${path.split('/').map(encodeURIComponent).join('/')}`;
+const b64enc = str=>{ const by=new TextEncoder().encode(str); let bin=''; for(let i=0;i<by.length;i+=0x8000) bin+=String.fromCharCode.apply(null,by.subarray(i,i+0x8000)); return btoa(bin); };
+const b64dec = b64=>{ const bin=atob(String(b64).replace(/\s/g,'')); return new TextDecoder().decode(Uint8Array.from(bin,ch=>ch.charCodeAt(0))); };
+function ghFetch(c,url,opts={}){
+  return fetch(url,Object.assign({},opts,{headers:Object.assign({'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Authorization':'Bearer '+c.token},opts.headers||{})}));
+}
+async function ghErr(r){
+  let m=''; try{ m=(await r.json()).message||''; }catch(e){}
+  if(r.status===401) return 'El token no es válido o ha caducado.';
+  if(r.status===403) return 'GitHub ha rechazado la operación (permisos del token o límite de uso). '+m;
+  if(r.status===404) return 'No se encuentra el repositorio, o el token no tiene acceso a él. '+m;
+  return 'Error '+r.status+(m?': '+m:'');
+}
+function setGhStatus(text,cls=''){ const el=$('#ghStatus'); el.textContent=text; el.className=cls; }
+function refreshGhStatus(){
+  if(!ghReady()) setGhStatus('GitHub sin configurar: solo se guarda al descargar.','warn');
+  else if(state.dirty) setGhStatus('Cambios pendientes de guardar en GitHub…','warn');
+  else setGhStatus('GitHub listo: se guarda solo después de cada cambio.');
+}
+
+function markDirty(reason){
+  state.dirty=true;
+  state.reason = reason || (state.data&&state.data.league ? 'Liga T'+state.data.league.season+': ajustes de '+state.data.teamName : '');
+  refreshGhStatus(); scheduleSave();
+}
+function scheduleSave(){
+  clearTimeout(state.saveTimer);
+  if(!ghReady() || state.autosaveBlocked || !(state.data&&state.data.league)) return;
+  state.saveTimer=setTimeout(()=>ghSave(state.reason),2000);
+}
+async function ghSave(reason,manual){
+  const c=ghSettings();
+  if(!state.data||!state.data.league) return false;
+  if(!ghReady()){ toast('Configura primero GitHub en «Ajustes GitHub».'); return false; }
+  if(state.saving){ state.saveAgain=true; return false; }
+  if(manual) state.autosaveBlocked=false;
+  state.saving=true; clearTimeout(state.saveTimer); setGhStatus('Guardando en GitHub…','warn');
+  let ok=false;
+  try{
+    const path=ghFolder(c)+'/'+state.data.league.teamId+'.json', url=ghApi(c,path);
+    let r=await ghFetch(c,url+'?ref='+encodeURIComponent(c.branch)), remote=null;
+    if(r.status===200) remote=await r.json(); else if(r.status!==404) throw new Error(await ghErr(r));
+    if(remote && remote.sha!==state.remoteSha){
+      if(state.remoteSha) throw new Error('El archivo de GitHub ha cambiado desde que lo abriste. Ábrelo de nuevo para no pisar cambios.');
+      if(!confirm(`Ya existe ${path} en GitHub. ¿Sobrescribirlo con lo que tienes cargado?`)){
+        state.autosaveBlocked=true; setGhStatus('Sin guardar: cancelaste la sobrescritura. Usa «Guardar en GitHub ahora» cuando quieras.','warn'); return false; }
+    }
+    const body={message:reason||('Liga T'+state.data.league.season+': '+state.data.teamName), content:b64enc(JSON.stringify(state.data,null,2)+'\n'), branch:c.branch};
+    if(remote) body.sha=remote.sha;
+    r=await ghFetch(c,url,{method:'PUT',body:JSON.stringify(body),headers:{'Content-Type':'application/json'}});
+    if(!r.ok) throw new Error(await ghErr(r));
+    const res=await r.json(); state.remoteSha=res.content.sha; state.dirty=false; ok=true;
+    setGhStatus('Guardado en GitHub a las '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})+' ('+path+')','ok');
+  }catch(e){
+    state.autosaveBlocked=true;
+    setGhStatus('No se pudo guardar en GitHub: '+e.message,'bad'); toast('No se pudo guardar en GitHub: '+e.message);
+  }finally{
+    state.saving=false;
+    if(state.saveAgain){ state.saveAgain=false; if(ok) scheduleSave(); }
+  }
+  return ok;
+}
+
+async function ghOpenList(){
+  if(!ghReady()){ toast('Configura primero GitHub en «Ajustes GitHub».'); openCfg(); return; }
+  const c=ghSettings();
+  try{
+    const r=await ghFetch(c,ghApi(c,ghFolder(c))+'?ref='+encodeURIComponent(c.branch));
+    if(r.status===404){ toast('Todavía no hay equipos en '+ghFolder(c)+'.'); return; }
+    if(!r.ok){ toast(await ghErr(r)); return; }
+    const files=(await r.json()).filter(x=>x.type==='file'&&/\.json$/i.test(x.name));
+    if(!files.length){ toast('No hay equipos en '+ghFolder(c)+'.'); return; }
+    $('#ghOpenList').innerHTML=files.map(f=>`<option value="${esc(f.name)}">${esc(f.name.replace(/\.json$/i,''))}</option>`).join('');
+    $('#ghOpen').showModal();
+  }catch(e){ toast('No se pudo leer GitHub: '+e.message); }
+}
+async function ghOpenFile(name){
+  const c=ghSettings();
+  try{
+    const r=await ghFetch(c,ghApi(c,ghFolder(c)+'/'+name)+'?ref='+encodeURIComponent(c.branch));
+    if(!r.ok){ toast(await ghErr(r)); return; }
+    const f=await r.json();
+    loadText(b64dec(f.content),name);
+    if(state.data&&state.data.league){ state.remoteSha=f.sha; state.dirty=false; refreshGhStatus(); }
+  }catch(e){ toast('No se pudo abrir el equipo: '+e.message); }
+}
+function openCfg(){
+  const c=ghSettings();
+  $('#cfgOwner').value=c.owner; $('#cfgRepo').value=c.repo; $('#cfgBranch').value=c.branch; $('#cfgFolder').value=c.folder;
+  $('#cfgToken').value=c.token; $('#cfgRemember').checked=!!c.remember; $('#ghCfgMsg').textContent='';
+  $('#ghCfg').showModal();
+}
+function readCfg(){ return {owner:$('#cfgOwner').value.trim(),repo:$('#cfgRepo').value.trim(),branch:$('#cfgBranch').value.trim(),
+  folder:$('#cfgFolder').value.trim(),token:$('#cfgToken').value.trim(),remember:$('#cfgRemember').checked}; }
+
+$('#ghCfgBtn').addEventListener('click',openCfg);
+$('#ghCfgClose').addEventListener('click',()=>$('#ghCfg').close());
+$('#ghCfgSave').addEventListener('click',()=>{ ghStore(readCfg()); state.autosaveBlocked=false; $('#ghCfg').close(); refreshGhStatus(); scheduleSave(); toast('Ajustes de GitHub guardados.'); });
+$('#ghCfgTest').addEventListener('click',async()=>{
+  const c=readCfg(), msg=$('#ghCfgMsg'); msg.className='hint'; msg.textContent='Probando…';
+  if(!c.token){ msg.className='hint warn'; msg.textContent='Falta el token.'; return; }
+  try{
+    const r=await ghFetch(c,`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}`);
+    if(!r.ok){ msg.className='hint warn'; msg.textContent=await ghErr(r); return; }
+    const j=await r.json(), push=j.permissions&&j.permissions.push;
+    msg.className='hint '+(push?'':'warn'); msg.textContent=push?`Conexión correcta con ${j.full_name}. El token puede escribir.`:`Conecta con ${j.full_name}, pero el token NO tiene permiso de escritura (Contents: Read and write).`;
+  }catch(e){ msg.className='hint warn'; msg.textContent='No se pudo conectar: '+e.message; }
+});
+$('#ghOpenBtn').addEventListener('click',ghOpenList);
+$('#ghOpenClose').addEventListener('click',()=>$('#ghOpen').close());
+$('#ghOpenGo').addEventListener('click',()=>{
+  const name=$('#ghOpenList').value; if(!name) return;
+  if(state.dirty && !confirm('Hay cambios sin guardar. ¿Abrir otro equipo igualmente?')) return;
+  $('#ghOpen').close(); ghOpenFile(name);
+});
+$('#ghSaveBtn').addEventListener('click',()=>ghSave(state.reason||undefined,true));
+refreshGhStatus();
 
 window.addEventListener('beforeunload',e=>{ if(state.dirty){ e.preventDefault(); e.returnValue=''; } });
 </script>

@@ -854,7 +854,19 @@ $('#ghCfgTest').addEventListener('click',async()=>{
   if(!c.token){ msg.className='hint warn'; msg.textContent='Falta el token.'; return; }
   try{
     const r=await ghFetch(c,`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}`);
-    if(!r.ok){ msg.className='hint warn'; msg.textContent=await ghErr(r); return; }
+    if(!r.ok){
+      let extra='';
+      if(r.status===404){
+        const base=`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}`;
+        const pub=await fetch(base).catch(()=>null), me=await ghFetch(c,'https://api.github.com/user').catch(()=>null);
+        const who=me&&me.ok?(await me.json()).login:null;
+        extra=` He probado con «${c.owner}/${c.repo}».`+(pub&&pub.ok
+          ? ' Ese repositorio existe y es público, así que el problema es el token: al crearlo hay que elegir «Only select repositories», marcar este repositorio y poner tu cuenta como propietario (Resource owner).'
+          : ' Sin token tampoco lo encuentro: revisa el usuario y el nombre exacto del repositorio (tal como sale en la dirección de GitHub), o puede ser privado.')
+          +(who?` El token pertenece a «${who}».`:' GitHub no reconoce el token.');
+      }
+      msg.className='hint warn'; msg.textContent=await ghErr(r)+extra; return;
+    }
     const j=await r.json(), push=j.permissions&&j.permissions.push;
     msg.className='hint '+(push?'':'warn'); msg.textContent=push?`Conexión correcta con ${j.full_name}. El token puede escribir.`:`Conecta con ${j.full_name}, pero el token NO tiene permiso de escritura (Contents: Read and write).`;
   }catch(e){ msg.className='hint warn'; msg.textContent='No se pudo conectar: '+e.message; }

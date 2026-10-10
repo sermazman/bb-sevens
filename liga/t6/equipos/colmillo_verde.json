@@ -183,14 +183,14 @@
         "num": 1,
         "price": 50000,
         "progression": {
-          "sppTotal": 0,
-          "sppUnspent": 0,
+          "sppTotal": 3,
+          "sppUnspent": 3,
           "improvements": []
         },
         "statistics": {
           "sprints": 0,
           "passes": 0,
-          "touchdowns": 0,
+          "touchdowns": 1,
           "deflections": 0,
           "interceptions": 0,
           "lightInjuries": 0,
@@ -334,7 +334,53 @@
         "status": "active"
       }
     ],
-    "matches": [],
+    "matches": [
+      {
+        "id": "T6-J01",
+        "round": 1,
+        "opponent": {
+          "teamName": "p1",
+          "race": "p2"
+        },
+        "result": {
+          "teamScore": 1,
+          "opponentScore": 0,
+          "outcome": "win"
+        },
+        "statistics": {
+          "lightInjuriesFor": 0,
+          "lightInjuriesAgainst": 0,
+          "seriousInjuriesFor": 0,
+          "seriousInjuriesAgainst": 0,
+          "deathsFor": 0,
+          "deathsAgainst": 0,
+          "sentOffFor": 0,
+          "sentOffAgainst": 0
+        },
+        "dedicatedFansGained": 0,
+        "treasurySpent": 0,
+        "earnings": 40000,
+        "leaguePoints": 0,
+        "playerEvents": [
+          {
+            "num": 1,
+            "name": "Grukk Bocafiera",
+            "sprints": 0,
+            "passes": 0,
+            "touchdowns": 1,
+            "deflections": 0,
+            "interceptions": 0,
+            "lightInjuries": 0,
+            "seriousInjuries": 0,
+            "deaths": 0,
+            "mvp": 0,
+            "injurySuffered": "none",
+            "sppEarned": 3
+          }
+        ],
+        "notes": ""
+      }
+    ],
     "retiredPlayers": []
   }
 }

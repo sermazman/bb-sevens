@@ -739,7 +739,7 @@ $('#downloadBtn').addEventListener('click',()=>{
    Guardado en GitHub (API de contenidos)
    ========================================================= */
 const GH_KEY='bbl_gh_settings', GH_TOKEN_KEY='bbl_gh_token';
-const GH_DEFAULTS={owner:'sermazman',repo:'sermazman.github.io',branch:'main',folder:'liga/t6/equipos',remember:false};
+const GH_DEFAULTS={owner:'sermazman',repo:'bb-sevens',branch:'main',folder:'liga/t6/equipos',remember:false};
 function ghSettings(){
   let st={}; try{ st=JSON.parse(localStorage.getItem(GH_KEY)||'{}'); }catch(e){}
   let token=''; try{ token=sessionStorage.getItem(GH_TOKEN_KEY)||localStorage.getItem(GH_TOKEN_KEY)||''; }catch(e){}
@@ -868,7 +868,14 @@ $('#ghCfgTest').addEventListener('click',async()=>{
       msg.className='hint warn'; msg.textContent=await ghErr(r)+extra; return;
     }
     const j=await r.json(), push=j.permissions&&j.permissions.push;
-    msg.className='hint '+(push?'':'warn'); msg.textContent=push?`Conexión correcta con ${j.full_name}. El token puede escribir.`:`Conecta con ${j.full_name}, pero el token NO tiene permiso de escritura (Contents: Read and write).`;
+    let branchNote='';
+    if(c.branch){
+      const br=await ghFetch(c,`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/branches/${encodeURIComponent(c.branch)}`).catch(()=>null);
+      if(br && br.status===404) branchNote=` Pero la rama «${c.branch}» no existe: la principal de este repositorio es «${j.default_branch}». Cámbiala en «Rama».`;
+    }
+    const bad=!push||!!branchNote;
+    msg.className='hint '+(bad?'warn':'');
+    msg.textContent=(push?`Conexión correcta con ${j.full_name}. El token puede escribir.`:`Conecta con ${j.full_name}, pero el token NO tiene permiso de escritura (Contents: Read and write).`)+branchNote;
   }catch(e){ msg.className='hint warn'; msg.textContent='No se pudo conectar: '+e.message; }
 });
 $('#ghOpenBtn').addEventListener('click',ghOpenList);

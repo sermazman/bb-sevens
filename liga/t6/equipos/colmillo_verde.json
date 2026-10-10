@@ -1,0 +1,340 @@
+{
+  "teamName": "Colmillo Verde",
+  "race": "Orcs",
+  "color": "#b30000",
+  "textColor": "auto",
+  "staff": {
+    "rerolls": {
+      "clave": "reroll",
+      "count": 1,
+      "pricePerUnit": 100000,
+      "total": 100000
+    }
+  },
+  "players": [
+    {
+      "num": 1,
+      "name": "Grukk Bocafiera",
+      "position": "Lineman",
+      "ma": 4,
+      "st": 3,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "10+",
+      "skills": [
+        "Veterano",
+        "Linea - Orc"
+      ]
+    },
+    {
+      "num": 2,
+      "name": "Snagga Vientre-Verde",
+      "position": "Lineman",
+      "ma": 5,
+      "st": 3,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "10+",
+      "skills": [
+        "Linea - Orc"
+      ]
+    },
+    {
+      "num": 3,
+      "name": "Morg Piel-Dura",
+      "position": "Blitzer",
+      "ma": 6,
+      "st": 3,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "10+",
+      "skills": [
+        "Placar",
+        "Abrirse paso",
+        "Blitzer - Orc"
+      ]
+    },
+    {
+      "num": 4,
+      "name": "Thrag Machaca-Huesos",
+      "position": "Blitzer",
+      "ma": 6,
+      "st": 3,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "10+",
+      "skills": [
+        "Placar",
+        "Abrirse paso",
+        "Blitzer - Orc"
+      ]
+    },
+    {
+      "num": 5,
+      "name": "Borgut Cabeza-Negra",
+      "position": "Big Un Blocker",
+      "ma": 5,
+      "st": 4,
+      "ag": "4+",
+      "pa": "6+",
+      "av": "10+",
+      "skills": [
+        "Cabeza dura",
+        "Golpe mortífero",
+        "Provocar",
+        "Tembloroso",
+        "Defensor - Orc"
+      ]
+    },
+    {
+      "num": 6,
+      "name": "Krunk Ojo-Ciego",
+      "position": "Big Un Blocker",
+      "ma": 5,
+      "st": 4,
+      "ag": "4+",
+      "pa": "6+",
+      "av": "10+",
+      "skills": [
+        "Cabeza Dura",
+        "Golper Mortífero",
+        "Provocar",
+        "Tembloroso",
+        "Defensor - Orc"
+      ]
+    },
+    {
+      "num": 7,
+      "name": "Gorbash",
+      "position": "Goblin",
+      "ma": 6,
+      "st": 2,
+      "ag": "3+",
+      "pa": "3+",
+      "av": "8+",
+      "skills": [
+        "Esquivar",
+        "Humanoide bala",
+        "Escurridizo",
+        "Linea - Goblin"
+      ]
+    }
+  ],
+  "formation": [
+    {
+      "num": 1,
+      "col": 1,
+      "row": 0
+    },
+    {
+      "num": 2,
+      "col": 9,
+      "row": 0
+    },
+    {
+      "num": 3,
+      "col": 7,
+      "row": 0
+    },
+    {
+      "num": 4,
+      "col": 3,
+      "row": 0
+    },
+    {
+      "num": 5,
+      "col": 4,
+      "row": 0
+    },
+    {
+      "num": 6,
+      "col": 6,
+      "row": 0
+    },
+    {
+      "num": 7,
+      "col": 5,
+      "row": 1
+    }
+  ],
+  "league": {
+    "schemaVersion": 2,
+    "season": 6,
+    "teamId": "colmillo_verde",
+    "economy": {
+      "startingTreasury": 600000,
+      "prices": {
+        "dedicatedFan": 20000,
+        "cheerleader": 20000,
+        "assistantCoach": 20000,
+        "apothecary": null,
+        "bribe": 100000
+      }
+    },
+    "staff": {
+      "dedicatedFans": 1,
+      "cheerleaders": 0,
+      "assistantCoaches": 0,
+      "apothecary": 0,
+      "bribes": 0
+    },
+    "players": [
+      {
+        "num": 1,
+        "price": 50000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 2,
+        "price": 50000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 3,
+        "price": 85000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 4,
+        "price": 85000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 5,
+        "price": 95000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 6,
+        "price": 95000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 7,
+        "price": 40000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      }
+    ],
+    "matches": [],
+    "retiredPlayers": []
+  }
+}

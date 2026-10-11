@@ -1,0 +1,327 @@
+{
+  "teamName": "MARIENBURG RAVENS",
+  "race": "Elven Union",
+  "color": "#6e2bbf",
+  "textColor": "#d8f15b",
+  "staff": {
+    "rerolls": {
+      "clave": "reroll",
+      "count": 0,
+      "pricePerUnit": 100000,
+      "total": 0
+    }
+  },
+  "players": [
+    {
+      "num": 1,
+      "name": "Pímenth OldYoungElf",
+      "position": "Lineman",
+      "ma": 5,
+      "st": 3,
+      "ag": "2+",
+      "pa": "3+",
+      "av": "8+",
+      "skills": [
+        "Dejada",
+        "Veterano",
+        "Elf - Linea"
+      ]
+    },
+    {
+      "num": 2,
+      "name": "Gobenroth Gullkiller",
+      "position": "Lineman",
+      "ma": 6,
+      "st": 3,
+      "ag": "2+",
+      "pa": "3+",
+      "av": "8+",
+      "skills": [
+        "Dejada",
+        "Elf - Linea"
+      ]
+    },
+    {
+      "num": 3,
+      "name": "Elarion Goldenhook",
+      "position": "Thrower",
+      "ma": 6,
+      "st": 3,
+      "ag": "2+",
+      "pa": "2+",
+      "av": "8+",
+      "skills": [
+        "Pasar",
+        "Pase a lo loco",
+        "Elf - Lanzador"
+      ]
+    },
+    {
+      "num": 4,
+      "name": "Aelindor Blackwing",
+      "position": "Blitzer",
+      "ma": 7,
+      "st": 3,
+      "ag": "2+",
+      "pa": "3+",
+      "av": "9+",
+      "skills": [
+        "Placar",
+        "Echarse a un lado",
+        "Elf - Blitzer"
+      ]
+    },
+    {
+      "num": 5,
+      "name": "Therion Powerfists",
+      "position": "Blitzer",
+      "ma": 7,
+      "st": 3,
+      "ag": "2+",
+      "pa": "3+",
+      "av": "9+",
+      "skills": [
+        "Placar",
+        "Echarse a un lado",
+        "Elf - Blitzer"
+      ]
+    },
+    {
+      "num": 6,
+      "name": "Carlion Silvershadow",
+      "position": "Catcher",
+      "ma": 8,
+      "st": 3,
+      "ag": "2+",
+      "pa": "4+",
+      "av": "8+",
+      "skills": [
+        "Atrapar",
+        "Nervios de acero",
+        "Recepción heroica",
+        "Elf - Receptor"
+      ]
+    },
+    {
+      "num": 7,
+      "name": "Lethain Coincrawler",
+      "position": "Lineman",
+      "ma": 6,
+      "st": 3,
+      "ag": "2+",
+      "pa": "3+",
+      "av": "8+",
+      "skills": [
+        "Dejada",
+        "Elf - Linea"
+      ]
+    }
+  ],
+  "formation": [
+    {
+      "num": 1,
+      "col": 1,
+      "row": 0
+    },
+    {
+      "num": 2,
+      "col": 6,
+      "row": 0
+    },
+    {
+      "num": 4,
+      "col": 2,
+      "row": 0
+    },
+    {
+      "num": 5,
+      "col": 8,
+      "row": 0
+    },
+    {
+      "num": 6,
+      "col": 4,
+      "row": 0
+    }
+  ],
+  "league": {
+    "schemaVersion": 2,
+    "season": 6,
+    "teamId": "marienburg_ravens",
+    "economy": {
+      "startingTreasury": 600000,
+      "prices": {
+        "dedicatedFan": 20000,
+        "cheerleader": 20000,
+        "assistantCoach": 20000,
+        "apothecary": 80000,
+        "bribe": 100000
+      }
+    },
+    "staff": {
+      "dedicatedFans": 1,
+      "cheerleaders": 0,
+      "assistantCoaches": 0,
+      "apothecary": 0,
+      "bribes": 0
+    },
+    "players": [
+      {
+        "num": 1,
+        "price": 65000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 2,
+        "price": 65000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 3,
+        "price": 75000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 4,
+        "price": 115000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 5,
+        "price": 115000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 6,
+        "price": 100000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 7,
+        "price": 65000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      }
+    ],
+    "matches": [],
+    "retiredPlayers": []
+  }
+}

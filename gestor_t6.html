@@ -119,7 +119,24 @@ code{font-family:var(--f-mono);font-size:.9em;color:#c7ced8}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--accent);padding:10px 18px;border-radius:8px;z-index:10;max-width:90vw}
 .toast[hidden]{display:none}
 .banner{background:#2a2312;border:1px solid var(--warn);color:var(--warn);padding:10px 14px;border-radius:8px;margin-bottom:16px}
-@media (max-width:600px){.brand{font-size:22px}.badge-team{font-size:24px}}
+.btn.accent{border-color:var(--accent)}
+.mvtitle{font-family:var(--f-title);font-size:30px;letter-spacing:.04em;text-transform:uppercase}
+fieldset{min-width:0}
+#matchForm td input[type=number]{width:50px;padding:6px 4px}
+#matchForm td select{width:124px;min-width:124px}
+#matchForm td.impcell{min-width:170px}
+fieldset.side{border-left:6px solid var(--tc,var(--accent))}
+.tag{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:99px;padding:2px 4px 2px 10px;font-size:13px;margin:2px 4px 2px 0;background:var(--panel2)}
+.tag small{color:var(--muted)}
+.tag .x{background:none;border:0;cursor:pointer;color:var(--muted);font-size:16px;line-height:1;padding:0 6px}
+td.impcell{min-width:210px;white-space:normal}
+.newsk{color:var(--warn);font-weight:600}
+.banner.bad{background:#2a1212;border-color:var(--bad);color:var(--bad)}
+.banner ul{margin:6px 0 0;padding-left:18px}
+#impDlg .grid{margin-top:10px}
+#impDlg[open]{max-width:640px}
+[hidden]{display:none!important}
+@media (max-width:600px){.brand{font-size:22px}.badge-team{font-size:24px}.mvtitle{font-size:24px}}
 </style>
 </head>
 <body>
@@ -128,11 +145,11 @@ code{font-family:var(--f-mono);font-size:.9em;color:#c7ced8}
   <div class="wrap">
     <div class="brand">Gestor de Liga<small>Temporada 6 · Blood Bowl Sevens</small></div>
     <div class="actions">
+      <button class="btn accent" id="mvBtn" type="button">Registrar partido</button>
       <label class="btn" for="fileInput" style="cursor:pointer">Cargar equipo</label>
       <input id="fileInput" type="file" accept=".json,application/json" hidden>
       <button class="btn" id="ghOpenBtn" type="button">Abrir de GitHub</button>
       <button class="btn" id="ghCfgBtn" type="button">Ajustes GitHub</button>
-      <button class="btn" id="undoBtn" type="button" disabled>Deshacer último partido</button>
       <button class="btn primary" id="downloadBtn" type="button" disabled>Descargar para jugar</button>
     </div>
   </div>
@@ -171,6 +188,27 @@ code{font-family:var(--f-mono);font-size:.9em;color:#c7ced8}
   </form>
 </dialog>
 
+<dialog id="impDlg">
+  <form method="dialog" onsubmit="return false">
+    <h2>Añadir mejora</h2>
+    <p class="hint" id="impWho"></p>
+    <div class="grid">
+      <label class="f">Tipo<select id="impKind"><option value="skill">Habilidad</option><option value="stat">Característica</option></select></label>
+      <label class="f" id="impSkillWrap">Habilidad<select id="impSkill"></select></label>
+      <label class="f" id="impOtherWrap" hidden>Nombre de la habilidad<input type="text" id="impOther"></label>
+      <label class="f" id="impCatWrap">Categoría para el jugador<select id="impCat"><option value="primary">Primaria</option><option value="secondary">Secundaria</option></select></label>
+      <label class="f" id="impSelWrap">Elección<select id="impSel"><option value="chosen">Elegida</option><option value="random">Aleatoria</option></select></label>
+      <label class="f" id="impStatWrap" hidden>Característica<select id="impStat"></select></label>
+    </div>
+    <p class="hint" id="impInfo"></p>
+    <p class="hint neg" id="impErr"></p>
+    <div class="actions" style="margin-top:12px">
+      <button class="btn primary" type="button" id="impOk">Añadir mejora</button>
+      <button class="btn" type="button" id="impCancel">Cancelar</button>
+    </div>
+  </form>
+</dialog>
+
 <main class="wrap" id="app">
   <div class="drop" id="drop">
     <h2>Carga un equipo</h2>
@@ -204,9 +242,13 @@ const IMPROVEMENT_COSTS = {
   6:{pr:15,pc:30,sr:30,sc:40,st:50}
 };
 const DEFAULT_PRICES = { dedicatedFan:20000, cheerleader:20000, assistantCoach:20000, apothecary:null, bribe:100000 };
-/* catálogo de posiciones (hoja Teams del Excel): sirve de respaldo si el JSON o rosters/positions.json no traen el precio */
-const CATALOG_PRICES = {"Amazon":{"Eagle Warrior Linewomen":50000,"Python Warrior Throwers":80000,"Piranha Warrior Blitzers":90000,"Jaguar Warrior Blockers":110000,"Journey Eagle Warrior Linewomen":50000},"Black Orc":{"Goblin Bruiser":45000,"Black Orc":90000,"Trained Troll":115000,"Journey Goblin":45000},"Bretonia":{"Squire":50000,"Knigth Catcher":85000,"Knigth Thrower":80000,"Grial Knigths":95000,"Journey Eagle Warrior Linewomen":50000},"Chaos Chosen":{"Beastman Lineman":55000,"Chaos Chosen":100000,"Troll":115000,"Ogre":140000,"Minotaur":150000,"Journey Beastman":55000},"Chaos Dwarf":{"Hobgoblin Lineman":40000,"Sneaky Stabba":60000,"Chaos Dwarf Blocker":70000,"Flamesmith":80000,"Bull Centaur":130000,"Minotaur":150000,"Journey Hobgoblin Lineman":40000},"Chaos Renegades":{"Human Renegade":50000,"Goblin Renegade":40000,"Orc Renegade":50000,"Skaven Renegade":50000,"Dark Elf Renegade":65000,"Human Thrower Renegade":75000,"Troll":115000,"Ogre":140000,"Minotaur":150000,"Rat Ogre":150000,"Journey Human Renegade":50000},"Dark Elf":{"Lineman":65000,"Runner":80000,"Assassin":90000,"Blitzer":105000,"Witch Elf":110000,"Journey Elf":65000},"Dwarf":{"Lineman":70000,"Runner":80000,"Blitzer":100000,"Troll Slayer":95000,"Deathroller":170000,"Journey Lineman":70000},"Elven Union":{"Lineman":65000,"Thrower":75000,"Catcher":100000,"Blitzer":115000,"Journey Elf":65000},"Goblin":{"Goblin":40000,"Bombardier":45000,"Looney":40000,"Doom Diver":60000,"Ooligan":65000,"Fanatic":70000,"Pogoer":75000,"Troll":115000,"Journey Goblin":40000},"Gnome":{"Lineman":40000,"Woodland Fox":50000,"Illusionist":50000,"Beastmaster":55000,"Altern Forest Treeman":120000,"Journey Lineman":40000},"Halfling":{"Halfling Hopeful":30000,"Halfling Catcher":55000,"Halfling Hefty":50000,"Forest Treeman":120000,"Journey Halfling":30000},"High Elf":{"Lineman":65000,"White Lion":110000,"Phoenix Warrior":90000,"Dragon Prince":110000,"Journey Elf":65000},"Human":{"Lineman":50000,"Halfling Hopeful":30000,"Catcher":75000,"Thrower":75000,"Blitzer":85000,"Ogre":140000,"Journeyman":50000},"Imperial Nobility":{"Imperial Retainer":45000,"Imperial Thrower":75000,"Noble Blitzer":90000,"Bodyguard":85000,"Ogre":140000,"Journeyman":45000},"Khorne":{"Bloodborn Marauder":50000,"Khorngor":70000,"Bloodseeker":105000,"Bloodspawn":160000,"Journey Bloodborn":50000},"Lizardman":{"Skink":60000,"Chameleon Skink":70000,"Saurus":90000,"Kroxigor":140000,"Journey Skink":60000},"Necromantic":{"Zombie Lineman":40000,"Ghoul Runner":75000,"Wraith":85000,"Flesh Golem":110000,"Werewolf":120000,"Raised Zombie":40000,"Journey Zombie":40000},"Norse":{"Raider Lineman":50000,"Beer Boar":20000,"Berserker":90000,"Valkyrie":95000,"Ulfwerner":105000,"Yhetee":140000,"Journeyman":50000},"Nurgle":{"Rotter":40000,"Pestigor":70000,"Bloater":110000,"Rotspawn":140000,"Journey Rotter":40000},"Ogre":{"Gnoblar Linemen":15000,"Ogre Blocker":140000,"Ogre Runt Punter":145000,"Journey Gnoblar":15000},"Old World Alliance":{"Human Lineman":50000,"Halfling Hopeful":30000,"Human Catcher":75000,"Dwarf Lineman":70000,"Human Thrower":75000,"Dwarf Runner":80000,"Human Blitzer":85000,"Dwarf Blitzer":100000,"Troll Slayer":95000,"Ogre":140000,"Altern Forest Treeman":120000,"Journeyman":50000},"Orcs":{"Lineman":50000,"Goblin":40000,"Thrower":75000,"Blitzer":85000,"Big Un Blocker":95000,"Troll":115000,"Journey Orc":50000},"Shambling Undead":{"Skeleton Lineman":40000,"Zombie Lineman":40000,"Ghoul Runner":75000,"Wight Blitzer":95000,"Mummy":125000,"Raised Zombie":40000,"Skeleton Journeyman":40000,"Zombie Journeyman":40000},"Slann":{"Lineman":60000,"Catcher":80000,"Blitzer":110000,"Kroxigor":140000,"Journey Slann":60000},"Skaven":{"ClanRat":50000,"Thrower":80000,"Gutter Runner":85000,"Blitzer":90000,"Rat Ogre":150000,"Journey ClanRat":50000},"Tomb King":{"Skeleton Lineman":40000,"Tomb King Thrower":65000,"Tomb King Blitzers":85000,"Tomb Guardian":115000,"Journey Skeleton":40000},"Snotling":{"Snotling":15000,"Fungus Flinga":30000,"Fun-hoppa":20000,"Stilty Runna":20000,"Pump Wagon":105000,"Trained Troll":115000,"Journey Snotling":15000},"Underworld Denizens":{"Goblin":40000,"Snotling":15000,"Skaven Clanrat":50000,"Skaven Thrower":80000,"Gutter Runner":85000,"Skaven Blitzer":90000,"Troll":115000,"Rat Ogre":150000,"Journey Goblin":40000},"Vampire":{"Thrall":40000,"Vampire Runner":100000,"Vampire Thrower":110000,"Vampire Blitzer":110000,"Vargheist":150000,"Journey Thrall":40000},"Elfos Silvanos":{"Lineman":65000,"Thrower":85000,"Catcher":90000,"Wardancer":130000,"Treeman":120000,"Journey Elf":65000}};
+/* catálogo de posiciones (rosters/positions.json): respaldo si el JSON no trae el precio */
+let CATALOG_PRICES = {"Amazon":{"Eagle Warrior Linewomen":50000,"Python Warrior Throwers":80000,"Piranha Warrior Blitzers":90000,"Jaguar Warrior Blockers":110000,"Journey Eagle Warrior Linewomen":50000},"Black Orc":{"Goblin Bruiser":45000,"Black Orc":90000,"Trained Troll":115000,"Journey Goblin":45000},"Bretonia":{"Squire":50000,"Knigth Catcher":85000,"Knigth Thrower":80000,"Grial Knigths":95000,"Journey Eagle Warrior Linewomen":50000},"Chaos Chosen":{"Beastman Lineman":55000,"Chaos Chosen":100000,"Troll":115000,"Ogre":140000,"Minotaur":150000,"Journey Beastman":55000},"Chaos Dwarf":{"Hobgoblin Lineman":40000,"Sneaky Stabba":60000,"Chaos Dwarf Blocker":70000,"Flamesmith":80000,"Bull Centaur":130000,"Minotaur":150000,"Journey Hobgoblin Lineman":40000},"Chaos Renegades":{"Human Renegade":50000,"Goblin Renegade":40000,"Orc Renegade":50000,"Skaven Renegade":50000,"Dark Elf Renegade":65000,"Human Thrower Renegade":75000,"Troll":115000,"Ogre":140000,"Minotaur":150000,"Rat Ogre":150000,"Journey Human Renegade":50000},"Dark Elf":{"Lineman":65000,"Runner":80000,"Assassin":90000,"Blitzer":105000,"Witch Elf":110000,"Journey Elf":65000},"Dwarf":{"Lineman":70000,"Runner":80000,"Blitzer":100000,"Troll Slayer":95000,"Deathroller":170000,"Journey Lineman":70000},"Elven Union":{"Lineman":65000,"Thrower":75000,"Catcher":100000,"Blitzer":115000,"Journey Elf":65000},"Goblin":{"Goblin":40000,"Bombardier":45000,"Looney":40000,"Doom Diver":60000,"Ooligan":65000,"Fanatic":70000,"Pogoer":75000,"Troll":115000,"Journey Goblin":40000},"Gnome":{"Linemen":40000,"Illusionist":50000,"Woodland Fox":50000,"Beastmaster":55000,"Altern Forest Treeman":120000,"Journey Lineman":40000},"Halfling":{"Halfling Hopeful":30000,"Halfling Catcher":55000,"Halfling Hefty":50000,"Forest Treeman":120000,"Journey Halfling":30000},"High Elf":{"Lineman":65000,"White Lion":110000,"Phoenix Warrior":90000,"Dragon Prince":110000,"Journey Elf":65000},"Human":{"Lineman":50000,"Halfling Hopeful":30000,"Catcher":75000,"Thrower":75000,"Blitzer":85000,"Ogre":140000,"Journeyman":50000},"Imperial Nobility":{"Imperial Retainer":45000,"Imperial Thrower":75000,"Noble Blitzer":90000,"Bodyguard":85000,"Ogre":140000,"Journeyman":45000},"Khorne":{"Bloodborn Marauder":50000,"Khorngor":70000,"Bloodseeker":105000,"Bloodspawn":160000,"Journey Bloodborn":50000},"Lizardman":{"Skink":60000,"Chameleon Skink":70000,"Saurus":90000,"Kroxigor":140000,"Journey Skink":60000},"Necromantic":{"Zombie Lineman":40000,"Ghoul Runner":75000,"Wraith":85000,"Flesh Golem":110000,"Werewolf":120000,"Raised Zombie":40000,"Journey Zombie":40000},"Norse":{"Raider Lineman":50000,"Beer Boar":20000,"Berserker":90000,"Valkyrie":95000,"Ulfwerner":105000,"Yhetee":140000,"Journeyman":50000},"Nurgle":{"Rotter":40000,"Pestigor":70000,"Bloater":110000,"Rotspawn":140000,"Journey Rotter":40000},"Ogre":{"Gnoblar Linemen":15000,"Ogre Blocker":140000,"Ogre Runt Punter":145000,"Journey Gnoblar":15000},"Old World Alliance":{"Human Lineman":50000,"Halfling Hopeful":30000,"Human Catcher":75000,"Dwarf Lineman":70000,"Human Thrower":75000,"Dwarf Runner":80000,"Human Blitzer":85000,"Dwarf Blitzer":100000,"Troll Slayer":95000,"Ogre":140000,"Altern Forest Treeman":120000,"Journeyman":50000},"Orcs":{"Lineman":50000,"Goblin":40000,"Thrower":75000,"Blitzer":85000,"Big Un Blocker":95000,"Troll":115000,"Journey Orc":50000},"Shambling Undead":{"Skeleton Lineman":40000,"Zombie Lineman":40000,"Ghoul Runner":75000,"Wight Blitzer":95000,"Mummy":125000,"Raised Zombie":40000,"Skeleton Journeyman":40000,"Zombie Journeyman":40000},"Slann":{"Lineman":60000,"Catcher":80000,"Blitzer":110000,"Kroxigor":140000,"Journey Slann":60000},"Skaven":{"ClanRat":50000,"Thrower":80000,"Gutter Runner":85000,"Blitzer":90000,"Rat Ogre":150000,"Journey ClanRat":50000},"Tomb King":{"Skeleton Lineman":40000,"Tomb King Thrower":65000,"Tomb King Blitzers":85000,"Tomb Guardian":115000,"Journey Skeleton":40000},"Snotling":{"Snotling":15000,"Fungus Flinga":30000,"Fun-hoppa":20000,"Stilty Runna":20000,"Pump Wagon":105000,"Trained Troll":115000,"Journey Snotling":15000},"Underworld Denizens":{"Goblin":40000,"Snotling":15000,"Skaven Clanrat":50000,"Skaven Thrower":80000,"Gutter Runner":85000,"Skaven Blitzer":90000,"Troll":115000,"Rat Ogre":150000,"Journey Goblin":40000},"Vampire":{"Thrall":40000,"Vampire Runner":100000,"Vampire Thrower":110000,"Vampire Blitzer":110000,"Vargheist":150000,"Journey Thrall":40000},"Elfos Silvanos":{"Lineman":65000,"Thrower":85000,"Catcher":90000,"Wardancer":130000,"Treeman":120000,"Journey Elf":65000}};
 const CATALOG_APOTHECARY = {"Amazon":80000,"Black Orc":80000,"Chaos Chosen":80000,"Chaos Dwarf":80000,"Chaos Renegades":80000,"Dark Elf":80000,"Dwarf":80000,"Elven Union":80000,"Goblin":80000,"Gnome":80000,"Halfling":80000,"High Elf":80000,"Human":80000,"Imperial Nobility":80000,"Khorne":50000,"Lizardman":80000,"Norse":80000,"Ogre":80000,"Old World Alliance":80000,"Slann":80000,"Skaven":80000,"Snotling":80000,"Underworld Denizens":80000,"Vampire":50000};
+/* acceso de cada posición a las categorías de habilidad, en el orden G A S P M T: P = primaria, S = secundaria, - = sin acceso (rosters/positions.json; las razas que no lo traen, de la hoja Teams del Excel) */
+let SKILL_ACCESS = {"Amazon":{"Eagle Warrior Linewomen":"PSS---","Python Warrior Throwers":"PSSP--","Piranha Warrior Blitzers":"PPS---","Jaguar Warrior Blockers":"PSP---","Journey Eagle Warrior Linewomen":"PSS---"},"Black Orc":{"Goblin Bruiser":"SPSS-P","Black Orc":"PSP--S","Trained Troll":"SSPS--","Journey Goblin":"SPSS-P"},"Bretonia":{"Squire":"PSS---","Knigth Catcher":"PPS---","Knigth Thrower":"PSSP--","Grial Knigths":"PSP---","Journey Eagle Warrior Linewomen":"PSS---"},"Chaos Chosen":{"Beastman Lineman":"PSSSPS","Chaos Chosen":"PSP-PS","Troll":"SSPSP-","Ogre":"SSP-P-","Minotaur":"SSP-P-","Journey Beastman":"PSSSPS"},"Chaos Dwarf":{"Hobgoblin Lineman":"SSS--P","Sneaky Stabba":"PSS--P","Chaos Dwarf Blocker":"PSP-SS","Flamesmith":"PSP-SS","Bull Centaur":"PSP-SS","Minotaur":"SSP-P-","Journey Hobgoblin Lineman":"SSS--P"},"Chaos Renegades":{"Human Renegade":"PSS-PP","Goblin Renegade":"SP-SPP","Orc Renegade":"PSS-PP","Skaven Renegade":"PSS-PP","Dark Elf Renegade":"PPS-PP","Human Thrower Renegade":"PSSPPP","Troll":"SSPSS-","Ogre":"SSP-S-","Minotaur":"SSP-S-","Rat Ogre":"SSP-S-","Journey Human Renegade":"PSS-PP"},"Dark Elf":{"Lineman":"PPS--S","Runner":"PPSP-S","Assassin":"SPS--P","Blitzer":"PPSS-S","Witch Elf":"PPS--S","Journey Elf":"PPS--S"},"Dwarf":{"Lineman":"P-S--P","Runner":"P-SP--","Blitzer":"P-PS--","Troll Slayer":"P-P--S","Deathroller":"S-P--P","Journey Lineman":"P-S--P"},"Elven Union":{"Lineman":"PPS---","Thrower":"PPSP--","Catcher":"PPS---","Blitzer":"PPSS--","Journey Elf":"PPS---"},"Goblin":{"Goblin":"SPSS--","Bombardier":"SPSP--","Looney":"SPS---","Doom Diver":"SPS---","Ooligan":"SPSS--","Fanatic":"SSP---","Pogoer":"SPSS--","Troll":"SSPS--","Journey Goblin":"SPSS--"},"Gnome":{"Linemen":"SPSS-S","Illusionist":"SP-P-S","Woodland Fox":"------","Beastmaster":"SPS--S","Altern Forest Treeman":"SSPS--","Journey Lineman":"SPSS-S"},"Halfling":{"Halfling Hopeful":"SPS---","Halfling Catcher":"SPSS--","Halfling Hefty":"SPS---","Forest Treeman":"SSPS--","Journey Halfling":"SPS---"},"High Elf":{"Lineman":"PPS---","White Lion":"PPSS--","Phoenix Warrior":"PPSP--","Dragon Prince":"PPS---","Journey Elf":"PPS---"},"Human":{"Lineman":"PSS--S","Halfling Hopeful":"SPS--S","Catcher":"PPSS-S","Thrower":"PSSP-S","Blitzer":"PSP--S","Ogre":"SSP---","Journeyman":"PSS--S"},"Imperial Nobility":{"Imperial Retainer":"PSS---","Imperial Thrower":"PSSP--","Noble Blitzer":"PPSS--","Bodyguard":"PSP---","Ogre":"SSP---","Journeyman":"PSS---"},"Khorne":{"Bloodborn Marauder":"PSS-PS","Khorngor":"PSPSPS","Bloodseeker":"PSP-PS","Bloodspawn":"SSP-P-","Journey Bloodborn":"PSS-PS"},"Lizardman":{"Skink":"SPSS-S","Chameleon Skink":"SPSP-S","Saurus":"PSP---","Kroxigor":"SSP---","Journey Skink":"SPSS-S"},"Necromantic":{"Zombie Lineman":"PSS--P","Ghoul Runner":"PPSS-S","Wraith":"PSP--S","Flesh Golem":"PSP--S","Werewolf":"PPSS-S","Raised Zombie":"PSS--P","Journey Zombie":"PSS--P"},"Norse":{"Raider Lineman":"PSSS--","Beer Boar":"-S----","Berserker":"PSPS--","Valkyrie":"PPSP--","Ulfwerner":"PSP---","Yhetee":"SSP---","Journeyman":"PSSS--"},"Nurgle":{"Rotter":"PSS-PP","Pestigor":"PSPSPS","Bloater":"PSP-PS","Rotspawn":"S-P-SS","Journey Rotter":"PSS-PP"},"Ogre":{"Gnoblar Linemen":"SP---P","Ogre Blocker":"SSPS-S","Ogre Runt Punter":"SSPP-S","Journey Gnoblar":"SP---P"},"Old World Alliance":{"Human Lineman":"PSS---","Halfling Hopeful":"SPS---","Human Catcher":"PPSS--","Dwarf Lineman":"P-S--P","Human Thrower":"PSSP--","Dwarf Runner":"PSSP--","Human Blitzer":"PSP---","Dwarf Blitzer":"P-PS--","Troll Slayer":"PSP---","Ogre":"SSP---","Altern Forest Treeman":"SSPS--","Journeyman":"PSS---"},"Orcs":{"Lineman":"PSP--S","Goblin":"SPSS-P","Thrower":"PSSP-S","Blitzer":"PSP--S","Big Un Blocker":"PSP--S","Troll":"SSPS--","Journey Orc":"PSP--S"},"Shambling Undead":{"Skeleton Lineman":"PSS--S","Zombie Lineman":"PSS--P","Ghoul Runner":"PPSS-S","Wight Blitzer":"PSP--S","Mummy":"SSP---","Raised Zombie":"PSS--P","Skeleton Journeyman":"PSS--S","Zombie Journeyman":"PSS--P"},"Slann":{"Lineman":"PSS---","Catcher":"PPSS--","Blitzer":"PPPS--","Kroxigor":"SSP---","Journey Slann":"PSS---"},"Skaven":{"ClanRat":"PSS-SP","Thrower":"PSSPSS","Gutter Runner":"PPS-SP","Blitzer":"PSP-SS","Rat Ogre":"SSP-S-","Journey ClanRat":"PSS-SP"},"Tomb King":{"Skeleton Lineman":"PSS--S","Tomb King Thrower":"PSSP-S","Tomb King Blitzers":"PSP--S","Tomb Guardian":"SSP---","Journey Skeleton":"PSS--S"},"Snotling":{"Snotling":"SPS---","Fungus Flinga":"SPSP--","Fun-hoppa":"SPS---","Stilty Runna":"SPS---","Pump Wagon":"SSP---","Trained Troll":"SSPS--","Journey Snotling":"SPS---"},"Underworld Denizens":{"Goblin":"SPSSPP","Snotling":"SP--PP","Skaven Clanrat":"PSS-PP","Skaven Thrower":"PSSPPS","Gutter Runner":"PPS-PP","Skaven Blitzer":"PSP-PS","Troll":"SSPSP-","Rat Ogre":"SSPSP-","Journey Goblin":"SPSSPP"},"Vampire":{"Thrall":"PSS---","Vampire Runner":"PPSS--","Vampire Thrower":"PPSP--","Vampire Blitzer":"PPP---","Vargheist":"SSP---","Journey Thrall":"PSS---"},"Elfos Silvanos":{"Lineman":"PP----","Thrower":"PPSP--","Catcher":"PPSS--","Wardancer":"PPSS--","Treeman":"SSPS--","Journey Elf":"PP----"}};
+/* categoría de cada habilidad (rosters/skills.json: los nombres son exactamente los que escribe y lee el juego) */
+let SKILL_CATS = {"Agallas":"G","Equilibrio Firme":"G","Forcejear":"G","Furia":"G","Manos seguras":"G","Patada":"G","Placaje defensivo":"G","Placar":"G","Profesional":"G","Provocar":"G","Robar balón":"G","Zafarse":"G","Atrapar":"A","Echarse a un lado":"A","En pie de un salto":"A","Esprintar":"A","Esquivar":"A","Golpe a la carrera":"A","Pies Firmes":"A","Placaje heroico":"A","Proteger el cuero":"A","Recepción heroica":"A","Romper defensas":"A","Saltar":"A","Atento al balón":"P","Cañonero":"P","Líder":"P","Nervios de acero":"P","Parte nubes":"P","Pasar":"P","Pasar y Seguir":"P","Pase a lo loco":"P","Pase precipitado":"P","Pase seguro":"P","Patada despeje":"P","Precisión":"P","Abrirse paso":"S","Apartar":"S","Brazo fuerte":"S","Cabeza dura":"S","Defensa":"S","Golpe mortífero":"S","Imparable":"S","Llave de brazo":"S","Luchador":"S","Mantenerse firme":"S","Ojo de halcón":"S","Placaje múltiple":"S","Agresor discreto":"T","Crujir":"T","Dejada":"T","Falta rápida":"T","Furtivo":"T","Innovador violento":"T","Jugar sucio":"T","Meter la bota":"T","Perseguir":"T","Piquete de ojos":"T","Saboteador":"T","Vuelo letal":"T","Apariencia asquerosa":"M","Boca monstruosa":"M","Brazos adicionales":"M","Cola prensil":"M","Cuernos":"M","Dos cabezas":"M","Garras":"M","Mano grande":"M","Piel férrea":"M","Piernas muy largas":"M","Presencia perturbadora":"M","Tentáculos":"M"};
 const STAFF_ROWS = [
   ['dedicatedFans','Fans devotos comprados',1],
   ['cheerleaders','Animadoras',0],
@@ -218,9 +260,10 @@ const STAFF_ROWS = [
 /* =========================================================
    Estado
    ========================================================= */
-const state = { data:null, fileName:'equipo.json', dirty:false, history:[], tab:'roster', remoteSha:null, saving:false, saveAgain:false, saveTimer:null, autosaveBlocked:false, reason:'' };
+const state = { data:null, fileName:'equipo.json', dirty:false, history:[], tab:'roster', view:'team', remoteSha:null, saving:false, saveAgain:false, saveTimer:null, autosaveBlocked:false, reason:'' };
 const $ = (s,r=document)=>r.querySelector(s);
 const app = $('#app');
+const DROP_HTML = app.innerHTML;
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = n => Number(n||0).toLocaleString('es-ES');
@@ -307,16 +350,11 @@ function loadText(text, name){
   try{ d=JSON.parse(text); }catch(e){ toast('El archivo no es un JSON válido.'); return; }
   if(!d || !Array.isArray(d.players)){ toast('Este JSON no parece un equipo (falta la lista de jugadores).'); return; }
   if(d.league && d.league.schemaVersion!==2){ toast('La sección de liga de este archivo es de otra versión y no se puede abrir.'); return; }
-  state.data=d; state.history=[]; state.dirty=false; state.tab='roster'; state.remoteSha=null; state.autosaveBlocked=false; clearTimeout(state.saveTimer);
+  state.data=d; state.history=[]; state.dirty=false; state.tab='roster'; state.view='team'; state.remoteSha=null; state.autosaveBlocked=false; clearTimeout(state.saveTimer);
   state.fileName=(name||'equipo.json');
   applyTheme();
   if(!d.league){ renderEnroll(); updateButtons(); return; }
-  /* jugadores del equipo que aún no están en el registro de liga */
-  const l=d.league; l.players=l.players||[]; l.matches=l.matches||[]; l.retiredPlayers=l.retiredPlayers||[];
-  l.staff=l.staff||{}; l.economy=l.economy||{startingTreasury:0}; if(!l.teamId) l.teamId=slug(d.teamName);
-  let added=0;
-  for(const p of d.players){ if(!leaguePlayer(p.num)){ l.players.push(emptyPlayerLeague(p.num,0)); added++; } }
-  l.players.forEach(recalcSpp);
+  const added=normalizeDoc(d);
   renderAll(); updateButtons();
   if(added) toast(`Se añadieron ${added} jugador(es) al registro de liga con precio 0: ajusta su precio en el Roster.`);
 }
@@ -428,7 +466,7 @@ function renderEnroll(){
 /* =========================================================
    Pintado
    ========================================================= */
-const TABS=[['roster','Roster'],['match','Registrar partido'],['history','Historial'],['team','Equipo y economía'],['dead','Muertos y retirados']];
+const TABS=[['roster','Roster'],['history','Historial'],['team','Equipo y economía'],['dead','Muertos']];
 
 function renderAll(){
   const d=state.data;
@@ -437,7 +475,7 @@ function renderAll(){
     <div class="tiles" id="tiles"></div>
     <div class="tabs" role="tablist">${TABS.map(([id,t])=>`<button class="tab" role="tab" data-tab="${id}" aria-selected="${state.tab===id}">${t}</button>`).join('')}</div>
     ${TABS.map(([id])=>`<section class="panel" id="p-${id}" role="tabpanel" ${state.tab===id?'':'hidden'}></section>`).join('')}`;
-  renderTiles(); renderRoster(); renderMatchForm(); renderHistory(); renderTeam(); renderDead();
+  renderTiles(); renderRoster(); renderHistory(); renderTeam(); renderDead();
 }
 
 function renderTiles(){
@@ -452,12 +490,13 @@ function renderTiles(){
 function renderRoster(){
   const rows=state.data.players.map(tp=>{
     const lp=leaguePlayer(tp.num), s=lp.statistics, out=lp.status==='missNextGame';
-    const skills=[...(tp.skills||[])].join(', ');
+    const gained=new Set((lp.progression.improvements||[]).filter(i=>i.skill).map(i=>normTxt(i.skill)));
+    const skills=(tp.skills||[]).map(k=>gained.has(normTxt(k))?`<span class="newsk">${esc(k)}</span>`:esc(k)).join(', ');
     return `<tr class="${out?'out':''}">
       <td class="num">${tp.num}</td>
       <td class="l"><strong>${esc(tp.name)}</strong><br><span class="race">${esc(tp.position)}</span></td>
       <td class="num">${esc(tp.ma)}</td><td class="num">${esc(tp.st)}</td><td class="num">${esc(tp.ag)}</td><td class="num">${esc(tp.pa)}</td><td class="num">${esc(tp.av)}</td>
-      <td class="skills">${esc(skills)}</td>
+      <td class="skills">${skills}</td>
       ${STAT_COLS.map(([k])=>`<td class="num">${s[k]||0}</td>`).join('')}
       <td class="num"><strong>${lp.progression.sppTotal}</strong> / ${lp.progression.sppUnspent}</td>
       <td class="price"><input type="number" min="0" step="5000" value="${lp.price||0}" data-price="${tp.num}" aria-label="Precio de ${esc(tp.name)}"></td>
@@ -473,56 +512,6 @@ function renderRoster(){
     <p class="hint">Precio y estado se pueden corregir a mano. Las estadísticas, los SPP y las lesiones se actualizan solos al registrar un partido.</p>`;
 }
 
-function renderMatchForm(){
-  const l=L(), n=l.matches.length+1;
-  const avail=state.data.players.filter(p=>leaguePlayer(p.num).status!=='missNextGame');
-  const out=state.data.players.filter(p=>leaguePlayer(p.num).status==='missNextGame');
-  const evRows=avail.map(p=>`<tr data-ev="${p.num}">
-      <td class="num">${p.num}</td><td class="l">${esc(p.name)}</td>
-      ${STAT_COLS.map(([k])=>`<td><input type="number" min="0" value="0" name="ev_${p.num}_${k}" data-evk="${k}" aria-label="${k} de ${esc(p.name)}"></td>`).join('')}
-      <td><select name="inj_${p.num}" aria-label="Lesión sufrida por ${esc(p.name)}">${INJURY_OPTS.map(([v,t])=>`<option value="${v}">${t}</option>`).join('')}</select></td>
-    </tr>`).join('');
-  const teamStat=(key,label)=>`<tr><td>${label}</td>
-      <td><input type="number" min="0" value="0" name="s_${key}For" id="s_${key}For" ${['lightInjuries','seriousInjuries','deaths'].includes(key)?'data-auto="1"':''}></td>
-      <td><input type="number" min="0" value="0" name="s_${key}Against"></td></tr>`;
-  $('#p-match').innerHTML=`
-    <form id="matchForm" autocomplete="off">
-      <fieldset><legend>Jornada ${n}</legend>
-        <div class="grid">
-          <label class="f">Oponente<input type="text" name="oppName" required></label>
-          <label class="f">Raza del oponente<input type="text" name="oppRace"></label>
-          <label class="f">Nuestros TD<input type="number" min="0" value="0" name="scoreFor" id="scoreFor"></label>
-          <label class="f">TD del oponente<input type="number" min="0" value="0" name="scoreAgainst"></label>
-        </div>
-        <p class="hint" id="tdCheck"></p>
-      </fieldset>
-      <fieldset><legend>Estadísticas del partido</legend>
-        <div class="tscroll"><table class="stat-table"><thead><tr><th class="l"></th><th>A favor</th><th>En contra</th></tr></thead><tbody>
-          ${teamStat('lightInjuries','Heridas leves (HL)')}${teamStat('seriousInjuries','Heridas graves (HG)')}${teamStat('deaths','Muertos (RIP)')}${teamStat('sentOff','Expulsados')}
-        </tbody></table></div>
-        <p class="hint">«A favor» de heridas se rellena con lo que sumen los jugadores; se puede corregir.</p>
-      </fieldset>
-      <fieldset><legend>Economía del partido</legend>
-        <div class="grid">
-          <label class="f">Fans devotos ganados<input type="number" min="0" value="0" name="fans"></label>
-          <label class="f">Ganancias<input type="number" min="0" step="10000" value="0" name="earnings"></label>
-          <label class="f">Tesorería gastada (incentivos)<input type="number" min="0" step="10000" value="0" name="spent"></label>
-          <label class="f">Puntos de liga<input type="number" min="0" value="0" name="points"></label>
-        </div>
-      </fieldset>
-      <fieldset><legend>Jugadores</legend>
-        <div class="tscroll"><table>
-          <thead><tr><th>#</th><th class="l">Jugador</th>${STAT_COLS.map(([,t])=>`<th>${t}</th>`).join('')}<th>Lesión sufrida</th></tr></thead>
-          <tbody>${evRows}</tbody></table></div>
-        <p class="hint">ESP, CP, TD, DES, INT, HL, HG, RIP y MVP son las acciones que dan SPP. «Lesión sufrida» es lo que le pasó al propio jugador.
-          ${out.length?`<br><span class="warn">No pueden jugar este partido (herido grave): ${out.map(p=>`#${p.num} ${esc(p.name)}`).join(', ')}. Volverán a estar disponibles al registrarlo.</span>`:''}</p>
-      </fieldset>
-      <fieldset><legend>Notas</legend><textarea name="notes" aria-label="Notas del partido"></textarea></fieldset>
-      <button class="btn primary" type="submit">Registrar partido</button>
-    </form>`;
-  updateTdCheck();
-}
-
 function renderHistory(){
   const ms=L().matches;
   if(!ms.length){ $('#p-history').innerHTML='<div class="empty">Todavía no hay partidos registrados.</div>'; return; }
@@ -530,12 +519,12 @@ function renderHistory(){
   $('#p-history').innerHTML='<div class="cards">'+[...ms].reverse().map(m=>{
     const evs=(m.playerEvents||[]).map(ev=>{
       const acts=STAT_COLS.filter(([k])=>ev[k]).map(([k,t])=>`${t}×${ev[k]}`).join(', ');
-      return `<li>#${ev.num} ${esc(ev.name||'')}${acts?': '+acts:''} · <strong>+${ev.sppEarned||0} SPP</strong>${ev.injurySuffered&&ev.injurySuffered!=='none'?` · <span class="warn">${INJURY_LABEL[ev.injurySuffered]}</span>`:''}</li>`;
+      return `<li>#${ev.num} ${esc(ev.name||'')}${acts?': '+acts:''} · <strong>+${ev.sppEarned||0} SPP</strong>${ev.injurySuffered&&ev.injurySuffered!=='none'?` · <span class="warn">${INJURY_LABEL[ev.injurySuffered]}</span>`:''}${(ev.improvements||[]).map(im=>` · <span class="newsk">Mejora: ${esc(impText(im))}</span>`).join('')}</li>`;
     }).join('');
     const s=m.statistics||{};
-    return `<div class="card"><h3>${esc(m.id)} · vs ${esc(m.opponent.teamName)}
+    return `<div class="card"><h3>${esc(m.id)} · ${m.homeAway==='home'?'(local) ':m.homeAway==='away'?'(visitante) ':''}vs ${esc(m.opponent.teamName)}
         <span class="res ${m.result.outcome}">${m.result.teamScore} - ${m.result.opponentScore}</span><span class="pill ${m.result.outcome==='win'?'ok':m.result.outcome==='loss'?'out':''}">${label[m.result.outcome]}</span></h3>
-      <div class="meta">${esc(m.opponent.race||'')} · Puntos ${m.leaguePoints} · Ganancias ${fmt(m.earnings)} · Gastado ${fmt(m.treasurySpent)} · Fans +${m.dedicatedFansGained}
+      <div class="meta">${esc(m.opponent.race||'')} · Puntos ${m.leaguePoints} · Ganancias ${fmt(m.earnings)} · Gastado ${fmt(m.treasurySpent)} · Fans ${sgn(m.dedicatedFansGained||0)}
         · HL ${s.lightInjuriesFor}-${s.lightInjuriesAgainst} · HG ${s.seriousInjuriesFor}-${s.seriousInjuriesAgainst} · RIP ${s.deathsFor}-${s.deathsAgainst} · Expulsados ${s.sentOffFor}-${s.sentOffAgainst}</div>
       ${evs?`<ul>${evs}</ul>`:''}${m.notes?`<div class="meta">${esc(m.notes)}</div>`:''}</div>`;
   }).join('')+'</div>';
@@ -577,7 +566,7 @@ function renderTeam(){
 
 function renderDead(){
   const r=L().retiredPlayers;
-  if(!r.length){ $('#p-dead').innerHTML='<div class="empty">Nadie ha muerto ni se ha retirado.</div>'; return; }
+  if(!r.length){ $('#p-dead').innerHTML='<div class="empty">Todavía no ha muerto ningún jugador.</div>'; return; }
   $('#p-dead').innerHTML='<div class="cards">'+r.map(p=>`<div class="card"><h3>#${p.num} ${esc(p.name)} <span class="pill out">${p.reason==='dead'?'Muerto':'Retirado'}</span></h3>
     <div class="meta">${esc(p.position)} · ${p.retiredAtMatch?'en '+esc(p.retiredAtMatch):''} · MO ${esc(p.attributes.ma)} FU ${esc(p.attributes.st)} AG ${esc(p.attributes.ag)} PA ${esc(p.attributes.pa)} AR ${esc(p.attributes.av)} · SPP ${p.progression.sppTotal}</div>
     <div class="meta">${esc((p.skills||[]).join(', '))}</div>
@@ -585,83 +574,506 @@ function renderDead(){
 }
 
 /* =========================================================
-   Registro de un partido
+   Mejoras: valor extra, categorías y ayudas (reglas del Excel)
    ========================================================= */
-function updateTdCheck(){
-  const f=$('#matchForm'); if(!f) return;
-  let tds=0; f.querySelectorAll('input[data-evk="touchdowns"]').forEach(i=>tds+=int(i.value));
-  const sc=int($('#scoreFor').value), el=$('#tdCheck');
-  el.className='hint'+(tds!==sc?' warn':'');
-  el.textContent = tds===sc ? `TD de los jugadores: ${tds} (coincide con el marcador).` : `TD de los jugadores: ${tds}, pero el marcador es ${sc}. Revísalo antes de registrar.`;
+const IMP_VALUE = {
+  skill:{ primary:{random:10000,chosen:20000}, secondary:{random:20000,chosen:40000} },
+  stat:{ av:10000, ma:20000, pa:20000, ag:40000, st:80000 }
+};
+const CAT_NAMES = { G:'General', A:'Agilidad', S:'Fuerza', P:'Pase', M:'Mutación', T:'Triquiñuelas' };
+const CAT_POS = { G:0, A:1, S:2, P:3, M:4, T:5 };
+const STAT_IMPS = [['ma','MO+','Movimiento +1'],['av','AR+','Armadura +1'],['ag','AG−','Agilidad: objetivo −1 (p. ej. 3+ pasa a 2+)'],['pa','PA−','Pase: objetivo −1 (p. ej. 4+ pasa a 3+)'],['st','FU+','Fuerza +1']];
+const STAT_IMP_LABEL = Object.fromEntries(STAT_IMPS.map(([k,s])=>[k,s]));
+const sint = v => parseInt(v,10) || 0;
+const sgn = n => (n>0?'+':'')+n;
+const pad2 = n => String(n).padStart(2,'0');
+
+/* 'primary' | 'secondary' | null (sin acceso) | undefined (no hay datos de esa raza/posición) */
+function accessFor(race,pos,letter){
+  const rk=Object.keys(SKILL_ACCESS).find(k=>k.toLowerCase()===String(race||'').trim().toLowerCase()); if(!rk) return undefined;
+  const r=SKILL_ACCESS[rk], pk=Object.keys(r).find(k=>k.toLowerCase()===String(pos||'').trim().toLowerCase()); if(!pk) return undefined;
+  const ch=r[pk][CAT_POS[letter]];
+  return ch==='P'?'primary':ch==='S'?'secondary':null;
 }
-function updateAutoSums(){
-  const f=$('#matchForm'); if(!f) return;
-  const sums={lightInjuries:0,seriousInjuries:0,deaths:0};
-  for(const k in sums) f.querySelectorAll(`input[data-evk="${k}"]`).forEach(i=>sums[k]+=int(i.value));
-  for(const k in sums){ const i=$('#s_'+k+'For'); if(i && !i.dataset.touched) i.value=sums[k]; }
+/* nuevo valor de una característica al mejorarla (null si no se puede) */
+function nextAttr(tp,attr){
+  const cur=tp[attr];
+  if(attr==='ma'||attr==='st'){ const n=Number(cur); if(!Number.isFinite(n)) return null; return typeof cur==='string'?String(n+1):n+1; }
+  const m=/^(\d+)\+$/.exec(String(cur)); if(!m) return null;
+  const n=parseInt(m[1],10);
+  return (attr==='av'?n+1:Math.max(1,n-1))+'+';
+}
+/* datos derivados de una mejora pendiente: orden, coste en SPP y valor extra */
+function impDerive(lp,idx,dr){
+  const order=lp.progression.improvements.length+idx+1;
+  let category,selection,valueExtra,label;
+  if(dr.kind==='stat'){ category='stat'; selection='chosen'; valueExtra=IMP_VALUE.stat[dr.attr]||0; label=STAT_IMP_LABEL[dr.attr]||dr.attr; }
+  else{ category=dr.category; selection=dr.selection; valueExtra=(IMP_VALUE.skill[category]||{})[selection]||0;
+        label=`${dr.skill} (${category==='primary'?'primaria':'secundaria'}, ${selection==='chosen'?'elegida':'aleatoria'})`; }
+  const row=IMPROVEMENT_COSTS[order]; let sppCost=0;
+  if(row) sppCost = category==='stat' ? row.st : row[(category==='primary'?'p':'s')+(selection==='random'?'r':'c')];
+  return {order,category,selection,valueExtra,sppCost,label,valid:!!row};
+}
+const impText = im => im.skill ? im.skill : ((STAT_IMP_LABEL[im.attribute]||im.attribute)+' (característica)');
+
+
+/* Biblioteca de rosters: si esta página está junto a la carpeta rosters/, se usan sus listas (son las que escribe y lee el juego).
+   Si no se pueden leer, valen las que lleva incrustadas el archivo. */
+function accessFromPrimSec(ps){
+  if(typeof ps!=='string'||!ps.includes('/')) return null;
+  const [a,b]=ps.split('/',2), idx={G:0,A:1,F:2,S:2,P:3,M:4,T:5}, out=['-','-','-','-','-','-'];
+  [...a.toUpperCase()].forEach(c=>{ if(c in idx) out[idx[c]]='P'; });
+  [...b.toUpperCase()].forEach(c=>{ if(c in idx && out[idx[c]]==='-') out[idx[c]]='S'; });
+  return out.join('');
+}
+async function loadLibrary(){
+  try{
+    const [rs,rp]=await Promise.all([fetch('rosters/skills.json',{cache:'no-store'}),fetch('rosters/positions.json',{cache:'no-store'})]);
+    if(rs.ok){
+      const sk=await rs.json(), letter={General:'G',Agilidad:'A',Fuerza:'S',Pase:'P','Mutación':'M','Triquiñuelas':'T'}, cats={};
+      for(const [c,list] of Object.entries(sk)) if(letter[c]&&Array.isArray(list)) list.forEach(n=>{ if(typeof n==='string'&&n.trim()) cats[n]=letter[c]; });
+      if(Object.keys(cats).length>=40) SKILL_CATS=cats;
+    }
+    if(rp.ok){
+      const pos=await rp.json(); if(!Array.isArray(pos)) return;
+      const pr=clone(CATALOG_PRICES), ac=clone(SKILL_ACCESS);
+      pos.forEach(p=>{
+        if(!p||!p.race||!p.type) return;
+        if(typeof p.prize==='number') (pr[p.race]=pr[p.race]||{})[p.type]=p.prize;
+        const a=accessFromPrimSec(p.primSec); if(a) (ac[p.race]=ac[p.race]||{})[p.type]=a;
+      });
+      CATALOG_PRICES=pr; SKILL_ACCESS=ac;
+    }
+  }catch(e){}
 }
 
-function registerMatch(form){
-  const f=new FormData(form), l=L();
-  const oppName=String(f.get('oppName')||'').trim();
-  if(!oppName){ toast('Indica el nombre del oponente.'); return; }
-  const scoreFor=int(f.get('scoreFor')), scoreAgainst=int(f.get('scoreAgainst'));
-  const round=l.matches.length+1, id=`T${l.season}-J${String(round).padStart(2,'0')}`;
-  const outcome=scoreFor>scoreAgainst?'win':scoreFor<scoreAgainst?'loss':'draw';
+/* =========================================================
+   Registrar partido: pantalla propia (local y visitante a la vez)
+   ========================================================= */
+const mv = { teams:[], skipped:[], home:'', away:'', imp:{home:{},away:{}}, touched:{}, last:null };
+const mvTeam = side => mv.teams.find(t=>t.file===mv[side]);
 
-  /* eventos de los jugadores que participan */
-  const events=[]; let tdSum=0;
-  form.querySelectorAll('tr[data-ev]').forEach(tr=>{
-    const num=int(tr.dataset.ev), ev={num, name:topPlayer(num).name};
-    STAT_COLS.forEach(([k])=>ev[k]=int(f.get(`ev_${num}_${k}`)));
-    ev.injurySuffered=String(f.get('inj_'+num)||'none');
-    ev.sppEarned=sppFromStats(ev); tdSum+=ev.touchdowns;
-    if(ev.sppEarned>0 || ev.injurySuffered!=='none' || STAT_COLS.some(([k])=>ev[k])) events.push(ev);
+/* lee un equipo y lo deja listo para usar; devuelve cuántos jugadores se añadieron al registro de liga */
+function normalizeDoc(d){
+  const l=d.league; l.players=l.players||[]; l.matches=l.matches||[]; l.retiredPlayers=l.retiredPlayers||[];
+  l.staff=l.staff||{}; l.economy=l.economy||{startingTreasury:0}; if(!l.teamId) l.teamId=slug(d.teamName);
+  let added=0;
+  for(const p of d.players){ if(!l.players.find(x=>x.num===p.num)){ l.players.push(emptyPlayerLeague(p.num,0)); added++; } }
+  l.players.forEach(recalcSpp);
+  return added;
+}
+
+/* ---- GitHub: leer un archivo y guardar varios en un solo commit ---- */
+async function ghGetFile(path){
+  const c=ghSettings(), r=await ghFetch(c,ghApi(c,path)+'?ref='+encodeURIComponent(c.branch),{cache:'no-store'});
+  if(r.status===404) return null;
+  if(!r.ok) throw new Error(await ghErr(r));
+  const j=await r.json(); return {sha:j.sha,text:b64dec(j.content)};
+}
+async function ghCommitFiles(files,message){
+  const c=ghSettings(), repo=`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}`;
+  const branch=c.branch.split('/').map(encodeURIComponent).join('/');
+  const J={'Content-Type':'application/json'};
+  const ok=async r=>{ if(!r.ok) throw new Error(await ghErr(r)); return r.json(); };
+  const ref=await ok(await ghFetch(c,`${repo}/git/ref/heads/${branch}`,{cache:'no-store'}));
+  const head=ref.object.sha;
+  const commit=await ok(await ghFetch(c,`${repo}/git/commits/${head}`,{cache:'no-store'}));
+  const tree=await ok(await ghFetch(c,`${repo}/git/trees`,{method:'POST',headers:J,body:JSON.stringify({base_tree:commit.tree.sha,tree:files.map(f=>({path:f.path,mode:'100644',type:'blob',content:f.text}))})}));
+  const nc=await ok(await ghFetch(c,`${repo}/git/commits`,{method:'POST',headers:J,body:JSON.stringify({message,tree:tree.sha,parents:[head]})}));
+  await ok(await ghFetch(c,`${repo}/git/refs/heads/${branch}`,{method:'PATCH',headers:J,body:JSON.stringify({sha:nc.sha,force:false})}));
+}
+/* si el equipo que está abierto en la vista de equipo es uno de los modificados, se actualiza sin pintar */
+function adoptIfOpen(path,text,sha){
+  if(!state.data||!state.data.league) return;
+  if(ghFolder(ghSettings())+'/'+state.data.league.teamId+'.json'!==path) return;
+  try{
+    const d=JSON.parse(text); if(!d.league) return; normalizeDoc(d);
+    state.data=d; state.remoteSha=sha; state.dirty=false; state.autosaveBlocked=false; state.history=[]; clearTimeout(state.saveTimer);
+    updateButtons(); refreshGhStatus();
+  }catch(e){}
+}
+
+async function mvLoadTeams(){
+  const c=ghSettings(), folder=ghFolder(c);
+  const r=await ghFetch(c,ghApi(c,folder)+'?ref='+encodeURIComponent(c.branch),{cache:'no-store'});
+  mv.teams=[]; mv.skipped=[];
+  if(r.status===404) return;
+  if(!r.ok) throw new Error(await ghErr(r));
+  const files=(await r.json()).filter(x=>x.type==='file'&&/\.json$/i.test(x.name));
+  const out=await Promise.all(files.map(async f=>{
+    try{
+      const g=await ghGetFile(f.path); if(!g) return {file:f.name,error:'no se pudo leer'};
+      const doc=JSON.parse(g.text);
+      if(!doc.league) return {file:f.name,error:'no está inscrito en la liga'};
+      if(doc.league.schemaVersion!==2) return {file:f.name,error:'tiene otra versión de liga'};
+      normalizeDoc(doc);
+      return {file:f.name,path:f.path,sha:g.sha,text:g.text,doc,name:doc.teamName||f.name};
+    }catch(e){ return {file:f.name,error:e.message}; }
+  }));
+  mv.teams=out.filter(t=>!t.error).sort((a,b)=>a.name.localeCompare(b.name,'es'));
+  mv.skipped=out.filter(t=>t.error);
+}
+
+async function openMatchView(){
+  if(!ghReady()){ toast('Para registrar partidos hay que configurar GitHub primero.'); openCfg(); return; }
+  if(state.dirty && state.data && state.data.league){
+    const saved=await ghSave(state.reason,true);
+    if(!saved){ toast('Antes de registrar un partido hay que guardar los cambios del equipo abierto.'); return; }
+  }
+  state.view='match'; mv.last=null; mv.imp={home:{},away:{}}; mv.touched={}; mv.home=''; mv.away='';
+  app.innerHTML='<div class="empty">Cargando los equipos de GitHub…</div>';
+  try{ await mvLoadTeams(); }
+  catch(e){ app.innerHTML=`<div class="banner bad">No se pudieron leer los equipos: ${esc(e.message)}</div><button class="btn" id="mvBack" type="button">← Volver</button>`; return; }
+  renderMatchView();
+}
+
+function backToTeam(){
+  state.view='team';
+  if(!state.data){ app.innerHTML=DROP_HTML; return; }
+  applyTheme();
+  if(state.data.league) renderAll(); else renderEnroll();
+}
+
+function renderMatchView(){
+  const t=mv.teams, opts=sel=>'<option value="">— elige equipo —</option>'+t.map(x=>`<option value="${esc(x.file)}" ${x.file===sel?'selected':''}>${esc(x.name)}</option>`).join('');
+  const skipped=mv.skipped.length?`<div class="banner">No se han podido usar: ${mv.skipped.map(s=>`<code>${esc(s.file)}</code> (${esc(s.error)})`).join(', ')}.</div>`:'';
+  app.innerHTML=`
+    <div class="teamhead"><span class="mvtitle">Registrar partido</span><button class="btn" id="mvBack" type="button">← Volver</button></div>
+    ${skipped}
+    ${t.length<2 ? '<div class="empty">Hacen falta al menos dos equipos inscritos en la carpeta de GitHub para registrar un partido.</div>' : `
+    <form id="matchForm" autocomplete="off" novalidate>
+      <fieldset><legend>Partido</legend>
+        <div class="grid">
+          <label class="f">Jornada<input type="number" min="1" name="round" id="mvRound" value="1"></label>
+          <label class="f">Equipo local<select id="mvHome">${opts(mv.home)}</select></label>
+          <label class="f">Equipo visitante<select id="mvAway">${opts(mv.away)}</select></label>
+        </div>
+        <p class="hint">Los datos de cada equipo se cargan de GitHub. Al registrar, el partido se guarda en los dos equipos a la vez (un solo commit).</p>
+      </fieldset>
+      <div id="mvSides"></div>
+      <div id="mvErrors" aria-live="polite"></div>
+      <div id="mvSubmitRow" hidden><button class="btn primary" type="submit" id="mvSubmit">Registrar partido</button></div>
+    </form>`}`;
+  if(t.length>=2) renderSides();
+}
+
+function sideHTML(side){
+  const t=mvTeam(side), d=t.doc, l=d.league, label=side==='home'?'Local':'Visitante';
+  const rows=d.players.map(tp=>{
+    const lp=l.players.find(p=>p.num===tp.num), out=lp.status==='missNextGame';
+    return `<tr class="${out?'out':''}">
+      <td class="num">${tp.num}</td>
+      <td class="l">${esc(tp.name)}<br><span class="race">${esc(tp.position)}${out?' · baja (herido grave)':''}</span></td>
+      ${STAT_COLS.map(([k,tt])=>`<td><input type="number" min="0" value="0" name="${side}_ev_${tp.num}_${k}" data-evk="${k}" ${out?'disabled':''} aria-label="${tt} de ${esc(tp.name)}"></td>`).join('')}
+      <td><select name="${side}_inj_${tp.num}" ${out?'disabled':''} aria-label="Lesión sufrida por ${esc(tp.name)}">${INJURY_OPTS.map(([v,tx])=>`<option value="${v}">${tx}</option>`).join('')}</select></td>
+      <td class="impcell l" data-impcell="${side}_${tp.num}"></td>
+      <td class="num" data-sppcell="${side}_${tp.num}"></td></tr>`;
+  }).join('');
+  const field=(name,lab,extra='')=>`<label class="f">${lab}<input type="number" name="${side}_${name}" value="0" ${extra}></label>`;
+  const col=/^#[0-9a-f]{6}$/i.test(d.color||'')?d.color:'#b30000';
+  return `<fieldset class="side" style="--tc:${col}"><legend>${label} · ${esc(d.teamName)} <span class="race">${esc(d.race||'')}</span></legend>
+    <div class="grid">
+      ${field('score','TD marcados (marcador)','min="0" data-score="1"')}
+      ${field('hl','Heridas leves causadas (HL)',`min="0" data-auto="${side}_hl"`)}
+      ${field('hg','Heridas graves causadas (HG)',`min="0" data-auto="${side}_hg"`)}
+      ${field('rip','Muertos causados (RIP)',`min="0" data-auto="${side}_rip"`)}
+      ${field('sentoff','Jugadores expulsados','min="0"')}
+    </div>
+    <p class="hint" data-tdcheck="${side}"></p>
+    <div class="grid" style="margin-top:10px">
+      ${field('fans','Fans devotos ganados (+/−)','')}
+      ${field('earnings','Ganancias','step="10000"')}
+      ${field('spent','Tesorería gastada (incentivos)','min="0" step="10000"')}
+      ${field('points','Puntos de liga','')}
+    </div>
+    <p class="hint">Fans, ganancias y puntos de liga pueden ser negativos. HL, HG y RIP se rellenan con lo que sumen los jugadores y se pueden corregir.</p>
+    <div class="tscroll" style="margin-top:12px"><table>
+      <thead><tr><th>#</th><th class="l">Jugador</th>${STAT_COLS.map(([,tt])=>`<th>${tt}</th>`).join('')}<th>Lesión sufrida</th><th class="l">Mejoras</th><th>SPP</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    <p class="hint">«Lesión sufrida» es lo que le pasó al propio jugador. Los de baja por herido grave no juegan, pero pueden recibir mejoras con los SPP que ya tenían.</p>
+  </fieldset>`;
+}
+
+function renderSides(){
+  const box=$('#mvSides'), H=mvTeam('home'), A=mvTeam('away'), row=$('#mvSubmitRow');
+  mv.imp={home:{},away:{}}; mv.touched=Object.assign({},mv.touched.round?{round:true}:{});
+  $('#mvErrors').innerHTML='';
+  if(!H||!A){ box.innerHTML='<p class="hint">Elige el equipo local y el visitante.</p>'; row.hidden=true; return; }
+  if(H===A){ box.innerHTML='<p class="hint warn">El equipo local y el visitante no pueden ser el mismo.</p>'; row.hidden=true; return; }
+  if(!mv.touched.round) $('#mvRound').value=Math.max(H.doc.league.matches.length,A.doc.league.matches.length)+1;
+  box.innerHTML=sideHTML('home')+sideHTML('away')+'<fieldset><legend>Notas</legend><textarea name="notes" aria-label="Notas del partido"></textarea></fieldset>';
+  ['home','away'].forEach(s=>{ mvTeam(s).doc.players.forEach(tp=>renderImpCell(s,tp.num)); updateSide(s); });
+  row.hidden=false;
+}
+
+/* lee del formulario lo que hizo un jugador en este partido */
+function readEv(side,num){
+  const f=$('#matchForm'), ev={};
+  STAT_COLS.forEach(([k])=>{ const el=f.elements[`${side}_ev_${num}_${k}`]; ev[k]=el&&!el.disabled?int(el.value):0; });
+  return ev;
+}
+function freeSpp(side,num){
+  const lp=mvTeam(side).doc.league.players.find(p=>p.num===num);
+  const cost=(mv.imp[side][num]||[]).reduce((a,dr,i)=>a+impDerive(lp,i,dr).sppCost,0);
+  return lp.progression.sppUnspent+sppFromStats(readEv(side,num))-cost;
+}
+
+function renderImpCell(side,num){
+  const td=document.querySelector(`[data-impcell="${side}_${num}"]`); if(!td) return;
+  const lp=mvTeam(side).doc.league.players.find(p=>p.num===num), drafts=mv.imp[side][num]||[];
+  td.innerHTML=drafts.map((dr,i)=>{ const x=impDerive(lp,i,dr);
+    return `<span class="tag">${esc(x.label)} <small>${x.sppCost} SPP</small><button type="button" class="x" data-impdel="${side}_${num}_${i}" aria-label="Quitar mejora">×</button></span>`; }).join('')
+    +`<button class="btn small" type="button" data-impadd="${side}_${num}" ${lp.progression.improvements.length+drafts.length>=6?'disabled':''}>+ Mejora</button>`;
+}
+
+/* actualiza SPP en vivo, sumas automáticas y comprobación de TD de un equipo */
+function updateSide(side){
+  const f=$('#matchForm'), t=mvTeam(side); if(!f||!t) return;
+  const sums={hl:0,hg:0,rip:0}; let td=0;
+  t.doc.players.forEach(tp=>{
+    const ev=readEv(side,tp.num); td+=ev.touchdowns; sums.hl+=ev.lightInjuries; sums.hg+=ev.seriousInjuries; sums.rip+=ev.deaths;
+    const cell=document.querySelector(`[data-sppcell="${side}_${tp.num}"]`);
+    if(cell){ const free=freeSpp(side,tp.num); cell.innerHTML=`+${sppFromStats(ev)} · libres <strong class="${free<0?'neg':''}">${free}</strong>`; }
   });
-  const dying=events.filter(e=>e.injurySuffered==='dead');
-  let msg=`¿Registrar ${id} contra ${oppName} (${scoreFor}-${scoreAgainst})?`;
-  if(tdSum!==scoreFor) msg+=`\n\nAviso: los TD de los jugadores (${tdSum}) no coinciden con el marcador (${scoreFor}).`;
-  if(dying.length) msg+=`\n\nMueren: ${dying.map(e=>'#'+e.num+' '+e.name).join(', ')}. Pasarán a «Muertos y retirados».`;
-  if(!confirm(msg)) return;
+  for(const k in sums){ const el=f.elements[`${side}_${k}`]; if(el && !mv.touched[`${side}_${k}`]) el.value=sums[k]; }
+  const sc=int(f.elements[`${side}_score`].value), hint=document.querySelector(`[data-tdcheck="${side}"]`);
+  if(hint){ hint.className='hint'+(td!==sc?' warn':''); hint.textContent=td===sc?`TD de los jugadores: ${td} (coincide con el marcador).`:`TD de los jugadores: ${td}, pero el marcador es ${sc}. Revísalo antes de registrar.`; }
+}
 
-  state.history.push(JSON.stringify(state.data));
+/* ---- diálogo para añadir una mejora ---- */
+const impDlg=$('#impDlg'); let impCtx=null;
+function impReadDraft(){
+  if($('#impKind').value==='stat') return {kind:'stat',attr:$('#impStat').value};
+  const sel=$('#impSkill').value, other=sel==='__other';
+  return {kind:'skill', skill:other?$('#impOther').value.trim():sel, other, category:$('#impCat').value, selection:$('#impSel').value};
+}
+function impRefresh(){
+  if(!impCtx) return;
+  const {side,num}=impCtx, t=mvTeam(side), tp=t.doc.players.find(p=>p.num===num), lp=t.doc.league.players.find(p=>p.num===num);
+  const isStat=$('#impKind').value==='stat';
+  $('#impSkillWrap').hidden=isStat; $('#impSelWrap').hidden=isStat; $('#impStatWrap').hidden=!isStat;
+  const other=!isStat && $('#impSkill').value==='__other';
+  $('#impOtherWrap').hidden=!other; $('#impCatWrap').hidden=isStat;
+  if(!isStat && $('#impSkill').value && !other){
+    const acc=accessFor(t.doc.race,tp.position,SKILL_CATS[$('#impSkill').value]);
+    if(acc){ $('#impCat').value=acc; $('#impCat').disabled=true; } else $('#impCat').disabled=false;
+  } else $('#impCat').disabled=false;
+  const dr=impReadDraft(), d=impDerive(lp,(mv.imp[side][num]||[]).length,dr);
+  let err='', info='';
+  if(!d.valid) err='Este jugador ya tiene las 6 mejoras posibles.';
+  else if(isStat){
+    const nv=nextAttr(tp,dr.attr);
+    if(nv===null) err='Esta característica no se puede mejorar (valor no numérico).';
+    else info=`${STAT_IMP_LABEL[dr.attr]}: ${tp[dr.attr]} → ${nv}. `;
+  } else if(!dr.skill) err=other?'Escribe el nombre de la habilidad.':'Elige una habilidad.';
+  else if(new Set([...(tp.skills||[])].map(normTxt)).has(normTxt(dr.skill))) err='El jugador ya tiene esa habilidad.';
+  if(!err){ const free=freeSpp(side,num)-d.sppCost;
+    info+=`Será la mejora nº ${d.order} del jugador. Coste: ${d.sppCost} SPP · valor extra: +${fmt(d.valueExtra)}. SPP libres después: ${free}.`;
+    if(free<0) info+=` Le faltan ${-free} SPP: de momento no se podrá registrar el partido con esta mejora.`; }
+  $('#impInfo').textContent=info; $('#impInfo').className='hint'+(info.includes('Le faltan')?' warn':'');
+  $('#impErr').textContent=err; $('#impOk').disabled=!!err;
+}
+function openImpDialog(side,num){
+  const t=mvTeam(side), tp=t.doc.players.find(p=>p.num===num);
+  impCtx={side,num};
+  $('#impWho').textContent=`#${num} ${tp.name} · ${tp.position} (${t.doc.race||''})`;
+  const have=new Set([...(tp.skills||[]),...(mv.imp[side][num]||[]).filter(d=>d.kind==='skill').map(d=>d.skill)].map(normTxt));
+  const groups={}; Object.entries(SKILL_CATS).forEach(([n,l])=>{ (groups[l]=groups[l]||[]).push(n); });
+  let html='<option value="">— elige —</option>';
+  for(const letter of Object.keys(CAT_NAMES)){
+    const acc=accessFor(t.doc.race,tp.position,letter), list=(groups[letter]||[]).filter(n=>!have.has(normTxt(n))).sort((a,b)=>a.localeCompare(b,'es'));
+    if(!list.length) continue;
+    const tag=acc==='primary'?'primaria':acc==='secondary'?'secundaria':acc===null?'sin acceso':'categoría sin datos';
+    html+=`<optgroup label="${CAT_NAMES[letter]} · ${tag}">${list.map(n=>`<option value="${esc(n)}" ${acc===null?'disabled':''}>${esc(n)}</option>`).join('')}</optgroup>`;
+  }
+  html+='<optgroup label="Otra"><option value="__other">Otra habilidad (escribir el nombre)…</option></optgroup>';
+  $('#impSkill').innerHTML=html;
+  $('#impKind').value='skill'; $('#impSel').value='chosen'; $('#impCat').value='primary'; $('#impOther').value='';
+  $('#impStat').innerHTML=STAT_IMPS.map(([k,s,d])=>`<option value="${k}">${s} · ${d}</option>`).join('');
+  impRefresh(); impDlg.showModal();
+}
+$('#impDlg').addEventListener('input',impRefresh);
+$('#impDlg').addEventListener('change',impRefresh);
+$('#impCancel').addEventListener('click',()=>impDlg.close());
+$('#impOk').addEventListener('click',()=>{
+  if(!impCtx) return;
+  const {side,num}=impCtx, dr=impReadDraft();
+  (mv.imp[side][num]=mv.imp[side][num]||[]).push(dr);
+  impDlg.close(); renderImpCell(side,num); updateSide(side);
+});
 
+/* ---- aplicar el partido a un equipo ---- */
+function collectSide(side){
+  const f=$('#matchForm'), t=mvTeam(side), d=t.doc, l=d.league;
+  const el=n=>f.elements[`${side}_${n}`], I=n=>int(el(n)&&el(n).value), S=n=>sint(el(n)&&el(n).value);
+  const events=[], dying=[], problems=[]; let td=0, mvp=0;
+  d.players.forEach(tp=>{
+    const lp=l.players.find(p=>p.num===tp.num), out=lp.status==='missNextGame';
+    const ev=Object.assign({num:tp.num,name:tp.name},readEv(side,tp.num));
+    ev.injurySuffered=out?'none':String(f.elements[`${side}_inj_${tp.num}`].value||'none');
+    ev.sppEarned=sppFromStats(ev); td+=ev.touchdowns; mvp+=ev.mvp;
+    const drafts=mv.imp[side][tp.num]||[]; let cost=0;
+    const imps=drafts.map((dr,i)=>{ const x=impDerive(lp,i,dr); cost+=x.sppCost;
+      if(!x.valid) problems.push(`#${tp.num} ${tp.name}: ya tiene las 6 mejoras posibles.`);
+      if(dr.kind==='stat' && nextAttr(tp,dr.attr)===null) problems.push(`#${tp.num} ${tp.name}: no se puede mejorar ${STAT_IMP_LABEL[dr.attr]}.`);
+      return Object.assign({order:x.order,category:x.category,selection:x.selection},
+        dr.kind==='skill'?{skill:dr.skill}:{attribute:dr.attr,amount:(dr.attr==='ag'||dr.attr==='pa')?-1:1},{sppCost:x.sppCost,valueExtra:x.valueExtra}); });
+    if(imps.length){
+      ev.improvements=imps; const free=lp.progression.sppUnspent+ev.sppEarned-cost;
+      if(free<0) problems.push(`#${tp.num} ${tp.name}: le faltan ${-free} SPP para sus mejoras.`);
+      if(ev.injurySuffered==='dead') problems.push(`#${tp.num} ${tp.name}: un jugador muerto no puede recibir mejoras.`);
+    }
+    if(ev.injurySuffered==='dead') dying.push(ev);
+    if(STAT_COLS.some(([k])=>ev[k]) || ev.injurySuffered!=='none' || imps.length) events.push(ev);
+  });
+  return {side,teamId:l.teamId,teamName:d.teamName,race:d.race,score:I('score'),hl:I('hl'),hg:I('hg'),rip:I('rip'),sentOff:I('sentoff'),
+          fans:S('fans'),earnings:S('earnings'),spent:I('spent'),points:S('points'),events,dying,td,mvp,problems};
+}
+
+function applyAttr(tp,attr){ const v=nextAttr(tp,attr); if(v!==null) tp[attr]=v; }
+function applyMatchSide(doc,S,O,meta){
+  const l=doc.league, lpOf=n=>l.players.find(p=>p.num===n), tpOf=n=>doc.players.find(p=>p.num===n);
   /* los que se perdían este partido vuelven a estar disponibles */
   l.players.forEach(p=>{ if(p.status==='missNextGame'){ p.status='active'; p.injuries.forEach(i=>{ i.missNextGame=false; }); } });
-
-  /* aplicar eventos */
-  events.forEach(ev=>{
-    const p=leaguePlayer(ev.num);
-    STAT_COLS.forEach(([k])=>p.statistics[k]+=ev[k]);
+  S.events.forEach(ev=>{
+    const p=lpOf(ev.num);
+    STAT_COLS.forEach(([k])=>p.statistics[k]=(p.statistics[k]||0)+ev[k]);
     p.progression.sppTotal+=ev.sppEarned;
-    if(ev.injurySuffered==='lightInjury') p.injuries.push({type:'lightInjury',matchId:id,missNextGame:false});
-    if(ev.injurySuffered==='seriousInjury'){ p.injuries.push({type:'seriousInjury',matchId:id,missNextGame:true}); p.status='missNextGame'; }
+    if(ev.injurySuffered==='lightInjury') p.injuries.push({type:'lightInjury',matchId:meta.id,missNextGame:false});
+    if(ev.injurySuffered==='seriousInjury'){ p.injuries.push({type:'seriousInjury',matchId:meta.id,missNextGame:true}); p.status='missNextGame'; }
+    (ev.improvements||[]).forEach(im=>{
+      p.progression.improvements.push(Object.assign({matchId:meta.id},im));
+      const tp=tpOf(ev.num);
+      if(im.skill){ tp.skills=tp.skills||[]; if(!tp.skills.some(s=>normTxt(s)===normTxt(im.skill))) tp.skills.push(im.skill); }
+      else applyAttr(tp,im.attribute);
+    });
   });
   l.players.forEach(recalcSpp);
-
-  /* muertos: salen del roster y de la formación */
-  dying.forEach(ev=>{
-    const lp=leaguePlayer(ev.num), tp=topPlayer(ev.num);
-    lp.injuries.push({type:'dead',matchId:id,missNextGame:false});
-    l.retiredPlayers.push({ num:tp.num, name:tp.name, position:tp.position, reason:'dead', retiredAtMatch:id,
-      attributes:{ma:tp.ma,st:tp.st,ag:tp.ag,pa:tp.pa,av:tp.av}, skills:clone(tp.skills||[]), price:lp.price,
-      progression:clone(lp.progression), statistics:clone(lp.statistics), injuries:clone(lp.injuries) });
+  S.dying.forEach(ev=>{
+    const lp=lpOf(ev.num), tp=tpOf(ev.num);
+    lp.injuries.push({type:'dead',matchId:meta.id,missNextGame:false});
+    l.retiredPlayers.push({num:tp.num,name:tp.name,position:tp.position,reason:'dead',retiredAtMatch:meta.id,
+      attributes:{ma:tp.ma,st:tp.st,ag:tp.ag,pa:tp.pa,av:tp.av},skills:clone(tp.skills||[]),price:lp.price,
+      progression:clone(lp.progression),statistics:clone(lp.statistics),injuries:clone(lp.injuries)});
     l.players=l.players.filter(p=>p.num!==ev.num);
-    state.data.players=state.data.players.filter(p=>p.num!==ev.num);
-    if(Array.isArray(state.data.formation)) state.data.formation=state.data.formation.filter(x=>x.num!==ev.num);
+    doc.players=doc.players.filter(p=>p.num!==ev.num);
+    if(Array.isArray(doc.formation)) doc.formation=doc.formation.filter(x=>x.num!==ev.num);
   });
+  l.matches.push({id:meta.id,round:meta.round,homeAway:S.side,
+    opponent:{teamId:O.teamId,teamName:O.teamName,race:O.race},
+    result:{teamScore:S.score,opponentScore:O.score,outcome:S.score>O.score?'win':S.score<O.score?'loss':'draw'},
+    statistics:{lightInjuriesFor:S.hl,lightInjuriesAgainst:O.hl,seriousInjuriesFor:S.hg,seriousInjuriesAgainst:O.hg,
+      deathsFor:S.rip,deathsAgainst:O.rip,sentOffFor:S.sentOff,sentOffAgainst:O.sentOff},
+    dedicatedFansGained:S.fans,treasurySpent:S.spent,earnings:S.earnings,leaguePoints:S.points,
+    playerEvents:S.events,notes:meta.notes,registeredAt:meta.at});
+}
 
-  const S=k=>int(f.get('s_'+k));
-  l.matches.push({ id, round, opponent:{teamName:oppName, race:String(f.get('oppRace')||'').trim()},
-    result:{teamScore:scoreFor, opponentScore:scoreAgainst, outcome},
-    statistics:{ lightInjuriesFor:S('lightInjuriesFor'), lightInjuriesAgainst:S('lightInjuriesAgainst'),
-      seriousInjuriesFor:S('seriousInjuriesFor'), seriousInjuriesAgainst:S('seriousInjuriesAgainst'),
-      deathsFor:S('deathsFor'), deathsAgainst:S('deathsAgainst'), sentOffFor:S('sentOffFor'), sentOffAgainst:S('sentOffAgainst') },
-    dedicatedFansGained:int(f.get('fans')), treasurySpent:int(f.get('spent')), earnings:int(f.get('earnings')),
-    leaguePoints:int(f.get('points')), playerEvents:events, notes:String(f.get('notes')||'').trim() });
+async function mvCheckFresh(list){
+  for(const t of list){
+    const g=await ghGetFile(t.path);
+    if(!g || g.sha!==t.sha) throw new Error(`El archivo de ${t.name} ha cambiado en GitHub desde que abriste esta pantalla. Pulsa «Volver» y entra otra vez en «Registrar partido».`);
+  }
+}
 
-  markDirty('Liga T'+l.season+' · '+id+' · '+state.data.teamName+' vs '+oppName); state.tab='roster'; renderAll(); updateButtons();
-  toast(`${id} registrado.`);
+async function mvSubmit(){
+  const err=$('#mvErrors'); err.innerHTML='';
+  const H=mvTeam('home'), A=mvTeam('away');
+  const fail=list=>{ err.innerHTML='<div class="banner bad"><strong>No se puede registrar todavía:</strong><ul>'+list.map(x=>`<li>${esc(x)}</li>`).join('')+'</ul></div>'; err.scrollIntoView({behavior:'smooth',block:'center'}); };
+  const round=int($('#mvRound').value), problems=[];
+  if(!H||!A||H===A) problems.push('Elige dos equipos distintos.');
+  if(!round) problems.push('Indica la jornada.');
+  if(problems.length) return fail(problems);
+  const season=H.doc.league.season;
+  if(A.doc.league.season!==season) problems.push(`Los equipos son de temporadas distintas (${season} y ${A.doc.league.season}).`);
+  const id=`T${season}-J${pad2(round)}`;
+  [H,A].forEach(t=>{ if(t.doc.league.matches.some(m=>m.id===id)) problems.push(`${t.name} ya tiene registrado el partido ${id}. Cambia la jornada.`); });
+  const sh=collectSide('home'), sa=collectSide('away');
+  sh.problems.forEach(x=>problems.push(`${H.name}: ${x}`)); sa.problems.forEach(x=>problems.push(`${A.name}: ${x}`));
+  if(problems.length) return fail(problems);
+
+  const warns=[];
+  [sh,sa].forEach(s=>{
+    if(s.td!==s.score) warns.push(`${s.teamName}: los TD de los jugadores (${s.td}) no coinciden con su marcador (${s.score}).`);
+    if(s.mvp>1) warns.push(`${s.teamName}: hay ${s.mvp} MVP (lo normal es 1).`);
+  });
+  const lines=[`¿Registrar ${id}?`,`${H.name} ${sh.score} - ${sa.score} ${A.name}`];
+  [sh,sa].forEach(s=>{
+    if(s.dying.length) lines.push(`Mueren en ${s.teamName}: ${s.dying.map(e=>'#'+e.num+' '+e.name).join(', ')}.`);
+    const im=s.events.flatMap(e=>(e.improvements||[]).map(i=>`#${e.num} ${e.name}: ${impText(i)}`));
+    if(im.length) lines.push(`Mejoras en ${s.teamName}: ${im.join('; ')}.`);
+  });
+  if(warns.length) lines.push('','Avisos:',...warns);
+  if(!confirm(lines.join('\n'))) return;
+
+  const btn=$('#mvSubmit'); btn.disabled=true; btn.textContent='Guardando en GitHub…';
+  try{
+    const meta={id,round,notes:String($('#matchForm').elements.notes.value||'').trim(),at:new Date().toISOString()};
+    const newH=clone(H.doc), newA=clone(A.doc);
+    applyMatchSide(newH,sh,sa,meta); applyMatchSide(newA,sa,sh,meta);
+    const files=[{path:H.path,text:JSON.stringify(newH,null,2)+'\n'},{path:A.path,text:JSON.stringify(newA,null,2)+'\n'}];
+    await mvCheckFresh([H,A]);
+    await ghCommitFiles(files,`Liga T${season} · ${id} · ${H.name} ${sh.score}-${sa.score} ${A.name}`);
+    const fresh=await Promise.all([ghGetFile(H.path),ghGetFile(A.path)]);
+    mv.last={id,home:H.name,away:A.name,score:[sh.score,sa.score],
+      teams:[{name:H.name,path:H.path,before:H.text,afterSha:fresh[0].sha},{name:A.name,path:A.path,before:A.text,afterSha:fresh[1].sha}],
+      summary:[sh,sa].map(s=>({name:s.teamName,spp:s.events.reduce((a,e)=>a+e.sppEarned,0),
+        dead:s.dying.map(e=>e.name),imps:s.events.flatMap(e=>(e.improvements||[]).map(i=>`#${e.num} ${e.name}: ${impText(i)}`)),fans:s.fans,earnings:s.earnings}))};
+    adoptIfOpen(H.path,files[0].text,fresh[0].sha); adoptIfOpen(A.path,files[1].text,fresh[1].sha);
+    if(state.view==='match') renderMatchDone(); else toast(`Partido ${id} registrado en los dos equipos.`);
+  }catch(e){ if(state.view==='match'){ fail(['No se pudo guardar en GitHub: '+e.message]); btn.disabled=false; btn.textContent='Registrar partido'; } else toast('No se pudo guardar el partido: '+e.message); }
+}
+
+function renderMatchDone(){
+  const m=mv.last;
+  app.innerHTML=`
+    <div class="teamhead"><span class="mvtitle">Partido registrado</span></div>
+    <div class="card"><h3>${esc(m.id)} · ${esc(m.home)} <span class="res">${m.score[0]} - ${m.score[1]}</span> ${esc(m.away)}</h3>
+      ${m.summary.map(s=>`<div class="meta"><strong>${esc(s.name)}</strong>: ${s.spp} SPP repartidos · fans ${sgn(s.fans)} · ganancias ${fmt(s.earnings)}
+        ${s.dead.length?` · <span class="neg">muertos: ${esc(s.dead.join(', '))}</span>`:''}${s.imps.length?` · mejoras: ${esc(s.imps.join('; '))}`:''}</div>`).join('')}
+      <p class="hint">Guardado en GitHub en un solo commit para los dos equipos.</p>
+    </div>
+    <div class="actions" style="margin-top:14px">
+      <button class="btn" id="mvUndo" type="button">Deshacer este partido</button>
+      <button class="btn primary" id="mvAgain" type="button">Registrar otro partido</button>
+      <button class="btn" id="mvBack" type="button">Volver al equipo</button>
+    </div>`;
+}
+
+async function mvUndo(){
+  const m=mv.last; if(!m) return;
+  if(!confirm(`¿Deshacer el partido ${m.id} (${m.home} - ${m.away})? Los dos equipos volverán a como estaban antes.`)) return;
+  try{
+    for(const t of m.teams){ const g=await ghGetFile(t.path); if(!g||g.sha!==t.afterSha) throw new Error(`${t.name} ha cambiado en GitHub después de registrar el partido; ya no se puede deshacer desde aquí.`); }
+    await ghCommitFiles(m.teams.map(t=>({path:t.path,text:t.before})),`Liga: deshecho ${m.id} · ${m.home} - ${m.away}`);
+    for(const t of m.teams){ const g=await ghGetFile(t.path); adoptIfOpen(t.path,t.before,g&&g.sha); }
+    mv.last=null;
+    app.innerHTML=`<div class="teamhead"><span class="mvtitle">Partido deshecho</span></div>
+      <div class="card"><p>El partido ${esc(m.id)} se ha deshecho y los dos equipos han vuelto a su estado anterior.</p></div>
+      <div class="actions" style="margin-top:14px"><button class="btn primary" id="mvAgain" type="button">Registrar otro partido</button><button class="btn" id="mvBack" type="button">Volver al equipo</button></div>`;
+  }catch(e){ toast('No se pudo deshacer: '+e.message); }
+}
+
+function mvClick(e){
+  const t=e.target;
+  if(t.closest('#mvBack')){ backToTeam(); return true; }
+  if(t.closest('#mvUndo')){ mvUndo(); return true; }
+  if(t.closest('#mvAgain')){ openMatchView(); return true; }
+  const add=t.closest('[data-impadd]'); if(add){ const [s,n]=add.dataset.impadd.split('_'); openImpDialog(s,int(n)); return true; }
+  const del=t.closest('[data-impdel]'); if(del){ const [s,n,i]=del.dataset.impdel.split('_'); mv.imp[s][n].splice(int(i),1); renderImpCell(s,int(n)); updateSide(s); return true; }
+  return false;
+}
+function mvInput(e){
+  const t=e.target; if(!t.closest||!t.closest('#matchForm')) return false;
+  if(t.dataset.auto) mv.touched[t.dataset.auto]=true;
+  if(t.id==='mvRound') mv.touched.round=true;
+  const side=(t.name||'').split('_')[0];
+  if(side==='home'||side==='away') updateSide(side);
+  return true;
+}
+function mvChange(e){
+  const t=e.target;
+  if(t.id==='mvHome'||t.id==='mvAway'){ mv.home=$('#mvHome').value; mv.away=$('#mvAway').value; renderSides(); return true; }
+  return false;
 }
 
 /* =========================================================
@@ -669,7 +1081,6 @@ function registerMatch(form){
    ========================================================= */
 function updateButtons(){
   $('#downloadBtn').disabled = !(state.data && state.data.league);
-  $('#undoBtn').disabled = !state.history.length;
   $('#ghSaveBtn').disabled = !(state.data && state.data.league);
 }
 function showTab(id){
@@ -679,6 +1090,7 @@ function showTab(id){
 }
 
 app.addEventListener('click',e=>{
+  if(mvClick(e)) return;
   const tab=e.target.closest('[data-tab]'); if(tab){ showTab(tab.dataset.tab); return; }
   const st=e.target.closest('[data-staff]');
   if(st){
@@ -689,21 +1101,20 @@ app.addEventListener('click',e=>{
   }
 });
 app.addEventListener('input',e=>{
+  if(mvInput(e)) return;
   const t=e.target;
   if(t.dataset.price){ leaguePlayer(int(t.dataset.price)).price=int(t.value); markDirty(); renderTiles(); renderTeam(); }
-  if(t.dataset.evk){ updateAutoSums(); updateTdCheck(); }
-  if(t.id==='scoreFor') updateTdCheck();
-  if(t.dataset.auto) t.dataset.touched='1';
 });
 app.addEventListener('change',e=>{
+  if(mvChange(e)) return;
   const t=e.target;
   if(t.dataset.status){
     const p=leaguePlayer(int(t.dataset.status)); p.status=t.value; markDirty();
     if(t.value==='active') p.injuries.forEach(i=>{i.missNextGame=false;});
-    renderTiles(); renderRoster(); renderMatchForm(); renderTeam();
+    renderTiles(); renderRoster(); renderTeam();
   }
 });
-app.addEventListener('submit',e=>{ if(e.target.id==='matchForm'){ e.preventDefault(); registerMatch(e.target); } });
+app.addEventListener('submit',e=>{ if(e.target.id==='matchForm'){ e.preventDefault(); mvSubmit(); } });
 
 $('#fileInput').addEventListener('change',e=>{
   const file=e.target.files[0]; if(!file) return;
@@ -717,12 +1128,6 @@ window.addEventListener('drop',e=>{
   const file=e.dataTransfer&&e.dataTransfer.files[0]; if(!file) return;
   if(state.dirty && !confirm('Hay cambios sin descargar. ¿Cargar otro equipo igualmente?')) return;
   file.text().then(t=>loadText(t,file.name));
-});
-
-$('#undoBtn').addEventListener('click',()=>{
-  if(!state.history.length) return;
-  if(!confirm('¿Deshacer el último partido registrado en esta sesión?')) return;
-  state.data=JSON.parse(state.history.pop()); applyTheme(); renderAll(); updateButtons(); markDirty(); toast('Último partido deshecho.');
 });
 
 $('#downloadBtn').addEventListener('click',()=>{
@@ -879,6 +1284,7 @@ $('#ghCfgTest').addEventListener('click',async()=>{
   }catch(e){ msg.className='hint warn'; msg.textContent='No se pudo conectar: '+e.message; }
 });
 $('#ghOpenBtn').addEventListener('click',ghOpenList);
+$('#mvBtn').addEventListener('click',openMatchView);
 $('#ghOpenClose').addEventListener('click',()=>$('#ghOpen').close());
 $('#ghOpenGo').addEventListener('click',()=>{
   const name=$('#ghOpenList').value; if(!name) return;
@@ -887,6 +1293,7 @@ $('#ghOpenGo').addEventListener('click',()=>{
 });
 $('#ghSaveBtn').addEventListener('click',()=>ghSave(state.reason||undefined,true));
 refreshGhStatus();
+loadLibrary();
 
 window.addEventListener('beforeunload',e=>{ if(state.dirty){ e.preventDefault(); e.returnValue=''; } });
 </script>

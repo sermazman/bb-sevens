@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Liga BB Sevens T6</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;500&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --bg:#0d1014; --panel:#151a21; --panel2:#1b222b; --line:#2a323e;
+  --text:#e9ecf0; --muted:#8c97a6; --good:#3fb97b; --bad:#e5534b; --warn:#e3b341;
+  --accent:#b30000; --accent-ink:#ffffff;
+  --f-title:'Anton',Impact,sans-serif; --f-ui:'Oswald',system-ui,sans-serif; --f-mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html{color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--f-ui);font-size:16px;line-height:1.35}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{margin:0;font-weight:400}
+.wrap{max-width:1280px;margin:0 auto;padding:0 16px 64px}
+
+/* barra superior */
+.topbar{background:var(--panel);border-bottom:3px solid var(--accent)}
+.topbar .wrap{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding-top:14px;padding-bottom:14px}
+.brand{font-family:var(--f-title);font-size:28px;letter-spacing:.04em;text-transform:uppercase}
+.brand small{display:block;font-family:var(--f-ui);font-size:13px;letter-spacing:.14em;color:var(--muted)}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.btn{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px 14px;cursor:pointer;letter-spacing:.04em;text-transform:uppercase;font-size:14px}
+.btn:hover:not(:disabled){border-color:var(--accent)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.primary:hover:not(:disabled){filter:brightness(1.15)}
+.btn.small{padding:3px 9px;font-size:13px}
+:focus-visible{outline:2px solid var(--warn);outline-offset:2px}
+
+/* vacío / carga */
+.drop{margin-top:48px;border:2px dashed var(--line);border-radius:10px;padding:56px 24px;text-align:center;color:var(--muted)}
+.drop.over{border-color:var(--accent);color:var(--text)}
+.drop h2{font-family:var(--f-title);font-size:30px;color:var(--text);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+
+/* cabecera de equipo */
+.teamhead{display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin:24px 0 16px}
+.badge-team{background:var(--accent);color:var(--accent-ink);font-family:var(--f-title);font-size:32px;text-transform:uppercase;letter-spacing:.04em;padding:6px 18px;border-radius:6px}
+.race{color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.tile .k{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.tile .v{font-family:var(--f-mono);font-size:20px;font-weight:600;margin-top:2px}
+.neg{color:var(--bad)}
+
+/* pestañas */
+.tabs{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.tab{background:none;border:0;border-bottom:3px solid transparent;padding:10px 16px;cursor:pointer;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.tab[aria-selected="true"]{color:var(--text);border-bottom-color:var(--accent)}
+.panel[hidden]{display:none}
+
+/* tablas */
+.tscroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{padding:7px 6px;text-align:center;white-space:nowrap;border-bottom:1px solid var(--line)}
+th{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:500;background:var(--panel2)}
+td.l,th.l{text-align:left}
+tr:last-child td{border-bottom:0}
+td.num{font-family:var(--f-mono)}
+td.skills{white-space:normal;text-align:left;min-width:170px;max-width:230px;color:#c7ced8;font-size:14px}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;border:1px solid}
+.pill.ok{color:var(--good);border-color:var(--good)}
+.pill.out{color:var(--bad);border-color:var(--bad)}
+tr.out td{opacity:.6}
+input[type=number],input[type=text],select,textarea{background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:6px 8px;width:100%}
+input[type=number]{font-family:var(--f-mono);text-align:right}
+td input[type=number]{width:64px}
+td.price input{width:92px}
+td select{width:auto;min-width:170px}
+textarea{resize:vertical;min-height:60px}
+
+/* formularios */
+fieldset{border:1px solid var(--line);border-radius:8px;background:var(--panel);margin:0 0 16px;padding:14px 16px}
+legend{padding:0 8px;font-family:var(--f-title);letter-spacing:.06em;text-transform:uppercase;font-size:18px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+label.f{display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+label.f>input,label.f>select{margin-top:4px;color:var(--text);text-transform:none;letter-spacing:0;font-size:16px}
+.hint{color:var(--muted);font-size:14px;margin:6px 0 0}
+.warn{color:var(--warn)}
+.sum{font-family:var(--f-mono)}
+.stat-table td:first-child{text-align:left}
+.stat-table input{width:80px}
+
+/* historial / retirados */
+.cards{display:grid;gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.card h3{font-family:var(--f-title);font-size:20px;letter-spacing:.04em;text-transform:uppercase;display:flex;flex-wrap:wrap;gap:10px;align-items:baseline}
+.res{font-family:var(--f-mono);font-size:18px}
+.res.win{color:var(--good)} .res.loss{color:var(--bad)} .res.draw{color:var(--warn)}
+.card ul{margin:8px 0 0;padding-left:18px;color:#c7ced8;font-size:15px}
+.meta{color:var(--muted);font-size:14px;margin-top:4px}
+.empty{color:var(--muted);padding:24px;text-align:center;border:1px dashed var(--line);border-radius:8px}
+
+/* equipo */
+.staffrow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.staffrow:last-child{border-bottom:0}
+.stepper{display:flex;align-items:center;gap:8px;font-family:var(--f-mono)}
+.two{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+dl.calc{margin:0}
+dl.calc div{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid var(--line)}
+dl.calc div:last-child{border-bottom:0}
+dl.calc dt{color:var(--muted)} dl.calc dd{margin:0;font-family:var(--f-mono)}
+dl.calc .total{font-weight:600}
+
+.ghbar{background:var(--bg);border-bottom:1px solid var(--line);font-size:14px;color:var(--muted)}
+.ghbar .wrap{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding-top:6px;padding-bottom:6px}
+#ghStatus.ok{color:var(--good)} #ghStatus.bad{color:var(--bad)} #ghStatus.warn{color:var(--warn)}
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:20px;width:calc(100% - 32px);max-width:600px}
+dialog::backdrop{background:rgba(0,0,0,.65)}
+dialog h2{font-family:var(--f-title);text-transform:uppercase;letter-spacing:.04em;font-size:22px;margin-bottom:6px}
+code{font-family:var(--f-mono);font-size:.9em;color:#c7ced8}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--accent);padding:10px 18px;border-radius:8px;z-index:10;max-width:90vw}
+.toast[hidden]{display:none}
+.banner{background:#2a2312;border:1px solid var(--warn);color:var(--warn);padding:10px 14px;border-radius:8px;margin-bottom:16px}
+.btn.accent{border-color:var(--accent)}
+.mvtitle{font-family:var(--f-title);font-size:30px;letter-spacing:.04em;text-transform:uppercase}
+fieldset{min-width:0}
+#matchForm td input[type=number]{width:50px;padding:6px 4px}
+#matchForm td select{width:124px;min-width:124px}
+#matchForm td.impcell{min-width:170px}
+fieldset.side{border-left:6px solid var(--tc,var(--accent))}
+.tag{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:99px;padding:2px 4px 2px 10px;font-size:13px;margin:2px 4px 2px 0;background:var(--panel2)}
+.tag small{color:var(--muted)}
+.tag .x{background:none;border:0;cursor:pointer;color:var(--muted);font-size:16px;line-height:1;padding:0 6px}
+td.impcell{min-width:210px;white-space:normal}
+.newsk{color:var(--warn);font-weight:600}
+.banner.bad{background:#2a1212;border-color:var(--bad);color:var(--bad)}
+.banner ul{margin:6px 0 0;padding-left:18px}
+#impDlg .grid{margin-top:10px}
+#impDlg[open]{max-width:640px}
+[hidden]{display:none!important}
+@media (max-width:600px){.brand{font-size:22px}.badge-team{font-size:24px}.mvtitle{font-size:24px}}
+a{color:inherit}
+a:hover{text-decoration:underline}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:8px;vertical-align:middle}
+.tgrid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.tcard .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.tcard .btn{text-decoration:none;display:inline-block}
+h2.round{font-family:var(--f-title);text-transform:uppercase;letter-spacing:.06em;font-size:22px;margin:22px 0 10px}
+td.l a{text-decoration:none}
+</style>
+</head>
+<body>
+<header class="topbar"><div class="wrap">
+  <div class="brand">Liga Blood Bowl Sevens <small>Temporada 6 · vista pública</small></div>
+  <div class="actions">
+    <button class="btn" id="reloadBtn" type="button">Actualizar</button>
+    <button class="btn primary" id="zipBtn" type="button">Descargar todos (.zip)</button>
+  </div>
+</div></header>
+<main class="wrap">
+  <div id="banner"></div>
+  <nav class="tabs" id="mainTabs" role="tablist"></nav>
+  <section id="view"></section>
+</main>
+<div class="toast" id="toast" hidden></div>
+<script>
+'use strict';
+const REPO={owner:'sermazman',repo:'bb-sevens',branch:'main',folder:'liga/t6/equipos'};
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=n=>Number(n||0).toLocaleString('es-ES');
+const sgn=n=>(n>0?'+':'')+n;
+const STAT_COLS=[['sprints','ESP'],['passes','CP'],['touchdowns','TD'],['deflections','DES'],['interceptions','INT'],['lightInjuries','HL'],['seriousInjuries','HG'],['deaths','RIP'],['mvp','MVP']];
+const INJURY_LABEL={knockedOut:'Inconsciente',lightInjury:'Herido leve',seriousInjury:'Herido grave',dead:'Muerto'};
+const IMPROVEMENT_COSTS={1:{pr:3,pc:6,sr:6,sc:12,st:18},2:{pr:4,pc:8,sr:8,sc:14,st:20},3:{pr:6,pc:12,sr:12,sc:18,st:24},4:{pr:8,pc:16,sr:16,sc:22,st:28},5:{pr:10,pc:20,sr:20,sc:26,st:32},6:{pr:15,pc:30,sr:30,sc:40,st:50}};
+const STAT_LABEL={ma:'MO+',av:'AR+',ag:'AG−',pa:'PA−',st:'FU+'};
+const DEFAULT_PRICES={dedicatedFan:20000,cheerleader:20000,assistantCoach:20000,apothecary:null,bribe:100000};
+const normTxt=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,'');
+const impText=im=>im.skill?im.skill:((STAT_LABEL[im.attribute]||im.attribute)+' (característica)');
+const toast=m=>{const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,4500)};
+function textInk(hex){const m=/^#?([0-9a-f]{6})$/i.exec(hex||'');if(!m)return'#fff';const n=parseInt(m[1],16);return(((n>>16)*299+((n>>8)&255)*587+(n&255)*114)/1000)>=150?'#111':'#fff'}
+const colorOf=d=>/^#[0-9a-f]{6}$/i.test(d.color||'')?d.color:'#b30000';
+const inkOf=d=>d.textColor&&d.textColor!=='auto'?d.textColor:textInk(colorOf(d));
+
+let teams=[];          // {file, name, text, doc}
+let skipped=[];
+let ui={tab:'standings', team:null, teamTab:'roster'};
+
+/* ---------- cálculos (los mismos que el gestor) ---------- */
+const impCost=(im,i)=>{const r=IMPROVEMENT_COSTS[im.order||i+1];if(!r)return 0;return im.category==='stat'?r.st:r[(im.category==='primary'?'p':'s')+(im.selection==='random'?'r':'c')]};
+const sppSpent=p=>(p.progression.improvements||[]).reduce((t,i,ix)=>t+impCost(i,ix),0);
+const impValue=p=>(p.progression.improvements||[]).reduce((t,i)=>t+(i.valueExtra||0),0);
+function totals(d){
+  const m=d.league.matches,sum=f=>m.reduce((t,x)=>t+(f(x)||0),0),st=x=>x.statistics||{};
+  const r={played:m.length,won:m.filter(x=>x.result.outcome==='win').length,drawn:m.filter(x=>x.result.outcome==='draw').length,lost:m.filter(x=>x.result.outcome==='loss').length};
+  r.tdFor=sum(x=>x.result.teamScore);r.tdAgainst=sum(x=>x.result.opponentScore);
+  for(const k of['lightInjuries','seriousInjuries','deaths','sentOff']){r[k+'For']=sum(x=>st(x)[k+'For']);r[k+'Against']=sum(x=>st(x)[k+'Against'])}
+  r.casFor=r.lightInjuriesFor+r.seriousInjuriesFor+r.deathsFor;r.casAgainst=r.lightInjuriesAgainst+r.seriousInjuriesAgainst+r.deathsAgainst;
+  r.points=sum(x=>x.leaguePoints);r.earnings=sum(x=>x.earnings);r.spent=sum(x=>x.treasurySpent);r.fansGained=sum(x=>x.dedicatedFansGained);
+  return r;
+}
+function economy(d){
+  const l=d.league,pr=Object.assign({},DEFAULT_PRICES,(l.economy||{}).prices),s=l.staff||{},t=totals(d);
+  const rerolls=(d.staff&&d.staff.rerolls&&d.staff.rerolls.total)||0;
+  const staffCost=Math.max(0,(s.dedicatedFans||1)-1)*pr.dedicatedFan+(s.cheerleaders||0)*pr.cheerleader+(s.assistantCoaches||0)*pr.assistantCoach+(s.apothecary||0)*(pr.apothecary||0)+(s.bribes||0)*pr.bribe;
+  const playersBase=l.players.reduce((a,p)=>a+(p.price||0),0),playersExtra=l.players.reduce((a,p)=>a+impValue(p),0);
+  const deadCost=l.retiredPlayers.filter(p=>p.reason==='dead').reduce((a,p)=>a+(p.price||0)+impValue(p),0);
+  const teamCost=staffCost+rerolls+playersBase+playersExtra;
+  const teamValue=staffCost+rerolls+l.players.filter(p=>p.status!=='missNextGame').reduce((a,p)=>a+(p.price||0)+impValue(p),0);
+  const start=(l.economy||{}).startingTreasury||0;
+  return{rerolls,staffCost,playersBase,playersExtra,deadCost,teamCost,teamValue,start,treasury:start+t.earnings-t.spent-teamCost+playersExtra-deadCost,fans:(s.dedicatedFans||1)+t.fansGained,t};
+}
+
+/* ---------- carga ---------- */
+const rawUrl=f=>`https://raw.githubusercontent.com/${REPO.owner}/${REPO.repo}/${REPO.branch}/${REPO.folder}/${encodeURIComponent(f)}`;
+async function getText(file){
+  const bust='?v='+Date.now();
+  for(const u of[`${REPO.folder}/${encodeURIComponent(file)}${bust}`,rawUrl(file)+bust]){
+    try{const r=await fetch(u,{cache:'no-store'});if(r.ok)return await r.text()}catch(e){}
+  }
+  throw new Error('No se pudo leer '+file);
+}
+async function listFiles(){
+  const api=`https://api.github.com/repos/${REPO.owner}/${REPO.repo}/contents/${REPO.folder}?ref=${REPO.branch}`;
+  const r=await fetch(api,{headers:{Accept:'application/vnd.github+json'}});
+  if(!r.ok)throw new Error(r.status===403?'GitHub ha limitado las consultas desde tu conexión. Prueba en unos minutos.':'No se pudo leer la lista de equipos ('+r.status+').');
+  return(await r.json()).filter(x=>x.type==='file'&&/\.json$/i.test(x.name)).map(x=>x.name);
+}
+async function loadAll(){
+  $('#view').innerHTML='<div class="empty">Cargando equipos…</div>';$('#banner').innerHTML='';
+  teams=[];skipped=[];
+  try{
+    const files=await listFiles();
+    await Promise.all(files.map(async f=>{
+      try{
+        const text=await getText(f),doc=JSON.parse(text);
+        if(!doc.league||doc.league.schemaVersion!==2){skipped.push(f);return}
+        const l=doc.league;l.players=l.players||[];l.matches=l.matches||[];l.retiredPlayers=l.retiredPlayers||[];l.staff=l.staff||{};l.economy=l.economy||{};
+        l.players.forEach(p=>{p.progression=p.progression||{};p.progression.improvements=p.progression.improvements||[];p.statistics=p.statistics||{}});
+        teams.push({file:f,name:doc.teamName||f.replace(/\.json$/i,''),text,doc});
+      }catch(e){skipped.push(f)}
+    }));
+    teams.sort((a,b)=>a.name.localeCompare(b.name,'es'));
+  }catch(e){$('#view').innerHTML='';$('#banner').innerHTML=`<div class="banner bad">${esc(e.message)}</div>`;return}
+  if(skipped.length)$('#banner').innerHTML=`<div class="banner">No se han podido mostrar: ${skipped.map(esc).join(', ')}</div>`;
+  fromHash();render();
+}
+
+/* ---------- descargas ---------- */
+function saveBlob(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
+function downloadTeam(file){const t=teams.find(x=>x.file===file);if(t)saveBlob(new Blob([t.text],{type:'application/json'}),t.file)}
+async function downloadZip(){
+  if(!teams.length)return toast('No hay equipos que descargar.');
+  try{
+    if(!window.JSZip)await new Promise((ok,ko)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';s.onload=ok;s.onerror=ko;document.head.appendChild(s)});
+    const z=new JSZip();teams.forEach(t=>z.file(t.file,t.text));
+    saveBlob(await z.generateAsync({type:'blob'}),'equipos_liga_t6.zip');
+  }catch(e){toast('No se pudo crear el zip. Descarga los equipos uno a uno.')}
+}
+
+/* ---------- vistas ---------- */
+const MAIN_TABS=[['standings','Clasificación'],['teams','Equipos'],['matches','Partidos']];
+function render(){
+  $('#mainTabs').innerHTML=MAIN_TABS.map(([id,l])=>`<button class="tab" role="tab" data-main="${id}" aria-selected="${ui.tab===id&&!ui.team}">${l}</button>`).join('');
+  if(ui.team&&teams.find(t=>t.file===ui.team))return renderTeam();
+  ui.team=null;
+  ({standings:renderStandings,teams:renderTeams,matches:renderMatches})[ui.tab]();
+}
+function badge(t){const d=t.doc;return`<span class="dot" style="background:${colorOf(d)}"></span>`}
+function renderStandings(){
+  if(!teams.length){$('#view').innerHTML='<div class="empty">Todavía no hay equipos inscritos.</div>';return}
+  const rows=teams.map(t=>{const x=totals(t.doc);return{t,x,tdd:x.tdFor-x.tdAgainst,cas:x.casFor-x.casAgainst}})
+    .sort((a,b)=>b.x.points-a.x.points||b.tdd-a.tdd||b.cas-a.cas||b.x.tdFor-a.x.tdFor||a.t.name.localeCompare(b.t.name,'es'));
+  $('#view').innerHTML=`<div class="tscroll"><table><thead><tr><th>#</th><th class="l">Equipo</th><th>Pts</th><th>J</th><th>G</th><th>E</th><th>P</th><th>TD+</th><th>TD−</th><th>Dif</th><th>HER+</th><th>HER−</th></tr></thead><tbody>
+  ${rows.map((r,i)=>`<tr><td class="num">${i+1}</td><td class="l"><a href="#team=${encodeURIComponent(r.t.file)}">${badge(r.t)}<strong>${esc(r.t.name)}</strong></a><br><span class="race">${esc(r.t.doc.race||'')}</span></td>
+   <td class="num"><strong>${r.x.points}</strong></td><td class="num">${r.x.played}</td><td class="num">${r.x.won}</td><td class="num">${r.x.drawn}</td><td class="num">${r.x.lost}</td>
+   <td class="num">${r.x.tdFor}</td><td class="num">${r.x.tdAgainst}</td><td class="num">${sgn(r.tdd)}</td><td class="num">${r.x.casFor}</td><td class="num">${r.x.casAgainst}</td></tr>`).join('')}
+  </tbody></table></div><p class="hint">Desempate: puntos, diferencia de TD, diferencia de heridas y TD a favor. HER = heridas leves + graves + muertes causadas.</p>`;
+}
+function renderTeams(){
+  if(!teams.length){$('#view').innerHTML='<div class="empty">Todavía no hay equipos inscritos.</div>';return}
+  $('#view').innerHTML=`<div class="tgrid">${teams.map(t=>{const e=economy(t.doc);return`<div class="card tcard" style="border-top:6px solid ${colorOf(t.doc)}">
+    <h3><a href="#team=${encodeURIComponent(t.file)}">${esc(t.name)}</a></h3>
+    <div class="race">${esc(t.doc.race||'')}</div>
+    <div class="meta">${t.doc.players.length} jugadores · Valor ${fmt(e.teamValue)} · ${e.t.played} partidos jugados</div>
+    <div class="row"><a class="btn small" href="#team=${encodeURIComponent(t.file)}">Ver equipo</a>
+    <button class="btn small primary" type="button" data-dl="${esc(t.file)}">Descargar JSON</button></div></div>`}).join('')}</div>
+    <p class="hint">Para probar un equipo en el juego: descarga su JSON y cárgalo en el editor de rosters. La parte de liga la ignora el juego.</p>`;
+}
+function allMatches(){
+  const seen=new Set(),out=[];
+  for(const t of teams)for(const m of t.doc.league.matches){
+    const pair=[t.name,m.opponent.teamName].sort().join('|'),key=m.id+'|'+pair;
+    if(seen.has(key)&&m.homeAway!=='home')continue;
+    if(seen.has(key)){const i=out.findIndex(o=>o.key===key);if(i>=0)out.splice(i,1)}
+    seen.add(key);
+    const home=m.homeAway==='away'?{name:m.opponent.teamName,score:m.result.opponentScore,file:null}:{name:t.name,score:m.result.teamScore,file:t.file};
+    const away=m.homeAway==='away'?{name:t.name,score:m.result.teamScore,file:t.file}:{name:m.opponent.teamName,score:m.result.opponentScore,file:null};
+    out.push({key,id:m.id,round:m.round||0,home,away,team:t,m});
+  }
+  return out.sort((a,b)=>b.round-a.round||a.id.localeCompare(b.id));
+}
+function renderMatches(){
+  const ms=allMatches();
+  if(!ms.length){$('#view').innerHTML='<div class="empty">Todavía no se ha jugado ningún partido.</div>';return}
+  const link=(x)=>{const t=teams.find(q=>q.name===x.name);return t?`<a href="#team=${encodeURIComponent(t.file)}">${esc(x.name)}</a>`:esc(x.name)};
+  let last=null,html='';
+  for(const o of ms){
+    if(o.round!==last){html+=`${last!==null?'</div>':''}<h2 class="round">Jornada ${o.round||'—'}</h2><div class="cards">`;last=o.round}
+    html+=`<div class="card"><h3>${link(o.home)} <span class="res">${o.home.score} - ${o.away.score}</span> ${link(o.away)} <span class="race" style="font-size:13px">${esc(o.id)}</span></h3></div>`;
+  }
+  $('#view').innerHTML=html+'</div>';
+}
+
+const TEAM_TABS=[['roster','Roster'],['history','Historial'],['team','Equipo y economía'],['dead','Muertos']];
+function renderTeam(){
+  const t=teams.find(x=>x.file===ui.team),d=t.doc,e=economy(d),x=e.t;
+  document.documentElement.style.setProperty('--accent',colorOf(d));document.documentElement.style.setProperty('--accent-ink',inkOf(d));
+  const tile=(k,v,c='')=>`<div class="tile"><div class="k">${k}</div><div class="v ${c}">${v}</div></div>`;
+  $('#view').innerHTML=`<p><a href="#" data-back>← Volver a la liga</a></p>
+  <div class="teamhead"><span class="badge-team">${esc(d.teamName)}</span><span class="race">${esc(d.race||'')}</span>
+   <button class="btn small primary" type="button" data-dl="${esc(t.file)}">Descargar JSON</button></div>
+  <div class="tiles">${tile('Jugados',x.played)+tile('G / E / P',`${x.won} / ${x.drawn} / ${x.lost}`)+tile('Puntos',x.points)+tile('TD',`${x.tdFor} - ${x.tdAgainst}`)+tile('Fans',e.fans)+tile('Tesorería',fmt(e.treasury),e.treasury<0?'neg':'')+tile('Valor equipo',fmt(e.teamValue))}</div>
+  <nav class="tabs" role="tablist">${TEAM_TABS.map(([id,l])=>`<button class="tab" role="tab" data-tt="${id}" aria-selected="${ui.teamTab===id}">${l}</button>`).join('')}</nav>
+  <div id="tpanel"></div>`;
+  $('#mainTabs').innerHTML=MAIN_TABS.map(([id,l])=>`<button class="tab" role="tab" data-main="${id}" aria-selected="false">${l}</button>`).join('');
+  ({roster:tRoster,history:tHistory,team:tEcon,dead:tDead})[ui.teamTab](d);
+}
+function tRoster(d){
+  const lp=n=>d.league.players.find(p=>p.num===n)||{statistics:{},progression:{sppTotal:0,sppUnspent:0,improvements:[]}};
+  const rows=d.players.map(p=>{const l=lp(p.num),s=l.statistics||{},out=l.status==='missNextGame';
+    const gained=new Set((l.progression.improvements||[]).filter(i=>i.skill).map(i=>normTxt(i.skill)));
+    const sk=(p.skills||[]).map(k=>gained.has(normTxt(k))?`<span class="newsk">${esc(k)}</span>`:esc(k)).join(', ');
+    return`<tr class="${out?'out':''}"><td class="num">${esc(p.num)}</td><td class="l"><strong>${esc(p.name)}</strong><br><span class="race">${esc(p.position)}</span></td>
+    ${['ma','st','ag','pa','av'].map(k=>`<td class="num">${esc(p[k])}</td>`).join('')}<td class="skills">${sk}</td>
+    ${STAT_COLS.map(([k])=>`<td class="num">${s[k]||0}</td>`).join('')}<td class="num"><strong>${l.progression.sppTotal||0}</strong> / ${l.progression.sppUnspent||0}</td>
+    <td class="num">${fmt((l.price||0)+(l.progression.improvements||[]).reduce((a,i)=>a+(i.valueExtra||0),0))}</td>
+    <td>${out?'<span class="pill out">Baja próximo partido</span>':'<span class="pill ok">Disponible</span>'}</td></tr>`}).join('');
+  $('#tpanel').innerHTML=`<div class="tscroll"><table><thead><tr><th>#</th><th class="l">Jugador</th><th>MO</th><th>FU</th><th>AG</th><th>PA</th><th>AR</th><th class="l">Habilidades</th>${STAT_COLS.map(([,t])=>`<th>${t}</th>`).join('')}<th>SPP tot / libres</th><th>Valor</th><th>Estado</th></tr></thead><tbody>${rows}</tbody></table></div>
+  <p class="hint">Las habilidades en amarillo son mejoras ganadas en la liga.</p>`;
+}
+function tHistory(d){
+  const ms=d.league.matches;
+  if(!ms.length){$('#tpanel').innerHTML='<div class="empty">Todavía no hay partidos registrados.</div>';return}
+  const label={win:'Victoria',draw:'Empate',loss:'Derrota'};
+  $('#tpanel').innerHTML='<div class="cards">'+[...ms].reverse().map(m=>{
+    const evs=(m.playerEvents||[]).map(ev=>{const acts=STAT_COLS.filter(([k])=>ev[k]).map(([k,t])=>`${t}×${ev[k]}`).join(', ');
+      return`<li>#${esc(ev.num)} ${esc(ev.name||'')}${acts?': '+acts:''} · <strong>+${ev.sppEarned||0} SPP</strong>${ev.injurySuffered&&ev.injurySuffered!=='none'?` · <span class="warn">${INJURY_LABEL[ev.injurySuffered]||''}</span>`:''}${(ev.improvements||[]).map(im=>` · <span class="newsk">Mejora: ${esc(impText(im))}</span>`).join('')}</li>`}).join('');
+    const s=m.statistics||{};
+    return`<div class="card"><h3>${esc(m.id)} · ${m.homeAway==='home'?'(local) ':m.homeAway==='away'?'(visitante) ':''}vs ${esc(m.opponent.teamName)} <span class="res ${m.result.outcome}">${m.result.teamScore} - ${m.result.opponentScore}</span><span class="pill ${m.result.outcome==='win'?'ok':m.result.outcome==='loss'?'out':''}">${label[m.result.outcome]||''}</span></h3>
+    <div class="meta">${esc(m.opponent.race||'')} · Puntos ${m.leaguePoints} · Ganancias ${fmt(m.earnings)} · Fans ${sgn(m.dedicatedFansGained||0)} · HL ${s.lightInjuriesFor}-${s.lightInjuriesAgainst} · HG ${s.seriousInjuriesFor}-${s.seriousInjuriesAgainst} · RIP ${s.deathsFor}-${s.deathsAgainst}</div>
+    ${evs?`<ul>${evs}</ul>`:''}${m.notes?`<div class="meta">${esc(m.notes)}</div>`:''}</div>`}).join('')+'</div>';
+}
+function tEcon(d){
+  const e=economy(d),t=e.t;
+  $('#tpanel').innerHTML=`<div class="two"><div class="card"><h3>Economía</h3><dl class="calc">
+   <div><dt>Tesorería inicial</dt><dd>${fmt(e.start)}</dd></div><div><dt>+ Ganancias</dt><dd>${fmt(t.earnings)}</dd></div>
+   <div><dt>− Tesorería gastada (incentivos)</dt><dd>${fmt(t.spent)}</dd></div><div><dt>− Jugadores (precio base)</dt><dd>${fmt(e.playersBase)}</dd></div>
+   <div><dt>− Segundas oportunidades</dt><dd>${fmt(e.rerolls)}</dd></div><div><dt>− Personal</dt><dd>${fmt(e.staffCost)}</dd></div>
+   <div><dt>− Jugadores muertos</dt><dd>${fmt(e.deadCost)}</dd></div>
+   <div class="total"><dt>= Tesorería actual</dt><dd class="${e.treasury<0?'neg':''}">${fmt(e.treasury)}</dd></div>
+   <div><dt>Coste del equipo</dt><dd>${fmt(e.teamCost)}</dd></div><div><dt>Valor del equipo (sin lesionados)</dt><dd>${fmt(e.teamValue)}</dd></div></dl></div>
+  <div class="card"><h3>Personal</h3><dl class="calc">
+   <div><dt>Segundas oportunidades</dt><dd>${(d.staff&&d.staff.rerolls&&d.staff.rerolls.count)||0}</dd></div>
+   <div><dt>Fans devotos</dt><dd>${e.fans}</dd></div><div><dt>Animadoras</dt><dd>${d.league.staff.cheerleaders||0}</dd></div>
+   <div><dt>Ayudantes de entrenador</dt><dd>${d.league.staff.assistantCoaches||0}</dd></div><div><dt>Médico</dt><dd>${d.league.staff.apothecary||0}</dd></div>
+   <div><dt>Sobornos</dt><dd>${d.league.staff.bribes||0}</dd></div></dl></div>
+  <div class="card"><h3>Totales de liga</h3><dl class="calc">
+   <div><dt>Partidos</dt><dd>${t.played} (${t.won}G ${t.drawn}E ${t.lost}P)</dd></div><div><dt>TD a favor / en contra</dt><dd>${t.tdFor} / ${t.tdAgainst}</dd></div>
+   <div><dt>Heridas causadas / sufridas</dt><dd>${t.casFor} / ${t.casAgainst}</dd></div><div><dt>Expulsados</dt><dd>${t.sentOffFor} / ${t.sentOffAgainst}</dd></div>
+   <div><dt>Puntos de liga</dt><dd>${t.points}</dd></div></dl></div></div>`;
+}
+function tDead(d){
+  const r=d.league.retiredPlayers;
+  if(!r.length){$('#tpanel').innerHTML='<div class="empty">Todavía no ha muerto ningún jugador.</div>';return}
+  $('#tpanel').innerHTML='<div class="cards">'+r.map(p=>{const a=p.attributes||{},s=p.statistics||{};return`<div class="card"><h3>#${esc(p.num)} ${esc(p.name)} <span class="pill out">Muerto</span></h3>
+   <div class="meta">${esc(p.position)} ${p.retiredAtMatch?'· en '+esc(p.retiredAtMatch):''} · MO ${esc(a.ma)} FU ${esc(a.st)} AG ${esc(a.ag)} PA ${esc(a.pa)} AR ${esc(a.av)} · SPP ${(p.progression||{}).sppTotal||0}</div>
+   <div class="meta">${esc((p.skills||[]).join(', '))}</div><div class="meta">${STAT_COLS.map(([k,t])=>`${t} ${s[k]||0}`).join(' · ')}</div></div>`}).join('')+'</div>';
+}
+
+/* ---------- navegación ---------- */
+function fromHash(){const m=/team=([^&]+)/.exec(location.hash);ui.team=m?decodeURIComponent(m[1]):null;if(ui.team)ui.teamTab=ui.teamTab||'roster'}
+window.addEventListener('hashchange',()=>{fromHash();if(!ui.team)document.documentElement.style.removeProperty('--accent'),document.documentElement.style.removeProperty('--accent-ink');render()});
+document.addEventListener('click',e=>{
+  const b=e.target.closest('button,a');if(!b)return;
+  if(b.dataset.main){ui.tab=b.dataset.main;ui.team=null;document.documentElement.style.removeProperty('--accent');document.documentElement.style.removeProperty('--accent-ink');history.replaceState(null,'',location.pathname+location.search);render()}
+  else if(b.dataset.tt){ui.teamTab=b.dataset.tt;render()}
+  else if(b.dataset.dl){downloadTeam(b.dataset.dl)}
+  else if(b.hasAttribute('data-back')){e.preventDefault();history.replaceState(null,'',location.pathname+location.search);ui.team=null;document.documentElement.style.removeProperty('--accent');document.documentElement.style.removeProperty('--accent-ink');render()}
+});
+$('#reloadBtn').onclick=loadAll;$('#zipBtn').onclick=downloadZip;
+loadAll();
+</script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-w-version="W_V31">
+<html lang="es" data-w-version="W_V32">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -59,11 +59,11 @@
         <option value="">Clásico (actual)</option>
         <!-- El resto de campos se cargan solos desde field/fields.json -->
       </select>
-      <div class="small-note" style="margin-top:6px;">O probar una imagen suelta por URL (no se guarda como opción fija):</div> -->
+      <div class="small-note" style="margin-top:6px;">O probar una imagen suelta por URL (no se guarda como opción fija):</div>
       <input type="text" id="pitchBgInput" placeholder="https://...">
       <div class="row">
-       <button onclick="applyPitchBackground()">Aplicar URL</button>
-       <button onclick="clearPitchBackground()">Quitar</button>
+        <button onclick="applyPitchBackground()">Aplicar URL</button>
+        <button onclick="clearPitchBackground()">Quitar</button>
       </div>
     </div>
   </div>
@@ -106,6 +106,7 @@
           <div class="sb-reroll" id="sbRerollA" style="display:flex;">
             <span class="sb-reroll-label">RR</span>
             <span class="sb-reroll-count mono" id="sbRerollCountA">0/0</span>
+            <span class="sb-fans" id="sbFansA" style="display:none;" title="Fans: dado + Factor de hinchas"><span class="gold-icon" style="--icon:url('icons/fans.png')"></span><span class="mono" id="sbFansValA">0</span></span>
             <span class="sb-reroll-btns">
               <button onclick="adjustReroll('A', -1)">-1</button>
               <button onclick="adjustReroll('A', 1)">+1</button>
@@ -123,7 +124,7 @@
       </div>
       <div class="sb-mid">
         <div class="half mono">MITAD <span id="halfNum">1</span></div>
-        <div class="turns mono"><span class="turn-dot" id="turnDotA"></span> <span id="turnA">0</span>/6 &nbsp; <span class="turn-dot" id="turnDotB"></span> <span id="turnB">0</span>/6</div>
+        <div class="turns mono"><span class="turn-dot" id="turnDotA"></span> <span id="turnA">0</span>/6 <span class="sb-weather" id="sbWeather" style="display:none;"><span class="gold-icon" id="sbWeatherIcon"></span></span> <span class="turn-dot" id="turnDotB"></span> <span id="turnB">0</span>/6</div>
         <div class="active-flag mono" id="activeFlag">COLOCACIÓN</div>
       </div>
       <div class="sb-team">
@@ -139,6 +140,7 @@
           <div class="sb-reroll" id="sbRerollB" style="display:flex;">
             <span class="sb-reroll-label">RR</span>
             <span class="sb-reroll-count mono" id="sbRerollCountB">0/0</span>
+            <span class="sb-fans" id="sbFansB" style="display:none;" title="Fans: dado + Factor de hinchas"><span class="gold-icon" style="--icon:url('icons/fans.png')"></span><span class="mono" id="sbFansValB">0</span></span>
             <span class="sb-reroll-btns">
               <button onclick="adjustReroll('B', -1)">-1</button>
               <button onclick="adjustReroll('B', 1)">+1</button>
@@ -207,7 +209,12 @@
 
     <div class="panel setup" id="setupPanel">
       <h2>🏈 Fase de colocación</h2>
-      <div class="row" style="align-items:center; gap:10px;">
+      <div id="preMatchStartRow" style="display:none;">
+        <button class="full primary" id="preMatchStartBtn" onclick="preMatchBegin()">🎬 Empezar secuencia anterior a partido</button>
+        <div class="small-note" id="preMatchStartNote">Hinchas, clima, sustitutos, incentivos y sorteo de patada.</div>
+        <button class="pm-skip" id="preMatchSkipBtn" onclick="preMatchSkip()">Saltar secuencia (sin hinchas ni clima)</button>
+      </div>
+      <div class="row" id="setupKickRow" style="align-items:center; gap:10px;">
         <label style="margin:0; white-space:nowrap;">Equipo que patea:</label>
         <select id="kickSelect" onchange="onKickChange()">
           <option value="A">Rojo</option>
@@ -564,12 +571,20 @@
 
 <div class="modal-back" id="catchModal">
   <div class="modal">
-    <h2>RECOGER BALÓN</h2>
+    <h2 id="catchTitle">RECOGER BALÓN</h2>
     <p id="catchText">Intento de recogida.</p>
     <div class="die-face" id="catchDie" style="margin:0 auto 10px auto;">–</div>
     <div id="catchResultText" class="check-result"></div>
     <button class="primary full" id="catchRollBtn" onclick="rollCatchDie()">Tirar D6</button>
     <div class="row" id="catchActionRow" style="margin-top:12px; display:none;"></div>
+  </div>
+</div>
+
+<div class="modal-back" id="preMatchModal">
+  <div class="modal">
+    <h2 id="preMatchTitle">SECUENCIA PREVIA</h2>
+    <div id="preMatchBody"></div>
+    <div class="row" id="preMatchActions" style="margin-top:12px; justify-content:center;"></div>
   </div>
 </div>
 

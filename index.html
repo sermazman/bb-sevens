@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-w-version="W_V32">
+<html lang="es" data-w-version="W_V33">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -104,9 +104,11 @@
       <div class="sb-team">
         <div class="sb-team-inner">
           <div class="sb-reroll" id="sbRerollA" style="display:flex;">
-            <span class="sb-reroll-label">RR</span>
-            <span class="sb-reroll-count mono" id="sbRerollCountA">0/0</span>
-            <span class="sb-fans" id="sbFansA" style="display:none;" title="Fans: dado + Factor de hinchas"><span class="gold-icon" style="--icon:url('icons/fans.png')"></span><span class="mono" id="sbFansValA">0</span></span>
+            <div class="sb-rr-grid">
+              <span class="sb-reroll-label">RR</span>
+              <span class="sb-reroll-count mono" id="sbRerollCountA">0/0</span>
+              <span class="sb-fans hidden" id="sbFansA"><span class="sb-fans-icon" title="Fans"><span class="gold-icon" style="--icon:url('icons/fans.png')"></span></span><span class="sb-fans-val mono" id="sbFansValA">0</span></span>
+            </div>
             <span class="sb-reroll-btns">
               <button onclick="adjustReroll('A', -1)">-1</button>
               <button onclick="adjustReroll('A', 1)">+1</button>
@@ -138,9 +140,11 @@
             <img src="icons/veterano.png" alt="Veterano" onerror="this.outerHTML='<span class=&quot;fallback-star&quot;>⭐</span>'">
           </div>
           <div class="sb-reroll" id="sbRerollB" style="display:flex;">
-            <span class="sb-reroll-label">RR</span>
-            <span class="sb-reroll-count mono" id="sbRerollCountB">0/0</span>
-            <span class="sb-fans" id="sbFansB" style="display:none;" title="Fans: dado + Factor de hinchas"><span class="gold-icon" style="--icon:url('icons/fans.png')"></span><span class="mono" id="sbFansValB">0</span></span>
+            <div class="sb-rr-grid">
+              <span class="sb-reroll-label">RR</span>
+              <span class="sb-reroll-count mono" id="sbRerollCountB">0/0</span>
+              <span class="sb-fans hidden" id="sbFansB"><span class="sb-fans-icon" title="Fans"><span class="gold-icon" style="--icon:url('icons/fans.png')"></span></span><span class="sb-fans-val mono" id="sbFansValB">0</span></span>
+            </div>
             <span class="sb-reroll-btns">
               <button onclick="adjustReroll('B', -1)">-1</button>
               <button onclick="adjustReroll('B', 1)">+1</button>

@@ -1473,11 +1473,12 @@ function renderPreMatchBadges(){
   ['A','B'].forEach(t=>{
     const box = document.getElementById('sbFans'+t);
     if(!box) return;
+    box.classList.toggle('hidden', !preMatch.fanRolled);
     if(preMatch.fanRolled){
-      box.style.display = 'flex';
+      const tip = 'Fans: D3 ' + preMatch.fanDie[t] + ' + Factor ' + preMatch.fanFactor[t] + ' = ' + preMatch.fanTotal[t];
       document.getElementById('sbFansVal'+t).textContent = preMatch.fanTotal[t];
-      box.title = 'Fans: D3 ' + preMatch.fanDie[t] + ' + Factor ' + preMatch.fanFactor[t] + ' = ' + preMatch.fanTotal[t];
-    } else box.style.display = 'none';
+      box.querySelectorAll('.sb-fans-icon,.sb-fans-val').forEach(el=>{ el.title = tip; });
+    }
   });
   const wEl = document.getElementById('sbWeather');
   if(wEl){
@@ -5001,6 +5002,7 @@ function continueAfterKickoffEvent(){
   if(occ && occ.condition==='standing'){
     log('🏈 El balón cae sobre ' + occ.name + ' tras el primer rebote — intenta atraparlo antes del rebote final.');
     pendingDriveStart = kickoffReceivingTeam;
+    kickoffTargetRow = null; kickoffTargetCol = null; // el saque ya terminó: quitar la marca de casilla objetivo
     openCatchModal(occ);
     return;
   }
@@ -5865,6 +5867,7 @@ function isHalfComplete(team){
 }
 
 function beginTurn(team){
+  kickoffTargetRow = null; kickoffTargetCol = null; // seguridad: la marca del saque nunca debe sobrevivir al inicio de un turno
   state.turns[team]++;
   state.active = team;
   blitzUsedByTeam[team] = false;
@@ -6377,7 +6380,7 @@ function setupModalEnhancements(){
 document.addEventListener('DOMContentLoaded', setupModalEnhancements);
 if(document.readyState==='complete' || document.readyState==='interactive'){ setupModalEnhancements(); }
 
-window.APP_JS_VERSION = 'A_V33'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V34'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

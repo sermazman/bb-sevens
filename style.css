@@ -656,4 +656,25 @@ button.full{width:100%; margin-top:6px;}
 .conn-dot.on{background:var(--good);}
 
 /* --- Versión del archivo (para el badge de verificación en el pie) --- */
-:root{ --css-version: "S_V33"; }
+:root{ --css-version: "S_V34"; }
+
+/* ---- Iconos dorados (se tiñen con el color del marcador mediante máscara) ---- */
+.gold-icon{display:inline-block; width:18px; height:18px; vertical-align:middle; background:var(--gold);
+  -webkit-mask:var(--icon) center/contain no-repeat; mask:var(--icon) center/contain no-repeat;}
+.gold-icon.lg{width:44px; height:44px;}
+.sb-fans{display:flex; align-items:center; gap:3px; font-size:12px; font-weight:800; color:var(--gold); margin-top:2px;}
+.sb-fans .gold-icon{width:15px; height:15px;}
+.sb-weather{display:inline-block; vertical-align:middle; margin:0 4px;}
+.sb-weather .gold-icon{width:26px; height:26px;}
+.pm-skip{background:none; border:none; color:#8a7d64; font-size:10px; text-decoration:underline; cursor:pointer; margin-top:6px; padding:0;}
+.pm-dice{display:flex; justify-content:center; gap:28px; margin:8px 0;}
+.pm-team{text-align:center; min-width:110px;}
+.pm-team .pm-name{font-size:11px; letter-spacing:1.2px; text-transform:uppercase; color:#a99b7f; margin-bottom:6px;}
+.pm-team .pm-sum{margin-top:6px; font-family:'JetBrains Mono'; font-size:12px; color:#a99b7f;}
+.pm-team .pm-sum b{color:var(--gold); font-size:18px;}
+.pm-weather{text-align:center; margin-top:10px;}
+.pm-weather .pm-wname{font-family:'Anton',sans-serif; letter-spacing:1.5px; color:var(--gold); font-size:18px; margin-top:6px;}
+.pm-weather .pm-wdesc{font-size:12px; color:#c9bda3; margin-top:4px; line-height:1.4;}
+.pm-note{font-size:11px; color:#a99b7f; margin-top:8px; text-align:center; line-height:1.4;}
+.ri-weather{display:inline-flex; align-items:center; gap:3px; font-size:9px; color:var(--gold); margin-left:4px;}
+.ri-weather .gold-icon{width:14px; height:14px;}

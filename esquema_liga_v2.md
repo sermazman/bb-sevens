@@ -1,7 +1,7 @@
 # Sección `league` (schemaVersion 2) — Temporada 6
 
 La parte superior del JSON (teamName, race, color, textColor, staff, players, formation) es la de rosters.html y NO se toca.
-Todo lo de liga vive dentro de `league`. `league.coach` guarda el nombre del entrenador (se pide al inscribir el equipo y se puede editar en «Equipo y economía»). Los jugadores se enlazan por `num`.
+Todo lo de liga vive dentro de `league`. `league.coach` guarda el nombre del entrenador (se pide al inscribir el equipo y se puede editar en «Equipo y economía»). `league.logo` (opcional) es el nombre del PNG del logo, que vive en la misma carpeta que el JSON del equipo (`<teamId>.png`, máx. 512 px de lado largo). Los jugadores se enlazan por `num`.
 
 ## Qué se guarda y qué se calcula
 

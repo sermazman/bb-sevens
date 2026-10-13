@@ -136,6 +136,9 @@ a{color:inherit}
 a:hover{text-decoration:underline}
 .pill.draft{color:var(--warn);border-color:var(--warn)}
 .draftcell{font-family:var(--f-mono);font-weight:600;color:var(--warn)}
+.lg{height:28px;width:auto;max-width:44px;object-fit:contain;vertical-align:middle;margin-right:8px}
+.lgc{height:56px;width:auto;max-width:90px;object-fit:contain;margin-right:6px}
+.lgh{height:84px;width:auto;max-width:150px;object-fit:contain}
 .dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:8px;vertical-align:middle}
 .tgrid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
 .tcard .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
@@ -177,6 +180,7 @@ function textInk(hex){const m=/^#?([0-9a-f]{6})$/i.exec(hex||'');if(!m)return'#f
 const colorOf=d=>/^#[0-9a-f]{6}$/i.test(d.color||'')?d.color:'#b30000';
 const inkOf=d=>d.textColor&&d.textColor!=='auto'?d.textColor:textInk(colorOf(d));
 
+let LOAD_TS=Date.now();
 let teams=[];          // {file, name, text, doc}
 let skipped=[];
 let ui={tab:'standings', team:null, teamTab:'roster'};
@@ -226,7 +230,7 @@ async function listFiles(){
 }
 async function loadAll(){
   $('#view').innerHTML='<div class="empty">Cargando equipos…</div>';$('#banner').innerHTML='';
-  teams=[];skipped=[];
+  teams=[];skipped=[];LOAD_TS=Date.now();
   try{
     const files=await listFiles();
     await Promise.all(files.map(async f=>{
@@ -242,6 +246,19 @@ async function loadAll(){
   }catch(e){$('#view').innerHTML='';$('#banner').innerHTML=`<div class="banner bad">${esc(e.message)}</div>`;return}
   if(skipped.length)$('#banner').innerHTML=`<div class="banner">No se han podido mostrar: ${skipped.map(esc).join(', ')}</div>`;
   fromHash();render();
+}
+
+/* ---------- logos (PNG junto al JSON del equipo; solo se muestran, con tamaño limitado) ---------- */
+const logoName=d=>{const n=d&&d.league&&d.league.logo;return /^[\w.-]+\.png$/i.test(n||'')?n:null};
+const rawLogo=n=>`https://raw.githubusercontent.com/${REPO.owner}/${REPO.repo}/${REPO.branch}/${REPO.folder}/${encodeURIComponent(n)}?v=${LOAD_TS}`;
+function logoImg(t,cls){const n=logoName(t.doc);return n?`<img class="${cls}" src="${REPO.folder}/${encodeURIComponent(n)}?v=${LOAD_TS}" alt="" onerror="logoFallback(this,'${n}')">`:''}
+function logoFallback(im,n){if(im.dataset.fb){im.remove();return}im.dataset.fb='1';im.src=rawLogo(n)}
+async function fetchLogo(t){
+  const n=logoName(t.doc);if(!n)return null;
+  for(const u of[`${REPO.folder}/${encodeURIComponent(n)}?v=${LOAD_TS}`,rawLogo(n)]){
+    try{const r=await fetch(u);if(r.ok){const b=await r.blob();return await new Promise(ok=>{const fr=new FileReader();fr.onload=()=>ok(fr.result);fr.readAsDataURL(new Blob([b],{type:'image/png'}))})}}catch(e){}
+  }
+  return null;
 }
 
 /* ---------- descargas ---------- */
@@ -270,7 +287,7 @@ function renderStandings(){
   const rows=teams.map(t=>{const x=totals(t.doc);return{t,x,tdd:x.tdFor-x.tdAgainst,cas:x.casFor-x.casAgainst}})
     .sort((a,b)=>b.x.points-a.x.points||b.tdd-a.tdd||b.cas-a.cas||b.x.tdFor-a.x.tdFor||a.t.name.localeCompare(b.t.name,'es'));
   $('#view').innerHTML=`<div class="tscroll"><table><thead><tr><th>#</th><th class="l">Equipo</th><th>Pts</th><th>J</th><th>G</th><th>E</th><th>P</th><th>TD+</th><th>TD−</th><th>Dif</th><th>HER+</th><th>HER−</th></tr></thead><tbody>
-  ${rows.map((r,i)=>`<tr><td class="num">${i+1}</td><td class="l"><a href="#team=${encodeURIComponent(r.t.file)}">${badge(r.t)}<strong>${esc(r.t.name)}</strong></a><br><span class="race">${esc(r.t.doc.race||'')}</span></td>
+  ${rows.map((r,i)=>`<tr><td class="num">${i+1}</td><td class="l"><a href="#team=${encodeURIComponent(r.t.file)}">${logoImg(r.t,'lg')||badge(r.t)}<strong>${esc(r.t.name)}</strong></a><br><span class="race">${esc(r.t.doc.race||'')}</span></td>
    <td class="num"><strong>${r.x.points}</strong></td><td class="num">${r.x.played}</td><td class="num">${r.x.won}</td><td class="num">${r.x.drawn}</td><td class="num">${r.x.lost}</td>
    <td class="num">${r.x.tdFor}</td><td class="num">${r.x.tdAgainst}</td><td class="num">${sgn(r.tdd)}</td><td class="num">${r.x.casFor}</td><td class="num">${r.x.casAgainst}</td></tr>`).join('')}
   </tbody></table></div><p class="hint">Desempate: puntos, diferencia de TD, diferencia de heridas y TD a favor. HER = heridas leves + graves + muertes causadas.</p>`;
@@ -278,7 +295,7 @@ function renderStandings(){
 function renderTeams(){
   if(!teams.length){$('#view').innerHTML='<div class="empty">Todavía no hay equipos inscritos.</div>';return}
   $('#view').innerHTML=`<div class="tgrid">${teams.map(t=>{const e=economy(t.doc);return`<div class="card tcard" style="border-top:6px solid ${colorOf(t.doc)}">
-    <h3><a href="#team=${encodeURIComponent(t.file)}">${esc(t.name)}</a></h3>
+    <h3>${logoImg(t,'lgc')}<a href="#team=${encodeURIComponent(t.file)}">${esc(t.name)}</a></h3>
     <div class="race">${esc(t.doc.race||'')}</div>
     <div class="meta">${t.doc.league.coach?'Entrenador: '+esc(t.doc.league.coach)+' · ':''}${t.doc.players.length} jugadores · Valor ${fmt(e.teamValue)} · ${e.t.played} partidos jugados</div>
     <div class="row"><a class="btn small" href="#team=${encodeURIComponent(t.file)}">Ver equipo</a>
@@ -317,7 +334,7 @@ function renderTeam(){
   document.documentElement.style.setProperty('--accent',colorOf(d));document.documentElement.style.setProperty('--accent-ink',inkOf(d));
   const tile=(k,v,c='')=>`<div class="tile"><div class="k">${k}</div><div class="v ${c}">${v}</div></div>`;
   $('#view').innerHTML=`<p><a href="#" data-back>← Volver a la liga</a></p>
-  <div class="teamhead"><span class="badge-team">${esc(d.teamName)}</span><span class="race">${esc(d.race||'')}${d.league.coach?' · Entrenador: '+esc(d.league.coach):''}</span>
+  <div class="teamhead">${logoImg(t,'lgh')}<span class="badge-team">${esc(d.teamName)}</span><span class="race">${esc(d.race||'')}${d.league.coach?' · Entrenador: '+esc(d.league.coach):''}</span>
    <button class="btn small primary" type="button" data-dl="${esc(t.file)}">Descargar EQUIPO</button>
    <button class="btn small" type="button" data-sheet="${esc(t.file)}">Hoja de partido (PDF)</button></div>
   <div class="tiles">${tile('Jugados',x.played)+tile('G / E / P',`${x.won} / ${x.drawn} / ${x.lost}`)+tile('Puntos',x.points)+tile('TD',`${x.tdFor} - ${x.tdAgainst}`)+tile('Fans',e.fans)+tile('Tesorería',fmt(e.treasury),e.treasury<0?'neg':'')+tile('Valor equipo',fmt(e.teamValue))}</div>
@@ -402,7 +419,10 @@ function sheetSplitSkills(p){
   if(i<0) return {key:'',rest:sk};
   return {key:sk[i],rest:sk.filter((_,ix)=>ix!==i)};
 }
-async function makeSheetPdf(d,e){
+function loadImgDims(dataUrl){
+  return new Promise(ok=>{ const im=new Image(); im.onload=()=>ok({dataUrl,w:im.naturalWidth,h:im.naturalHeight}); im.onerror=()=>ok(null); im.src=dataUrl; });
+}
+async function makeSheetPdf(d,e,logo){
   const JsPDF=await ensureJsPDF();
   const pdf=new JsPDF({orientation:'landscape',unit:'mm',format:'a4'});
   const l=d.league, pr=Object.assign({},DEFAULT_PRICES,(l.economy||{}).prices), s=l.staff||{};
@@ -431,15 +451,22 @@ async function makeSheetPdf(d,e){
     lines.forEach((t,i)=>pdf.text(t,tx,y+h/2+(i-(lines.length-1)/2)*lh,{align:align==='left'?'left':'center',baseline:'middle'}));
   }
 
-  /* cabecera */
-  let y=M;
-  pdf.setFillColor(...rgb); pdf.rect(M,y,285,8,'F');
-  pdf.setTextColor(...inkRgb); pdf.setFont('helvetica','bold'); pdf.setFontSize(12);
-  pdf.text(String(d.teamName||'').toUpperCase(),M+3,y+5.4,{baseline:'alphabetic'});
+  /* cabecera: franja con el color del equipo, logo (si hay) y nombre */
+  let y=M; const BARH=14;
+  pdf.setFillColor(...rgb); pdf.rect(M,y,285,BARH,'F');
+  let tx=M+3;
+  if(logo&&logo.w&&logo.h){
+    const sc=Math.min(12/logo.h,34/logo.w), lw=logo.w*sc, lh=logo.h*sc;
+    try{ pdf.addImage(logo.dataUrl,'PNG',M+2,y+(BARH-lh)/2,lw,lh); tx=M+2+lw+4; }catch(err){}
+  }
+  const nm=String(d.teamName||'').toUpperCase();
+  pdf.setTextColor(...inkRgb); pdf.setFont('helvetica','bold'); pdf.setFontSize(15);
+  pdf.text(nm,tx,y+BARH/2+2,{baseline:'alphabetic'});
+  const nmW=pdf.getTextWidth(nm);
   pdf.setFont('helvetica','normal'); pdf.setFontSize(8);
-  pdf.text(`${d.race||''}  ·  Temporada ${l.season||''}`,M+3+pdf.getTextWidth(String(d.teamName||'').toUpperCase())*1.45+6,y+5.2);
-  pdf.text('Jornada: ____   Rival: ______________________   Resultado: ____ - ____',M+285-3,y+5.2,{align:'right'});
-  y+=10;
+  pdf.text(`${d.race||''}  ·  Temporada ${l.season||''}${l.coach?'  ·  Entrenador: '+l.coach:''}`,tx+nmW+6,y+BARH/2+1.4);
+  pdf.text('Jornada: ____   Rival: ______________________   Resultado: ____ - ____',M+285-3,y+BARH/2+1.4,{align:'right'});
+  y+=BARH+2;
 
   /* tabla de jugadores */
   const cols=[['#',6],['NOMBRE JUGADOR',32],['TIPO',22],['MO',6.5],['FU',6.5],['AG',6.5],['PA',6.5],['AR',6.5],
@@ -524,9 +551,9 @@ async function makeSheetPdf(d,e){
   pdf.text('DRAFT: aparece «2+» si el jugador ha subido 1 habilidad con SPP, «3+» si ha subido 2, y así sucesivamente (las habilidades de base no cuentan). Los eventos del partido se anotan en las columnas ESP a MVP y se pasan después al gestor.',M,ly+3.6);
   return pdf;
 }
-async function downloadSheet(d,e,base){
+async function downloadSheet(d,e,base,logoUrl){
   try{
-    const pdf=await makeSheetPdf(d,e);
+    const pdf=await makeSheetPdf(d,e,logoUrl?await loadImgDims(logoUrl):null);
     pdf.save(`${base}_hoja_partido.pdf`);
   }catch(err){ toast(err.message||'No se pudo crear el PDF.'); }
 }
@@ -534,12 +561,12 @@ async function downloadSheet(d,e,base){
 /* ---------- navegación ---------- */
 function fromHash(){const m=/team=([^&]+)/.exec(location.hash);ui.team=m?decodeURIComponent(m[1]):null;if(ui.team)ui.teamTab=ui.teamTab||'roster'}
 window.addEventListener('hashchange',()=>{fromHash();if(!ui.team)document.documentElement.style.removeProperty('--accent'),document.documentElement.style.removeProperty('--accent-ink');render()});
-document.addEventListener('click',e=>{
+document.addEventListener('click',async e=>{
   const b=e.target.closest('button,a');if(!b)return;
   if(b.dataset.main){ui.tab=b.dataset.main;ui.team=null;document.documentElement.style.removeProperty('--accent');document.documentElement.style.removeProperty('--accent-ink');history.replaceState(null,'',location.pathname+location.search);render()}
   else if(b.dataset.tt){ui.teamTab=b.dataset.tt;render()}
   else if(b.dataset.dl){downloadTeam(b.dataset.dl)}
-  else if(b.dataset.sheet){const t=teams.find(x=>x.file===b.dataset.sheet);if(t)downloadSheet(t.doc,economy(t.doc),t.file.replace(/\.json$/i,''))}
+  else if(b.dataset.sheet){const t=teams.find(x=>x.file===b.dataset.sheet);if(t)downloadSheet(t.doc,economy(t.doc),t.file.replace(/\.json$/i,''),await fetchLogo(t))}
   else if(b.hasAttribute('data-back')){e.preventDefault();history.replaceState(null,'',location.pathname+location.search);ui.team=null;document.documentElement.style.removeProperty('--accent');document.documentElement.style.removeProperty('--accent-ink');render()}
 });
 $('#reloadBtn').onclick=loadAll;$('#zipBtn').onclick=downloadZip;

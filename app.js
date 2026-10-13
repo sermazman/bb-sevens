@@ -39,6 +39,7 @@ let pitchBackgroundExact = false;
 let teamStaff = { A: null, B: null };
 let teamRerollsLeft = { A: 0, B: 0 };
 let teamFormation = { A: [], B: [] };
+let preMatch = defaultPreMatch(); // secuencia previa al partido (hinchas, clima, sustitutos, sorteo)
 
 function renderStaffPanels(){
   ['A','B'].forEach(team=>{
@@ -52,6 +53,7 @@ function renderStaffPanels(){
       rerollCountEl.textContent = max!==null ? (teamRerollsLeft[team] + '/' + max) : String(teamRerollsLeft[team] || 0);
     }
   });
+  if(typeof renderPreMatchBadges==='function') renderPreMatchBadges();
 }
 
 function adjustReroll(team, delta){
@@ -317,7 +319,7 @@ function snapshotState(){
   return {
     players, ball, ballInFlight, phase, state, pendingTD, pendingDodge, pendingGfi, armorForPlayer, nextId,
     mySelected: selected, myDeclaredAction: declaredAction,
-    koQueue, pendingKo, teamRace, customColorsEnabled, teamCustomColor, teamTextColor, openingKickoffDone, firstHalfKickingTeam, pitchBackgroundUrl, pitchBackgroundExact, teamStaff, teamRerollsLeft, kickoffPendingOOBAfterEvent,
+    koQueue, pendingKo, teamRace, customColorsEnabled, teamCustomColor, teamTextColor, openingKickoffDone, firstHalfKickingTeam, pitchBackgroundUrl, pitchBackgroundExact, teamStaff, teamRerollsLeft, preMatch, kickoffPendingOOBAfterEvent,
     ballBounceActive, pendingCatch, pendingBallDrop, pendingDriveStart, pendingPassRoll,
     pendingKickPlacement, kickoffBounceStep, kickoffKickingTeam, kickoffReceivingTeam, freeCatchTeam, placingBallFree, kickoffTargetRow, kickoffTargetCol,
     blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp, chainPushStack, secureBallUsedByTeam, pendingSecureBall, secureBallActivePlayer, handoffUsedByTeam, pendingHandoffChoice, pendingAnimosity, pendingHailMaryChoice, foulUsedByTeam, pendingFoulContext, passUsedByTeam,
@@ -501,6 +503,7 @@ function applyRemoteState(payload){
   setPitchBackground(payload.pitchBackgroundUrl || null, !!payload.pitchBackgroundExact);
   teamStaff = payload.teamStaff || { A:null, B:null };
   teamRerollsLeft = payload.teamRerollsLeft || { A:0, B:0 };
+  preMatch = mergePreMatch(payload.preMatch);
   kickoffPendingOOBAfterEvent = !!payload.kickoffPendingOOBAfterEvent;
   if(payload.pitchBackgroundUrl && payload.pitchBackgroundExact){
     document.getElementById('pitchBgSelect').value = payload.pitchBackgroundUrl;
@@ -516,6 +519,7 @@ function applyRemoteState(payload){
   document.getElementById('colorsOffBtn').classList.toggle('active', !customColorsEnabled);
   ballBounceActive = !!payload.ballBounceActive;
   pendingCatch = payload.pendingCatch;
+  updateCatchTitle();
   pendingPassRoll = payload.pendingPassRoll;
   pendingBallDrop = payload.pendingBallDrop;
   pendingDriveStart = payload.pendingDriveStart;
@@ -595,6 +599,7 @@ function applyRemoteState(payload){
   document.getElementById('kickSelect').value = payload.kickSelectValue;
 
   if(phase==='setup'){ showSetupPanel(); } else { document.getElementById('setupPanel').style.display='none'; }
+  renderPreMatch();
   const existingBtn = document.getElementById('newHalfBtn');
   if(payload.showHalfBtn && !existingBtn){ addNewHalfButton(); }
   if(!payload.showHalfBtn && existingBtn){ existingBtn.remove(); }
@@ -775,7 +780,8 @@ function log(msg){
 }
 function updateStatus(msg){ document.getElementById('statusLine').textContent = msg; }
 function anyModalOpen(){
-  return document.getElementById('tdModal').classList.contains('show') ||
+  return document.getElementById('preMatchModal').classList.contains('show') ||
+         document.getElementById('tdModal').classList.contains('show') ||
          document.getElementById('dodgeModal').classList.contains('show') ||
          document.getElementById('gfiModal').classList.contains('show') ||
          document.getElementById('armorModal').classList.contains('show') ||
@@ -916,7 +922,7 @@ function presetPositions(team){
   const teamPlayers = players.filter(p=>p.team===team);
   if(!teamPlayers.length){ showInfoModal('Sin jugadores', 'No hay jugadores en ' + teamName(team) + '.'); return; }
   const retiredConditions = ['ko','injured','injuredGrave','dead','expelled'];
-  const placeablePlayers = teamPlayers.filter(p=>!retiredConditions.includes(p.condition));
+  const placeablePlayers = teamPlayers.filter(p=>!retiredConditions.includes(p.condition) && !p.heatRest);
 
   // Quitar del campo a los jugadores de este equipo que ya estuvieran colocados (los de baja no se tocan)
   placeablePlayers.forEach(p=>{
@@ -981,6 +987,7 @@ function renderRosters(){
       const condTag = p.condition==='tumbado' ? `<span class="downed-tag">TUMBADO</span>`
                      : p.condition==='aturdido' ? `<span class="downed-tag">ATURDIDO</span>`
                      : p.condition==='despistado' ? `<span class="downed-tag">DESPISTADO</span>` : '';
+      const heatTag = p.heatRest ? `<span class="ri-weather" title="Descansa por Calor Asfixiante: no se puede colocar esta entrada"><span class="gold-icon" style="--icon:url('icons/calor_asfixiante.png')"></span>DESCANSA</span>` : '';
       const skillsText = (p.skills && p.skills.length) ? p.skills.join(', ') : 'Sin habilidades';
       const posBorder = positionBorderColor(p);
       const numBorderStyle = posBorder ? ('border-color:'+posBorder+';') : '';
@@ -989,7 +996,7 @@ function renderRosters(){
           <span class="num" style="background:${tokenColorFor(p)}; color:${textColorFor(p)}; ${numBorderStyle}">${p.num}</span>
           <span class="pname">${p.name}</span>
           <span class="pos">${posText}</span>
-          ${condTag}
+          ${condTag}${heatTag}
           <button class="rm-btn" title="Eliminar" onclick="removePlayer(${p.id}, event)">✕</button>
         </div>
         <div class="ri-row2 mono">MA ${p.ma ?? '-'} · ST ${p.st ?? '-'} · AG ${p.ag ?? '-'} · PA ${p.pa ?? '-'} · AV ${p.av ?? '-'}</div>
@@ -1248,12 +1255,276 @@ function toggleFreePush(){
   broadcastState();
 }
 
+// ---------- Secuencia previa al partido (hinchas, clima, sustitutos, incentivos, sorteo de patada) ----------
+// Nota Firebase: este objeto no usa null ni objetos/arrays vacíos (se perderían al sincronizar).
+const WEATHER_TABLE = {
+  calor:    { name:'CALOR ASFIXIANTE', icon:'calor_asfixiante.png', desc:'Al final de cada entrada se lanza 1D3 por equipo: ese número de jugadores que hayan acabado dentro del campo pasan a Reservas y no pueden colocarse en la siguiente entrada.' },
+  soleado:  { name:'MUY SOLEADO', icon:'muy_soleado.png', desc:'-1 a todos los chequeos de Pase.' },
+  perfecto: { name:'CLIMA PERFECTO', icon:'clima_perfecto.png', desc:'Sin efectos. Todo sigue igual.' },
+  lluvia:   { name:'LLUVIOSO', icon:'lluvioso.png', desc:'-1 a recoger el balón del suelo, atrapar e interceptar.' },
+  ventisca: { name:'VENTISCA', icon:'ventisca.png', desc:'-1 a "a por ellos". Solo se pueden hacer Pases Rápidos o Cortos (la Entrega de Balón sigue permitida).' }
+};
+function weatherKindFromSum(sum){
+  if(sum<=2) return 'calor';
+  if(sum===3) return 'soleado';
+  if(sum>=12) return 'ventisca';
+  if(sum===11) return 'lluvia';
+  return 'perfecto';
+}
+function defaultPreMatch(){
+  return { step:'idle', open:false,
+    fanDie:{A:0,B:0}, fanFactor:{A:0,B:0}, fanTotal:{A:0,B:0}, fanFound:{A:false,B:false}, fanRolled:false,
+    wDie:{a:0,b:0}, weather:'',
+    subs:{A:0,B:0},
+    coinDie:{A:0,B:0}, coinWinner:'' };
+}
+function mergePreMatch(src){
+  const d = defaultPreMatch();
+  if(!src || typeof src!=='object') return d;
+  Object.keys(d).forEach(k=>{
+    if(src[k]===undefined) return;
+    if(d[k] && typeof d[k]==='object') d[k] = Object.assign({}, d[k], src[k]);
+    else d[k] = src[k];
+  });
+  return d;
+}
+function weatherKind(){ return (preMatch && preMatch.weather) || ''; }
+function rollDieN(n){ return Math.floor(Math.random()*n)+1; }
+
+function getFanFactor(team){
+  // Busca en el staff del equipo (JSON) una clave de hinchas/fans; si no hay dato, 0.
+  const st = teamStaff[team];
+  if(!st || typeof st!=='object') return { value:0, found:false };
+  const pick = (v)=>{
+    if(typeof v==='number') return v;
+    if(v && typeof v==='object'){ for(const k of ['count','value','factor','total']){ if(typeof v[k]==='number') return v[k]; } }
+    return null;
+  };
+  for(const [k,v] of Object.entries(st)){
+    if(/fan|hincha/i.test(k)){ const n = pick(v); if(n!==null) return { value:n, found:true }; }
+  }
+  return { value:0, found:false };
+}
+
+function preMatchBegin(){
+  if(openingKickoffDone) return;
+  if(preMatch.step==='idle'){
+    ['A','B'].forEach(t=>{
+      const d = rollDieN(3);
+      const ff = getFanFactor(t);
+      preMatch.fanDie[t] = d;
+      preMatch.fanFactor[t] = ff.value;
+      preMatch.fanFound[t] = ff.found;
+      preMatch.fanTotal[t] = d + ff.value;
+      log('📣 Hinchas de ' + teamName(t) + ': D3=' + d + ' + Factor ' + ff.value + ' = ' + (d+ff.value) + (ff.found ? '' : ' (sin dato de hinchas en el equipo cargado: se usa 0)') + '.');
+    });
+    preMatch.fanRolled = true;
+    preMatch.step = 'fans';
+  }
+  preMatch.open = true;
+  renderPreMatch();
+  broadcastState();
+}
+
+function preMatchSkip(){
+  if(openingKickoffDone || preMatch.step!=='idle') return;
+  if(!confirm('¿Saltar la secuencia previa? No habrá hinchas, clima, sustitutos ni sorteo (elegiréis quién patea a mano).')) return;
+  preMatch = defaultPreMatch();
+  preMatch.step = 'done';
+  log('⏭️ Secuencia previa al partido omitida.');
+  renderPreMatch();
+  broadcastState();
+}
+
+function preMatchNext(){
+  if(preMatch.step==='fans'){
+    const a = rollDieN(6), b = rollDieN(6);
+    preMatch.wDie.a = a; preMatch.wDie.b = b;
+    preMatch.weather = weatherKindFromSum(a+b);
+    preMatch.step = 'weather';
+    log('🌦️ Clima: ' + a + ' + ' + b + ' = ' + (a+b) + ' → ' + WEATHER_TABLE[preMatch.weather].name + '. ' + WEATHER_TABLE[preMatch.weather].desc);
+  } else if(preMatch.step==='weather'){
+    addSubstitutesIfNeeded();
+    preMatch.step = 'inducements';
+  } else if(preMatch.step==='inducements'){
+    let a, b;
+    do { a = rollDieN(6); b = rollDieN(6); } while(a===b);
+    preMatch.coinDie.A = a; preMatch.coinDie.B = b;
+    preMatch.coinWinner = a>b ? 'A' : 'B';
+    preMatch.step = 'coin';
+    log('🎲 Sorteo de patada: ' + teamName('A') + ' ' + a + ' — ' + teamName('B') + ' ' + b + '. Gana ' + teamName(preMatch.coinWinner) + ' y elige quién patea en la 1ª mitad.');
+  }
+  renderPreMatch();
+  broadcastState();
+}
+
+function preMatchChooseKicker(team){
+  if(preMatch.step!=='coin') return;
+  const sel = document.getElementById('kickSelect');
+  sel.value = team;
+  preMatch.step = 'done';
+  preMatch.open = false;
+  log('🏈 ' + teamName(preMatch.coinWinner) + ' decide que patee ' + teamName(team) + ' en la 1ª mitad (la 2ª patea el otro equipo).');
+  onKickChangeQuiet();
+  renderPreMatch();
+  renderRosters();
+  broadcastState();
+}
+
+function addSubstitutesIfNeeded(){
+  const retired = ['ko','injured','injuredGrave','dead','expelled'];
+  ['A','B'].forEach(team=>{
+    preMatch.subs[team] = 0;
+    const roster = players.filter(p=>p.team===team && !retired.includes(p.condition));
+    if(roster.length===0){ log('ℹ️ ' + teamName(team) + ' no tiene plantilla cargada: no se añaden sustitutos.'); return; }
+    const missing = 7 - roster.length;
+    if(missing<=0) return;
+    const tpl = roster.find(p=>playerHasSkill(p, 'linea', 'lineman'));
+    for(let i=0;i<missing;i++){
+      const base = tpl ? {
+        ma: tpl.ma || 6, st: tpl.st, ag: tpl.ag, pa: tpl.pa, av: tpl.av,
+        skills: (tpl.skills || []).slice()
+      } : { ma:6, st:3, ag:'3+', pa:'4+', av:'9+', skills:['Línea'] };
+      base.skills.push('Solitario (4+)');
+      players.push({
+        id: nextId++, team, num: 'S' + (i+1), name: 'Sustituto ' + (i+1),
+        ma: base.ma, remainingMove: base.ma, gfiUsed:0, condition:'standing', blockedThisActivation:false, freePushOverride:false,
+        dodgeSkillUsedThisTurn:false, catchSkillUsedThisTurn:false, justStoodThisActivation:false,
+        st: base.st, ag: base.ag, pa: base.pa, av: base.av,
+        position: 'Sustituto', skills: base.skills, isSubstitute: true,
+        row:null, col:null, activated:false, onPitch:false
+      });
+    }
+    preMatch.subs[team] = missing;
+    log('🧍 ' + teamName(team) + ' solo tiene ' + roster.length + ' jugadores: se añaden ' + missing + ' Sustituto' + (missing===1?'':'s') + ' (Línea' + (tpl ? '' : ' genérico — no se encontró un Línea en su plantilla') + ' + Solitario 4+).');
+  });
+  renderRosters();
+}
+
+function renderPreMatch(){
+  const modal = document.getElementById('preMatchModal');
+  if(!modal) return;
+  const step = preMatch.step;
+  const inProgress = (step==='fans' || step==='weather' || step==='inducements' || step==='coin');
+  modal.classList.toggle('show', inProgress && !!preMatch.open);
+  const title = document.getElementById('preMatchTitle');
+  const body = document.getElementById('preMatchBody');
+  const actions = document.getElementById('preMatchActions');
+  const dieFace = (v)=>'<div class="die-face">' + v + '</div>';
+  const nameOf = (t)=> teamName(t);
+  actions.innerHTML = '';
+  const okBtn = (label, fn)=>{ const b = document.createElement('button'); b.className='primary'; b.textContent=label; b.onclick=fn; actions.appendChild(b); };
+  if(step==='fans'){
+    title.textContent = '📣 HINCHAS';
+    body.innerHTML = '<div class="pm-dice">' + ['A','B'].map(t=>
+      '<div class="pm-team"><div class="pm-name">' + nameOf(t) + '</div>' + dieFace(preMatch.fanDie[t]) +
+      '<div class="pm-sum">' + preMatch.fanDie[t] + ' + ' + preMatch.fanFactor[t] + ' = <b>' + preMatch.fanTotal[t] + '</b></div></div>').join('') + '</div>' +
+      '<div class="pm-note">Dado D3 + Factor de hinchas. El total queda guardado junto a las Rerolls.</div>';
+    okBtn('OK → Clima', preMatchNext);
+  } else if(step==='weather'){
+    const w = WEATHER_TABLE[preMatch.weather] || WEATHER_TABLE.perfecto;
+    title.textContent = '🌦️ CLIMA';
+    body.innerHTML = '<div class="pm-dice">' + dieFace(preMatch.wDie.a) + dieFace(preMatch.wDie.b) + '</div>' +
+      '<div class="pm-note">Suma: <b style="color:var(--gold)">' + (preMatch.wDie.a + preMatch.wDie.b) + '</b></div>' +
+      '<div class="pm-weather"><span class="gold-icon lg" style="--icon:url(\'icons/' + w.icon + '\')"></span>' +
+      '<div class="pm-wname">' + w.name + '</div><div class="pm-wdesc">' + w.desc + '</div></div>';
+    okBtn('OK', preMatchNext);
+  } else if(step==='inducements'){
+    title.textContent = '💰 INCENTIVOS';
+    const subTxt = ['A','B'].filter(t=>preMatch.subs[t]>0).map(t=> nameOf(t) + ': +' + preMatch.subs[t] + ' Sustituto' + (preMatch.subs[t]===1?'':'s')).join('<br>');
+    body.innerHTML = (subTxt ? '<div class="pm-note">🧍 Sustitutos añadidos (Línea + Solitario 4+):<br>' + subTxt + '</div>' : '') +
+      '<div class="pm-note" style="margin-top:12px;">La compra de Incentivos se definirá más adelante. Por ahora, pulsad OK para continuar.</div>';
+    okBtn('OK → Sorteo de patada', preMatchNext);
+  } else if(step==='coin'){
+    title.textContent = '🪙 SORTEO DE PATADA';
+    body.innerHTML = '<div class="pm-dice">' + ['A','B'].map(t=>
+      '<div class="pm-team"><div class="pm-name">' + nameOf(t) + '</div>' + dieFace(preMatch.coinDie[t]) + '</div>').join('') + '</div>' +
+      '<div class="pm-note">🏆 Gana <b style="color:var(--gold)">' + nameOf(preMatch.coinWinner) + '</b>. ¿Quién patea en la 1ª mitad? (en la 2ª patea el otro equipo)</div>';
+    ['A','B'].forEach(t=>{
+      const b = document.createElement('button'); b.className = (t===preMatch.coinWinner ? 'primary' : '');
+      b.textContent = 'Patea ' + nameOf(t); b.onclick = ()=>preMatchChooseKicker(t); actions.appendChild(b);
+    });
+  }
+  renderSetupPanelPreMatch();
+  renderPreMatchBadges();
+}
+
+function renderSetupPanelPreMatch(){
+  const startRow = document.getElementById('preMatchStartRow');
+  const kickRow = document.getElementById('setupKickRow');
+  const sel = document.getElementById('kickSelect');
+  if(!startRow || !kickRow || !sel) return;
+  const step = preMatch.step;
+  if(openingKickoffDone){ startRow.style.display='none'; kickRow.style.display=''; return; }
+  if(step==='done'){
+    startRow.style.display='none'; kickRow.style.display='';
+    sel.disabled = true;
+    return;
+  }
+  sel.disabled = false;
+  startRow.style.display='block'; kickRow.style.display='none';
+  const idle = (step==='idle');
+  document.getElementById('preMatchStartBtn').textContent = idle ? '🎬 Empezar secuencia anterior a partido' : '▶ Continuar secuencia previa';
+  document.getElementById('preMatchStartNote').style.display = idle ? '' : 'none';
+  document.getElementById('preMatchSkipBtn').style.display = idle ? '' : 'none';
+}
+
+function renderPreMatchBadges(){
+  ['A','B'].forEach(t=>{
+    const box = document.getElementById('sbFans'+t);
+    if(!box) return;
+    if(preMatch.fanRolled){
+      box.style.display = 'flex';
+      document.getElementById('sbFansVal'+t).textContent = preMatch.fanTotal[t];
+      box.title = 'Fans: D3 ' + preMatch.fanDie[t] + ' + Factor ' + preMatch.fanFactor[t] + ' = ' + preMatch.fanTotal[t];
+    } else box.style.display = 'none';
+  });
+  const wEl = document.getElementById('sbWeather');
+  if(wEl){
+    const w = WEATHER_TABLE[weatherKind()];
+    if(w){
+      wEl.style.display = 'inline-block';
+      const ic = document.getElementById('sbWeatherIcon');
+      ic.style.setProperty('--icon', "url('icons/" + w.icon + "')");
+      wEl.title = w.name + ' — ' + w.desc;
+    } else wEl.style.display = 'none';
+  }
+}
+
+// Calor asfixiante: al final de cada entrada, 1D3 jugadores por equipo (de los que acaban en el campo) pasan a Reservas y no pueden colocarse en la siguiente entrada.
+function applyHeatAtDriveEnd(){
+  if(weatherKind()!=='calor') return;
+  const retired = ['ko','injured','injuredGrave','dead','expelled'];
+  ['A','B'].forEach(team=>{
+    const d = rollDieN(3);
+    const pool = players.filter(p=>p.team===team && p.onPitch && !retired.includes(p.condition));
+    for(let i=pool.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [pool[i],pool[j]] = [pool[j],pool[i]]; }
+    const picked = pool.slice(0, d);
+    picked.forEach(p=>{ p.heatRest = true; });
+    log('🥵 Calor asfixiante — ' + teamName(team) + ': D3=' + d + (picked.length ? ' → a Reservas (no se pueden colocar en la siguiente entrada): ' + picked.map(p=>'#'+p.num+' '+p.name).join(', ') : ' (no había jugadores en el campo).'));
+  });
+}
+
+// Solitario (X+): para gastar una reroll de equipo hay que tirar 1D6; con X+ se repite, si no la reroll se pierde.
+function lonerBlocksReroll(p){
+  if(!p || !playerHasSkill(p, 'solitario', 'loner')) return false;
+  const sk = (p.skills||[]).map(normalizeSkillText).find(s=>s.includes('solitario') || s.includes('loner'));
+  const m = sk && sk.match(/(\d)\s*\+/);
+  const need = m ? parseInt(m[1],10) : 4;
+  const r = rollDieN(6);
+  const ok = r>=need;
+  log('🎲 Solitario (' + need + '+) de ' + p.name + ': ' + r + (ok ? ' — puede repetir la tirada.' : ' — NO puede repetir. La reroll se gasta igualmente.'));
+  return !ok;
+}
+
 // ---------- Setup / placement (pre-turn) ----------
 function placeOnPitch(id){
   if(phase!=='setup'){
     alert('Solo se puede colocar/mover jugadores desde el banquillo durante la Fase de colocación (antes de la entrada, o justo después de un touchdown).');
     return;
   }
+  const hp = players.find(x=>x.id===id);
+  if(hp && hp.heatRest){ updateStatus(hp.name + ' descansa por el Calor Asfixiante y no puede colocarse en esta entrada.'); return; }
   placing = id;
   const p = players.find(x=>x.id===id);
   renderRosters(); renderPitch();
@@ -1295,6 +1566,7 @@ function checkLosMinimums(){
 }
 
 function startDrive(){
+  if(!openingKickoffDone && preMatch.step!=='done'){ showInfoModal('Secuencia previa', 'Completad primero la secuencia anterior a partido.'); return; }
   const problems = checkLosMinimums();
   if(problems.length){
     const lines = problems.map(pr => `${teamName(pr.team)}: solo ${pr.count} de 3 jugadores mínimos en su línea de scrimmage (casillas centrales).`);
@@ -1302,6 +1574,7 @@ function startDrive(){
     document.getElementById('losWarningModal').classList.add('show');
     return;
   }
+  players.forEach(p=>{ p.heatRest = false; }); // los descansados por calor ya no pueden colocarse esta entrada: se liberan
   const kicking = document.getElementById('kickSelect').value;
   const receiving = kicking==='A' ? 'B':'A';
   if(!openingKickoffDone){
@@ -1328,6 +1601,7 @@ function showSetupPanel(){
   document.getElementById('setupPanel').style.display='block';
   updateKickSelectLabels();
   onKickChangeQuiet();
+  renderSetupPanelPreMatch();
 }
 
 // ---------- Pitch rendering ----------
@@ -1776,7 +2050,9 @@ function passRangeZone(dr, dc){
   const a = Math.min(Math.abs(dr), 14);
   const b = Math.min(Math.abs(dc), 14);
   const letter = PASS_RANGE_TABLE[a][b];
-  return PASS_LETTER_TO_ZONE[letter];
+  const z = PASS_LETTER_TO_ZONE[letter];
+  if(z>=2 && weatherKind()==='ventisca') return -1; // Ventisca: solo Pase Rápido o Corto
+  return z;
 }
 
 function canPass(p){
@@ -3820,10 +4096,10 @@ const PASS_ZONE_PENALTIES = [0, 1, 2, 3];
 // ---------- Habilidad: Pase a lo loco ----------
 function handlePassTargetChosen(passer, r, c){
   const zone = passRangeZone(r-passer.row, c-passer.col);
-  const hasHailMary = playerHasSkill(passer, 'pase a lo loco', 'hail mary pass');
+  const hasHailMary = playerHasSkill(passer, 'pase a lo loco', 'hail mary pass') && weatherKind()!=='ventisca';
   if(zone===-1){
     if(hasHailMary){ declarePassTarget(passer, r, c, 3, true); } // fuera de alcance: solo posible con Pase a lo loco (Bomba larga)
-    else { updateStatus('Esa casilla está fuera del alcance máximo de pase.'); }
+    else { updateStatus(weatherKind()==='ventisca' ? 'Ventisca: solo se pueden hacer Pases Rápidos o Cortos.' : 'Esa casilla está fuera del alcance máximo de pase.'); }
     return;
   }
   if(hasHailMary){ openHailMaryChoice(passer, r, c, zone); return; } // dentro de alcance: puede elegir entre pase normal o a lo loco
@@ -3991,12 +4267,13 @@ function startPassRoll(passer, targetR, targetC, zone, hailMary){
   pendingPassTargetSelection = null;
   const hasNerviosPass = playerHasSkill(passer, 'nervios de acero', 'nerves of steel');
   const markers = hasNerviosPass ? 0 : countOpponentTackleZones(passer.row, passer.col, passer.team);
-  const totalPenalty = PASS_ZONE_PENALTIES[zone] + markers;
+  const wxPassPen = weatherKind()==='soleado' ? 1 : 0;
+  const totalPenalty = PASS_ZONE_PENALTIES[zone] + markers + wxPassPen;
   pendingPassRoll = { passerId: passer.id, targetR, targetC, zone, totalPenalty, hailMary: !!hailMary };
   const target = parseAgTarget(passer.ag);
   document.getElementById('passText').textContent = (hailMary ? 'PASE A LO LOCO (' + PASS_ZONE_NAMES[zone] + ')' : PASS_ZONE_NAMES[zone]) + ' de ' + passer.name +
     ' — necesita ' + target + '+ (AG' + (passer.ag ?? '?') + ', modificador -' + totalPenalty +
-    (markers>0 ? ' = -' + PASS_ZONE_PENALTIES[zone] + ' por el rango, -' + markers + ' por marcaje' : ' por el rango') + '). Tirad 1D6.';
+    ((markers>0 || wxPassPen>0) ? ' = -' + PASS_ZONE_PENALTIES[zone] + ' por el rango' + (markers>0 ? ', -' + markers + ' por marcaje' : '') + (wxPassPen>0 ? ', -1 por Muy soleado' : '') : ' por el rango') + '). Tirad 1D6.';
   document.getElementById('passDie').textContent = '–';
   document.getElementById('passResultText').textContent = '';
   document.getElementById('passResultText').className = 'check-result';
@@ -4095,6 +4372,10 @@ function usePassReroll(isSkill){
     teamRerollsLeft[passer.team] = Math.max(0, (teamRerollsLeft[passer.team]||0) - 1);
     log('🔄 ' + teamName(passer.team) + ' gasta un reroll — quedan ' + teamRerollsLeft[passer.team] + '.');
     renderStaffPanels();
+    if(lonerBlocksReroll(passer)){
+      renderPassActionRow(passer, pendingPassRoll.lastOutcome);
+      return;
+    }
   }
   document.getElementById('passActionRow').style.display = 'none';
   document.getElementById('passRollBtn').style.display = 'block';
@@ -4226,12 +4507,13 @@ function attemptInterception(id){
   const zonePenalty = outcome==='preciso' ? 3 : 2;
   const markers = countOpponentTackleZones(interceptor.row, interceptor.col, interceptor.team);
   const escurridizoPenalty = playerHasSkill(interceptor, 'escurridizo', 'diving tackle immune', 'slippery') ? 1 : 0;
-  const target = parseAgTarget(interceptor.ag) + zonePenalty + markers + escurridizoPenalty;
+  const rainPen = weatherKind()==='lluvia' ? 1 : 0;
+  const target = parseAgTarget(interceptor.ag) + zonePenalty + markers + escurridizoPenalty + rainPen;
   pendingInterceptionRoll = { interceptorId: interceptor.id, target };
   document.getElementById('interceptText').textContent = interceptor.name + ' intenta interceptar — necesita ' + target + '+ (AG' + (interceptor.ag ?? '?') +
     ' -' + zonePenalty + ' por ser ' + (outcome==='preciso' ? 'un pase preciso' : 'un pase impreciso') +
     (markers>0 ? (', -' + markers + ' por marcaje') : '') +
-    (escurridizoPenalty>0 ? ', -1 por Escurridizo' : '') + '). Tirad 1D6.';
+    (escurridizoPenalty>0 ? ', -1 por Escurridizo' : '') + (rainPen>0 ? ', -1 por Lluvioso' : '') + '). Tirad 1D6.';
   document.getElementById('interceptDie').textContent = '–';
   document.getElementById('interceptResultText').textContent = '';
   document.getElementById('interceptResultText').className = 'check-result';
@@ -4552,14 +4834,26 @@ function resolveBounce(r,c){
   }
 }
 
+function catchKindOf(pc){
+  if(!pc) return 'pickup';
+  return pc.catchKind || (pc.useAtraparSkill ? 'handoff' : 'pickup');
+}
+function updateCatchTitle(){
+  const el = document.getElementById('catchTitle');
+  if(!el) return;
+  el.textContent = catchKindOf(pendingCatch)==='pickup' ? 'RECOGER BALÓN' : 'ATRAPAR BALÓN';
+}
+
 function openCatchModal(p, noModifiers, voluntary, extraPenalty, extraReason, useAtraparSkill, catchVerb, rhBonus, catchKind){
   const hasNerviosCatch = playerHasSkill(p, 'nervios de acero', 'nerves of steel');
   const markers = (noModifiers || hasNerviosCatch) ? 0 : countOpponentTackleZones(p.row, p.col, p.team);
   const extra = noModifiers ? 0 : (extraPenalty || 0);
   const bonus = noModifiers ? 0 : (rhBonus || 0);
-  const target = noModifiers ? parseAgTarget(p.ag) : parseAgTarget(p.ag) + markers + extra - bonus;
+  const rainPen = (!noModifiers && weatherKind()==='lluvia') ? 1 : 0;
+  const target = noModifiers ? parseAgTarget(p.ag) : parseAgTarget(p.ag) + markers + extra + rainPen - bonus;
   pendingCatch = { playerId: p.id, target, voluntary: !!voluntary, useAtraparSkill: !!useAtraparSkill, catchKind: catchKind || (useAtraparSkill ? 'handoff' : 'pickup') };
   catchRerollUsed = false;
+  updateCatchTitle();
   let modText;
   if(noModifiers){
     modText = `(AG${p.ag ?? '?'}, sin modificadores — rebote del saque inicial)`;
@@ -4567,6 +4861,7 @@ function openCatchModal(p, noModifiers, voluntary, extraPenalty, extraReason, us
     const parts = [];
     if(markers>0) parts.push('-1 por cada rival marcándole (' + markers + ')');
     if(extra>0) parts.push('-1 por ser ' + (extraReason || 'recogida especial'));
+    if(rainPen>0) parts.push('-1 por Lluvioso');
     if(bonus>0) parts.push('+1 por Recepción Heroica (en la casilla objetivo)');
     modText = `(AG${p.ag ?? '?'}${parts.length ? ' ' + parts.join(' ') : ', sin modificadores'})`;
   }
@@ -4589,7 +4884,7 @@ function rollCatchDie(){
   const p = players.find(x=>x.id===pendingCatch.playerId);
   const success = r===6 ? true : (r===1 ? false : r>=pendingCatch.target);
   pendingCatch.lastSuccess = success;
-  log('🎲 Recoger balón: tirada ' + r + ' (necesitaba ' + pendingCatch.target + '+) → ' + (success?'CONSEGUIDO':'FALLADO'));
+  log('🎲 ' + (catchKindOf(pendingCatch)==='pickup' ? 'Recoger balón' : 'Atrapar balón') + ': tirada ' + r + ' (necesitaba ' + pendingCatch.target + '+) → ' + (success?'CONSEGUIDO':'FALLADO'));
   checkActionButtons('catch', success, p);
   broadcastState();
 }
@@ -4980,6 +5275,11 @@ function useCheckReroll(prefix, isSkill){
     teamRerollsLeft[p.team] = Math.max(0, (teamRerollsLeft[p.team]||0) - 1);
     log('🔄 ' + teamName(p.team) + ' gasta un reroll — quedan ' + teamRerollsLeft[p.team] + '.');
     renderStaffPanels();
+    if(lonerBlocksReroll(p)){
+      checkActionButtons(prefix, pending.lastSuccess, p);
+      broadcastState();
+      return;
+    }
   } else if(prefix==='dodge'){
     p.dodgeSkillUsedThisTurn = true;
     log('🔁 ' + p.name + ' repite gratis con su habilidad Esquivar (ya no podrá volver a usarla este turno).');
@@ -5088,11 +5388,13 @@ function openGfiModal(p, toR, toC, chainDodge, blockDefenderId, stabDefenderId){
   pendingGfi = { playerId:p.id, toR, toC, chainDodge: !!chainDodge, blockDefenderId: blockDefenderId || null, stabDefenderId: stabDefenderId || null };
   gfiRerollUsed = false;
   const attempt = (p.gfiUsed ?? 0) + 1;
-  let msg = `${p.name} intenta "a por ellos" — casilla extra ${attempt}/${maxGfiFor(p)}. Necesita 2+ (solo falla con un 1). Tirad D6.`;
+  const gfiNeed = weatherKind()==='ventisca' ? 3 : 2;
+  const gfiWx = gfiNeed>2 ? ' (-1 por Ventisca)' : '';
+  let msg = `${p.name} intenta "a por ellos" — casilla extra ${attempt}/${maxGfiFor(p)}. Necesita ${gfiNeed}+${gfiWx}${gfiNeed===2 ? ' (solo falla con un 1)' : ''}. Tirad D6.`;
   if(blockDefenderId){
-    msg = `${p.name} ya no le queda MA para el placaje del Blitz — tirad D6 "a por ellos" para intentarlo igualmente (necesita 2+).`;
+    msg = `${p.name} ya no le queda MA para el placaje del Blitz — tirad D6 "a por ellos" para intentarlo igualmente (necesita ${gfiNeed}+${gfiWx}).`;
   } else if(stabDefenderId){
-    msg = `${p.name} ya no le queda MA para el Apuñalar del Blitz — tirad D6 "a por ellos" para intentarlo igualmente (necesita 2+).`;
+    msg = `${p.name} ya no le queda MA para el Apuñalar del Blitz — tirad D6 "a por ellos" para intentarlo igualmente (necesita ${gfiNeed}+${gfiWx}).`;
   } else if(chainDodge){
     msg += ' Esa casilla también sale de una zona de marcaje: si supera esto, tocará esquivar justo después.';
   }
@@ -5112,7 +5414,7 @@ function rollGfiDie(){
   const r = Math.floor(Math.random()*6)+1;
   document.getElementById('gfiDie').textContent = r;
   const p = players.find(x=>x.id===pendingGfi.playerId);
-  const success = r>=2;
+  const success = r >= (weatherKind()==='ventisca' ? 3 : 2);
   pendingGfi.lastSuccess = success;
   log('🎲 A por ellos: tirada ' + r + ' → ' + (success?'CONSEGUIDO':'FALLADO'));
   checkActionButtons('gfi', success, p);
@@ -5632,6 +5934,7 @@ function confirmTD(){
   log('🏆 ¡TOUCHDOWN! ' + teamName(scoringTeam) + ' — ' + pendingTD.name);
 
   const halfOver = isHalfComplete(scoringTeam);
+  applyHeatAtDriveEnd();
   resetBoardForNewDrive();
   phase='setup';
   document.getElementById('kickSelect').value = scoringTeam;
@@ -5677,6 +5980,7 @@ function endTurn(){
   });
 
   if(isHalfComplete(finishing)){
+    if(state.half<2) applyHeatAtDriveEnd();
     resetBoardForNewDrive();
     phase='setup';
     if(state.half >= 2){
@@ -5998,6 +6302,9 @@ function cancelActiveModal(modalId){
       pendingFollowUp = null;
       log('❌ Movimiento de impulso cancelado manualmente.');
       break;
+    case 'preMatchModal':
+      preMatch.open = false;
+      break;
     default:
       // Modales puramente informativos (aviso de línea, fin de partida, partida guardada, touchdown, KO...): basta con cerrarlos.
       break;
@@ -6070,7 +6377,7 @@ function setupModalEnhancements(){
 document.addEventListener('DOMContentLoaded', setupModalEnhancements);
 if(document.readyState==='complete' || document.readyState==='interactive'){ setupModalEnhancements(); }
 
-window.APP_JS_VERSION = 'A_V32'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V33'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

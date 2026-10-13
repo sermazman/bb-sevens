@@ -1,7 +1,7 @@
 # Sección `league` (schemaVersion 2) — Temporada 6
 
 La parte superior del JSON (teamName, race, color, textColor, staff, players, formation) es la de rosters.html y NO se toca.
-Todo lo de liga vive dentro de `league`. Los jugadores se enlazan por `num`.
+Todo lo de liga vive dentro de `league`. `league.coach` guarda el nombre del entrenador (se pide al inscribir el equipo y se puede editar en «Equipo y economía»). Los jugadores se enlazan por `num`.
 
 ## Qué se guarda y qué se calcula
 
@@ -22,13 +22,15 @@ Todo lo de liga vive dentro de `league`. Los jugadores se enlazan por `num`.
 - Precio del jugador = precio base + valor extra de sus mejoras
 - Coste del equipo = precios de jugadores + repeticiones + personal (fans extra a 20.000, médico, animadoras, ayudantes, sobornos)
 - Valor del equipo = personal + valor de los jugadores (un jugador que se pierde el próximo partido no cuenta)
-- Tesorería = inicial + Σ ganancias − Σ tesorería gastada − coste del equipo + valor extra de mejoras − precio de los muertos
+- Tesorería = inicial + Σ ganancias − Σ tesorería gastada − coste del equipo + valor extra de mejoras − precio de los muertos y drafteados (con sus mejoras) − Σ valor pagado para no ser drafteado
 - "Tesorería gastada" de cada partido es SOLO el gasto manual en incentivos (no son compras de roster).
 
 ## Estado del jugador
 
 - `active`: puede jugar.
 - `missNextGame`: herido grave; vuelve a `active` al registrar el siguiente partido.
+- Drafteado: el draft se marca en el registro de partido, solo en jugadores con al menos 1 habilidad subida con SPP (las de base y las mejoras de característica no cuentan). Sale de `players` y de `formation` y pasa a `retiredPlayers` con `reason: "drafted"` y `draftValue` ("2+" con 1 habilidad subida, "3+" con 2, etc.). Se trata exactamente como un muerto: no se devuelve dinero y su valor total en ese momento (precio + mejoras) sigue restando de la tesorería.
+- Pagar valor: en lugar de ser drafteado, el jugador se queda; se resta su valor (precio + mejoras) de la tesorería y su valor sube 15.000. Se guarda en `progression.draftPayments`: `{ "matchId": "T6-J02", "paid": 105000, "valueExtra": 15000 }`. El evento del partido lleva `draft: "paidValue"` y `valuePaid`.
 - Muerto: sale de `players` y se mueve a `retiredPlayers` con atributos, habilidades, progresión y estadísticas del momento.
 - Herido leve e inconsciente: no impiden jugar (solo cuentan HL como estadística).
 - Expulsados: son los jugadores PROPIOS expulsados; solo estadística del partido/equipo, no afectan a la disponibilidad.

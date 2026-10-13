@@ -68,6 +68,8 @@ td.skills{white-space:normal;text-align:left;min-width:170px;max-width:230px;col
 .pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;border:1px solid}
 .pill.ok{color:var(--good);border-color:var(--good)}
 .pill.out{color:var(--bad);border-color:var(--bad)}
+.pill.draft{color:var(--warn);border-color:var(--warn)}
+.draftcell{font-family:var(--f-mono);font-weight:600;color:var(--warn)}
 tr.out td{opacity:.6}
 input[type=number],input[type=text],select,textarea{background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:6px 8px;width:100%}
 input[type=number]{font-family:var(--f-mono);text-align:right}
@@ -150,7 +152,8 @@ td.impcell{min-width:210px;white-space:normal}
       <input id="fileInput" type="file" accept=".json,application/json" hidden>
       <button class="btn" id="ghOpenBtn" type="button">Abrir de GitHub</button>
       <button class="btn" id="ghCfgBtn" type="button">Ajustes GitHub</button>
-      <button class="btn primary" id="downloadBtn" type="button" disabled>Descargar para jugar</button>
+      <button class="btn" id="sheetBtn" type="button" disabled>Hoja de partido (PDF)</button>
+      <button class="btn primary" id="downloadBtn" type="button" disabled>Descargar EQUIPO</button>
     </div>
   </div>
 </header>
@@ -212,7 +215,7 @@ td.impcell{min-width:210px;white-space:normal}
 <main class="wrap" id="app">
   <div class="drop" id="drop">
     <h2>Carga un equipo</h2>
-    <p>Arrastra aquí el JSON del equipo o usa «Cargar equipo».<br>Sirve el que sale de rosters.html (se inscribe en la liga) o uno que ya tenga la sección de liga.</p>
+    <p>Arrastra aquí el archivo del equipo o usa «Cargar equipo».<br>Sirve el que sale de rosters.html (se inscribe en la liga) o uno que ya tenga la sección de liga.</p>
   </div>
 </main>
 
@@ -243,6 +246,8 @@ const IMPROVEMENT_COSTS = {
 };
 const DEFAULT_PRICES = { dedicatedFan:20000, cheerleader:20000, assistantCoach:20000, apothecary:null, bribe:100000 };
 /* catálogo de posiciones (rosters/positions.json): respaldo si el JSON no trae el precio */
+/* catálogo completo de posiciones (rosters/positions.json): respaldo; la página lo vuelve a leer del repo al abrirse */
+let POS_CAT = [{"race":"Amazon","type":"Eagle Warrior Linewomen","ma":6,"st":3,"ag":3,"pa":4,"av":8,"skills":["Esquivar"],"prize":50000,"qty":16,"clave":"Human - Linea"},{"race":"Amazon","type":"Python Warrior Throwers","ma":6,"st":3,"ag":3,"pa":3,"av":8,"skills":["Esquivar","Atento al balón","Pasar","Pase seguro"],"prize":80000,"qty":2,"clave":"Human - Lanzador"},{"race":"Amazon","type":"Piranha Warrior Blitzers","ma":7,"st":3,"ag":3,"pa":5,"av":8,"skills":["Esquivar","Pegar y correr","En pie de un salto"],"prize":90000,"qty":2,"clave":"Human - Blitzer"},{"race":"Amazon","type":"Jaguar Warrior Blockers","ma":6,"st":4,"ag":3,"pa":5,"av":9,"skills":["Romper Defensas","Esquivar"],"prize":110000,"qty":2,"clave":"Human - Defensor"},{"race":"Amazon","type":"Journey Eagle Warrior Linewomen","ma":6,"st":3,"ag":3,"pa":4,"av":8,"skills":["Solitario (5+)","Esquivar"],"prize":50000,"qty":16,"clave":"Human - Linea"},{"race":"Black Orc","type":"Goblin Bruiser","ma":6,"st":2,"ag":3,"pa":4,"av":8,"skills":["Esquivar","Humanoide bala","Escurridizo","Cabeza dura"],"prize":45000,"qty":16,"clave":"Goblin - Linea"},{"race":"Black Orc","type":"Black Orc","ma":4,"st":4,"ag":4,"pa":5,"av":10,"skills":["Luchador","Apartar"],"prize":90000,"qty":6,"clave":"Orc - Defensor"},{"race":"Black Orc","type":"Trained Troll","ma":4,"st":5,"ag":5,"pa":5,"av":10,"skills":["Golpe mortífero","Lanzar compañero","Proyectil de vómito","Realmente estúpido","Siempre hambriento","Regeneración"],"prize":115000,"qty":1,"clave":"Troll - Grandullon"},{"race":"Black Orc","type":"Journey Goblin","ma":6,"st":2,"ag":3,"pa":4,"av":8,"skills":["Solitario (5+)","Esquivar","Humanoide bala","Escurridizo","Cabeza dura"],"prize":45000,"qty":11,"clave":"Goblin - Linea"},{"race":"Bretonia","type":"Squire","ma":6,"st":3,"ag":3,"pa":4,"av":8,"skills":["Forcejear"],"prize":50000,"qty":16,"clave":"Human - Linea"},{"race":"Bretonia","type":"Knigth Catcher","ma":7,"st":3,"ag":3,"pa":3,"av":9,"skills":["Agallas","Atrapar","Nervios de Acero"],"prize":85000,"qty":2,"clave":"Human - Receptor"},{"race":"Bretonia","type":"Knigth Thrower","ma":6,"st":3,"ag":3,"pa":3,"av":9,"skills":["Agallas","Nervios de Acero","Pasar"],"prize":80000,"qty":2,"clave":"Human - Lanzador"},{"race":"Bretonia","type":"Grial Knigths","ma":7,"st":4,"ag":3,"pa":4,"av":10,"skills":["Agallas","Equilibrio Firme","Placar"],"prize":95000,"qty":2,"clave":"Human - Blitzer"},{"race":"Bretonia","type":"Journey Eagle Warrior Linewomen","ma":6,"st":3,"ag":3,"pa":4,"av":8,"skills":["Solitario (5+)","Forcejear"],"prize":50000,"qty":16,"clave":"Human - Linea"},{"race":"Chaos Chosen","type":"Beastman Lineman","ma":6,"st":3,"ag":3,"pa":3,"av":9,"skills":["Cuernos","Cabeza dura"],"prize":55000,"qty":16,"clave":"Beastman - Linea"},{"race":"Chaos Chosen","type":"Chaos Chosen","ma":5,"st":4,"ag":3,"pa":5,"av":10,"skills":["Llave de Brazo"],"prize":100000,"qty":4,"clave":"Human - Defensor"},{"race":"Chaos Chosen","type":"Troll","ma":4,"st":5,"ag":5,"pa":5,"av":10,"skills":["Siempre hambriento","Solitario (4+)","Golpe mortífero","Proyectil de vómito","Realmente estúpido","Regeneración","Lanzar compañero"],"prize":115000,"qty":1,"clave":"Troll - Grandullon"},{"race":"Chaos Chosen","type":"Ogre","ma":5,"st":5,"ag":4,"pa":5,"av":10,"skills":["Estúpido","Solitario (4+)","Golpe mortífero","Cabeza dura","Lanzar Compañero"],"prize":140000,"qty":1,"clave":"Ogre - Grandullon"},{"race":"Chaos Chosen","type":"Minotaur","ma":5,"st":5,"ag":4,"pa":6,"av":9,"skills":["Solitario (4+)","Furia","Cuernos","Golpe mortífero","Cabeza dura","Ira descontrolada"],"prize":150000,"qty":1,"clave":"Minotaur - Grandullon"},{"race":"Chaos Chosen","type":"Journey Beastman","ma":6,"st":3,"ag":3,"pa":3,"av":9,"skills":["Solitario (5+)","Cuernos"],"prize":55000,"qty":11,"clave":"Beastman - Linea"},{"race":"Chaos Dwarf","type":"Hobgoblin Lineman","ma":6,"st":3,"ag":3,"pa":4,"av":8,"skills":[],"prize":40000,"qty":16,"clave":"Goblin - Linea"},{"race":"Chaos Dwarf","type":"Sneaky Stabba","ma":6,"st":3,"ag":3,"pa":5,"av":8,"skills":["Perseguir","Puñal"],"prize":60000,"qty":2,"clave":"Especial - Goblin"},{"race":"Chaos Dwarf","type":"Chaos Dwarf Blocker","ma":4,"st":3,"ag":4,"pa":6,"av":10,"skills":["Placar","Piel ferrea","Cabeza dura"],"prize":70000,"qty":4,"clave":"Defensor - Dwarf"},{"race":"Chaos Dwarf","type":"Flamesmith","ma":5,"st":3,"ag":4,"pa":6,"av":10,"skills":["Luchador","Exhalar fuego","Presencia perturbadora","Cabeza dura"],"prize":80000,"qty":2,"clave":"Dwarf - Especial"},{"race":"Chaos Dwarf","type":"Bull Centaur","ma":6,"st":4,"ag":4,"pa":6,"av":10,"skills":["Esprintar","Pies firmes","Cabeza dura","Tembloroso"],"prize":130000,"qty":2,"clave":"Blitzer - Dwarf"},{"race":"Chaos Dwarf","type":"Minotaur","ma":5,"st":5,"ag":4,"pa":6,"av":9,"skills":["Solitario (4+)","Furia","Cuernos","Golpe mortífero","Cabeza dura","Ira descontrolada"],"prize":150000,"qty":1,"clave":"Grandullon - Minotaur"},{"race":"Chaos Dwarf","type":"Journey Hobgoblin Lineman","ma":6,"st":3,"ag":3,"pa":4,"av":8,"skills":["Solitario (5+)"],"prize":40000,"qty":16,"clave":"Goblin - Linea"},{"race":"Chaos Renegades","type":"Human Renegade","ma":6,"st":3,"ag":3,"pa":4,"av":9,"skills":["Animosidad (todo el equipo)"],"prize":50000,"qty":12,"clave":"Human - Linea"},{"race":"Chaos Renegades","type":"Goblin Renegade","ma":6,"st":2,"ag":3,"pa":4,"av":8,"skills":["Animosidad (todo el equipo)","Esquivar","Humanoide bala","Escurridizo"],"prize":40000,"qty":1,"clave":"Goblin - Linea"},{"race":"Chaos Renegades","type":"Orc Renegade","ma":5,"st":3,"ag":3,"pa":5,"av":10,"skills":["Animosidad (todo el equipo)"],"prize":50000,"qty":1,"clave":"Orc - Linea"},{"race":"Chaos Renegades","type":"Skaven Renegade","ma":7,"st":3,"ag":3,"pa":4,"av":8,"skills":["Animosidad (todo el equipo)"],"prize":50000,"qty":1,"clave":"Linea - Skaven"},{"race":"Chaos Renegades","type":"Dark Elf Renegade","ma":6,"st":3,"ag":2,"pa":3,"av":9,"skills":["Animosidad (todo el equipo)"],"prize":65000,"qty":1,"clave":"Elf - Linea"},{"race":"Chaos Renegades","type":"Human Thrower Renegade","ma":6,"st":3,"ag":3,"pa":3,"av":9,"skills":["Animosidad (todo el equipo)","Pasar","Manos seguras"],"prize":75000,"qty":1,"clave":"Human - Lanzador"},{"race":"Chaos Renegades","type":"Troll","ma":4,"st":5,"ag":5,"pa":5,"av":10,"skills":["Siempre hambriento","Solitario (4+)","Golpe mortífero","Proyectil de vómito","Realmente estúpido","Regeneración","Lanzar compañero"],"prize":115000,"qty":1,"clave":"Troll - Grandullon"},{"race":"Chaos Renegades","type":"Ogre","ma":5,"st":5,"ag":4,"pa":5,"av":10,"skills":["Estúpido","Solitario (4+)","Golpe mortífero","Cabeza dura","Lanzar Compañero"],"prize":140000,"qty":1,"clave":"Ogre - Grandullon"},{"race":"Chaos Renegades","type":"Minotaur","ma":5,"st":5,"ag":4,"pa":6,"av":9,"skills":["Solitario (4+)","Furia","Cuernos","Golpe mortífero","Cabeza dura","Ira descontrolada"],"prize":150000,"qty":1,"clave":"Minotaur - Grandullon"},{"race":"Chaos Renegades","type":"Rat Ogre","ma":6,"st":5,"ag":4,"pa":6,"av":9,"skills":["Ferocidad animal","Furia","Solitario (4+)","Golpe mortífero","Cola prensil"],"prize":150000,"qty":1,"clave":"Skaven - Grandullon"},{"race":"Chaos Renegades","type":"Journey Human Renegade","ma":6,"st":3,"ag":3,"pa":4,"av":9,"skills":["Solitario (5+)","Animosidad (todo el equipo)"],"prize":50000,"qty":11,"clave":"Human - Linea"},{"race":"Dark Elf","type":"Lineman","ma":6,"st":3,"ag":2,"pa":3,"av":9,"skills":[],"prize":65000,"qty":16,"clave":"Elf - Linea"},{"race":"Dark Elf","type":"Runner","ma":7,"st":3,"ag":2,"pa":3,"av":8,"skills":["Pase precipitado","Patada despeje"],"prize":80000,"qty":2,"clave":"Corredor - Elf"},{"race":"Dark Elf","type":"Assassin","ma":7,"st":3,"ag":2,"pa":4,"av":8,"skills":["Perseguir","Apuñalar","Atacar y huir"],"prize":90000,"qty":2,"clave":"Elf - Especial"},{"race":"Dark Elf","type":"Blitzer","ma":7,"st":3,"ag":2,"pa":3,"av":9,"skills":["Placar"],"prize":105000,"qty":2,"clave":"Elf - Blitzer"},{"race":"Dark Elf","type":"Witch Elf","ma":7,"st":3,"ag":2,"pa":4,"av":8,"skills":["Esquivar","Furia","En pie de un salto"],"prize":110000,"qty":2,"clave":"Elf - Especial"},{"race":"Dark Elf","type":"Journey Elf","ma":6,"st":3,"ag":2,"pa":3,"av":9,"skills":["Solitario (5+)"],"prize":65000,"qty":11,"clave":"Elf - Linea"},{"race":"Dwarf","type":"Lineman","ma":4,"st":3,"ag":4,"pa":5,"av":10,"skills":["Placar","Romper defensas","Cabeza dura"],"prize":70000,"qty":16,"clave":"Dwarf - Linea"},{"race":"Dwarf","type":"Runner","ma":6,"st":3,"ag":3,"pa":4,"av":9,"skills":["Manos seguras","Cabeza dura","Esprintar"],"prize":80000,"qty":2,"clave":"Dwarf - Corredor"},{"race":"Dwarf","type":"Blitzer","ma":5,"st":3,"ag":4,"pa":4,"av":10,"skills":["Cabeza dura","Placaje defensivo","Placaje heroico","Placar"],"prize":100000,"qty":2,"clave":"Dwarf - Blitzer"},{"race":"Dwarf","type":"Troll Slayer","ma":5,"st":3,"ag":4,"pa":5,"av":9,"skills":["Agallas","Cabeza dura","Furia","Odio (Troll)","Placar"],"prize":95000,"qty":2,"clave":"Dwarf - Especial"},{"race":"Dwarf","type":"Deathroller","ma":5,"st":7,"ag":5,"pa":0,"av":11,"skills":["Abrirse paso","Arma secreta","El balón ni verlo","Golpe mortifero","Imparable","Jugar sucio","Mantenerse firme","Solitario (4+)"],"prize":170000,"qty":1,"clave":"Dwarf - Especial - Grandullon"},{"race":"Dwarf","type":"Journey Lineman","ma":4,"st":3,"ag":4,"pa":5,"av":10,"skills":["Solitario (5+)","Placar","Romper defensas","Cabeza dura"],"prize":70000,"qty":11,"clave":"Dwarf - Linea"},{"race":"Elven Union","type":"Lineman","ma":6,"st":3,"ag":2,"pa":3,"av":8,"skills":["Dejada"],"prize":65000,"qty":16,"clave":"Elf - Linea"},{"race":"Elven Union","type":"Thrower","ma":6,"st":3,"ag":2,"pa":2,"av":8,"skills":["Pasar","Pase a lo loco"],"prize":75000,"qty":2,"clave":"Elf - Lanzador"},{"race":"Elven Union","type":"Catcher","ma":8,"st":3,"ag":2,"pa":4,"av":8,"skills":["Atrapar","Nervios de acero","Recepción heroica"],"prize":100000,"qty":4,"clave":"Elf - Receptor"},{"race":"Elven Union","type":"Blitzer","ma":7,"st":3,"ag":2,"pa":3,"av":9,"skills":["Placar","Echarse a un lado"],"prize":115000,"qty":2,"clave":"Elf - Blitzer"},{"race":"Elven Union","type":"Journey Elf","ma":6,"st":3,"ag":2,"pa":3,"av":8,"skills":["Solitario (5+) Dejada"],"prize":65000,"qty":11,"clave":"Elf - Linea"},{"race":"Goblin","type":"Goblin","ma":6,"st":2,"ag":3,"pa":4,"av":8,"skills":["Esquivar","Humanoide bala","Escurridizo"],"prize":40000,"qty":16,"clave":null},{"race":"Goblin","type":"Bombardier","ma":6,"st":2,"ag":3,"pa":4,"av":8,"skills":["Bombardero","Esquivar","Arma secreta","Escurridizo"],"prize":45000,"qty":1,"clave":null},{"race":"Goblin","type":"Looney","ma":6,"st":2,"ag":3,"pa":0,"av":8,"skills":["Motosierra","Arma secreta","Escurridizo"],"prize":40000,"qty":1,"clave":null},{"race":"Goblin","type":"Doom Diver","ma":6,"st":2,"ag":3,"pa":6,"av":8,"skills":["Humanoide bala","Escurridizo","Planear"],"prize":60000,"qty":1,"clave":null},{"race":"Goblin","type":"Ooligan","ma":6,"st":2,"ag":3,"pa":6,"av":8,"skills":["Juego sucio (+1)","Presencia perturbadora","Esquivar","Humanoide bala","Escurridizo"],"prize":65000,"qty":1,"clave":null},{"race":"Goblin","type":"Fanatic","ma":3,"st":7,"ag":3,"pa":0,"av":8,"skills":["Bola y cadena","Sin manos","Arma secreta","Escurridizo"],"prize":70000,"qty":1,"clave":null},{"race":"Goblin","type":"Pogoer","ma":7,"st":2,"ag":3,"pa":5,"av":8,"skills":["Esquivar","Pogo saltarín","Escurridizo"],"prize":75000,"qty":1,"clave":null},{"race":"Goblin","type":"Troll","ma":4,"st":5,"ag":5,"pa":5,"av":10,"skills":["Siempre hambriento","Solitario (3+)","Golpe mortífero","Proyectil de vómito","Realmente estúpido","Regeneración","Lanzar compañero"],"prize":115000,"qty":2,"clave":null},{"race":"Goblin","type":"Journey Goblin","ma":6,"st":2,"ag":3,"pa":4,"av":8,"skills":["Solitario (5+)","Esquivar","Humanoide bala","Escurridizo"],"prize":40000,"qty":11,"clave":null},{"race":"Gnome","type":"Linemen","ma":5,"st":2,"ag":3,"pa":4,"av":7,"skills":["En pie de un salto","Humanoide bala","Escurridizo","Forcejear"],"prize":40000,"qty":16,"clave":null},{"race":"Gnome","type":"Illusionist","ma":5,"st":2,"ag":3,"pa":3,"av":7,"skills":["En pie de un salto","Escurridizo","Embaucador","Forcejear"],"prize":50000,"qty":2,"clave":null},{"race":"Gnome","type":"Woodland Fox","ma":7,"st":2,"ag":2,"pa":0,"av":6,"skills":["Esquivar","Mi balón","Echarse a un lado","Escurridizo"],"prize":50000,"qty":2,"clave":null},{"race":"Gnome","type":"Beastmaster","ma":5,"st":2,"ag":3,"pa":4,"av":8,"skills":["Defensa","En pie de un salto","Escurridizo","Forcejear"],"prize":55000,"qty":2,"clave":null},{"race":"Gnome","type":"Altern Forest Treeman","ma":2,"st":6,"ag":5,"pa":5,"av":11,"skills":["Golpe mortífero","Mantenerse firme","Brazo fuerte","Echar raíces","Cabeza dura","Lanzar compañero","¡Tronco va!"],"prize":120000,"qty":2,"clave":null},{"race":"Gnome","type":"Journey Lineman","ma":5,"st":2,"ag":3,"pa":4,"av":7,"skills":["Solitario (5+)","En pie de un salto","Humanoide bala","Escurridizo","Forcejear"],"prize":40000,"qty":16,"clave":null},{"race":"Halfling","type":"Halfling Hopeful","ma":5,"st":2,"ag":3,"pa":4,"av":7,"skills":["Esquivar","Humanoide bala","Escurridizo"],"prize":30000,"qty":16,"clave":null},{"race":"Halfling","type":"Halfling Catcher","ma":5,"st":2,"ag":3,"pa":5,"av":7,"skills":["Atrapar","Esquivar","Humanoide bala","Esprintar","Escurridizo"],"prize":55000,"qty":2,"clave":null},{"race":"Halfling","type":"Halfling Hefty","ma":5,"st":2,"ag":3,"pa":3,"av":8,"skills":["Esquivar","Zafarse","Escurridizo"],"prize":50000,"qty":2,"clave":null},{"race":"Halfling","type":"Forest Treeman","ma":2,"st":6,"ag":5,"pa":5,"av":11,"skills":["Golpe mortífero","Mantenerse firme","Brazo fuerte","Echar raíces","Cabeza dura","Lanzar compañero","¡Tronco va!"],"prize":120000,"qty":2,"clave":null},{"race":"Halfling","type":"Journey Halfling","ma":5,"st":2,"ag":3,"pa":4,"av":7,"skills":["Solitario (5+)","Esquivar","Humanoide bala","Escurridizo"],"prize":30000,"qty":11,"clave":null},{"race":"High Elf","type":"Lineman","ma":6,"st":3,"ag":2,"pa":3,"av":9,"skills":[],"prize":65000,"qty":16,"clave":"Elf - Linea"},{"race":"High Elf","type":"White Lion","ma":7,"st":3,"ag":2,"pa":3,"av":9,"skills":["Forcejear","Garras"],"prize":110000,"qty":2,"clave":"Elf - Blitzer"},{"race":"High Elf","type":"Phoenix Warrior","ma":6,"st":3,"ag":2,"pa":2,"av":9,"skills":["Pasar","Partenubes","Pase seguro"],"prize":90000,"qty":2,"clave":"Elf - Lanzador"},{"race":"High Elf","type":"Dragon Prince","ma":8,"st":3,"ag":2,"pa":1,"av":9,"skills":["El balon es mio","Equilibrio firme","Placar"],"prize":110000,"qty":2,"clave":"Elf - Corredor - Blitzer"},{"race":"High Elf","type":"Journey Elf","ma":6,"st":3,"ag":2,"pa":3,"av":9,"skills":["Solitario (5+)"],"prize":65000,"qty":11,"clave":"Elf - Linea"},{"race":"Human","type":"Lineman","ma":6,"st":3,"ag":3,"pa":4,"av":9,"skills":[],"prize":50000,"qty":16,"clave":"Human - Linea"},{"race":"Human","type":"Halfling Hopeful","ma":5,"st":2,"ag":3,"pa":4,"av":7,"skills":["Esquivar","Humanoide bala","Escurridizo"],"prize":30000,"qty":3,"clave":"Halfling - Linea"},{"race":"Human","type":"Catcher","ma":8,"st":3,"ag":3,"pa":4,"av":8,"skills":["Atrapar","Esquivar"],"prize":75000,"qty":2,"clave":"Human - Receptor"},{"race":"Human","type":"Thrower","ma":6,"st":3,"ag":3,"pa":3,"av":9,"skills":["Pasar","Manos seguras"],"prize":75000,"qty":2,"clave":"Human - Lanzador"},{"race":"Human","type":"Blitzer","ma":7,"st":3,"ag":3,"pa":4,"av":9,"skills":["Placar","Placaje defensivo"],"prize":85000,"qty":2,"clave":"Human - Blitzer"},{"race":"Human","type":"Ogre","ma":5,"st":5,"ag":4,"pa":5,"av":10,"skills":["Estúpido","Solitario (3+)","Golpe mortífero","Cabeza dura","Lanzar Compañero"],"prize":140000,"qty":1,"clave":"Ogro - Grandullon"},{"race":"Human","type":"Journeyman","ma":6,"st":3,"ag":3,"pa":4,"av":9,"skills":["Solitario (5+)"],"prize":50000,"qty":11,"clave":"Human - Linea"},{"race":"Imperial Nobility","type":"Imperial Retainer","ma":6,"st":3,"ag":3,"pa":4,"av":8,"skills":["Zafarse"],"prize":45000,"qty":16,"clave":"Human - Linea"},{"race":"Imperial Nobility","type":"Imperial Thrower","ma":6,"st":3,"ag":3,"pa":2,"av":9,"skills":["Pasar","Pase y Seguir","Profesional"],"prize":75000,"qty":2,"clave":"Human - Lanzador"},{"race":"Imperial Nobility","type":"Noble Blitzer","ma":7,"st":3,"ag":3,"pa":4,"av":9,"skills":["Placar","Atrapar","Profesional"],"prize":90000,"qty":2,"clave":"Human - Blitzer"},{"race":"Imperial Nobility","type":"Bodyguard","ma":6,"st":3,"ag":3,"pa":5,"av":9,"skills":["Mantenerse firme","Forcejear"],"prize":85000,"qty":4,"clave":"Human - Defensor"},{"race":"Imperial Nobility","type":"Ogre","ma":5,"st":5,"ag":4,"pa":5,"av":10,"skills":["Estúpido","Solitario (3+)","Golpe mortífero","Cabeza dura","Lanzar Compañero"],"prize":140000,"qty":1,"clave":"Ogro - Grandullon"},{"race":"Imperial Nobility","type":"Journeyman","ma":6,"st":3,"ag":3,"pa":4,"av":8,"skills":["Solitario (5+)","Zafarse"],"prize":45000,"qty":11,"clave":"Human - Linea"},{"race":"Khorne","type":"Bloodborn Marauder","ma":6,"st":3,"ag":3,"pa":4,"av":8,"skills":["Furia"],"prize":50000,"qty":16,"clave":"Human - Linea"},{"race":"Khorne","type":"Khorngor","ma":6,"st":3,"ag":3,"pa":4,"av":9,"skills":["Cuernos","Imparable","Cabeza dura","En pie de un salto"],"prize":70000,"qty":2,"clave":"Beastman - Corredor"},{"race":"Khorne","type":"Bloodseeker","ma":5,"st":4,"ag":4,"pa":6,"av":10,"skills":["Furia"],"prize":105000,"qty":4,"clave":"Human - Defensor"},{"race":"Khorne","type":"Bloodspawn","ma":5,"st":5,"ag":4,"pa":6,"av":9,"skills":["Garras","Furia","Solitario (4+)","Golpe mortífero","Ira descontrolada"],"prize":160000,"qty":1,"clave":"Grandullon - Spawn"},{"race":"Khorne","type":"Journey Bloodborn","ma":6,"st":3,"ag":3,"pa":4,"av":8,"skills":["Solitario (5+)","Furia"],"prize":50000,"qty":11,"clave":"Human - Linea"},{"race":"Lizardman","type":"Skink","ma":8,"st":2,"ag":3,"pa":4,"av":8,"skills":["Esquivar","Escurridizo"],"prize":60000,"qty":16,"clave":"Lizarman - Linea"},{"race":"Lizardman","type":"Chameleon Skink","ma":7,"st":2,"ag":3,"pa":3,"av":8,"skills":["Esquivar","Atento al balón","Perseguir","Escurridizo"],"prize":70000,"qty":2,"clave":"Lizardman - Lanzador"},{"race":"Lizardman","type":"Saurus","ma":6,"st":4,"ag":5,"pa":6,"av":10,"skills":["Imparable","Tembloroso"],"prize":90000,"qty":6,"clave":"Lizardman - Defensor"},{"race":"Lizardman","type":"Kroxigor","ma":6,"st":5,"ag":5,"pa":6,"av":10,"skills":["Estúpido","Solitario (4+)","Golpe mortífero","Cola prensil","Cabeza dura"],"prize":140000,"qty":1,"clave":"Lizardman - Grandullon"},{"race":"Lizardman","type":"Journey Skink","ma":8,"st":2,"ag":3,"pa":4,"av":8,"skills":["Solitario (5+)","Esquivar","Escurridizo"],"prize":60000,"qty":11,"clave":"Lizardman - Lanzador"},{"race":"Necromantic","type":"Zombie Lineman","ma":4,"st":3,"ag":4,"pa":6,"av":9,"skills":["Regeneración","Piquete de ojos","Tembloroso"],"prize":40000,"qty":16,"clave":"Human - Linea - No Muerto - Zombie"},{"race":"Necromantic","type":"Ghoul Runner","ma":7,"st":3,"ag":3,"pa":3,"av":8,"skills":["Esquivar","Regeneración"],"prize":75000,"qty":2,"clave":"Corredor - Ghoul - No Muerto"},{"race":"Necromantic","type":"Wraith","ma":6,"st":3,"ag":3,"pa":0,"av":9,"skills":["Placar","Apariencia asquerosa","Regeneración","Echarse a un lado","El balon ni verlo"],"prize":85000,"qty":2,"clave":"Defensor - No Muerto - Wraith"},{"race":"Necromantic","type":"Flesh Golem","ma":4,"st":4,"ag":4,"pa":6,"av":10,"skills":["Regeneración","Mantenerse firme","Cabeza dura","Tembloroso"],"prize":110000,"qty":2,"clave":"Defensor - No Muerto - Constructo"},{"race":"Necromantic","type":"Werewolf","ma":8,"st":3,"ag":3,"pa":3,"av":9,"skills":["Garras","Furia","Regeneración"],"prize":120000,"qty":2,"clave":"Blitzer - No Muerto - Werewolf"},{"race":"Necromantic","type":"Raised Zombie","ma":4,"st":3,"ag":4,"pa":0,"av":9,"skills":["Regeneración","Piquete de ojos","Tembloroso"],"prize":40000,"qty":16,"clave":"Human - Linea - No Muerto - Zombie"},{"race":"Necromantic","type":"Journey Zombie","ma":4,"st":3,"ag":4,"pa":6,"av":9,"skills":["Solitario (5+)","Regeneración","Piquete de ojos","Tembloroso"],"prize":40000,"qty":11,"clave":"Human - Linea - No Muerto - Zombie"},{"race":"Norse","type":"Raider Lineman","ma":6,"st":3,"ag":3,"pa":4,"av":8,"skills":["Placar","Borracho","Cabeza dura","Tembloroso"],"prize":50000,"qty":16,"clave":"Human - Linea"},{"race":"Norse","type":"Beer Boar","ma":5,"st":1,"ag":3,"pa":null,"av":6,"skills":["Esquivar","Escurridizo","Canijo","El balón ni verlo","Levantar compañero"],"prize":20000,"qty":2,"clave":"Animal especial"},{"race":"Norse","type":"Berserker","ma":6,"st":3,"ag":3,"pa":5,"av":8,"skills":["Placar","Furia","En pie de un salto"],"prize":90000,"qty":2,"clave":"Human - Blitzer"},{"race":"Norse","type":"Valkyrie","ma":7,"st":3,"ag":3,"pa":3,"av":8,"skills":["Atrapar","Agallas","Pasar","Robar balón"],"prize":95000,"qty":2,"clave":"Human - Lanzador - Receptor"},{"race":"Norse","type":"Ulfwerner","ma":6,"st":4,"ag":4,"pa":6,"av":9,"skills":["Furia","Tembloroso"],"prize":105000,"qty":2,"clave":"Human - Defensor"},{"race":"Norse","type":"Yhetee","ma":5,"st":5,"ag":4,"pa":6,"av":9,"skills":["Garras","Presencia perturbadora","Furia","Solitario (4+)","Ira descontrolada"],"prize":140000,"qty":1,"clave":"Yhetee - Grandullon"},{"race":"Norse","type":"Journeyman","ma":6,"st":3,"ag":3,"pa":4,"av":8,"skills":["Solitario (5+)","Placar","Borracho","Cabeza dura","Tembloroso"],"prize":50000,"qty":16,"clave":"Human - Linea"},{"race":"Nurgle","type":"Rotter","ma":5,"st":3,"ag":4,"pa":6,"av":9,"skills":["Descomposición","Infectado"],"prize":40000,"qty":16,"clave":"Human - Linea"},{"race":"Nurgle","type":"Pestigor","ma":6,"st":3,"ag":3,"pa":4,"av":9,"skills":["Cabeza dura","Cuernos","Equilibrio firme","Infectado","Regeneración"],"prize":70000,"qty":2,"clave":"Beastman - Corredor"},{"race":"Nurgle","type":"Bloater","ma":4,"st":4,"ag":4,"pa":6,"av":10,"skills":["Presencia perturbadora","Apariencia asquerosa","Infectado","Regeneración","Mantenerse firme","Tembloroso"],"prize":110000,"qty":4,"clave":"Defensor - Human"},{"race":"Nurgle","type":"Rotspawn","ma":4,"st":5,"ag":5,"pa":6,"av":10,"skills":["Presencia perturbadora","Apariencia asquerosa","Solitario (4+)","Golpe mortífero","Infectado","Realmente estúpido","Regeneración","Tentáculos","Levantar compañero"],"prize":140000,"qty":1,"clave":"Grandullon - Spawn"},{"race":"Nurgle","type":"Journey Rotter","ma":5,"st":3,"ag":4,"pa":6,"av":9,"skills":["Solitario (5+)","Descomposición","Infectado"],"prize":40000,"qty":11,"clave":"Human - Linea"},{"race":"Ogre","type":"Gnoblar Linemen","ma":5,"st":1,"ag":3,"pa":4,"av":6,"skills":["Esquivar","Humanoide bala","Echarse a un lado","Escurridizo","Canijo"],"prize":15000,"qty":16,"clave":"Gnoblar - Linea"},{"race":"Ogre","type":"Ogre Blocker","ma":5,"st":5,"ag":4,"pa":5,"av":10,"skills":["Estúpido","Golpe mortífero","Cabeza dura","Lanzar Compañero"],"prize":140000,"qty":5,"clave":"Defensor - Grandullon - Ogre"},{"race":"Ogre","type":"Ogre Runt Punter","ma":5,"st":5,"ag":4,"pa":4,"av":10,"skills":["Estúpido","Chutar compañero","Golpe mortífero","Cabeza dura"],"prize":145000,"qty":1,"clave":"Grandullon - Lanzador - Ogre"},{"race":"Ogre","type":"Journey Gnoblar","ma":5,"st":1,"ag":3,"pa":4,"av":6,"skills":["Solitario (5+)","Esquivar","Humanoide bala","Echarse a un lado","Escurridizo","Canijo"],"prize":15000,"qty":11,"clave":"Gnoblar - Linea"},{"race":"Old World Alliance","type":"Human Lineman","ma":6,"st":3,"ag":3,"pa":4,"av":9,"skills":[],"prize":50000,"qty":12,"clave":"Human - Linea"},{"race":"Old World Alliance","type":"Halfling Hopeful","ma":5,"st":2,"ag":3,"pa":4,"av":7,"skills":["Esquivar","Humanoide bala","Escurridizo"],"prize":30000,"qty":3,"clave":"Halfling - Linea"},{"race":"Old World Alliance","type":"Human Catcher","ma":8,"st":3,"ag":3,"pa":4,"av":8,"skills":["Atrapar","Esquivar"],"prize":75000,"qty":1,"clave":"Human - Receptor"},{"race":"Old World Alliance","type":"Dwarf Lineman","ma":4,"st":3,"ag":4,"pa":5,"av":10,"skills":["Cabeza dura","Placar","Romper defensas"],"prize":70000,"qty":3,"clave":"Dwarf - Linea"},{"race":"Old World Alliance","type":"Human Thrower","ma":6,"st":3,"ag":3,"pa":3,"av":9,"skills":["Pasar","Manos seguras"],"prize":75000,"qty":1,"clave":"Human - Lanzador"},{"race":"Old World Alliance","type":"Dwarf Runner","ma":6,"st":3,"ag":3,"pa":4,"av":9,"skills":["Esprintar","Manos seguras","Cabeza dura"],"prize":80000,"qty":1,"clave":"Corredor - Dwarf"},{"race":"Old World Alliance","type":"Human Blitzer","ma":7,"st":3,"ag":3,"pa":4,"av":9,"skills":["Placar","Placaje defensivo"],"prize":85000,"qty":1,"clave":"Blitzer - Human"},{"race":"Old World Alliance","type":"Dwarf Blitzer","ma":5,"st":3,"ag":4,"pa":4,"av":10,"skills":["Placar","Cabeza dura","Placaje defensivo","Placaje heroico"],"prize":100000,"qty":1,"clave":"Blitzer - Dwarf"},{"race":"Old World Alliance","type":"Troll Slayer","ma":5,"st":3,"ag":4,"pa":5,"av":9,"skills":["Placar","Furia","Agallas","Cabeza dura","Odio (Troll)"],"prize":95000,"qty":1,"clave":"Dwarf - Especial"},{"race":"Old World Alliance","type":"Ogre","ma":5,"st":5,"ag":4,"pa":5,"av":10,"skills":["Estúpido","Solitario (3+)","Golpe mortífero","Cabeza dura","Lanzar Compañero"],"prize":140000,"qty":1,"clave":"Grandullon - Ogre"},{"race":"Old World Alliance","type":"Altern Forest Treeman","ma":2,"st":6,"ag":5,"pa":5,"av":11,"skills":["Golpe mortífero","Mantenerse firme","Brazo fuerte","Echar raíces","Cabeza dura","Lanzar compañero","¡Tronco va!"],"prize":120000,"qty":1,"clave":"Grandullon - Treeman"},{"race":"Old World Alliance","type":"Journeyman","ma":6,"st":3,"ag":3,"pa":4,"av":9,"skills":["Solitario (5+)"],"prize":50000,"qty":11,"clave":"Human - Linea"},{"race":"Orcs","type":"Lineman","ma":5,"st":3,"ag":3,"pa":4,"av":10,"skills":[],"prize":50000,"qty":16,"clave":"Linea - Orc"},{"race":"Orcs","type":"Goblin","ma":6,"st":2,"ag":3,"pa":3,"av":8,"skills":["Esquivar","Humanoide bala","Escurridizo"],"prize":40000,"qty":4,"clave":"Linea - Goblin"},{"race":"Orcs","type":"Thrower","ma":5,"st":3,"ag":3,"pa":3,"av":9,"skills":["Pasar","Manos seguras"],"prize":75000,"qty":2,"clave":"Lanzador - Orc"},{"race":"Orcs","type":"Blitzer","ma":6,"st":3,"ag":3,"pa":4,"av":10,"skills":["Placar","Abrirse paso"],"prize":85000,"qty":2,"clave":"Blitzer - Orc"},{"race":"Orcs","type":"Big Un Blocker","ma":5,"st":4,"ag":4,"pa":6,"av":10,"skills":["Cabeza Dura","Golper Mortífero","Provocar","Tembloroso"],"prize":95000,"qty":2,"clave":"Defensor - Orc"},{"race":"Orcs","type":"Troll","ma":4,"st":5,"ag":5,"pa":5,"av":10,"skills":["Golpe mortífero","Siempre hambriento","Solitario (4+)","Proyectil de vómito","Realmente estúpido","Regeneración","Lanzar compañero"],"prize":115000,"qty":1,"clave":"Grandullon - Orc"},{"race":"Orcs","type":"Journey Orc","ma":5,"st":3,"ag":3,"pa":4,"av":10,"skills":["Solitario (5+)"],"prize":50000,"qty":11,"clave":"Linea - Orc"},{"race":"Shambling Undead","type":"Skeleton Lineman","ma":5,"st":3,"ag":4,"pa":6,"av":8,"skills":["Regeneración","Cabeza dura"],"prize":40000,"qty":16,"clave":"Human - Linea - No muerto - Skeleton"},{"race":"Shambling Undead","type":"Zombie Lineman","ma":4,"st":3,"ag":4,"pa":6,"av":9,"skills":["Regeneración","Tembloroso","Piquete de ojos"],"prize":40000,"qty":16,"clave":"Human - Linea - No muerto - Zombie"},{"race":"Shambling Undead","type":"Ghoul Runner","ma":7,"st":3,"ag":3,"pa":3,"av":8,"skills":["Esquivar","Regeneracion"],"prize":75000,"qty":2,"clave":"Corredor - Ghoul - No Muerto"},{"race":"Shambling Undead","type":"Wight Blitzer","ma":6,"st":3,"ag":3,"pa":5,"av":9,"skills":["Placar","Regeneración","Pacaje defensivo","Cabeza dura"],"prize":95000,"qty":2,"clave":"Blitzer - Human - No muerto - Skeleton"},{"race":"Shambling Undead","type":"Mummy","ma":3,"st":5,"ag":5,"pa":6,"av":10,"skills":["Golpe mortífero","Regeneración"],"prize":125000,"qty":2,"clave":"Defensor - Grandullon - Human - No muerto"},{"race":"Shambling Undead","type":"Raised Zombie","ma":4,"st":3,"ag":4,"pa":6,"av":9,"skills":["Regeneración","Tembloroso","Piquete de ojos"],"prize":40000,"qty":16,"clave":"Human - Linea - No muerto - Zombie"},{"race":"Shambling Undead","type":"Skeleton Journeyman","ma":5,"st":3,"ag":4,"pa":6,"av":8,"skills":["Solitario (5+)","Regeneración","Cabeza dura"],"prize":40000,"qty":11,"clave":"Human - Linea - No muerto - Skeleton"},{"race":"Shambling Undead","type":"Zombie Journeyman","ma":4,"st":3,"ag":4,"pa":6,"av":9,"skills":["Solitario (5+)","Regeneración"],"prize":40000,"qty":11,"clave":"Human - Linea - No muerto - Zombie"},{"race":"Slann","type":"Lineman","ma":6,"st":3,"ag":3,"pa":4,"av":9,"skills":["Pogo saltarín","Piernas muy largas"],"prize":60000,"qty":16,"clave":null},{"race":"Slann","type":"Catcher","ma":7,"st":2,"ag":2,"pa":4,"av":8,"skills":["Recepción heroica","Pogo saltarín","Piernas muy largas"],"prize":80000,"qty":4,"clave":null},{"race":"Slann","type":"Blitzer","ma":7,"st":3,"ag":3,"pa":4,"av":9,"skills":["Placaje heroico","En pie de un salto","Pogo saltarín","Piernas muy largas"],"prize":110000,"qty":4,"clave":null},{"race":"Slann","type":"Kroxigor","ma":6,"st":5,"ag":5,"pa":0,"av":10,"skills":["Estúpido","Solitario (4+)","Golpe mortífero","Cola prensil","Cabeza dura"],"prize":140000,"qty":1,"clave":null},{"race":"Slann","type":"Journey Slann","ma":6,"st":3,"ag":3,"pa":4,"av":9,"skills":["Solitario (5+)","Pogo saltarín","Piernas muy largas"],"prize":60000,"qty":11,"clave":null},{"race":"Skaven","type":"ClanRat","ma":7,"st":3,"ag":3,"pa":4,"av":8,"skills":[],"prize":50000,"qty":16,"clave":"Skaven - Linea"},{"race":"Skaven","type":"Thrower","ma":7,"st":3,"ag":3,"pa":2,"av":8,"skills":["Pasar","Manos seguras"],"prize":80000,"qty":2,"clave":"Skaven - Lanzador"},{"race":"Skaven","type":"Gutter Runner","ma":9,"st":2,"ag":2,"pa":4,"av":8,"skills":["Esquivar","Apuñalar"],"prize":85000,"qty":2,"clave":"Skaven - Corredor"},{"race":"Skaven","type":"Blitzer","ma":8,"st":3,"ag":3,"pa":4,"av":9,"skills":["Placar","Robar balón"],"prize":90000,"qty":2,"clave":"Skaven - Blitzer"},{"race":"Skaven","type":"Rat Ogre","ma":6,"st":5,"ag":4,"pa":0,"av":9,"skills":["Ferocidad animal","Furia","Solitario (4+)","Golpe mortífero","Cola prensil"],"prize":150000,"qty":1,"clave":"Skaven - Grandullon"},{"race":"Skaven","type":"Journey ClanRat","ma":7,"st":3,"ag":3,"pa":4,"av":8,"skills":["Solitario (5+)"],"prize":50000,"qty":11,"clave":"Skaven - Linea"},{"race":"Tomb King","type":"Skeleton Lineman","ma":5,"st":3,"ag":4,"pa":6,"av":8,"skills":["Regeneración","Cabeza dura"],"prize":40000,"qty":16,"clave":"Human - Linea - No Muerto - Skeleton"},{"race":"Tomb King","type":"Tomb King Thrower","ma":6,"st":3,"ag":4,"pa":3,"av":9,"skills":["Pasar","Regeneración","Manos seguras","Cabeza dura"],"prize":65000,"qty":2,"clave":"Human - Lanzador - No Muerto - Skeleton"},{"race":"Tomb King","type":"Tomb King Blitzers","ma":6,"st":3,"ag":4,"pa":5,"av":9,"skills":["Placar","Regeneración","Cabeza dura"],"prize":85000,"qty":2,"clave":"Human - Blitzer - No Muerto - Skeleton"},{"race":"Tomb King","type":"Tomb Guardian","ma":4,"st":5,"ag":5,"pa":6,"av":10,"skills":["Descomposición","Regeneración","Luchador"],"prize":115000,"qty":4,"clave":"Defensor - Grandullon - Human - No Muerto"},{"race":"Tomb King","type":"Journey Skeleton","ma":5,"st":3,"ag":4,"pa":6,"av":8,"skills":["Solitario (5+)","Regeneración","Cabeza dura"],"prize":40000,"qty":11,"clave":"Human - Linea - No Muerto - Skeleton"},{"race":"Snotling","type":"Snotling","ma":5,"st":1,"ag":3,"pa":5,"av":6,"skills":["Esquivar","Humanoide bala","Echarse a un lado","Escurridizo","Colocarse","Canijo"],"prize":15000,"qty":16,"clave":null},{"race":"Snotling","type":"Fungus Flinga","ma":5,"st":1,"ag":3,"pa":4,"av":6,"skills":["Bombardero","Esquivar","Humanoide bala","Arma secreta","Echarse a un lado","Escurridizo"],"prize":30000,"qty":2,"clave":null},{"race":"Snotling","type":"Fun-hoppa","ma":6,"st":1,"ag":3,"pa":5,"av":6,"skills":["Esquivar","Pogo saltarín","Humanoide bala","Echarse a un lado","Escurridizo"],"prize":20000,"qty":2,"clave":null},{"race":"Snotling","type":"Stilty Runna","ma":6,"st":1,"ag":3,"pa":5,"av":6,"skills":["Esquivar","Humanoide bala","Echarse a un lado","Carrera","Escurridizo"],"prize":20000,"qty":2,"clave":null},{"race":"Snotling","type":"Pump Wagon","ma":4,"st":5,"ag":5,"pa":0,"av":9,"skills":["Juego sucio (+1)","Imparable","Golpe mortífero","Realmente estúpido","Arma secreta","Mantenerse firme"],"prize":105000,"qty":2,"clave":null},{"race":"Snotling","type":"Trained Troll","ma":4,"st":5,"ag":5,"pa":5,"av":10,"skills":["Siempre hambriento","Solitario (3+)","Golpe mortífero","Proyectil de vómito","Realmente estúpido","Regeneración","Lanzar compañero"],"prize":115000,"qty":2,"clave":null},{"race":"Snotling","type":"Journey Snotling","ma":5,"st":1,"ag":3,"pa":5,"av":6,"skills":["Solitario (5+)","Esquivar","Humanoide bala","Echarse a un lado","Escurridizo","Colocarse","Canijo"],"prize":15000,"qty":11,"clave":null},{"race":"Underworld Denizens","type":"Goblin","ma":6,"st":2,"ag":3,"pa":4,"av":8,"skills":["Esquivar","Humanoide bala","Escurridizo"],"prize":40000,"qty":16,"clave":"Goblin - Linea"},{"race":"Underworld Denizens","type":"Snotling","ma":5,"st":1,"ag":3,"pa":4,"av":6,"skills":["Esquivar","Humanoide bala","Echarse a un lado","Escurridizo","Insifnificante","Canijo"],"prize":15000,"qty":6,"clave":"Snotling - Linea"},{"race":"Underworld Denizens","type":"Skaven Clanrat","ma":7,"st":3,"ag":3,"pa":4,"av":8,"skills":["Animosidad (Goblin)"],"prize":50000,"qty":3,"clave":"Skaven - Linea"},{"race":"Underworld Denizens","type":"Skaven Thrower","ma":7,"st":3,"ag":3,"pa":2,"av":8,"skills":["Animosidad (Goblin)","Pasar","Manos seguras"],"prize":80000,"qty":1,"clave":"Skaven - Lanzador"},{"race":"Underworld Denizens","type":"Gutter Runner","ma":9,"st":2,"ag":2,"pa":4,"av":8,"skills":["Animosidad (Goblin)","Esquivar","Apuñalar"],"prize":85000,"qty":1,"clave":"Skaven - Corredor"},{"race":"Underworld Denizens","type":"Skaven Blitzer","ma":8,"st":3,"ag":3,"pa":4,"av":9,"skills":["Animosidad (Goblin)","Placar","Robar Balón"],"prize":90000,"qty":1,"clave":"Skaven - Blitzer"},{"race":"Underworld Denizens","type":"Troll","ma":4,"st":5,"ag":5,"pa":5,"av":10,"skills":["Realmente Estúpido","Golpe mortífero","Lanzar Compañero","Proyectil Vómito","Regeneración","Siempre hambriento","Solitario (4+)"],"prize":115000,"qty":1,"clave":"Grandullon - Troll"},{"race":"Underworld Denizens","type":"Rat Ogre","ma":6,"st":5,"ag":4,"pa":6,"av":9,"skills":["Ferocidad animal","Furia","Solitario (4+)","Golpe mortífero","Cola prensil"],"prize":150000,"qty":1,"clave":"Grandullon - Skaven"},{"race":"Underworld Denizens","type":"Journey Goblin","ma":6,"st":2,"ag":3,"pa":4,"av":8,"skills":["Solitario (5+)","Esquivar","Humanoide bala","Escurridizo"],"prize":40000,"qty":11,"clave":"Goblin - Linea"},{"race":"Vampire","type":"Thrall","ma":6,"st":3,"ag":3,"pa":4,"av":8,"skills":[],"prize":40000,"qty":16,"clave":"Human - Linea - Thrall"},{"race":"Vampire","type":"Vampire Runner","ma":8,"st":3,"ag":2,"pa":3,"av":8,"skills":["Mirada hipnótica","Regeneración","Sed de sangre (2+)"],"prize":100000,"qty":2,"clave":"Corredor - No Muerto - Vampire"},{"race":"Vampire","type":"Vampire Thrower","ma":6,"st":4,"ag":2,"pa":2,"av":9,"skills":["Pasar","Mirada hipnótica","Regeneración","Sed de sangre (2+)"],"prize":110000,"qty":2,"clave":"Lanzador - No Muerto - Vampire"},{"race":"Vampire","type":"Vampire Blitzer","ma":6,"st":4,"ag":2,"pa":4,"av":9,"skills":["Imparable","Mirada hipnótica","Regeneración","Sed de sangre (3+)"],"prize":110000,"qty":2,"clave":"Blitzer - No Muerto - Vampire"},{"race":"Vampire","type":"Vargheist","ma":5,"st":5,"ag":4,"pa":6,"av":10,"skills":["Garras","Furia","Sed de sangre (3+)","Regeneración","Solitario (4+)"],"prize":150000,"qty":1,"clave":"Grandullon - No Muerto - Vampire"},{"race":"Vampire","type":"Journey Thrall","ma":6,"st":3,"ag":3,"pa":4,"av":8,"skills":["Solitario (5+)"],"prize":40000,"qty":11,"clave":"Human - Linea - Thrall"},{"race":"Elfos Silvanos","type":"Lineman","ma":7,"st":3,"ag":2,"pa":3,"av":8,"skills":[],"prize":65000,"qty":16,"clave":"Elf - Linea"},{"race":"Elfos Silvanos","type":"Thrower","ma":7,"st":3,"ag":2,"pa":2,"av":8,"skills":["Pasar","Proteger el cuero"],"prize":85000,"qty":2,"clave":"Elf - Lanzador"},{"race":"Elfos Silvanos","type":"Catcher","ma":8,"st":2,"ag":2,"pa":3,"av":8,"skills":["Atrapar","Esquivar","Esprintar"],"prize":90000,"qty":2,"clave":"Elf - Receptor"},{"race":"Elfos Silvanos","type":"Wardancer","ma":8,"st":3,"ag":2,"pa":3,"av":8,"skills":["Placar","Esquivar","Saltar"],"prize":130000,"qty":2,"clave":"Elf - Blitzer"},{"race":"Elfos Silvanos","type":"Treeman","ma":2,"st":6,"ag":5,"pa":5,"av":11,"skills":["Solitario (4+)","Golpe mortífero","Mantenerse firme","Brazo fuerte","Echar raíces","Cabeza dura","Lanzar compañero"],"prize":120000,"qty":1,"clave":"Grandullon - Treeman"},{"race":"Elfos Silvanos","type":"Journey Elf","ma":7,"st":3,"ag":2,"pa":3,"av":8,"skills":["Solitario (5+)"],"prize":65000,"qty":11,"clave":"Elf - Linea"}];
 let CATALOG_PRICES = {"Amazon":{"Eagle Warrior Linewomen":50000,"Python Warrior Throwers":80000,"Piranha Warrior Blitzers":90000,"Jaguar Warrior Blockers":110000,"Journey Eagle Warrior Linewomen":50000},"Black Orc":{"Goblin Bruiser":45000,"Black Orc":90000,"Trained Troll":115000,"Journey Goblin":45000},"Bretonia":{"Squire":50000,"Knigth Catcher":85000,"Knigth Thrower":80000,"Grial Knigths":95000,"Journey Eagle Warrior Linewomen":50000},"Chaos Chosen":{"Beastman Lineman":55000,"Chaos Chosen":100000,"Troll":115000,"Ogre":140000,"Minotaur":150000,"Journey Beastman":55000},"Chaos Dwarf":{"Hobgoblin Lineman":40000,"Sneaky Stabba":60000,"Chaos Dwarf Blocker":70000,"Flamesmith":80000,"Bull Centaur":130000,"Minotaur":150000,"Journey Hobgoblin Lineman":40000},"Chaos Renegades":{"Human Renegade":50000,"Goblin Renegade":40000,"Orc Renegade":50000,"Skaven Renegade":50000,"Dark Elf Renegade":65000,"Human Thrower Renegade":75000,"Troll":115000,"Ogre":140000,"Minotaur":150000,"Rat Ogre":150000,"Journey Human Renegade":50000},"Dark Elf":{"Lineman":65000,"Runner":80000,"Assassin":90000,"Blitzer":105000,"Witch Elf":110000,"Journey Elf":65000},"Dwarf":{"Lineman":70000,"Runner":80000,"Blitzer":100000,"Troll Slayer":95000,"Deathroller":170000,"Journey Lineman":70000},"Elven Union":{"Lineman":65000,"Thrower":75000,"Catcher":100000,"Blitzer":115000,"Journey Elf":65000},"Goblin":{"Goblin":40000,"Bombardier":45000,"Looney":40000,"Doom Diver":60000,"Ooligan":65000,"Fanatic":70000,"Pogoer":75000,"Troll":115000,"Journey Goblin":40000},"Gnome":{"Linemen":40000,"Illusionist":50000,"Woodland Fox":50000,"Beastmaster":55000,"Altern Forest Treeman":120000,"Journey Lineman":40000},"Halfling":{"Halfling Hopeful":30000,"Halfling Catcher":55000,"Halfling Hefty":50000,"Forest Treeman":120000,"Journey Halfling":30000},"High Elf":{"Lineman":65000,"White Lion":110000,"Phoenix Warrior":90000,"Dragon Prince":110000,"Journey Elf":65000},"Human":{"Lineman":50000,"Halfling Hopeful":30000,"Catcher":75000,"Thrower":75000,"Blitzer":85000,"Ogre":140000,"Journeyman":50000},"Imperial Nobility":{"Imperial Retainer":45000,"Imperial Thrower":75000,"Noble Blitzer":90000,"Bodyguard":85000,"Ogre":140000,"Journeyman":45000},"Khorne":{"Bloodborn Marauder":50000,"Khorngor":70000,"Bloodseeker":105000,"Bloodspawn":160000,"Journey Bloodborn":50000},"Lizardman":{"Skink":60000,"Chameleon Skink":70000,"Saurus":90000,"Kroxigor":140000,"Journey Skink":60000},"Necromantic":{"Zombie Lineman":40000,"Ghoul Runner":75000,"Wraith":85000,"Flesh Golem":110000,"Werewolf":120000,"Raised Zombie":40000,"Journey Zombie":40000},"Norse":{"Raider Lineman":50000,"Beer Boar":20000,"Berserker":90000,"Valkyrie":95000,"Ulfwerner":105000,"Yhetee":140000,"Journeyman":50000},"Nurgle":{"Rotter":40000,"Pestigor":70000,"Bloater":110000,"Rotspawn":140000,"Journey Rotter":40000},"Ogre":{"Gnoblar Linemen":15000,"Ogre Blocker":140000,"Ogre Runt Punter":145000,"Journey Gnoblar":15000},"Old World Alliance":{"Human Lineman":50000,"Halfling Hopeful":30000,"Human Catcher":75000,"Dwarf Lineman":70000,"Human Thrower":75000,"Dwarf Runner":80000,"Human Blitzer":85000,"Dwarf Blitzer":100000,"Troll Slayer":95000,"Ogre":140000,"Altern Forest Treeman":120000,"Journeyman":50000},"Orcs":{"Lineman":50000,"Goblin":40000,"Thrower":75000,"Blitzer":85000,"Big Un Blocker":95000,"Troll":115000,"Journey Orc":50000},"Shambling Undead":{"Skeleton Lineman":40000,"Zombie Lineman":40000,"Ghoul Runner":75000,"Wight Blitzer":95000,"Mummy":125000,"Raised Zombie":40000,"Skeleton Journeyman":40000,"Zombie Journeyman":40000},"Slann":{"Lineman":60000,"Catcher":80000,"Blitzer":110000,"Kroxigor":140000,"Journey Slann":60000},"Skaven":{"ClanRat":50000,"Thrower":80000,"Gutter Runner":85000,"Blitzer":90000,"Rat Ogre":150000,"Journey ClanRat":50000},"Tomb King":{"Skeleton Lineman":40000,"Tomb King Thrower":65000,"Tomb King Blitzers":85000,"Tomb Guardian":115000,"Journey Skeleton":40000},"Snotling":{"Snotling":15000,"Fungus Flinga":30000,"Fun-hoppa":20000,"Stilty Runna":20000,"Pump Wagon":105000,"Trained Troll":115000,"Journey Snotling":15000},"Underworld Denizens":{"Goblin":40000,"Snotling":15000,"Skaven Clanrat":50000,"Skaven Thrower":80000,"Gutter Runner":85000,"Skaven Blitzer":90000,"Troll":115000,"Rat Ogre":150000,"Journey Goblin":40000},"Vampire":{"Thrall":40000,"Vampire Runner":100000,"Vampire Thrower":110000,"Vampire Blitzer":110000,"Vargheist":150000,"Journey Thrall":40000},"Elfos Silvanos":{"Lineman":65000,"Thrower":85000,"Catcher":90000,"Wardancer":130000,"Treeman":120000,"Journey Elf":65000}};
 const CATALOG_APOTHECARY = {"Amazon":80000,"Black Orc":80000,"Chaos Chosen":80000,"Chaos Dwarf":80000,"Chaos Renegades":80000,"Dark Elf":80000,"Dwarf":80000,"Elven Union":80000,"Goblin":80000,"Gnome":80000,"Halfling":80000,"High Elf":80000,"Human":80000,"Imperial Nobility":80000,"Khorne":50000,"Lizardman":80000,"Norse":80000,"Ogre":80000,"Old World Alliance":80000,"Slann":80000,"Skaven":80000,"Snotling":80000,"Underworld Denizens":80000,"Vampire":50000};
 /* acceso de cada posición a las categorías de habilidad, en el orden G A S P M T: P = primaria, S = secundaria, - = sin acceso (rosters/positions.json; las razas que no lo traen, de la hoja Teams del Excel) */
@@ -286,7 +291,9 @@ function impCost(imp, idx){
   return row[(imp.category==='primary'?'p':'s') + (imp.selection==='random'?'r':'c')];
 }
 const sppSpent = p => (p.progression.improvements||[]).reduce((t,i,ix)=>t+impCost(i,ix),0);
-const impValue = p => (p.progression.improvements||[]).reduce((t,i)=>t+(i.valueExtra||0),0);
+const impValue = p => (p.progression.improvements||[]).concat(p.progression.draftPayments||[]).reduce((t,i)=>t+(i.valueExtra||0),0);
+const skillCount = p => (p.progression.improvements||[]).filter(i=>i.skill).length;   /* habilidades subidas con SPP (para el draft) */
+const DRAFT_BONUS = 15000;
 function recalcSpp(p){ p.progression.sppUnspent = p.progression.sppTotal - sppSpent(p); }
 
 const L = () => state.data.league;
@@ -317,12 +324,13 @@ function economy(){
                   + (s.assistantCoaches||0)*pr.assistantCoach + (s.apothecary||0)*(pr.apothecary||0) + (s.bribes||0)*pr.bribe;
   const playersBase = l.players.reduce((a,p)=>a+(p.price||0),0);
   const playersExtra = l.players.reduce((a,p)=>a+impValue(p),0);
-  const deadCost = l.retiredPlayers.filter(p=>p.reason==='dead').reduce((a,p)=>a+(p.price||0)+impValue(p),0);
+  const deadCost = l.retiredPlayers.filter(p=>p.reason==='dead'||p.reason==='drafted').reduce((a,p)=>a+(p.price||0)+impValue(p),0);
+  const valuePaid = l.players.concat(l.retiredPlayers).reduce((a,p)=>a+((p.progression.draftPayments||[]).reduce((b,x)=>b+(x.paid||0),0)),0);
   const teamCost = staffCost + rerolls + playersBase + playersExtra;
   const teamValue = staffCost + rerolls + l.players.filter(p=>p.status!=='missNextGame').reduce((a,p)=>a+(p.price||0)+impValue(p),0);
   const start = (l.economy||{}).startingTreasury||0;
-  const treasury = start + t.earnings - t.spent - teamCost + playersExtra - deadCost;
-  return { rerolls, staffCost, playersBase, playersExtra, deadCost, teamCost, teamValue, start, treasury,
+  const treasury = start + t.earnings - t.spent - teamCost + playersExtra - deadCost - valuePaid;
+  return { rerolls, staffCost, playersBase, playersExtra, deadCost, valuePaid, teamCost, teamValue, start, treasury,
            fans:(s.dedicatedFans||1)+t.fansGained, t };
 }
 
@@ -409,6 +417,7 @@ function renderEnroll(){
       <div class="grid">
         <label class="f">Temporada<input type="number" name="season" value="6" min="1"></label>
         <label class="f">Presupuesto inicial<input type="number" name="start" id="enrollStart" value="600000" min="0" step="10000"></label>
+        <label class="f">Entrenador<input type="text" name="coach" required placeholder="Nombre del entrenador"></label>
         <label class="f">Identificador del equipo<input type="text" name="teamId" value="${esc(slug(d.teamName))}"></label>
       </div>
     </fieldset>
@@ -454,7 +463,7 @@ function renderEnroll(){
   }
   form.addEventListener('submit',e=>{
     e.preventDefault(); const f=new FormData(form);
-    d.league={ schemaVersion:2, season:int(f.get('season'))||6, teamId:slug(f.get('teamId')||d.teamName),
+    d.league={ schemaVersion:2, season:int(f.get('season'))||6, coach:String(f.get('coach')||'').trim(), teamId:slug(f.get('teamId')||d.teamName),
       economy:{startingTreasury:int(f.get('start')), prices:Object.assign(clone(DEFAULT_PRICES),{apothecary:apothecaryFor(d.race)})},
       staff:{dedicatedFans:1,cheerleaders:0,assistantCoaches:0,apothecary:0,bribes:0},
       players:d.players.map(p=>emptyPlayerLeague(p.num,int(f.get('price_'+p.num)))),
@@ -466,12 +475,12 @@ function renderEnroll(){
 /* =========================================================
    Pintado
    ========================================================= */
-const TABS=[['roster','Roster'],['history','Historial'],['team','Equipo y economía'],['dead','Muertos']];
+const TABS=[['roster','Roster'],['history','Historial'],['team','Equipo y economía'],['dead','Muertos y drafteados']];
 
 function renderAll(){
   const d=state.data;
   app.innerHTML=`
-    <div class="teamhead"><span class="badge-team">${esc(d.teamName)}</span><span class="race">${esc(d.race||'')} · Temporada ${esc(L().season)}</span></div>
+    <div class="teamhead"><span class="badge-team">${esc(d.teamName)}</span><span class="race">${esc(d.race||'')} · Temporada ${esc(L().season)}${L().coach?' · Entrenador: '+esc(L().coach):''}</span></div>
     <div class="tiles" id="tiles"></div>
     <div class="tabs" role="tablist">${TABS.map(([id,t])=>`<button class="tab" role="tab" data-tab="${id}" aria-selected="${state.tab===id}">${t}</button>`).join('')}</div>
     ${TABS.map(([id])=>`<section class="panel" id="p-${id}" role="tabpanel" ${state.tab===id?'':'hidden'}></section>`).join('')}`;
@@ -489,7 +498,7 @@ function renderTiles(){
 
 function renderRoster(){
   const rows=state.data.players.map(tp=>{
-    const lp=leaguePlayer(tp.num), s=lp.statistics, out=lp.status==='missNextGame';
+    const lp=leaguePlayer(tp.num), s=lp.statistics, out=lp.status==='missNextGame', nImp=skillCount(lp);
     const gained=new Set((lp.progression.improvements||[]).filter(i=>i.skill).map(i=>normTxt(i.skill)));
     const skills=(tp.skills||[]).map(k=>gained.has(normTxt(k))?`<span class="newsk">${esc(k)}</span>`:esc(k)).join(', ');
     return `<tr class="${out?'out':''}">
@@ -503,11 +512,12 @@ function renderRoster(){
       <td><select data-status="${tp.num}" aria-label="Estado de ${esc(tp.name)}">
         <option value="active" ${!out?'selected':''}>Disponible</option>
         <option value="missNextGame" ${out?'selected':''}>Baja próximo partido</option></select></td>
+      <td class="draftcell">${nImp?`${nImp+1}+`:''}</td>
     </tr>`;}).join('');
   $('#p-roster').innerHTML=`
     <div class="tscroll"><table>
       <thead><tr><th>#</th><th class="l">Jugador</th><th>MO</th><th>FU</th><th>AG</th><th>PA</th><th>AR</th><th class="l">Habilidades</th>
-      ${STAT_COLS.map(([,t])=>`<th>${t}</th>`).join('')}<th>SPP tot / libres</th><th>Precio</th><th>Estado</th></tr></thead>
+      ${STAT_COLS.map(([,t])=>`<th>${t}</th>`).join('')}<th>SPP tot / libres</th><th>Precio</th><th>Estado</th><th>Draft</th></tr></thead>
       <tbody>${rows}</tbody></table></div>
     <p class="hint">Precio y estado se pueden corregir a mano. Las estadísticas, los SPP y las lesiones se actualizan solos al registrar un partido.</p>`;
 }
@@ -519,7 +529,7 @@ function renderHistory(){
   $('#p-history').innerHTML='<div class="cards">'+[...ms].reverse().map(m=>{
     const evs=(m.playerEvents||[]).map(ev=>{
       const acts=STAT_COLS.filter(([k])=>ev[k]).map(([k,t])=>`${t}×${ev[k]}`).join(', ');
-      return `<li>#${ev.num} ${esc(ev.name||'')}${acts?': '+acts:''} · <strong>+${ev.sppEarned||0} SPP</strong>${ev.injurySuffered&&ev.injurySuffered!=='none'?` · <span class="warn">${INJURY_LABEL[ev.injurySuffered]}</span>`:''}${(ev.improvements||[]).map(im=>` · <span class="newsk">Mejora: ${esc(impText(im))}</span>`).join('')}</li>`;
+      return `<li>#${ev.num} ${esc(ev.name||'')}${acts?': '+acts:''} · <strong>+${ev.sppEarned||0} SPP</strong>${ev.injurySuffered&&ev.injurySuffered!=='none'?` · <span class="warn">${INJURY_LABEL[ev.injurySuffered]}</span>`:''}${(ev.improvements||[]).map(im=>` · <span class="newsk">Mejora: ${esc(impText(im))}</span>`).join('')}${ev.draft==='drafted'?` · <span class="warn">Drafteado (${esc(ev.draftValue||'')})</span>`:''}${ev.draft==='paidValue'?` · <span class="warn">Pagó ${fmt(ev.valuePaid)} para no ser drafteado (+${fmt(DRAFT_BONUS)} de valor)</span>`:''}</li>`;
     }).join('');
     const s=m.statistics||{};
     return `<div class="card"><h3>${esc(m.id)} · ${m.homeAway==='home'?'(local) ':m.homeAway==='away'?'(visitante) ':''}vs ${esc(m.opponent.teamName)}
@@ -539,6 +549,7 @@ function renderTeam(){
   const priceOf={dedicatedFans:pr.dedicatedFan,cheerleaders:pr.cheerleader,assistantCoaches:pr.assistantCoach,apothecary:pr.apothecary,bribes:pr.bribe};
   $('#p-team').innerHTML=`<div class="two">
     <div class="card"><h3>Personal</h3>
+      <div class="staffrow"><div>Entrenador</div><input type="text" data-coach value="${esc(L().coach||'')}" placeholder="Nombre" style="max-width:220px" aria-label="Entrenador"></div>
       ${rr?row('rerolls','Segundas oportunidades',rr.count,0,rr.pricePerUnit):''}
       ${STAFF_ROWS.map(([k,lab,min])=>row(k,lab,s[k]??min,min,priceOf[k])).join('')}
       <p class="hint">El primer fan devoto es gratis; los demás se pagan. Las segundas oportunidades se guardan en la parte del equipo que lee el juego.</p></div>
@@ -549,7 +560,8 @@ function renderTeam(){
       <div><dt>− Jugadores (precio base)</dt><dd>${fmt(e.playersBase)}</dd></div>
       <div><dt>− Segundas oportunidades</dt><dd>${fmt(e.rerolls)}</dd></div>
       <div><dt>− Personal</dt><dd>${fmt(e.staffCost)}</dd></div>
-      <div><dt>− Jugadores muertos</dt><dd>${fmt(e.deadCost)}</dd></div>
+      <div><dt>− Jugadores muertos y drafteados</dt><dd>${fmt(e.deadCost)}</dd></div>
+      <div><dt>− Valor pagado para no ser drafteado</dt><dd>${fmt(e.valuePaid)}</dd></div>
       <div class="total"><dt>= Tesorería actual</dt><dd class="${e.treasury<0?'neg':''}">${fmt(e.treasury)}</dd></div>
       <div><dt>Coste del equipo</dt><dd>${fmt(e.teamCost)}</dd></div>
       <div><dt>Valor del equipo (sin lesionados)</dt><dd>${fmt(e.teamValue)}</dd></div></dl></div>
@@ -561,18 +573,80 @@ function renderTeam(){
       <div><dt>· graves</dt><dd>${t.seriousInjuriesFor} / ${t.seriousInjuriesAgainst}</dd></div>
       <div><dt>· muertos</dt><dd>${t.deathsFor} / ${t.deathsAgainst}</dd></div>
       <div><dt>Expulsados</dt><dd>${t.sentOffFor} / ${t.sentOffAgainst}</dd></div>
-      <div><dt>Puntos de liga</dt><dd>${t.points}</dd></div></dl></div></div>`;
+      <div><dt>Puntos de liga</dt><dd>${t.points}</dd></div></dl></div></div>${signHTML()}`;
+}
+
+
+/* =========================================================
+   Fichar jugadores (reglas de rosters.html: máx. 11, máx. 4 sin clave «Línea», máximo por posición)
+   ========================================================= */
+const MAX_PLAYERS = 11, MAX_NON_LINE = 4;
+const claveKind = c => c ? (String(c).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().includes('linea') ? 'linea' : 'otra') : null;
+const sameTxt = (a,b) => String(a||'').trim().toLowerCase() === String(b||'').trim().toLowerCase();
+const raceEntries = race => POS_CAT.filter(x=>sameTxt(x.race,race));
+const posEntry = (race,pos) => raceEntries(race).find(x=>sameTxt(x.type,pos));
+function signCounts(){
+  const d=state.data, players=d.players;
+  const nonLine = players.filter(tp=>{ const e=posEntry(d.race,tp.position); return e && claveKind(e.clave)==='otra'; }).length;
+  return { total:players.length, nonLine, of:type=>players.filter(tp=>sameTxt(tp.position,type)).length };
+}
+/* motivo por el que NO se puede fichar esa posición (cadena vacía si se puede) */
+function signBlock(e){
+  const c=signCounts();
+  if(c.total>=MAX_PLAYERS) return `El equipo ya tiene ${MAX_PLAYERS} jugadores.`;
+  if(e.qty!=null && c.of(e.type)>=e.qty) return `Ya tienes el máximo de «${e.type}» (${e.qty}).`;
+  if(claveKind(e.clave)==='otra' && c.nonLine>=MAX_NON_LINE) return `Ya tienes ${MAX_NON_LINE} jugadores sin clave «Línea».`;
+  const tr=economy().treasury;
+  if((e.prize||0)>tr) return `Tesorería insuficiente: cuesta ${fmt(e.prize)} y tienes ${fmt(tr)}.`;
+  return '';
+}
+function signHTML(){
+  const d=state.data, list=raceEntries(d.race), c=signCounts();
+  if(!list.length) return `<div class="card" style="margin-top:16px"><h3>Fichar jugador</h3><p class="hint">No hay posiciones en el catálogo para la raza «${esc(d.race)}».</p></div>`;
+  return `<div class="card" id="signCard" style="margin-top:16px"><h3>Fichar jugador</h3>
+    <p class="hint">Jugadores: ${c.total}/${MAX_PLAYERS} · sin clave «Línea»: ${c.nonLine}/${MAX_NON_LINE} · tesorería: ${fmt(economy().treasury)}. El precio se resta de la tesorería.</p>
+    <div class="grid" style="margin-top:8px">
+      <label class="f">Posición<select id="signPos"><option value="">Elige una posición…</option>${list.map(e=>{
+        const why=signBlock(e), n=c.of(e.type);
+        return `<option value="${esc(e.type)}" ${why?'disabled':''}>${esc(e.type)}${e.qty!=null?` (${n}/${e.qty})`:''} · ${fmt(e.prize)}${e.clave?' · '+esc(e.clave):''}</option>`; }).join('')}</select></label>
+      <label class="f">Nombre<input type="text" id="signName" placeholder="Nombre del jugador"></label>
+    </div>
+    <p class="hint" id="signInfo"></p>
+    <button class="btn primary" type="button" id="signBtn" disabled>Fichar</button></div>`;
+}
+function signRefresh(){
+  const sel=$('#signPos'), name=$('#signName'), btn=$('#signBtn'), info=$('#signInfo'); if(!sel) return;
+  const e=posEntry(state.data.race,sel.value);
+  if(!e){ info.textContent=''; btn.disabled=true; return; }
+  const why=signBlock(e);
+  info.className='hint'+(why?' warn':'');
+  info.textContent = why || `MO ${e.ma} · FU ${e.st} · AG ${e.ag}+ · PA ${e.pa!=null?e.pa+'+':'—'} · AR ${e.av}+ · ${[...(e.skills||[]),e.clave].filter(Boolean).join(', ')}`;
+  btn.disabled = !!why || !name.value.trim();
+}
+function signPlayer(){
+  const d=state.data, e=posEntry(d.race,$('#signPos').value), name=$('#signName').value.trim();
+  if(!e||!name) return;
+  const why=signBlock(e); if(why){ toast(why); return; }
+  const used=new Set(d.players.map(p=>p.num));
+  let num=1; while(used.has(num)) num++;
+  d.players.push({num,name,position:e.type,ma:e.ma??'',st:e.st??'',ag:e.ag!=null?e.ag+'+':'',pa:e.pa!=null?e.pa+'+':'',av:e.av!=null?e.av+'+':'',
+    skills:[...(e.skills||[]),...(e.clave?[e.clave]:[])]});
+  L().players.push(emptyPlayerLeague(num,e.prize||0));
+  d.players.sort((a,b)=>a.num-b.num); L().players.sort((a,b)=>a.num-b.num);
+  markDirty(`Liga T${L().season}: ${d.teamName} ficha a ${name} (${e.type}, nº ${num})`);
+  renderAll(); showTab('team'); toast(`${name} fichado con el nº ${num}.`);
 }
 
 function renderDead(){
   const r=L().retiredPlayers;
-  if(!r.length){ $('#p-dead').innerHTML='<div class="empty">Todavía no ha muerto ningún jugador.</div>'; return; }
-  $('#p-dead').innerHTML='<div class="cards">'+r.map(p=>`<div class="card"><h3>#${p.num} ${esc(p.name)} <span class="pill out">${p.reason==='dead'?'Muerto':'Retirado'}</span></h3>
-    <div class="meta">${esc(p.position)} · ${p.retiredAtMatch?'en '+esc(p.retiredAtMatch):''} · MO ${esc(p.attributes.ma)} FU ${esc(p.attributes.st)} AG ${esc(p.attributes.ag)} PA ${esc(p.attributes.pa)} AR ${esc(p.attributes.av)} · SPP ${p.progression.sppTotal}</div>
+  if(!r.length){ $('#p-dead').innerHTML='<div class="empty">Todavía no hay jugadores muertos ni drafteados.</div>'; return; }
+  $('#p-dead').innerHTML='<div class="cards">'+r.map(p=>{
+    const dr=p.reason==='drafted', a=p.attributes||{}, st=p.statistics||{};
+    return `<div class="card"><h3>#${p.num} ${esc(p.name)} <span class="pill ${dr?'draft':'out'}">${dr?'Drafteado':'Muerto'}</span>${dr&&p.draftValue?` <span class="pill draft">Draft ${esc(p.draftValue)}</span>`:''}</h3>
+    <div class="meta">${esc(p.position)}${p.retiredAtMatch?' · '+(dr?'tras ':'en ')+esc(p.retiredAtMatch):''} · MO ${esc(a.ma)} FU ${esc(a.st)} AG ${esc(a.ag)} PA ${esc(a.pa)} AR ${esc(a.av)} · SPP ${(p.progression||{}).sppTotal||0}</div>
     <div class="meta">${esc((p.skills||[]).join(', '))}</div>
-    <div class="meta">${STAT_COLS.map(([k,t])=>`${t} ${p.statistics[k]||0}`).join(' · ')}</div></div>`).join('')+'</div>';
+    <div class="meta">${STAT_COLS.map(([k,t])=>`${t} ${st[k]||0}`).join(' · ')}</div></div>`;}).join('')+'</div>';
 }
-
 /* =========================================================
    Mejoras: valor extra, categorías y ayudas (reglas del Excel)
    ========================================================= */
@@ -643,6 +717,8 @@ async function loadLibrary(){
         const a=accessFromPrimSec(p.primSec); if(a) (ac[p.race]=ac[p.race]||{})[p.type]=a;
       });
       CATALOG_PRICES=pr; SKILL_ACCESS=ac;
+      const full=pos.filter(p=>p&&p.race&&p.type).map(p=>Object.fromEntries(['race','type','ma','st','ag','pa','av','skills','prize','qty','clave'].map(k=>[k,p[k]])));
+      if(full.length>20) POS_CAT=full;
     }
   }catch(e){}
 }
@@ -767,7 +843,8 @@ function sideHTML(side){
       ${STAT_COLS.map(([k,tt])=>`<td><input type="number" min="0" value="0" name="${side}_ev_${tp.num}_${k}" data-evk="${k}" ${out?'disabled':''} aria-label="${tt} de ${esc(tp.name)}"></td>`).join('')}
       <td><select name="${side}_inj_${tp.num}" ${out?'disabled':''} aria-label="Lesión sufrida por ${esc(tp.name)}">${INJURY_OPTS.map(([v,tx])=>`<option value="${v}">${tx}</option>`).join('')}</select></td>
       <td class="impcell l" data-impcell="${side}_${tp.num}"></td>
-      <td class="num" data-sppcell="${side}_${tp.num}"></td></tr>`;
+      <td class="num" data-sppcell="${side}_${tp.num}"></td>
+      <td class="l"><select name="${side}_draft_${tp.num}" disabled aria-label="Draft de ${esc(tp.name)}"><option value="">—</option><option value="drafted">Drafteado</option><option value="paid">Pagar valor</option></select><br><span class="race" data-draftinfo="${side}_${tp.num}"></span></td></tr>`;
   }).join('');
   const field=(name,lab,extra='')=>`<label class="f">${lab}<input type="number" name="${side}_${name}" value="0" ${extra}></label>`;
   const col=/^#[0-9a-f]{6}$/i.test(d.color||'')?d.color:'#b30000';
@@ -788,9 +865,9 @@ function sideHTML(side){
     </div>
     <p class="hint">Fans, ganancias y puntos de liga pueden ser negativos. HL, HG y RIP se rellenan con lo que sumen los jugadores y se pueden corregir.</p>
     <div class="tscroll" style="margin-top:12px"><table>
-      <thead><tr><th>#</th><th class="l">Jugador</th>${STAT_COLS.map(([,tt])=>`<th>${tt}</th>`).join('')}<th>Lesión sufrida</th><th class="l">Mejoras</th><th>SPP</th></tr></thead>
+      <thead><tr><th>#</th><th class="l">Jugador</th>${STAT_COLS.map(([,tt])=>`<th>${tt}</th>`).join('')}<th>Lesión sufrida</th><th class="l">Mejoras</th><th>SPP</th><th class="l">Draft</th></tr></thead>
       <tbody>${rows}</tbody></table></div>
-    <p class="hint">«Lesión sufrida» es lo que le pasó al propio jugador. Los de baja por herido grave no juegan, pero pueden recibir mejoras con los SPP que ya tenían.</p>
+    <p class="hint">«Lesión sufrida» es lo que le pasó al propio jugador. Los de baja por herido grave no juegan, pero pueden recibir mejoras con los SPP que ya tenían. «Draft» solo se activa en jugadores con al menos una habilidad subida con SPP: «Drafteado» lo saca del equipo; «Pagar valor» lo conserva, resta su valor de la tesorería y le sube su valor 15.000.</p>
   </fieldset>`;
 }
 
@@ -811,6 +888,11 @@ function readEv(side,num){
   const f=$('#matchForm'), ev={};
   STAT_COLS.forEach(([k])=>{ const el=f.elements[`${side}_ev_${num}_${k}`]; ev[k]=el&&!el.disabled?int(el.value):0; });
   return ev;
+}
+/* lo que cuesta «pagar valor»: precio del jugador + valor de sus mejoras (incluidas las de este partido) */
+function paidAmount(side,num){
+  const lp=mvTeam(side).doc.league.players.find(p=>p.num===num);
+  return (lp.price||0)+impValue(lp)+(mv.imp[side][num]||[]).reduce((a,dr,i)=>a+impDerive(lp,i,dr).valueExtra,0);
 }
 function freeSpp(side,num){
   const lp=mvTeam(side).doc.league.players.find(p=>p.num===num);
@@ -834,6 +916,12 @@ function updateSide(side){
     const ev=readEv(side,tp.num); td+=ev.touchdowns; sums.hl+=ev.lightInjuries; sums.hg+=ev.seriousInjuries; sums.rip+=ev.deaths;
     const cell=document.querySelector(`[data-sppcell="${side}_${tp.num}"]`);
     if(cell){ const free=freeSpp(side,tp.num); cell.innerHTML=`+${sppFromStats(ev)} · libres <strong class="${free<0?'neg':''}">${free}</strong>`; }
+    const sel=f.elements[`${side}_draft_${tp.num}`], inj=f.elements[`${side}_inj_${tp.num}`], info=document.querySelector(`[data-draftinfo="${side}_${tp.num}"]`);
+    if(sel){
+      const lp=t.doc.league.players.find(p=>p.num===tp.num), n=skillCount(lp)+(mv.imp[side][tp.num]||[]).filter(d=>d.kind==='skill').length;
+      const ok=n>0 && !(inj&&inj.value==='dead'); sel.disabled=!ok; if(!ok) sel.value='';
+      if(info) info.textContent = sel.value==='paid' ? `Pagas ${fmt(paidAmount(side,tp.num))} mo` : (ok?`Draft ${n+1}+`:'');
+    }
   });
   for(const k in sums){ const el=f.elements[`${side}_${k}`]; if(el && !mv.touched[`${side}_${k}`]) el.value=sums[k]; }
   const sc=int(f.elements[`${side}_score`].value), hint=document.querySelector(`[data-tdcheck="${side}"]`);
@@ -906,7 +994,7 @@ $('#impOk').addEventListener('click',()=>{
 function collectSide(side){
   const f=$('#matchForm'), t=mvTeam(side), d=t.doc, l=d.league;
   const el=n=>f.elements[`${side}_${n}`], I=n=>int(el(n)&&el(n).value), S=n=>sint(el(n)&&el(n).value);
-  const events=[], dying=[], problems=[]; let td=0, mvp=0;
+  const events=[], dying=[], draftPicks=[], problems=[]; let td=0, mvp=0;
   d.players.forEach(tp=>{
     const lp=l.players.find(p=>p.num===tp.num), out=lp.status==='missNextGame';
     const ev=Object.assign({num:tp.num,name:tp.name},readEv(side,tp.num));
@@ -923,11 +1011,19 @@ function collectSide(side){
       if(free<0) problems.push(`#${tp.num} ${tp.name}: le faltan ${-free} SPP para sus mejoras.`);
       if(ev.injurySuffered==='dead') problems.push(`#${tp.num} ${tp.name}: un jugador muerto no puede recibir mejoras.`);
     }
+    const dsel=f.elements[`${side}_draft_${tp.num}`], dch=dsel&&!dsel.disabled?dsel.value:'';
+    if(dch){
+      const nSk=skillCount(lp)+imps.filter(i=>i.skill).length;
+      if(!nSk) problems.push(`#${tp.num} ${tp.name}: solo se puede draftear a jugadores con una habilidad subida con SPP.`);
+      else if(ev.injurySuffered==='dead') problems.push(`#${tp.num} ${tp.name}: un jugador muerto no puede ser drafteado.`);
+      else if(dch==='drafted'){ ev.draft='drafted'; ev.draftValue=`${nSk+1}+`; draftPicks.push({ev,kind:'drafted'}); }
+      else { ev.draft='paidValue'; ev.valuePaid=(lp.price||0)+impValue(lp)+imps.reduce((a,i)=>a+(i.valueExtra||0),0); draftPicks.push({ev,kind:'paid'}); }
+    }
     if(ev.injurySuffered==='dead') dying.push(ev);
-    if(STAT_COLS.some(([k])=>ev[k]) || ev.injurySuffered!=='none' || imps.length) events.push(ev);
+    if(STAT_COLS.some(([k])=>ev[k]) || ev.injurySuffered!=='none' || imps.length || dch) events.push(ev);
   });
   return {side,teamId:l.teamId,teamName:d.teamName,race:d.race,score:I('score'),hl:I('hl'),hg:I('hg'),rip:I('rip'),sentOff:I('sentoff'),
-          fans:S('fans'),earnings:S('earnings'),spent:I('spent'),points:S('points'),events,dying,td,mvp,problems};
+          fans:S('fans'),earnings:S('earnings'),spent:I('spent'),points:S('points'),events,dying,drafts:draftPicks,td,mvp,problems};
 }
 
 function applyAttr(tp,attr){ const v=nextAttr(tp,attr); if(v!==null) tp[attr]=v; }
@@ -949,6 +1045,20 @@ function applyMatchSide(doc,S,O,meta){
     });
   });
   l.players.forEach(recalcSpp);
+  S.drafts.forEach(({ev,kind})=>{
+    const lp=lpOf(ev.num), tp=tpOf(ev.num);
+    if(kind==='paid'){
+      lp.progression.draftPayments=lp.progression.draftPayments||[];
+      lp.progression.draftPayments.push({matchId:meta.id,paid:ev.valuePaid,valueExtra:DRAFT_BONUS});
+    } else {
+      l.retiredPlayers.push({num:tp.num,name:tp.name,position:tp.position,reason:'drafted',draftValue:ev.draftValue,retiredAtMatch:meta.id,
+        attributes:{ma:tp.ma,st:tp.st,ag:tp.ag,pa:tp.pa,av:tp.av},skills:clone(tp.skills||[]),price:lp.price,
+        progression:clone(lp.progression),statistics:clone(lp.statistics),injuries:clone(lp.injuries||[])});
+      l.players=l.players.filter(p=>p.num!==ev.num);
+      doc.players=doc.players.filter(p=>p.num!==ev.num);
+      if(Array.isArray(doc.formation)) doc.formation=doc.formation.filter(x=>x.num!==ev.num);
+    }
+  });
   S.dying.forEach(ev=>{
     const lp=lpOf(ev.num), tp=tpOf(ev.num);
     lp.injuries.push({type:'dead',matchId:meta.id,missNextGame:false});
@@ -1001,6 +1111,7 @@ async function mvSubmit(){
     if(s.dying.length) lines.push(`Mueren en ${s.teamName}: ${s.dying.map(e=>'#'+e.num+' '+e.name).join(', ')}.`);
     const im=s.events.flatMap(e=>(e.improvements||[]).map(i=>`#${e.num} ${e.name}: ${impText(i)}`));
     if(im.length) lines.push(`Mejoras en ${s.teamName}: ${im.join('; ')}.`);
+    s.drafts.forEach(({ev,kind})=>lines.push(kind==='drafted'?`${s.teamName}: #${ev.num} ${ev.name} es drafteado y sale del equipo.`:`${s.teamName}: #${ev.num} ${ev.name} se queda; paga ${fmt(ev.valuePaid)} de la tesorería y sube 15.000 de valor.`));
   });
   if(warns.length) lines.push('','Avisos:',...warns);
   if(!confirm(lines.join('\n'))) return;
@@ -1017,7 +1128,7 @@ async function mvSubmit(){
     mv.last={id,home:H.name,away:A.name,score:[sh.score,sa.score],
       teams:[{name:H.name,path:H.path,before:H.text,afterSha:fresh[0].sha},{name:A.name,path:A.path,before:A.text,afterSha:fresh[1].sha}],
       summary:[sh,sa].map(s=>({name:s.teamName,spp:s.events.reduce((a,e)=>a+e.sppEarned,0),
-        dead:s.dying.map(e=>e.name),imps:s.events.flatMap(e=>(e.improvements||[]).map(i=>`#${e.num} ${e.name}: ${impText(i)}`)),fans:s.fans,earnings:s.earnings}))};
+        dead:s.dying.map(e=>e.name),drafts:s.drafts.map(({ev,kind})=>kind==='drafted'?`${ev.name} (drafteado)`:`${ev.name} (pagó ${fmt(ev.valuePaid)})`),imps:s.events.flatMap(e=>(e.improvements||[]).map(i=>`#${e.num} ${e.name}: ${impText(i)}`)),fans:s.fans,earnings:s.earnings}))};
     adoptIfOpen(H.path,files[0].text,fresh[0].sha); adoptIfOpen(A.path,files[1].text,fresh[1].sha);
     if(state.view==='match') renderMatchDone(); else toast(`Partido ${id} registrado en los dos equipos.`);
   }catch(e){ if(state.view==='match'){ fail(['No se pudo guardar en GitHub: '+e.message]); btn.disabled=false; btn.textContent='Registrar partido'; } else toast('No se pudo guardar el partido: '+e.message); }
@@ -1029,7 +1140,7 @@ function renderMatchDone(){
     <div class="teamhead"><span class="mvtitle">Partido registrado</span></div>
     <div class="card"><h3>${esc(m.id)} · ${esc(m.home)} <span class="res">${m.score[0]} - ${m.score[1]}</span> ${esc(m.away)}</h3>
       ${m.summary.map(s=>`<div class="meta"><strong>${esc(s.name)}</strong>: ${s.spp} SPP repartidos · fans ${sgn(s.fans)} · ganancias ${fmt(s.earnings)}
-        ${s.dead.length?` · <span class="neg">muertos: ${esc(s.dead.join(', '))}</span>`:''}${s.imps.length?` · mejoras: ${esc(s.imps.join('; '))}`:''}</div>`).join('')}
+        ${s.dead.length?` · <span class="neg">muertos: ${esc(s.dead.join(', '))}</span>`:''}${s.drafts.length?` · <span class="warn">draft: ${esc(s.drafts.join(', '))}</span>`:''}${s.imps.length?` · mejoras: ${esc(s.imps.join('; '))}`:''}</div>`).join('')}
       <p class="hint">Guardado en GitHub en un solo commit para los dos equipos.</p>
     </div>
     <div class="actions" style="margin-top:14px">
@@ -1082,6 +1193,7 @@ function mvChange(e){
 function updateButtons(){
   $('#downloadBtn').disabled = !(state.data && state.data.league);
   $('#ghSaveBtn').disabled = !(state.data && state.data.league);
+  $('#sheetBtn').disabled = !(state.data && state.data.league);
 }
 function showTab(id){
   state.tab=id;
@@ -1091,6 +1203,7 @@ function showTab(id){
 
 app.addEventListener('click',e=>{
   if(mvClick(e)) return;
+  if(e.target.closest('#signBtn')){ signPlayer(); return; }
   const tab=e.target.closest('[data-tab]'); if(tab){ showTab(tab.dataset.tab); return; }
   const st=e.target.closest('[data-staff]');
   if(st){
@@ -1103,11 +1216,14 @@ app.addEventListener('click',e=>{
 app.addEventListener('input',e=>{
   if(mvInput(e)) return;
   const t=e.target;
+  if(t.id==='signName'){ signRefresh(); return; }
+  if(t.dataset.coach!==undefined){ L().coach=t.value.trim(); markDirty(`Liga T${L().season}: entrenador de ${state.data.teamName}`); return; }
   if(t.dataset.price){ leaguePlayer(int(t.dataset.price)).price=int(t.value); markDirty(); renderTiles(); renderTeam(); }
 });
 app.addEventListener('change',e=>{
   if(mvChange(e)) return;
   const t=e.target;
+  if(t.id==='signPos'){ signRefresh(); return; }
   if(t.dataset.status){
     const p=leaguePlayer(int(t.dataset.status)); p.status=t.value; markDirty();
     if(t.value==='active') p.injuries.forEach(i=>{i.missNextGame=false;});
@@ -1130,6 +1246,11 @@ window.addEventListener('drop',e=>{
   file.text().then(t=>loadText(t,file.name));
 });
 
+$('#sheetBtn').addEventListener('click',()=>{
+  if(!state.data||!state.data.league) return;
+  const base=(state.fileName||state.data.teamName||'equipo').replace(/\.json$/i,'').replace(/_liga\d+$/i,'').replace(/-[0-9a-f]{8}$/i,'');
+  downloadSheet(state.data,economy(),base);
+});
 $('#downloadBtn').addEventListener('click',()=>{
   if(!state.data||!state.data.league) return;
   const base=state.fileName.replace(/\.json$/i,'').replace(/_liga\d+$/i,'').replace(/-[0-9a-f]{8}$/i,'');
@@ -1139,6 +1260,156 @@ $('#downloadBtn').addEventListener('click',()=>{
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
   state.dirty=false; toast('Descargado '+name);
 });
+
+/* =========================================================
+   Hoja de partido en PDF (formato de la hoja de roster del Excel)
+   Necesita: DEFAULT_PRICES, fmt, colorOf-like (se calcula aquí). e = resultado de economy().
+   ========================================================= */
+async function ensureJsPDF(){
+  if(window.jspdf) return window.jspdf.jsPDF;
+  await new Promise((ok,ko)=>{
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload=ok; s.onerror=()=>ko(new Error('No se pudo cargar la librería de PDF (¿sin conexión?).'));
+    document.head.appendChild(s);
+  });
+  return window.jspdf.jsPDF;
+}
+/* la clave del jugador es la habilidad con forma «Línea - Orc» */
+function sheetSplitSkills(p){
+  const sk=(p.skills||[]).slice(); let i=-1;
+  sk.forEach((k,ix)=>{ if(/\s-\s/.test(k)) i=ix; });
+  if(i<0) return {key:'',rest:sk};
+  return {key:sk[i],rest:sk.filter((_,ix)=>ix!==i)};
+}
+async function makeSheetPdf(d,e){
+  const JsPDF=await ensureJsPDF();
+  const pdf=new JsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const l=d.league, pr=Object.assign({},DEFAULT_PRICES,(l.economy||{}).prices), s=l.staff||{};
+  const rr=(d.staff&&d.staff.rerolls)||{count:0,pricePerUnit:100000};
+  const M=6, DK=[77,77,77], GR=[217,217,217], BL=[220,230,242], ORG=[255,226,196], BK=[0,0,0], WH=[255,255,255];
+  const hex=/^#[0-9a-f]{6}$/i.test(d.color||'')?d.color:'#b30000';
+  const rgb=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16));
+  const ink=d.textColor&&d.textColor!=='auto'?d.textColor:((rgb[0]*299+rgb[1]*587+rgb[2]*114)/1000>=150?'#111111':'#ffffff');
+  const inkRgb=/^#[0-9a-f]{6}$/i.test(ink)?[1,3,5].map(i=>parseInt(ink.slice(i,i+2),16)):WH;
+  pdf.setLineWidth(.2); pdf.setDrawColor(110,110,110);
+
+  function cell(x,y,w,h,o={}){
+    const {fill,text='',size=7,bold=false,align='center',color=BK,max=0}=o;
+    if(fill){ pdf.setFillColor(...fill); pdf.rect(x,y,w,h,'FD'); } else pdf.rect(x,y,w,h,'S');
+    if(text===''||text===null||text===undefined) return;
+    pdf.setFont('helvetica',bold?'bold':'normal'); pdf.setTextColor(...color);
+    let sz=size, lines;
+    for(;;){
+      pdf.setFontSize(sz);
+      lines=pdf.splitTextToSize(String(text),w-1.6);
+      const lh=sz*0.3528*1.15;
+      if(lines.length*lh<=h-0.6 || sz<=4.5) break;
+      sz-=0.5;
+    }
+    const lh=sz*0.3528*1.15, tx=align==='left'?x+0.9:x+w/2;
+    lines.forEach((t,i)=>pdf.text(t,tx,y+h/2+(i-(lines.length-1)/2)*lh,{align:align==='left'?'left':'center',baseline:'middle'}));
+  }
+
+  /* cabecera */
+  let y=M;
+  pdf.setFillColor(...rgb); pdf.rect(M,y,285,8,'F');
+  pdf.setTextColor(...inkRgb); pdf.setFont('helvetica','bold'); pdf.setFontSize(12);
+  pdf.text(String(d.teamName||'').toUpperCase(),M+3,y+5.4,{baseline:'alphabetic'});
+  pdf.setFont('helvetica','normal'); pdf.setFontSize(8);
+  pdf.text(`${d.race||''}  ·  Temporada ${l.season||''}`,M+3+pdf.getTextWidth(String(d.teamName||'').toUpperCase())*1.45+6,y+5.2);
+  pdf.text('Jornada: ____   Rival: ______________________   Resultado: ____ - ____',M+285-3,y+5.2,{align:'right'});
+  y+=10;
+
+  /* tabla de jugadores */
+  const cols=[['#',6],['NOMBRE JUGADOR',32],['TIPO',22],['MO',6.5],['FU',6.5],['AG',6.5],['PA',6.5],['AR',6.5],
+    ['HABILIDADES',46],['CLAVE JUGADOR',24],['LPP /RT',8],['ESP',6.5],['CP',6.5],['TD',6.5],['DES',6.5],['INT',6.5],
+    ['HL',6.5],['HG',6.5],['RIP',6.5],['MVP',6.5],['SPP Totales',12],['SPP Sin gastar',12],['PRECIO',15],['SUB',8],['DRAFT',8]];
+  const xs=[]; let acc=M; cols.forEach(c=>{ xs.push(acc); acc+=c[1]; });
+  cols.forEach((c,i)=>cell(xs[i],y,c[1],8,{fill:DK,text:c[0],size:i===9||i===20||i===21||i===24?5.2:6,bold:true,color:WH}));
+  y+=8;
+  const n=Math.max(11,d.players.length), rowH=Math.min(10.2,112/n);
+  const lpOf=num=>l.players.find(p=>p.num===num);
+  for(let r=0;r<n;r++){
+    const p=d.players[r], lp=p&&lpOf(p.num);
+    if(!p){
+      cols.forEach((c,i)=>cell(xs[i],y,c[1],rowH,{fill:i===0?DK:(i===23?GR:(i===24?BL:null)),text:i===0?String(r+1):'',color:WH,bold:true,size:6.5}));
+      y+=rowH; continue;
+    }
+    const {key,rest}=sheetSplitSkills(p);
+    const prog=(lp&&lp.progression)||{}, imps=(prog.improvements||[]);
+    const skillsUp=imps.filter(i=>i.skill).length;
+    const price=((lp&&lp.price)||0)+imps.concat(prog.draftPayments||[]).reduce((a,i)=>a+(i.valueExtra||0),0);
+    const out=lp&&lp.status==='missNextGame';
+    const vals=[String(p.num),null,p.position,p.ma,p.st,p.ag,p.pa,p.av,rest.join(', '),key,out?'SÍ':'','','','','','','','','',
+      '',String(prog.sppTotal||0),String(prog.sppUnspent||0),fmt(price),'',skillsUp?`${skillsUp+1}+`:''];
+    cols.forEach((c,i)=>{
+      const o={text:vals[i]??'',size:7}; if(out&&i>0) o.fill=ORG;
+      if(i===0){ o.fill=DK; o.color=WH; o.bold=true; }
+      if(i===1){ o.text=p.name; o.align='left'; o.bold=true; o.size=7.5; }
+      if(i===2||i===8||i===9){ o.align='left'; o.size=6.5; }
+      if(i===9){ o.bold=true; }
+      if(i===20||i===21){ o.bold=true; o.size=8; }
+      if(i===22){ o.align='center'; o.size=7; }
+      if(i===23&&!out){ o.fill=GR; }
+      if(i===24){ if(!out) o.fill=BL; o.bold=true; o.size=9; }
+      if(i===10){ o.bold=true; o.size=7.5; }
+      cell(xs[i],y,c[1],rowH,o);
+    });
+    y+=rowH;
+  }
+  y+=2.5;
+
+  /* bloque inferior */
+  const RH=5.2, k=v=>fmt(Math.round(v/1000))+' k mo';
+  const left=[['ENTRENADOR',l.coach||''],['RAZA',d.race||''],['NOMBRE DEL EQUIPO',d.teamName||''],['IDIOMA','Español'],
+    ['COSTE INCENTIVOS Y EXTRAS',k(e.staffCost+e.rerolls)],['PRECIO JUGADORES',k(e.playersBase+e.playersExtra)],
+    ['PRECIO TOTAL EQUIPO',k(e.teamCost)],['TESORERÍA',k(e.treasury)],['VALOR DEL EQUIPO',k(e.teamValue)]];
+  left.forEach(([lab,val],i)=>{ cell(M,y+i*RH,46,RH,{fill:DK,text:lab,color:WH,bold:true,size:6}); cell(M+46,y+i*RH,28,RH,{text:val,size:7.5,bold:true}); });
+
+  const money=v=>fmt(v);
+  const fansCost=Math.max(0,(s.dedicatedFans||1)-1)*pr.dedicatedFan;
+  const mid=[['FANS',null],
+    ['FANS DEVOTOS',[e.fans,pr.dedicatedFan,fansCost]],
+    ['MÉDICO',[s.apothecary||0,pr.apothecary||'',(s.apothecary||0)*(pr.apothecary||0)]],
+    ['ANIMADORAS',[s.cheerleaders||0,pr.cheerleader,(s.cheerleaders||0)*pr.cheerleader]],
+    ['AYUDANTES ENTRENADOR',[s.assistantCoaches||0,pr.assistantCoach,(s.assistantCoaches||0)*pr.assistantCoach]],
+    ['SOBORNOS',[s.bribes||0,pr.bribe,(s.bribes||0)*pr.bribe]],
+    ['MASTER CHEF',[0,300000,0]],
+    ['NOVATOS ALBOROTADORES',null]];
+  const right=[['SEGUNDAS OPORTUNIDADES TOTALES',[rr.count||0,rr.pricePerUnit||100000,e.rerolls]],
+    ['ENTRENAMIENTO EXTRA',[0,150000,0]],['BARRILES BLOODWEISER',[0,50000,0]],['ANIMADORAS TEMP.',[0,30000,0]],
+    ['AYUDANTES ENTRENADOR T.P.',[0,30000,0]],['MEDIDAS DESESPERADAS',[0,50000,0]],['JUGADAS ESPECIALES',[0,100000,0]],
+    ['MÉDICO ERRANTE',null]];
+  function block(x0,labW,rows){
+    rows.forEach(([lab,v],i)=>{
+      const yy=y+i*RH;
+      cell(x0,yy,labW,RH,{fill:DK,text:lab,color:WH,bold:true,size:5.8});
+      let x=x0+labW;
+      if(v===null){ cell(x,yy,9+5+17+6+14,RH,{}); return; }
+      cell(x,yy,9,RH,{text:String(v[0]),size:7.5,bold:true}); x+=9;
+      cell(x,yy,5,RH,{text:'x',size:6.5}); x+=5;
+      cell(x,yy,17,RH,{text:v[1]===''?'':money(v[1]),size:7}); x+=17;
+      cell(x,yy,6,RH,{text:'mo',size:6}); x+=6;
+      cell(x,yy,14,RH,{fill:GR,text:money(v[2]),size:7.5,bold:true});
+    });
+  }
+  block(M+74+3,40,mid);
+  block(M+74+3+40+51+3,52,right);
+
+  /* leyenda */
+  pdf.setTextColor(...BK); pdf.setFont('helvetica','normal'); pdf.setFontSize(5.7);
+  const ly=y+9*RH+4.5;
+  pdf.text('LPP/RT= SÍ: el jugador se pierde el próximo partido (fila naranja)   ESP=(1)   CP=PASE COMPLETADO (1)   TD=TOUCHDOWN (3)   DES=PASE DESVIADO (1)   INT=INTERCEPCIÓN (2)   HL=HERIDA LEVE (2)   HG=HERIDA GRAVE (2)   RIP=MUERTOS (2)   MVP=MEJOR DEL PARTIDO (4)',M,ly);
+  pdf.text('DRAFT: aparece «2+» si el jugador ha subido 1 habilidad con SPP, «3+» si ha subido 2, y así sucesivamente (las habilidades de base no cuentan). Los eventos del partido se anotan en las columnas ESP a MVP y se pasan después al gestor.',M,ly+3.6);
+  return pdf;
+}
+async function downloadSheet(d,e,base){
+  try{
+    const pdf=await makeSheetPdf(d,e);
+    pdf.save(`${base}_hoja_partido.pdf`);
+  }catch(err){ toast(err.message||'No se pudo crear el PDF.'); }
+}
 
 /* =========================================================
    Guardado en GitHub (API de contenidos)

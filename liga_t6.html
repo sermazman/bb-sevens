@@ -134,6 +134,8 @@ td.impcell{min-width:210px;white-space:normal}
 @media (max-width:600px){.brand{font-size:22px}.badge-team{font-size:24px}.mvtitle{font-size:24px}}
 a{color:inherit}
 a:hover{text-decoration:underline}
+.pill.draft{color:var(--warn);border-color:var(--warn)}
+.draftcell{font-family:var(--f-mono);font-weight:600;color:var(--warn)}
 .dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:8px;vertical-align:middle}
 .tgrid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
 .tcard .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
@@ -147,7 +149,7 @@ td.l a{text-decoration:none}
   <div class="brand">Liga Blood Bowl Sevens <small>Temporada 6 · vista pública</small></div>
   <div class="actions">
     <button class="btn" id="reloadBtn" type="button">Actualizar</button>
-    <button class="btn primary" id="zipBtn" type="button">Descargar todos (.zip)</button>
+    <button class="btn primary" id="zipBtn" type="button">Descargar todos los equipos (.zip)</button>
   </div>
 </div></header>
 <main class="wrap">
@@ -182,7 +184,9 @@ let ui={tab:'standings', team:null, teamTab:'roster'};
 /* ---------- cálculos (los mismos que el gestor) ---------- */
 const impCost=(im,i)=>{const r=IMPROVEMENT_COSTS[im.order||i+1];if(!r)return 0;return im.category==='stat'?r.st:r[(im.category==='primary'?'p':'s')+(im.selection==='random'?'r':'c')]};
 const sppSpent=p=>(p.progression.improvements||[]).reduce((t,i,ix)=>t+impCost(i,ix),0);
-const impValue=p=>(p.progression.improvements||[]).reduce((t,i)=>t+(i.valueExtra||0),0);
+const impValue=p=>(p.progression.improvements||[]).concat(p.progression.draftPayments||[]).reduce((t,i)=>t+(i.valueExtra||0),0);
+const skillCount=p=>(p.progression.improvements||[]).filter(i=>i.skill).length;
+const DRAFT_BONUS=15000;
 function totals(d){
   const m=d.league.matches,sum=f=>m.reduce((t,x)=>t+(f(x)||0),0),st=x=>x.statistics||{};
   const r={played:m.length,won:m.filter(x=>x.result.outcome==='win').length,drawn:m.filter(x=>x.result.outcome==='draw').length,lost:m.filter(x=>x.result.outcome==='loss').length};
@@ -197,11 +201,12 @@ function economy(d){
   const rerolls=(d.staff&&d.staff.rerolls&&d.staff.rerolls.total)||0;
   const staffCost=Math.max(0,(s.dedicatedFans||1)-1)*pr.dedicatedFan+(s.cheerleaders||0)*pr.cheerleader+(s.assistantCoaches||0)*pr.assistantCoach+(s.apothecary||0)*(pr.apothecary||0)+(s.bribes||0)*pr.bribe;
   const playersBase=l.players.reduce((a,p)=>a+(p.price||0),0),playersExtra=l.players.reduce((a,p)=>a+impValue(p),0);
-  const deadCost=l.retiredPlayers.filter(p=>p.reason==='dead').reduce((a,p)=>a+(p.price||0)+impValue(p),0);
+  const deadCost = l.retiredPlayers.filter(p=>p.reason==='dead'||p.reason==='drafted').reduce((a,p)=>a+(p.price||0)+impValue(p),0);
+  const valuePaid=l.players.concat(l.retiredPlayers).reduce((a,p)=>a+((p.progression.draftPayments||[]).reduce((b,x)=>b+(x.paid||0),0)),0);
   const teamCost=staffCost+rerolls+playersBase+playersExtra;
   const teamValue=staffCost+rerolls+l.players.filter(p=>p.status!=='missNextGame').reduce((a,p)=>a+(p.price||0)+impValue(p),0);
   const start=(l.economy||{}).startingTreasury||0;
-  return{rerolls,staffCost,playersBase,playersExtra,deadCost,teamCost,teamValue,start,treasury:start+t.earnings-t.spent-teamCost+playersExtra-deadCost,fans:(s.dedicatedFans||1)+t.fansGained,t};
+  return{rerolls,staffCost,playersBase,playersExtra,deadCost,teamCost,teamValue,start,treasury:start+t.earnings-t.spent-teamCost+playersExtra-deadCost-valuePaid,valuePaid,fans:(s.dedicatedFans||1)+t.fansGained,t};
 }
 
 /* ---------- carga ---------- */
@@ -229,7 +234,7 @@ async function loadAll(){
         const text=await getText(f),doc=JSON.parse(text);
         if(!doc.league||doc.league.schemaVersion!==2){skipped.push(f);return}
         const l=doc.league;l.players=l.players||[];l.matches=l.matches||[];l.retiredPlayers=l.retiredPlayers||[];l.staff=l.staff||{};l.economy=l.economy||{};
-        l.players.forEach(p=>{p.progression=p.progression||{};p.progression.improvements=p.progression.improvements||[];p.statistics=p.statistics||{}});
+        l.players.concat(l.retiredPlayers).forEach(p=>{p.progression=p.progression||{};p.progression.improvements=p.progression.improvements||[];p.statistics=p.statistics||{}});
         teams.push({file:f,name:doc.teamName||f.replace(/\.json$/i,''),text,doc});
       }catch(e){skipped.push(f)}
     }));
@@ -275,10 +280,11 @@ function renderTeams(){
   $('#view').innerHTML=`<div class="tgrid">${teams.map(t=>{const e=economy(t.doc);return`<div class="card tcard" style="border-top:6px solid ${colorOf(t.doc)}">
     <h3><a href="#team=${encodeURIComponent(t.file)}">${esc(t.name)}</a></h3>
     <div class="race">${esc(t.doc.race||'')}</div>
-    <div class="meta">${t.doc.players.length} jugadores · Valor ${fmt(e.teamValue)} · ${e.t.played} partidos jugados</div>
+    <div class="meta">${t.doc.league.coach?'Entrenador: '+esc(t.doc.league.coach)+' · ':''}${t.doc.players.length} jugadores · Valor ${fmt(e.teamValue)} · ${e.t.played} partidos jugados</div>
     <div class="row"><a class="btn small" href="#team=${encodeURIComponent(t.file)}">Ver equipo</a>
-    <button class="btn small primary" type="button" data-dl="${esc(t.file)}">Descargar JSON</button></div></div>`}).join('')}</div>
-    <p class="hint">Para probar un equipo en el juego: descarga su JSON y cárgalo en el editor de rosters. La parte de liga la ignora el juego.</p>`;
+    <button class="btn small primary" type="button" data-dl="${esc(t.file)}">Descargar EQUIPO</button>
+    <button class="btn small" type="button" data-sheet="${esc(t.file)}">Hoja de partido (PDF)</button></div></div>`}).join('')}</div>
+    <p class="hint">Para probar un equipo en el juego: pulsa «Descargar EQUIPO» y cárgalo en el editor de rosters. La hoja de partido (PDF) sirve para anotar los eventos durante el partido.</p>`;
 }
 function allMatches(){
   const seen=new Set(),out=[];
@@ -305,14 +311,15 @@ function renderMatches(){
   $('#view').innerHTML=html+'</div>';
 }
 
-const TEAM_TABS=[['roster','Roster'],['history','Historial'],['team','Equipo y economía'],['dead','Muertos']];
+const TEAM_TABS=[['roster','Roster'],['history','Historial'],['team','Equipo y economía'],['dead','Muertos y drafteados']];
 function renderTeam(){
   const t=teams.find(x=>x.file===ui.team),d=t.doc,e=economy(d),x=e.t;
   document.documentElement.style.setProperty('--accent',colorOf(d));document.documentElement.style.setProperty('--accent-ink',inkOf(d));
   const tile=(k,v,c='')=>`<div class="tile"><div class="k">${k}</div><div class="v ${c}">${v}</div></div>`;
   $('#view').innerHTML=`<p><a href="#" data-back>← Volver a la liga</a></p>
-  <div class="teamhead"><span class="badge-team">${esc(d.teamName)}</span><span class="race">${esc(d.race||'')}</span>
-   <button class="btn small primary" type="button" data-dl="${esc(t.file)}">Descargar JSON</button></div>
+  <div class="teamhead"><span class="badge-team">${esc(d.teamName)}</span><span class="race">${esc(d.race||'')}${d.league.coach?' · Entrenador: '+esc(d.league.coach):''}</span>
+   <button class="btn small primary" type="button" data-dl="${esc(t.file)}">Descargar EQUIPO</button>
+   <button class="btn small" type="button" data-sheet="${esc(t.file)}">Hoja de partido (PDF)</button></div>
   <div class="tiles">${tile('Jugados',x.played)+tile('G / E / P',`${x.won} / ${x.drawn} / ${x.lost}`)+tile('Puntos',x.points)+tile('TD',`${x.tdFor} - ${x.tdAgainst}`)+tile('Fans',e.fans)+tile('Tesorería',fmt(e.treasury),e.treasury<0?'neg':'')+tile('Valor equipo',fmt(e.teamValue))}</div>
   <nav class="tabs" role="tablist">${TEAM_TABS.map(([id,l])=>`<button class="tab" role="tab" data-tt="${id}" aria-selected="${ui.teamTab===id}">${l}</button>`).join('')}</nav>
   <div id="tpanel"></div>`;
@@ -327,9 +334,10 @@ function tRoster(d){
     return`<tr class="${out?'out':''}"><td class="num">${esc(p.num)}</td><td class="l"><strong>${esc(p.name)}</strong><br><span class="race">${esc(p.position)}</span></td>
     ${['ma','st','ag','pa','av'].map(k=>`<td class="num">${esc(p[k])}</td>`).join('')}<td class="skills">${sk}</td>
     ${STAT_COLS.map(([k])=>`<td class="num">${s[k]||0}</td>`).join('')}<td class="num"><strong>${l.progression.sppTotal||0}</strong> / ${l.progression.sppUnspent||0}</td>
-    <td class="num">${fmt((l.price||0)+(l.progression.improvements||[]).reduce((a,i)=>a+(i.valueExtra||0),0))}</td>
-    <td>${out?'<span class="pill out">Baja próximo partido</span>':'<span class="pill ok">Disponible</span>'}</td></tr>`}).join('');
-  $('#tpanel').innerHTML=`<div class="tscroll"><table><thead><tr><th>#</th><th class="l">Jugador</th><th>MO</th><th>FU</th><th>AG</th><th>PA</th><th>AR</th><th class="l">Habilidades</th>${STAT_COLS.map(([,t])=>`<th>${t}</th>`).join('')}<th>SPP tot / libres</th><th>Valor</th><th>Estado</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <td class="num">${fmt((l.price||0)+impValue(l))}</td>
+    <td>${out?'<span class="pill out">Baja próximo partido</span>':'<span class="pill ok">Disponible</span>'}</td>
+    <td class="draftcell">${skillCount(l)?`${skillCount(l)+1}+`:''}</td></tr>`}).join('');
+  $('#tpanel').innerHTML=`<div class="tscroll"><table><thead><tr><th>#</th><th class="l">Jugador</th><th>MO</th><th>FU</th><th>AG</th><th>PA</th><th>AR</th><th class="l">Habilidades</th>${STAT_COLS.map(([,t])=>`<th>${t}</th>`).join('')}<th>SPP tot / libres</th><th>Valor</th><th>Estado</th><th>Draft</th></tr></thead><tbody>${rows}</tbody></table></div>
   <p class="hint">Las habilidades en amarillo son mejoras ganadas en la liga.</p>`;
 }
 function tHistory(d){
@@ -338,7 +346,7 @@ function tHistory(d){
   const label={win:'Victoria',draw:'Empate',loss:'Derrota'};
   $('#tpanel').innerHTML='<div class="cards">'+[...ms].reverse().map(m=>{
     const evs=(m.playerEvents||[]).map(ev=>{const acts=STAT_COLS.filter(([k])=>ev[k]).map(([k,t])=>`${t}×${ev[k]}`).join(', ');
-      return`<li>#${esc(ev.num)} ${esc(ev.name||'')}${acts?': '+acts:''} · <strong>+${ev.sppEarned||0} SPP</strong>${ev.injurySuffered&&ev.injurySuffered!=='none'?` · <span class="warn">${INJURY_LABEL[ev.injurySuffered]||''}</span>`:''}${(ev.improvements||[]).map(im=>` · <span class="newsk">Mejora: ${esc(impText(im))}</span>`).join('')}</li>`}).join('');
+      return`<li>#${esc(ev.num)} ${esc(ev.name||'')}${acts?': '+acts:''} · <strong>+${ev.sppEarned||0} SPP</strong>${ev.injurySuffered&&ev.injurySuffered!=='none'?` · <span class="warn">${INJURY_LABEL[ev.injurySuffered]||''}</span>`:''}${(ev.improvements||[]).map(im=>` · <span class="newsk">Mejora: ${esc(impText(im))}</span>`).join('')}${ev.draft==='drafted'?` · <span class="warn">Drafteado (${esc(ev.draftValue||'')})</span>`:''}${ev.draft==='paidValue'?` · <span class="warn">Pagó ${fmt(ev.valuePaid)} para no ser drafteado (+${fmt(DRAFT_BONUS)} de valor)</span>`:''}</li>`}).join('');
     const s=m.statistics||{};
     return`<div class="card"><h3>${esc(m.id)} · ${m.homeAway==='home'?'(local) ':m.homeAway==='away'?'(visitante) ':''}vs ${esc(m.opponent.teamName)} <span class="res ${m.result.outcome}">${m.result.teamScore} - ${m.result.opponentScore}</span><span class="pill ${m.result.outcome==='win'?'ok':m.result.outcome==='loss'?'out':''}">${label[m.result.outcome]||''}</span></h3>
     <div class="meta">${esc(m.opponent.race||'')} · Puntos ${m.leaguePoints} · Ganancias ${fmt(m.earnings)} · Fans ${sgn(m.dedicatedFansGained||0)} · HL ${s.lightInjuriesFor}-${s.lightInjuriesAgainst} · HG ${s.seriousInjuriesFor}-${s.seriousInjuriesAgainst} · RIP ${s.deathsFor}-${s.deathsAgainst}</div>
@@ -350,10 +358,12 @@ function tEcon(d){
    <div><dt>Tesorería inicial</dt><dd>${fmt(e.start)}</dd></div><div><dt>+ Ganancias</dt><dd>${fmt(t.earnings)}</dd></div>
    <div><dt>− Tesorería gastada (incentivos)</dt><dd>${fmt(t.spent)}</dd></div><div><dt>− Jugadores (precio base)</dt><dd>${fmt(e.playersBase)}</dd></div>
    <div><dt>− Segundas oportunidades</dt><dd>${fmt(e.rerolls)}</dd></div><div><dt>− Personal</dt><dd>${fmt(e.staffCost)}</dd></div>
-   <div><dt>− Jugadores muertos</dt><dd>${fmt(e.deadCost)}</dd></div>
+   <div><dt>− Jugadores muertos y drafteados</dt><dd>${fmt(e.deadCost)}</dd></div>
+   <div><dt>− Valor pagado para no ser drafteado</dt><dd>${fmt(e.valuePaid)}</dd></div>
    <div class="total"><dt>= Tesorería actual</dt><dd class="${e.treasury<0?'neg':''}">${fmt(e.treasury)}</dd></div>
    <div><dt>Coste del equipo</dt><dd>${fmt(e.teamCost)}</dd></div><div><dt>Valor del equipo (sin lesionados)</dt><dd>${fmt(e.teamValue)}</dd></div></dl></div>
   <div class="card"><h3>Personal</h3><dl class="calc">
+   <div><dt>Entrenador</dt><dd>${esc(d.league.coach||'—')}</dd></div>
    <div><dt>Segundas oportunidades</dt><dd>${(d.staff&&d.staff.rerolls&&d.staff.rerolls.count)||0}</dd></div>
    <div><dt>Fans devotos</dt><dd>${e.fans}</dd></div><div><dt>Animadoras</dt><dd>${d.league.staff.cheerleaders||0}</dd></div>
    <div><dt>Ayudantes de entrenador</dt><dd>${d.league.staff.assistantCoaches||0}</dd></div><div><dt>Médico</dt><dd>${d.league.staff.apothecary||0}</dd></div>
@@ -365,10 +375,160 @@ function tEcon(d){
 }
 function tDead(d){
   const r=d.league.retiredPlayers;
-  if(!r.length){$('#tpanel').innerHTML='<div class="empty">Todavía no ha muerto ningún jugador.</div>';return}
-  $('#tpanel').innerHTML='<div class="cards">'+r.map(p=>{const a=p.attributes||{},s=p.statistics||{};return`<div class="card"><h3>#${esc(p.num)} ${esc(p.name)} <span class="pill out">Muerto</span></h3>
-   <div class="meta">${esc(p.position)} ${p.retiredAtMatch?'· en '+esc(p.retiredAtMatch):''} · MO ${esc(a.ma)} FU ${esc(a.st)} AG ${esc(a.ag)} PA ${esc(a.pa)} AR ${esc(a.av)} · SPP ${(p.progression||{}).sppTotal||0}</div>
+  if(!r.length){$('#tpanel').innerHTML='<div class="empty">Todavía no hay jugadores muertos ni drafteados.</div>';return}
+  $('#tpanel').innerHTML='<div class="cards">'+r.map(p=>{const a=p.attributes||{},s=p.statistics||{},dr=p.reason==='drafted';return`<div class="card"><h3>#${esc(p.num)} ${esc(p.name)} <span class="pill ${dr?'draft':'out'}">${dr?'Drafteado':'Muerto'}</span>${dr&&p.draftValue?` <span class="pill draft">Draft ${esc(p.draftValue)}</span>`:''}</h3>
+   <div class="meta">${esc(p.position)} ${p.retiredAtMatch?'· '+(dr?'tras ':'en ')+esc(p.retiredAtMatch):''} · MO ${esc(a.ma)} FU ${esc(a.st)} AG ${esc(a.ag)} PA ${esc(a.pa)} AR ${esc(a.av)} · SPP ${(p.progression||{}).sppTotal||0}</div>
    <div class="meta">${esc((p.skills||[]).join(', '))}</div><div class="meta">${STAT_COLS.map(([k,t])=>`${t} ${s[k]||0}`).join(' · ')}</div></div>`}).join('')+'</div>';
+}
+
+/* =========================================================
+   Hoja de partido en PDF (formato de la hoja de roster del Excel)
+   Necesita: DEFAULT_PRICES, fmt, colorOf-like (se calcula aquí). e = resultado de economy().
+   ========================================================= */
+async function ensureJsPDF(){
+  if(window.jspdf) return window.jspdf.jsPDF;
+  await new Promise((ok,ko)=>{
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload=ok; s.onerror=()=>ko(new Error('No se pudo cargar la librería de PDF (¿sin conexión?).'));
+    document.head.appendChild(s);
+  });
+  return window.jspdf.jsPDF;
+}
+/* la clave del jugador es la habilidad con forma «Línea - Orc» */
+function sheetSplitSkills(p){
+  const sk=(p.skills||[]).slice(); let i=-1;
+  sk.forEach((k,ix)=>{ if(/\s-\s/.test(k)) i=ix; });
+  if(i<0) return {key:'',rest:sk};
+  return {key:sk[i],rest:sk.filter((_,ix)=>ix!==i)};
+}
+async function makeSheetPdf(d,e){
+  const JsPDF=await ensureJsPDF();
+  const pdf=new JsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const l=d.league, pr=Object.assign({},DEFAULT_PRICES,(l.economy||{}).prices), s=l.staff||{};
+  const rr=(d.staff&&d.staff.rerolls)||{count:0,pricePerUnit:100000};
+  const M=6, DK=[77,77,77], GR=[217,217,217], BL=[220,230,242], ORG=[255,226,196], BK=[0,0,0], WH=[255,255,255];
+  const hex=/^#[0-9a-f]{6}$/i.test(d.color||'')?d.color:'#b30000';
+  const rgb=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16));
+  const ink=d.textColor&&d.textColor!=='auto'?d.textColor:((rgb[0]*299+rgb[1]*587+rgb[2]*114)/1000>=150?'#111111':'#ffffff');
+  const inkRgb=/^#[0-9a-f]{6}$/i.test(ink)?[1,3,5].map(i=>parseInt(ink.slice(i,i+2),16)):WH;
+  pdf.setLineWidth(.2); pdf.setDrawColor(110,110,110);
+
+  function cell(x,y,w,h,o={}){
+    const {fill,text='',size=7,bold=false,align='center',color=BK,max=0}=o;
+    if(fill){ pdf.setFillColor(...fill); pdf.rect(x,y,w,h,'FD'); } else pdf.rect(x,y,w,h,'S');
+    if(text===''||text===null||text===undefined) return;
+    pdf.setFont('helvetica',bold?'bold':'normal'); pdf.setTextColor(...color);
+    let sz=size, lines;
+    for(;;){
+      pdf.setFontSize(sz);
+      lines=pdf.splitTextToSize(String(text),w-1.6);
+      const lh=sz*0.3528*1.15;
+      if(lines.length*lh<=h-0.6 || sz<=4.5) break;
+      sz-=0.5;
+    }
+    const lh=sz*0.3528*1.15, tx=align==='left'?x+0.9:x+w/2;
+    lines.forEach((t,i)=>pdf.text(t,tx,y+h/2+(i-(lines.length-1)/2)*lh,{align:align==='left'?'left':'center',baseline:'middle'}));
+  }
+
+  /* cabecera */
+  let y=M;
+  pdf.setFillColor(...rgb); pdf.rect(M,y,285,8,'F');
+  pdf.setTextColor(...inkRgb); pdf.setFont('helvetica','bold'); pdf.setFontSize(12);
+  pdf.text(String(d.teamName||'').toUpperCase(),M+3,y+5.4,{baseline:'alphabetic'});
+  pdf.setFont('helvetica','normal'); pdf.setFontSize(8);
+  pdf.text(`${d.race||''}  ·  Temporada ${l.season||''}`,M+3+pdf.getTextWidth(String(d.teamName||'').toUpperCase())*1.45+6,y+5.2);
+  pdf.text('Jornada: ____   Rival: ______________________   Resultado: ____ - ____',M+285-3,y+5.2,{align:'right'});
+  y+=10;
+
+  /* tabla de jugadores */
+  const cols=[['#',6],['NOMBRE JUGADOR',32],['TIPO',22],['MO',6.5],['FU',6.5],['AG',6.5],['PA',6.5],['AR',6.5],
+    ['HABILIDADES',46],['CLAVE JUGADOR',24],['LPP /RT',8],['ESP',6.5],['CP',6.5],['TD',6.5],['DES',6.5],['INT',6.5],
+    ['HL',6.5],['HG',6.5],['RIP',6.5],['MVP',6.5],['SPP Totales',12],['SPP Sin gastar',12],['PRECIO',15],['SUB',8],['DRAFT',8]];
+  const xs=[]; let acc=M; cols.forEach(c=>{ xs.push(acc); acc+=c[1]; });
+  cols.forEach((c,i)=>cell(xs[i],y,c[1],8,{fill:DK,text:c[0],size:i===9||i===20||i===21||i===24?5.2:6,bold:true,color:WH}));
+  y+=8;
+  const n=Math.max(11,d.players.length), rowH=Math.min(10.2,112/n);
+  const lpOf=num=>l.players.find(p=>p.num===num);
+  for(let r=0;r<n;r++){
+    const p=d.players[r], lp=p&&lpOf(p.num);
+    if(!p){
+      cols.forEach((c,i)=>cell(xs[i],y,c[1],rowH,{fill:i===0?DK:(i===23?GR:(i===24?BL:null)),text:i===0?String(r+1):'',color:WH,bold:true,size:6.5}));
+      y+=rowH; continue;
+    }
+    const {key,rest}=sheetSplitSkills(p);
+    const prog=(lp&&lp.progression)||{}, imps=(prog.improvements||[]);
+    const skillsUp=imps.filter(i=>i.skill).length;
+    const price=((lp&&lp.price)||0)+imps.concat(prog.draftPayments||[]).reduce((a,i)=>a+(i.valueExtra||0),0);
+    const out=lp&&lp.status==='missNextGame';
+    const vals=[String(p.num),null,p.position,p.ma,p.st,p.ag,p.pa,p.av,rest.join(', '),key,out?'SÍ':'','','','','','','','','',
+      '',String(prog.sppTotal||0),String(prog.sppUnspent||0),fmt(price),'',skillsUp?`${skillsUp+1}+`:''];
+    cols.forEach((c,i)=>{
+      const o={text:vals[i]??'',size:7}; if(out&&i>0) o.fill=ORG;
+      if(i===0){ o.fill=DK; o.color=WH; o.bold=true; }
+      if(i===1){ o.text=p.name; o.align='left'; o.bold=true; o.size=7.5; }
+      if(i===2||i===8||i===9){ o.align='left'; o.size=6.5; }
+      if(i===9){ o.bold=true; }
+      if(i===20||i===21){ o.bold=true; o.size=8; }
+      if(i===22){ o.align='center'; o.size=7; }
+      if(i===23&&!out){ o.fill=GR; }
+      if(i===24){ if(!out) o.fill=BL; o.bold=true; o.size=9; }
+      if(i===10){ o.bold=true; o.size=7.5; }
+      cell(xs[i],y,c[1],rowH,o);
+    });
+    y+=rowH;
+  }
+  y+=2.5;
+
+  /* bloque inferior */
+  const RH=5.2, k=v=>fmt(Math.round(v/1000))+' k mo';
+  const left=[['ENTRENADOR',l.coach||''],['RAZA',d.race||''],['NOMBRE DEL EQUIPO',d.teamName||''],['IDIOMA','Español'],
+    ['COSTE INCENTIVOS Y EXTRAS',k(e.staffCost+e.rerolls)],['PRECIO JUGADORES',k(e.playersBase+e.playersExtra)],
+    ['PRECIO TOTAL EQUIPO',k(e.teamCost)],['TESORERÍA',k(e.treasury)],['VALOR DEL EQUIPO',k(e.teamValue)]];
+  left.forEach(([lab,val],i)=>{ cell(M,y+i*RH,46,RH,{fill:DK,text:lab,color:WH,bold:true,size:6}); cell(M+46,y+i*RH,28,RH,{text:val,size:7.5,bold:true}); });
+
+  const money=v=>fmt(v);
+  const fansCost=Math.max(0,(s.dedicatedFans||1)-1)*pr.dedicatedFan;
+  const mid=[['FANS',null],
+    ['FANS DEVOTOS',[e.fans,pr.dedicatedFan,fansCost]],
+    ['MÉDICO',[s.apothecary||0,pr.apothecary||'',(s.apothecary||0)*(pr.apothecary||0)]],
+    ['ANIMADORAS',[s.cheerleaders||0,pr.cheerleader,(s.cheerleaders||0)*pr.cheerleader]],
+    ['AYUDANTES ENTRENADOR',[s.assistantCoaches||0,pr.assistantCoach,(s.assistantCoaches||0)*pr.assistantCoach]],
+    ['SOBORNOS',[s.bribes||0,pr.bribe,(s.bribes||0)*pr.bribe]],
+    ['MASTER CHEF',[0,300000,0]],
+    ['NOVATOS ALBOROTADORES',null]];
+  const right=[['SEGUNDAS OPORTUNIDADES TOTALES',[rr.count||0,rr.pricePerUnit||100000,e.rerolls]],
+    ['ENTRENAMIENTO EXTRA',[0,150000,0]],['BARRILES BLOODWEISER',[0,50000,0]],['ANIMADORAS TEMP.',[0,30000,0]],
+    ['AYUDANTES ENTRENADOR T.P.',[0,30000,0]],['MEDIDAS DESESPERADAS',[0,50000,0]],['JUGADAS ESPECIALES',[0,100000,0]],
+    ['MÉDICO ERRANTE',null]];
+  function block(x0,labW,rows){
+    rows.forEach(([lab,v],i)=>{
+      const yy=y+i*RH;
+      cell(x0,yy,labW,RH,{fill:DK,text:lab,color:WH,bold:true,size:5.8});
+      let x=x0+labW;
+      if(v===null){ cell(x,yy,9+5+17+6+14,RH,{}); return; }
+      cell(x,yy,9,RH,{text:String(v[0]),size:7.5,bold:true}); x+=9;
+      cell(x,yy,5,RH,{text:'x',size:6.5}); x+=5;
+      cell(x,yy,17,RH,{text:v[1]===''?'':money(v[1]),size:7}); x+=17;
+      cell(x,yy,6,RH,{text:'mo',size:6}); x+=6;
+      cell(x,yy,14,RH,{fill:GR,text:money(v[2]),size:7.5,bold:true});
+    });
+  }
+  block(M+74+3,40,mid);
+  block(M+74+3+40+51+3,52,right);
+
+  /* leyenda */
+  pdf.setTextColor(...BK); pdf.setFont('helvetica','normal'); pdf.setFontSize(5.7);
+  const ly=y+9*RH+4.5;
+  pdf.text('LPP/RT= SÍ: el jugador se pierde el próximo partido (fila naranja)   ESP=(1)   CP=PASE COMPLETADO (1)   TD=TOUCHDOWN (3)   DES=PASE DESVIADO (1)   INT=INTERCEPCIÓN (2)   HL=HERIDA LEVE (2)   HG=HERIDA GRAVE (2)   RIP=MUERTOS (2)   MVP=MEJOR DEL PARTIDO (4)',M,ly);
+  pdf.text('DRAFT: aparece «2+» si el jugador ha subido 1 habilidad con SPP, «3+» si ha subido 2, y así sucesivamente (las habilidades de base no cuentan). Los eventos del partido se anotan en las columnas ESP a MVP y se pasan después al gestor.',M,ly+3.6);
+  return pdf;
+}
+async function downloadSheet(d,e,base){
+  try{
+    const pdf=await makeSheetPdf(d,e);
+    pdf.save(`${base}_hoja_partido.pdf`);
+  }catch(err){ toast(err.message||'No se pudo crear el PDF.'); }
 }
 
 /* ---------- navegación ---------- */
@@ -379,6 +539,7 @@ document.addEventListener('click',e=>{
   if(b.dataset.main){ui.tab=b.dataset.main;ui.team=null;document.documentElement.style.removeProperty('--accent');document.documentElement.style.removeProperty('--accent-ink');history.replaceState(null,'',location.pathname+location.search);render()}
   else if(b.dataset.tt){ui.teamTab=b.dataset.tt;render()}
   else if(b.dataset.dl){downloadTeam(b.dataset.dl)}
+  else if(b.dataset.sheet){const t=teams.find(x=>x.file===b.dataset.sheet);if(t)downloadSheet(t.doc,economy(t.doc),t.file.replace(/\.json$/i,''))}
   else if(b.hasAttribute('data-back')){e.preventDefault();history.replaceState(null,'',location.pathname+location.search);ui.team=null;document.documentElement.style.removeProperty('--accent');document.documentElement.style.removeProperty('--accent-ink');render()}
 });
 $('#reloadBtn').onclick=loadAll;$('#zipBtn').onclick=downloadZip;

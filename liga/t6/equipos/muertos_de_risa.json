@@ -1,0 +1,308 @@
+{
+  "teamName": "MUERTOS DE RISA",
+  "race": "Tomb King",
+  "color": "#f5c929",
+  "textColor": "#9900ff",
+  "staff": {
+    "rerolls": {
+      "clave": "reroll",
+      "count": 0,
+      "pricePerUnit": 100000,
+      "total": 0
+    }
+  },
+  "players": [
+    {
+      "num": 1,
+      "name": "TUTANJAMON",
+      "position": "Tomb Guardian",
+      "ma": 4,
+      "st": 5,
+      "ag": "5+",
+      "pa": "6+",
+      "av": "10+",
+      "skills": [
+        "Descomposición",
+        "Regeneración",
+        "Luchador",
+        "Defensor - Grandullon - Human - No Muerto"
+      ]
+    },
+    {
+      "num": 2,
+      "name": "RAMSES EL APLASTADOR",
+      "position": "Tomb Guardian",
+      "ma": 4,
+      "st": 5,
+      "ag": "5+",
+      "pa": "6+",
+      "av": "10+",
+      "skills": [
+        "Descomposición",
+        "Regeneración",
+        "Luchador",
+        "Defensor - Grandullon - Human - No Muerto"
+      ]
+    },
+    {
+      "num": 3,
+      "name": "CALCIO",
+      "position": "Skeleton Lineman",
+      "ma": 5,
+      "st": 3,
+      "ag": "4+",
+      "pa": "6+",
+      "av": "8+",
+      "skills": [
+        "Regeneración",
+        "Cabeza dura",
+        "Human - Linea - No Muerto - Skeleton"
+      ]
+    },
+    {
+      "num": 4,
+      "name": "SINCARNE",
+      "position": "Skeleton Lineman",
+      "ma": 4,
+      "st": 3,
+      "ag": "4+",
+      "pa": "6+",
+      "av": "8+",
+      "skills": [
+        "Regeneración",
+        "Cabeza dura",
+        "Veterano",
+        "Human - Linea - No Muerto - Skeleton"
+      ]
+    },
+    {
+      "num": 5,
+      "name": "HUESITOS",
+      "position": "Skeleton Lineman",
+      "ma": 5,
+      "st": 3,
+      "ag": "4+",
+      "pa": "6+",
+      "av": "8+",
+      "skills": [
+        "Regeneración",
+        "Cabeza dura",
+        "Human - Linea - No Muerto - Skeleton"
+      ]
+    },
+    {
+      "num": 6,
+      "name": "SEGARRO",
+      "position": "Tomb King Blitzers",
+      "ma": 6,
+      "st": 3,
+      "ag": "4+",
+      "pa": "5+",
+      "av": "9+",
+      "skills": [
+        "Placar",
+        "Regeneración",
+        "Cabeza dura",
+        "Human - Blitzer - No Muerto - Skeleton"
+      ]
+    },
+    {
+      "num": 7,
+      "name": "SINCOSTILLAS",
+      "position": "Tomb King Blitzers",
+      "ma": 6,
+      "st": 3,
+      "ag": "4+",
+      "pa": "5+",
+      "av": "9+",
+      "skills": [
+        "Placar",
+        "Regeneración",
+        "Cabeza dura",
+        "Human - Blitzer - No Muerto - Skeleton"
+      ]
+    }
+  ],
+  "formation": [],
+  "league": {
+    "schemaVersion": 2,
+    "season": 6,
+    "coach": "JESUS",
+    "teamId": "muertos_de_risa",
+    "economy": {
+      "startingTreasury": 600000,
+      "prices": {
+        "dedicatedFan": 20000,
+        "cheerleader": 20000,
+        "assistantCoach": 20000,
+        "apothecary": null,
+        "bribe": 100000
+      }
+    },
+    "staff": {
+      "dedicatedFans": 1,
+      "cheerleaders": 0,
+      "assistantCoaches": 0,
+      "apothecary": 0,
+      "bribes": 0
+    },
+    "players": [
+      {
+        "num": 1,
+        "price": 115000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 2,
+        "price": 115000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 3,
+        "price": 40000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 4,
+        "price": 40000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 5,
+        "price": 40000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 6,
+        "price": 85000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 7,
+        "price": 85000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      }
+    ],
+    "matches": [],
+    "retiredPlayers": []
+  }
+}

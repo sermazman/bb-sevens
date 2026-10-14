@@ -81,15 +81,23 @@
   .skill-tag.cat-mutacion{border-color:#4bbfb0; color:#4bbfb0;}
   .skill-tag.cat-personalizada{border-color:#6b6152; color:#a99b7f;}
   .skill-tag.cat-veterano{background:#d8a94b; border-color:#d8a94b; color:#1c1712; font-weight:700;}
+  .skill-tag.cat-capitan{background:#1c1712; border:1px solid #d8a94b; color:#d8a94b; font-weight:700;}
   .skill-add-row{display:flex; gap:6px;}
   .skill-add-row select{margin-bottom:0; flex:1; min-width:0;}
-  .veteran-row{
-    display:flex; align-items:center; gap:7px; margin-top:6px; font-size:11.5px; color:#d8a94b;
-    user-select:none;
+  .flags-row{display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:6px;}
+  .flag-item{
+    display:flex; align-items:center; gap:6px; font-size:11.5px; color:#d8a94b;
+    user-select:none; cursor:pointer;
   }
-  .veteran-row input[type=checkbox]{width:14px; height:14px; margin:0; cursor:pointer;}
-  .veteran-row label{cursor:pointer;}
+  .flag-item input[type=checkbox]{width:14px; height:14px; margin:0; cursor:pointer;}
   input.ma-veteran{color:#e0453f !important; font-weight:800 !important;}
+  .staff-treasury{
+    display:flex; justify-content:space-between; align-items:center; margin-top:10px;
+    padding-top:10px; border-top:1px solid var(--panel-line); font-size:13px; color:#cfc3a8;
+  }
+  .staff-treasury .mono{font-weight:700; color:var(--gold);}
+  .staff-treasury .mono.negative{color:var(--bad);}
+  .stepper button:disabled{opacity:0.35; cursor:not-allowed;}
   .skill-add-row button{white-space:nowrap; padding:6px 8px;}
   .cat-legend{display:flex; flex-wrap:wrap; gap:12px; margin-top:4px;}
   .cat-legend-item{display:flex; align-items:center; gap:5px; font-size:11.5px; color:#a99b7f;}
@@ -175,6 +183,12 @@
   .veteran-star{
     position:absolute; top:-6px; left:-6px; width:14px; height:14px;
     filter:drop-shadow(0 1px 1px rgba(0,0,0,0.8)); pointer-events:none;
+  }
+  .captain-badge{
+    position:absolute; bottom:-6px; left:-6px; width:15px; height:15px; border-radius:50%;
+    background:#1c1712; color:#d8a94b; border:1px solid #d8a94b;
+    font-family:'JetBrains Mono', monospace; font-weight:800; font-size:10px; line-height:13px;
+    text-align:center; pointer-events:none;
   }
   .formation-grid{
     display:grid;
@@ -301,7 +315,17 @@
           </div>
           <div class="mono staff-row-total" id="rerollTotalText">0 po</div>
         </div>
-        <div class="small-note" style="margin-top:8px;">Aquí irá añadiéndose el resto del staff (animadoras, entrenadores asistentes, apotecario...).</div>
+        <div id="staffExtraRows"></div>
+        <div class="pos-limit-row" style="margin-top:12px; padding-top:10px;">
+          <label class="pos-limit-label">
+            <input type="checkbox" id="leagueStartedCheck" onchange="onLeagueStartedChange(this.checked)">
+            Liga en curso (bloquea la compra de Fans devotos)
+          </label>
+        </div>
+        <div class="staff-treasury">
+          <span>Tesorería restante</span>
+          <span class="mono" id="treasuryText">600.000 po</span>
+        </div>
         <div class="small-note" id="staffCatalogStatus" style="margin-top:4px;">Cargando catálogo de staff...</div>
       </div>
     </div>
@@ -369,8 +393,13 @@
 </div>
 
 <script>
-let team = { teamName: 'Nuevo Equipo', race: '', color: '#c0392b', textColor: 'auto', rerolls: 0, players: [] };
+function emptyStaff(){ return { fans: 0, assistants: 0, cheerleaders: 0, apothecary: 0 }; }
+let team = { teamName: 'Nuevo Equipo', race: '', color: '#c0392b', textColor: 'auto', rerolls: 0, staff: emptyStaff(), leagueStarted: false, players: [] };
 let uid = 1;
+
+// Razas que pueden nombrar Capitán (nombres tal cual aparecen en positions.json). "Black Orc" NO entra.
+const CAPTAIN_RACES = ['orcs', 'human'];
+const CAPTAIN_SKILL = 'CAP: PROFESIONAL';
 let disablePosLimit = false; // solo de sesión: no se guarda en el JSON del equipo
 let disableBudgetLimit = false; // solo de sesión: no se guarda en el JSON del equipo
 const TEAM_BUDGET_CAP = 600000;
@@ -384,6 +413,22 @@ let CATALOG_LOOKUP = {};
 let STAFF_CATALOG = {
   rerolls: { clave: 'reroll', label: 'Segunda Oportunidad', basePrice: 50000, sevensMultiplier: 2, byRace: {} }
 };
+
+// Staff comprable (precio por unidad, máximo comprable). Se puede sobreescribir desde rosters/staff.json ("items").
+// freeBase: unidades gratuitas que da la liga (no se pagan ni cuentan en el valor de equipo).
+// onlyAtCreation: solo se puede comprar al crear el equipo (se bloquea con "Liga en curso").
+let STAFF_ITEMS = {
+  fans:         { clave: 'fans',         label: 'Fans devotos',            price: 20000, max: 4, freeBase: 1, onlyAtCreation: true },
+  assistants:   { clave: 'assistants',   label: 'Ayudantes de entrenador', price: 20000, max: 3 },
+  cheerleaders: { clave: 'cheerleaders', label: 'Animadoras',              price: 20000, max: 3 },
+  apothecary:   { clave: 'apothecary',   label: 'Apotecario',              price: 80000, max: 1 }
+};
+
+function staffCost(){
+  let total = 0;
+  Object.keys(STAFF_ITEMS).forEach(k => { total += (team.staff[k] || 0) * STAFF_ITEMS[k].price; });
+  return total;
+}
 
 function rerollBasePriceForRace(race){
   const cfg = STAFF_CATALOG.rerolls;
@@ -409,6 +454,11 @@ async function loadStaffCatalog(){
     if(!res.ok) throw new Error('http ' + res.status);
     const data = await res.json();
     if(data.rerolls) STAFF_CATALOG.rerolls = Object.assign({}, STAFF_CATALOG.rerolls, data.rerolls);
+    if(data.items){
+      Object.keys(STAFF_ITEMS).forEach(k => {
+        if(data.items[k]) STAFF_ITEMS[k] = Object.assign({}, STAFF_ITEMS[k], data.items[k]);
+      });
+    }
     console.info('[staff.json] cargado. byRace:', STAFF_CATALOG.rerolls.byRace);
     const raceCount = Object.keys(STAFF_CATALOG.rerolls.byRace || {}).length;
     if(statusEl) statusEl.textContent = 'Catálogo de staff cargado (' + raceCount + ' razas con precio propio de reroll).';
@@ -517,7 +567,7 @@ async function loadSkillCatalog(){
 function buildEmptySlots(){
   const slots = [];
   for(let i = 1; i <= 11; i++){
-    slots.push({ _uid: uid++, num: i, name: '', position: '', ma: '', st: '', ag: '', pa: '', av: '', skills: [], formation: null });
+    slots.push({ _uid: uid++, num: i, name: '', position: '', ma: '', st: '', ag: '', pa: '', av: '', skills: [], veteran: false, captain: false, formation: null });
   }
   return slots;
 }
@@ -533,7 +583,7 @@ function stripTrailingClave(position, skillsArr){
 function newTeam(){
   const hasData = team.players && team.players.some(p => p.position || p.name);
   if(hasData && !confirm('Esto borra la plantilla actual sin guardar. ¿Continuar?')) return;
-  team = { teamName: 'Nuevo Equipo', race: '', color: '#c0392b', textColor: 'auto', rerolls: 0, players: buildEmptySlots() };
+  team = { teamName: 'Nuevo Equipo', race: '', color: '#c0392b', textColor: 'auto', rerolls: 0, staff: emptyStaff(), leagueStarted: false, players: buildEmptySlots() };
   document.getElementById('teamNameInput').value = team.teamName;
   populateRaceSelect(Object.keys(POSITIONS_BY_RACE).length ? Object.keys(POSITIONS_BY_RACE).sort() : FALLBACK_RACES);
   syncColorUI();
@@ -548,6 +598,12 @@ function loadTeamData(data){
   team.color = data.color || '#c0392b';
   team.textColor = data.textColor || 'auto';
   team.rerolls = (data.staff && data.staff.rerolls && data.staff.rerolls.count) || 0;
+  team.staff = emptyStaff();
+  Object.keys(STAFF_ITEMS).forEach(k => {
+    const n = parseInt(data.staff && data.staff[k] && data.staff[k].count);
+    if(!isNaN(n) && n > 0) team.staff[k] = Math.min(n, STAFF_ITEMS[k].max);
+  });
+  team.leagueStarted = !!data.leagueStarted;
 
   const slots = buildEmptySlots();
   const used = new Set();
@@ -569,8 +625,27 @@ function loadTeamData(data){
       pa: pd.pa ?? '',
       av: pd.av ?? '',
       skills: stripTrailingClave(pd.position || '', rawSkills),
+      veteran: false,
+      captain: false,
       formation: null
     };
+  });
+
+  // Veterano y Capitán viajan en las habilidades del JSON: se recuperan de ahí (el MA guardado ya viene reducido).
+  const capOk = captainAllowed(team.race);
+  let vetFound = false, capFound = false;
+  slots.forEach(s => {
+    if(!s.position) return;
+    const entry = findCatalogEntry(team.race, s.position);
+    if(s.skills.includes('Veterano')){
+      const lineaOk = !entry || claveCategory(entry.clave) === 'linea';
+      if(lineaOk && !vetFound){ s.veteran = true; vetFound = true; }
+      else s.skills = s.skills.filter(k => k !== 'Veterano');
+    }
+    if(s.skills.includes(CAPTAIN_SKILL)){
+      if(capOk && !capFound){ s.captain = true; capFound = true; }
+      else s.skills = s.skills.filter(k => k !== CAPTAIN_SKILL);
+    }
   });
   if(Array.isArray(data.formation)){
     data.formation.forEach(f => {
@@ -692,11 +767,54 @@ function claveCategory(clave){
   return norm.includes('linea') ? 'linea' : 'otra';
 }
 
+function shiftMA(p, delta){
+  const n = parseFloat(p.ma);
+  if(!isNaN(n)) p.ma = n + delta;
+}
+
 function clearVeteranState(p){
   if(!p.veteran) return;
-  if(typeof p.ma === 'number') p.ma = p.ma + 1;
+  shiftMA(p, +1);
   p.skills = p.skills.filter(s => s !== 'Veterano');
   p.veteran = false;
+}
+
+function captainAllowed(race){
+  return CAPTAIN_RACES.includes(normKey(race));
+}
+
+function clearCaptainState(p){
+  if(!p.captain) return;
+  p.skills = p.skills.filter(s => s !== CAPTAIN_SKILL);
+  p.captain = false;
+}
+
+function enforceCaptainEligibility(){
+  if(captainAllowed(team.race)) return;
+  team.players.forEach(clearCaptainState);
+}
+
+function toggleCaptain(_uid, checked){
+  const p = findPlayer(_uid);
+  if(!p) return;
+  if(checked){
+    if(!captainAllowed(team.race)){
+      showFormationModal('Esta raza no puede tener Capitán', 'Solo los equipos de Orcos y Humanos pueden nombrar un Capitán.');
+      renderPlayers();
+      return;
+    }
+    const other = team.players.find(pl => pl !== p && pl.captain);
+    if(other){
+      showFormationModal('Solo puede haber un Capitán', 'Ya tienes a "' + (other.name || ('#' + other.num)) + '" como Capitán del equipo.\n\nQuítale primero el Capitán si quieres asignárselo a este jugador.');
+      renderPlayers();
+      return;
+    }
+    p.captain = true;
+    if(!p.skills.includes(CAPTAIN_SKILL)) p.skills.push(CAPTAIN_SKILL);
+  } else {
+    clearCaptainState(p);
+  }
+  renderPlayers();
 }
 
 function onPositionChange(_uid, value){
@@ -704,6 +822,7 @@ function onPositionChange(_uid, value){
   if(!p) return;
   if(!value){
     clearVeteranState(p);
+    clearCaptainState(p);
     p.position = ''; p.ma = ''; p.st = ''; p.ag = ''; p.pa = ''; p.av = ''; p.skills = []; p.formation = null;
     renderPlayers();
     return;
@@ -753,6 +872,8 @@ function onPositionChange(_uid, value){
     p.av = entry.av != null ? entry.av + '+' : '';
     p.skills = Array.isArray(entry.skills) ? [...entry.skills] : [];
   }
+  // El Capitán conserva su estatus al cambiar de posición (el Veterano no: exige Clave Línea y se reinicia).
+  if(p.captain && !p.skills.includes(CAPTAIN_SKILL)) p.skills.push(CAPTAIN_SKILL);
   renderPlayers();
 }
 
@@ -767,7 +888,7 @@ function toggleVeteran(_uid, checked){
       return;
     }
     p.veteran = true;
-    if(typeof p.ma === 'number') p.ma = p.ma - 1;
+    shiftMA(p, -1);
     if(!p.skills.includes('Veterano')) p.skills.push('Veterano');
   } else {
     clearVeteranState(p);
@@ -779,7 +900,7 @@ function clearSlot(_uid){
   const p = findPlayer(_uid);
   if(!p) return;
   if(!confirm('¿Vaciar este hueco de jugador?')) return;
-  clearVeteranState(p);
+  p.veteran = false; p.captain = false;
   p.name = ''; p.position = ''; p.ma = ''; p.st = ''; p.ag = ''; p.pa = ''; p.av = ''; p.skills = []; p.formation = null;
   renderPlayers();
 }
@@ -841,7 +962,65 @@ function computeTeamValue(){
     else missing++;
   });
   total += (team.rerolls || 0) * rerollPriceForRace(team.race);
+  total += staffCost();
   return { total, missing };
+}
+
+function budgetBlockMessage(what, projected){
+  return what + ' dejaría el valor de equipo en ' + projected.toLocaleString('es-ES') + ' po, por encima del máximo de ' + TEAM_BUDGET_CAP.toLocaleString('es-ES') + ' po.\n\nSi necesitas superarlo, marca la casilla "Desactivar límite de presupuesto" al final del panel de jugadores.';
+}
+
+function changeStaff(key, delta){
+  const it = STAFF_ITEMS[key];
+  if(!it) return;
+  const cur = team.staff[key] || 0;
+  if(it.onlyAtCreation && team.leagueStarted){
+    showFormationModal('Compra no disponible en liga', '"' + it.label + '" solo se pueden comprar al crear el equipo. Con la liga en curso ya no se pueden añadir ni quitar.\n\nSi estás creando el equipo, desmarca "Liga en curso" en el panel de staff.');
+    return;
+  }
+  if(delta > 0){
+    if(cur >= it.max){
+      showFormationModal('Máximo alcanzado', 'Ya tienes el máximo permitido de "' + it.label + '" (' + ((it.freeBase || 0) + it.max) + (it.freeBase ? ' en total, contando el gratuito de la liga' : '') + ').');
+      return;
+    }
+    if(!disableBudgetLimit){
+      const projected = computeTeamValue().total + it.price;
+      if(projected > TEAM_BUDGET_CAP){
+        showFormationModal('Presupuesto máximo superado', budgetBlockMessage('Añadir 1 × "' + it.label + '"', projected));
+        return;
+      }
+    }
+  }
+  team.staff[key] = Math.max(0, Math.min(it.max, cur + delta));
+  renderStaffPanel();
+  scheduleJsonRefresh();
+}
+
+function onLeagueStartedChange(checked){
+  team.leagueStarted = checked;
+  renderStaffPanel();
+  scheduleJsonRefresh();
+}
+
+function staffRowHtml(key){
+  const it = STAFF_ITEMS[key];
+  const count = team.staff[key] || 0;
+  const locked = !!(it.onlyAtCreation && team.leagueStarted);
+  const free = it.freeBase || 0;
+  const freeTxt = free ? ' · +' + free + ' gratis de la liga (total: ' + (free + count) + ')' : '';
+  const lockTxt = locked ? ' · 🔒 bloqueado en liga' : '';
+  return `<div class="staff-row" style="margin-top:10px;">
+    <div class="staff-row-label">
+      <span>${it.label}</span>
+      <span class="small-note" style="margin:0;">${it.price.toLocaleString('es-ES')} po/ud. · máx. ${free ? (free + it.max) + ' en total' : it.max}${freeTxt}${lockTxt}</span>
+    </div>
+    <div class="stepper">
+      <button type="button" onclick="changeStaff('${key}', -1)" ${locked ? 'disabled' : ''}>−</button>
+      <span class="mono stepper-value">${count}</span>
+      <button type="button" onclick="changeStaff('${key}', 1)" ${locked ? 'disabled' : ''}>+</button>
+    </div>
+    <div class="mono staff-row-total">${(count * it.price).toLocaleString('es-ES')} po</div>
+  </div>`;
 }
 
 function changeRerolls(delta){
@@ -849,7 +1028,7 @@ function changeRerolls(delta){
     const price = rerollPriceForRace(team.race);
     const projected = computeTeamValue().total + price;
     if(projected > TEAM_BUDGET_CAP){
-      showFormationModal('Presupuesto máximo superado', 'Añadir otra Segunda Oportunidad dejaría el valor de equipo en ' + projected.toLocaleString('es-ES') + ' po, por encima del máximo de ' + TEAM_BUDGET_CAP.toLocaleString('es-ES') + ' po.\n\nSi necesitas superarlo, marca la casilla "Desactivar límite de presupuesto" al final del panel de jugadores.');
+      showFormationModal('Presupuesto máximo superado', budgetBlockMessage('Añadir otra Segunda Oportunidad', projected));
       return;
     }
   }
@@ -868,9 +1047,22 @@ function renderStaffPanel(){
   countEl.textContent = team.rerolls || 0;
   priceHintEl.textContent = price.toLocaleString('es-ES') + ' po/ud. (base ' + base.toLocaleString('es-ES') + ' ×2 Sevens)';
   totalEl.textContent = ((team.rerolls || 0) * price).toLocaleString('es-ES') + ' po';
+  const extra = document.getElementById('staffExtraRows');
+  if(extra) extra.innerHTML = Object.keys(STAFF_ITEMS).map(staffRowHtml).join('');
+  const leagueChk = document.getElementById('leagueStartedCheck');
+  if(leagueChk) leagueChk.checked = !!team.leagueStarted;
   const tv = computeTeamValue();
   const tvEl = document.getElementById('teamValueBadge');
   if(tvEl) tvEl.textContent = tv.total.toLocaleString('es-ES') + ' po' + (tv.missing ? ' (+' + tv.missing + ' sin precio)' : '');
+  updateTreasuryDisplay(tv);
+}
+
+function updateTreasuryDisplay(tv){
+  const trEl = document.getElementById('treasuryText');
+  if(!trEl) return;
+  const left = TEAM_BUDGET_CAP - tv.total;
+  trEl.textContent = left.toLocaleString('es-ES') + ' po';
+  trEl.classList.toggle('negative', left < 0);
 }
 
 function skillSelectOptionsHtml(){
@@ -892,6 +1084,9 @@ function renderPlayers(){
       if(s === 'Veterano'){
         return `<span class="skill-tag cat-veterano" title="Veterano">${s}</span>`;
       }
+      if(s === CAPTAIN_SKILL){
+        return `<span class="skill-tag cat-capitan" title="Capitán del equipo">${s}</span>`;
+      }
       const cat = SKILL_TO_CATEGORY[s];
       const catClass = cat ? (CATEGORY_CLASS[cat] || '') : 'cat-personalizada';
       const title = cat ? cat : 'Personalizada';
@@ -902,12 +1097,15 @@ function renderPlayers(){
     const accessTitle = catEntry && catEntry.primSec ? 'Acceso a habilidades según posición (Primaria / Secundaria)' : 'Sin dato de acceso para esta raza/posición en el catálogo';
     const priceText = catEntry && catEntry.prize != null ? catEntry.prize.toLocaleString('es-ES') : '–';
     const isLinea = catEntry && claveCategory(catEntry.clave) === 'linea';
-    const veteranRowHtml = isLinea
-      ? `<div class="veteran-row">
-          <input type="checkbox" id="vet-${p._uid}" ${p.veteran ? 'checked' : ''} onchange="toggleVeteran(${p._uid}, this.checked)">
-          <label for="vet-${p._uid}">Veterano</label>
-        </div>`
-      : '';
+    const canCaptain = !!p.position && captainAllowed(team.race);
+    const flagItems = [];
+    if(isLinea){
+      flagItems.push(`<label class="flag-item"><input type="checkbox" ${p.veteran ? 'checked' : ''} onchange="toggleVeteran(${p._uid}, this.checked)">Veterano</label>`);
+    }
+    if(canCaptain){
+      flagItems.push(`<label class="flag-item"><input type="checkbox" ${p.captain ? 'checked' : ''} onchange="toggleCaptain(${p._uid}, this.checked)">Capitán</label>`);
+    }
+    const veteranRowHtml = flagItems.length ? `<div class="flags-row">${flagItems.join('')}</div>` : '';
     div.innerHTML = `
       <div><input type="text" class="mono" value="${p.num}" oninput="updateField(${p._uid}, 'num', this.value)"></div>
       <div>
@@ -948,6 +1146,7 @@ function renderPlayers(){
   if(tvEl){
     tvEl.textContent = tv.total.toLocaleString('es-ES') + ' po' + (tv.missing ? ' (+' + tv.missing + ' sin precio)' : '');
   }
+  updateTreasuryDisplay(tv);
   renderFormation();
   scheduleJsonRefresh();
 }
@@ -997,7 +1196,8 @@ function formationTokenHtml(p){
   const cls = 'formation-token' + (selectedFormationNum === p.num ? ' selected' : '');
   const label = p.name ? (p.name + ' (' + p.position + ')') : p.position;
   const star = p.veteran ? `<img class="veteran-star" src="icons/veterano.png" alt="Veterano" title="Veterano">` : '';
-  return `<div class="${cls}" style="background:${bg}; color:${txt}; border-color:${borderColor};" title="#${p.num} ${label}" onclick="event.stopPropagation(); onFormationTokenClick(${p.num})">${p.num}${star}</div>`;
+  const cap = p.captain ? `<span class="captain-badge" title="Capitán">C</span>` : '';
+  return `<div class="${cls}" style="background:${bg}; color:${txt}; border-color:${borderColor};" title="#${p.num} ${label}" onclick="event.stopPropagation(); onFormationTokenClick(${p.num})">${p.num}${star}${cap}</div>`;
 }
 
 function renderFormation(){
@@ -1113,7 +1313,7 @@ function clearFormation(){
 }
 
 document.getElementById('teamNameInput').addEventListener('input', (e) => { team.teamName = e.target.value; scheduleJsonRefresh(); });
-document.getElementById('teamRaceInput').addEventListener('input', (e) => { team.race = e.target.value; renderPlayers(); });
+document.getElementById('teamRaceInput').addEventListener('input', (e) => { team.race = e.target.value; enforceCaptainEligibility(); renderPlayers(); });
 
 function skillsWithClave(p){
   const entry = findCatalogEntry(team.race, p.position);
@@ -1126,19 +1326,27 @@ function buildExportData(){
   const filled = team.players.filter(p => p.position);
   const rerollCount = team.rerolls || 0;
   const rerollPrice = rerollPriceForRace(team.race);
+  const staffOut = {
+    rerolls: {
+      clave: STAFF_CATALOG.rerolls.clave,
+      count: rerollCount,
+      pricePerUnit: rerollPrice,
+      total: rerollCount * rerollPrice
+    }
+  };
+  Object.keys(STAFF_ITEMS).forEach(k => {
+    const it = STAFF_ITEMS[k];
+    const c = team.staff[k] || 0;
+    staffOut[k] = { clave: it.clave, count: c, pricePerUnit: it.price, total: c * it.price };
+    if(it.freeBase) staffOut[k].free = it.freeBase;
+  });
   return {
     teamName: team.teamName,
     race: team.race,
     color: team.color || '#c0392b',
     textColor: team.textColor || 'auto',
-    staff: {
-      rerolls: {
-        clave: STAFF_CATALOG.rerolls.clave,
-        count: rerollCount,
-        pricePerUnit: rerollPrice,
-        total: rerollCount * rerollPrice
-      }
-    },
+    leagueStarted: !!team.leagueStarted,
+    staff: staffOut,
     players: filled.map(p => ({
       num: isNaN(parseInt(p.num)) ? p.num : parseInt(p.num),
       name: p.name,
@@ -1228,10 +1436,34 @@ function exportTeamPDF(){
     margin: { left: 14, right: 14 }
   });
 
-  const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 34;
+  const playersEndY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 34;
+
+  // Tabla de staff
+  const staffRows = [['Segundas Oportunidades', String(team.rerolls || 0), ((team.rerolls || 0) * rerollPriceForRace(team.race)).toLocaleString('es-ES') + ' po']];
+  Object.keys(STAFF_ITEMS).forEach(k => {
+    const it = STAFF_ITEMS[k];
+    const c = team.staff[k] || 0;
+    const qty = it.freeBase ? (it.freeBase + c) + ' (' + it.freeBase + ' gratis)' : String(c);
+    staffRows.push([it.label, qty, (c * it.price).toLocaleString('es-ES') + ' po']);
+  });
+  doc.autoTable({
+    startY: playersEndY + 8,
+    head: [['Staff','Cantidad','Coste']],
+    body: staffRows,
+    styles: { font: 'helvetica', fontSize: 9, cellPadding: 2, textColor: [30,26,20] },
+    headStyles: { fillColor: teamColor, textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [244,240,231] },
+    columnStyles: { 1: { halign: 'center', cellWidth: 36 }, 2: { halign: 'right', cellWidth: 36 } },
+    margin: { left: 14, right: 14 },
+    tableWidth: 120
+  });
+
+  const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : playersEndY;
   doc.setFontSize(8);
   doc.setTextColor(120,120,120);
-  doc.text(rows.length + ' jugadores en plantilla', 14, finalY + 8);
+  const captain = team.players.find(p => p.captain && p.position);
+  const captainTxt = captain ? ' · Capitán: #' + captain.num + (captain.name ? ' ' + captain.name : '') : '';
+  doc.text(rows.length + ' jugadores en plantilla' + captainTxt, 14, finalY + 8);
 
   const fname = (team.teamName || 'equipo').replace(/\s+/g,'_') + '.pdf';
   doc.save(fname);
@@ -1299,6 +1531,6 @@ loadSkillCatalog();
 loadPositionsCatalog();
 loadStaffCatalog();
 </script>
-<div class="small-note" style="text-align:center; padding:14px 0 6px 0; opacity:0.55; font-family:'JetBrains Mono', monospace;">Build rosters.html: 07102026-0735</div>
+<div class="small-note" style="text-align:center; padding:14px 0 6px 0; opacity:0.55; font-family:'JetBrains Mono', monospace;">Build rosters.html: 14102026-1755</div>
 </body>
 </html>

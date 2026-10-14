@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-w-version="W_V33">
+<html lang="es" data-w-version="W_V34">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -157,12 +157,12 @@
     <button class="primary full" id="endTurnBtn" style="margin-bottom:10px;" onclick="endTurn()">Terminar turno →</button>
 
     <div class="panel" id="kickPlacementPanel" style="display:none; border-color:#5aa469;">
-      <h2 style="color:#8fd19e;">🏈 Colocación del saque</h2>
+      <h2 style="color:#8fd19e;"><img class="ball-ico" src="icons/spiked_ball_1.PNG" alt="" onerror="this.outerHTML='🏈'"> Colocación del saque</h2>
       <div class="small-note" id="kickPlacementText">Elegid la casilla (resaltada en verde).</div>
     </div>
 
     <div class="panel" id="kickoffPanel" style="display:none; border-color:#4a7a9c;">
-      <h2 style="color:#7db8e8;">🏈 Saque inicial</h2>
+      <h2 style="color:#7db8e8;"><img class="ball-ico" src="icons/spiked_ball_1.PNG" alt="" onerror="this.outerHTML='🏈'"> Saque inicial</h2>
       <div class="small-note" id="kickoffStepText">Tirad los dados y elegid la casilla.</div>
       <div class="row" style="margin-top:8px;">
         <button onclick="rollKickoffDirDie()">Tirar 1D8 (dirección)</button>
@@ -188,7 +188,7 @@
     </div>
 
     <div class="panel" id="freeCatchPanel" style="display:none; border-color:var(--gold);">
-      <h2 style="color:var(--gold);">🏈 Recepción libre</h2>
+      <h2 style="color:var(--gold);"><img class="ball-ico" src="icons/spiked_ball_1.PNG" alt="" onerror="this.outerHTML='🏈'"> Recepción libre</h2>
       <div class="small-note" id="freeCatchText">Click en vuestro jugador para asignarle el balón.</div>
     </div>
 
@@ -199,7 +199,7 @@
     </div>
 
     <div class="panel" id="ballBouncePanel" style="display:none; border-color:#4a7a9c;">
-      <h2 style="color:#7db8e8;">🏈 Balón rebotado</h2>
+      <h2 style="color:#7db8e8;"><img class="ball-ico" src="icons/spiked_ball_1.PNG" alt="" onerror="this.outerHTML='🏈'"> Balón rebotado</h2>
       <div class="small-note">Elegid la casilla numerada (1-8) según el resultado del D8: 1-2-3 arriba, 4-balón-5 en medio, 6-7-8 abajo. Si la dirección cae fuera del campo, aparecerá una casilla fantasma pegada al borde — el balón vuelve a botar desde ahí con una nueva tirada de dirección.</div>
       <div class="row" style="margin-top:8px;">
         <button onclick="rollBounceDirDie()">Tirar 1D8 (dirección)</button>
@@ -212,7 +212,7 @@
     </div>
 
     <div class="panel setup" id="setupPanel">
-      <h2>🏈 Fase de colocación</h2>
+      <h2><img class="ball-ico" src="icons/spiked_ball_1.PNG" alt="" onerror="this.outerHTML='🏈'"> Fase de colocación</h2>
       <div id="preMatchStartRow" style="display:none;">
         <button class="full primary" id="preMatchStartBtn" onclick="preMatchBegin()">🎬 Empezar secuencia anterior a partido</button>
         <div class="small-note" id="preMatchStartNote">Hinchas, clima, sustitutos, incentivos y sorteo de patada.</div>
@@ -278,7 +278,7 @@
       <div class="panel">
         <h2>Acciones manuales</h2>
         <div class="sel-btn-row">
-          <button onclick="assignBall()">🏈 Asignar balón</button>
+          <button onclick="assignBall()"><img class="ball-ico" src="icons/spiked_ball_1.PNG" alt="" onerror="this.outerHTML='🏈'"> Asignar balón</button>
           <button onclick="startPlaceBallFree()">📍 Colocar balón suelto</button>
           <button id="blockBtn" onclick="startBlockTargeting()" style="display:none;">⚔️ Placar</button>
           <button id="blitzBtn" onclick="declareBlitz()" style="display:none;">⚡ Blitz</button>

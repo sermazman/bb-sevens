@@ -1780,6 +1780,8 @@ function renderPitch(){
         if(ball.carrierId===occ.id){
           const dot = document.createElement('div');
           dot.className='carrier-dot';
+          dot.title='Lleva el balón';
+          dot.innerHTML = ballImgHtml();
           t.appendChild(dot);
         }
         if(playerHasSkill(occ, 'veterano', 'veteran')){
@@ -1797,7 +1799,7 @@ function renderPitch(){
       if(!ballInFlight && ball.carrierId===null && ball.row===r && ball.col===c){
         const looseBall = document.createElement('div');
         looseBall.className = 'loose-ball';
-        looseBall.textContent = '🏈';
+        looseBall.innerHTML = ballImgHtml();
         looseBall.title = 'Balón suelto';
         cell.appendChild(looseBall);
       }
@@ -2747,7 +2749,7 @@ function renderSelInfo(){
   elLeft.innerHTML = `
     <div style="font-weight:700; font-size:14px; margin-bottom:4px;">${p.name} <span style="color:#a99b7f; font-weight:400;">#${p.num} · ${teamName(p.team)}</span></div>
     <div style="color:#a99b7f; font-size:11.5px; margin-bottom:4px;">${p.position || 'Sin posición'}</div>
-    <div>${(p.gfiUsed??0)>0?'A por ellos '+p.gfiUsed+'/'+maxGfiFor(p):''}${condLabel}${blitzLabel}${freePushLabel}${ball.carrierId===p.id?' · 🏈 lleva el balón':''}</div>`;
+    <div>${(p.gfiUsed??0)>0?'A por ellos '+p.gfiUsed+'/'+maxGfiFor(p):''}${condLabel}${blitzLabel}${freePushLabel}${ball.carrierId===p.id?' · ' + ballImgHtml() + ' lleva el balón':''}</div>`;
   elRight.innerHTML = `
     <div style="font-size:13px; margin-bottom:4px;">MA ${p.ma} (restante ${p.remainingMove ?? p.ma}) · ST ${p.st ?? '-'} · AG ${p.ag ?? '-'} · PA ${p.pa ?? '-'} · AV ${p.av ?? '-'}</div>
     <div style="font-size:11.5px; font-style:italic; color:#8a7d64;">${skillsText}</div>`;
@@ -4835,6 +4837,10 @@ function resolveBounce(r,c){
   }
 }
 
+const BALL_IMG_SRC = 'icons/spiked_ball_1.PNG';
+function ballImgHtml(cls){
+  return '<img class="ball-ico' + (cls ? ' ' + cls : '') + '" src="' + BALL_IMG_SRC + '" alt="Balón" onerror="this.outerHTML=\'🏈\'">';
+}
 function catchKindOf(pc){
   if(!pc) return 'pickup';
   return pc.catchKind || (pc.useAtraparSkill ? 'handoff' : 'pickup');
@@ -6380,7 +6386,7 @@ function setupModalEnhancements(){
 document.addEventListener('DOMContentLoaded', setupModalEnhancements);
 if(document.readyState==='complete' || document.readyState==='interactive'){ setupModalEnhancements(); }
 
-window.APP_JS_VERSION = 'A_V34'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V35'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

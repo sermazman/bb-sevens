@@ -4,6 +4,12 @@
     "label": "Segunda Oportunidad",
     "basePrice": 50000,
     "sevensMultiplier": 2,
-    "byRace": {  }
+    "byRace": { "Dwarf": 60000, "Elven Union": 50000 }
+  },
+  "items": {
+    "fans":         { "clave": "fans",         "label": "Fans devotos",            "price": 20000, "max": 4, "freeBase": 1, "onlyAtCreation": true },
+    "assistants":   { "clave": "assistants",   "label": "Ayudantes de entrenador", "price": 20000, "max": 3 },
+    "cheerleaders": { "clave": "cheerleaders", "label": "Animadoras",              "price": 20000, "max": 3 },
+    "apothecary":   { "clave": "apothecary",   "label": "Apotecario",              "price": 80000, "max": 1 }
   }
 }

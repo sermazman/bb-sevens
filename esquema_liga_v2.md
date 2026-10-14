@@ -14,7 +14,18 @@ Todo lo de liga vive dentro de `league`. `league.coach` guarda el nombre del ent
 | Resultado de cada partido | Victorias/empates/derrotas, TD a favor/en contra, puntos de liga |
 | Precio base de cada jugador | Coste y valor del equipo |
 
-## Fórmulas (idénticas al Excel)
+## Progresión (reglas nuevas de Sevens)
+
+- Las mejoras NO se pagan con SPP: se sube 1 habilidad por partido a un solo jugador. El gestor lo aplica así (máx. 1 mejora por equipo y partido, desde el registro del partido).
+- Los SPP y las estadísticas son solo orientativos (y base para un futuro Hall of Fame). `sppUnspent` ya no se usa (igual a `sppTotal`) y `sppCost` de las mejoras nuevas es 0.
+- Solo hay mejoras de habilidad, determinadas al azar. Valor extra: primaria +10.000 la primera habilidad nueva y +20.000 cada una de las siguientes; secundaria +20.000 la primera y +30.000 las siguientes. Ese dinero sube el valor del jugador, pero no sale de la tesorería.
+
+## Personal y fans
+
+- Se compran durante la liga: ayudantes de entrenador (20.000, máx. 3), animadoras (20.000, máx. 3) y apotecario (80.000 según raza, máx. 1). Resta de la tesorería al comprarlo y suma al valor del equipo.
+- Fans devotos: 1 gratis al crear el equipo, no se compran. Suben o bajan con los partidos (`dedicatedFansGained`), siempre entre 1 y 5 (se aplica partido a partido).
+
+## Fórmulas (antiguas, del Excel; los costes en SPP ya no se aplican)
 
 - SPP totales = ESP + CP + TD×3 + DES + INT×2 + HL×2 + HG×2 + RIP×2 + MVP×4
 - SPP sin gastar = SPP totales − SPP gastados en mejoras
@@ -92,3 +103,9 @@ Las habilidades se añaden además a `players[].skills` (nombre exacto de `roste
 ```json
 "injuries": [ { "type": "seriousInjury", "matchId": "T6-J04", "missNextGame": true } ]
 ```
+
+## Ajustes (14-oct)
+- Segundas oportunidades: 100.000 mo para todos los equipos. Apotecario: 80.000 mo en las razas que pueden tenerlo, máx. 1. Sobornos: siguen disponibles en el gestor (100.000 mo).
+- Mejoras de habilidad: el gestor puede marcarlas como `chosen` (elegida) o `random` (proceso externo); el valor extra es el mismo (tabla primera/siguiente).
+- Hoja PDF: se elimina la columna SUB (el sustituto se gestiona en el juego); la columna DRAFT ya marca las habilidades extra.
+- Hall of Fame: pendiente.

@@ -200,11 +200,11 @@ td.impcell{min-width:210px;white-space:normal}
     <h2>Añadir mejora</h2>
     <p class="hint" id="impWho"></p>
     <div class="grid">
-      <label class="f">Tipo<select id="impKind"><option value="skill">Habilidad</option><option value="stat">Característica</option></select></label>
+      <label class="f" hidden>Tipo<select id="impKind"><option value="skill">Habilidad</option><option value="stat">Característica</option></select></label>
       <label class="f" id="impSkillWrap">Habilidad<select id="impSkill"></select></label>
       <label class="f" id="impOtherWrap" hidden>Nombre de la habilidad<input type="text" id="impOther"></label>
       <label class="f" id="impCatWrap">Categoría para el jugador<select id="impCat"><option value="primary">Primaria</option><option value="secondary">Secundaria</option></select></label>
-      <label class="f" id="impSelWrap">Elección<select id="impSel"><option value="chosen">Elegida</option><option value="random">Aleatoria</option></select></label>
+      <label class="f" id="impSelWrap">Elección<select id="impSel"><option value="chosen">Elegida por mí</option><option value="random">Aleatoria (proceso externo)</option></select></label>
       <label class="f" id="impStatWrap" hidden>Característica<select id="impStat"></select></label>
     </div>
     <p class="hint" id="impInfo"></p>
@@ -258,13 +258,18 @@ const CATALOG_APOTHECARY = {"Amazon":80000,"Black Orc":80000,"Chaos Chosen":8000
 let SKILL_ACCESS = {"Amazon":{"Eagle Warrior Linewomen":"PSS---","Python Warrior Throwers":"PSSP--","Piranha Warrior Blitzers":"PPS---","Jaguar Warrior Blockers":"PSP---","Journey Eagle Warrior Linewomen":"PSS---"},"Black Orc":{"Goblin Bruiser":"SPSS-P","Black Orc":"PSP--S","Trained Troll":"SSPS--","Journey Goblin":"SPSS-P"},"Bretonia":{"Squire":"PSS---","Knigth Catcher":"PPS---","Knigth Thrower":"PSSP--","Grial Knigths":"PSP---","Journey Eagle Warrior Linewomen":"PSS---"},"Chaos Chosen":{"Beastman Lineman":"PSSSPS","Chaos Chosen":"PSP-PS","Troll":"SSPSP-","Ogre":"SSP-P-","Minotaur":"SSP-P-","Journey Beastman":"PSSSPS"},"Chaos Dwarf":{"Hobgoblin Lineman":"SSS--P","Sneaky Stabba":"PSS--P","Chaos Dwarf Blocker":"PSP-SS","Flamesmith":"PSP-SS","Bull Centaur":"PSP-SS","Minotaur":"SSP-P-","Journey Hobgoblin Lineman":"SSS--P"},"Chaos Renegades":{"Human Renegade":"PSS-PP","Goblin Renegade":"SP-SPP","Orc Renegade":"PSS-PP","Skaven Renegade":"PSS-PP","Dark Elf Renegade":"PPS-PP","Human Thrower Renegade":"PSSPPP","Troll":"SSPSS-","Ogre":"SSP-S-","Minotaur":"SSP-S-","Rat Ogre":"SSP-S-","Journey Human Renegade":"PSS-PP"},"Dark Elf":{"Lineman":"PPS--S","Runner":"PPSP-S","Assassin":"SPS--P","Blitzer":"PPSS-S","Witch Elf":"PPS--S","Journey Elf":"PPS--S"},"Dwarf":{"Lineman":"P-S--P","Runner":"P-SP--","Blitzer":"P-PS--","Troll Slayer":"P-P--S","Deathroller":"S-P--P","Journey Lineman":"P-S--P"},"Elven Union":{"Lineman":"PPS---","Thrower":"PPSP--","Catcher":"PPS---","Blitzer":"PPSS--","Journey Elf":"PPS---"},"Goblin":{"Goblin":"SPSS--","Bombardier":"SPSP--","Looney":"SPS---","Doom Diver":"SPS---","Ooligan":"SPSS--","Fanatic":"SSP---","Pogoer":"SPSS--","Troll":"SSPS--","Journey Goblin":"SPSS--"},"Gnome":{"Linemen":"SPSS-S","Illusionist":"SP-P-S","Woodland Fox":"------","Beastmaster":"SPS--S","Altern Forest Treeman":"SSPS--","Journey Lineman":"SPSS-S"},"Halfling":{"Halfling Hopeful":"SPS---","Halfling Catcher":"SPSS--","Halfling Hefty":"SPS---","Forest Treeman":"SSPS--","Journey Halfling":"SPS---"},"High Elf":{"Lineman":"PPS---","White Lion":"PPSS--","Phoenix Warrior":"PPSP--","Dragon Prince":"PPS---","Journey Elf":"PPS---"},"Human":{"Lineman":"PSS--S","Halfling Hopeful":"SPS--S","Catcher":"PPSS-S","Thrower":"PSSP-S","Blitzer":"PSP--S","Ogre":"SSP---","Journeyman":"PSS--S"},"Imperial Nobility":{"Imperial Retainer":"PSS---","Imperial Thrower":"PSSP--","Noble Blitzer":"PPSS--","Bodyguard":"PSP---","Ogre":"SSP---","Journeyman":"PSS---"},"Khorne":{"Bloodborn Marauder":"PSS-PS","Khorngor":"PSPSPS","Bloodseeker":"PSP-PS","Bloodspawn":"SSP-P-","Journey Bloodborn":"PSS-PS"},"Lizardman":{"Skink":"SPSS-S","Chameleon Skink":"SPSP-S","Saurus":"PSP---","Kroxigor":"SSP---","Journey Skink":"SPSS-S"},"Necromantic":{"Zombie Lineman":"PSS--P","Ghoul Runner":"PPSS-S","Wraith":"PSP--S","Flesh Golem":"PSP--S","Werewolf":"PPSS-S","Raised Zombie":"PSS--P","Journey Zombie":"PSS--P"},"Norse":{"Raider Lineman":"PSSS--","Beer Boar":"-S----","Berserker":"PSPS--","Valkyrie":"PPSP--","Ulfwerner":"PSP---","Yhetee":"SSP---","Journeyman":"PSSS--"},"Nurgle":{"Rotter":"PSS-PP","Pestigor":"PSPSPS","Bloater":"PSP-PS","Rotspawn":"S-P-SS","Journey Rotter":"PSS-PP"},"Ogre":{"Gnoblar Linemen":"SP---P","Ogre Blocker":"SSPS-S","Ogre Runt Punter":"SSPP-S","Journey Gnoblar":"SP---P"},"Old World Alliance":{"Human Lineman":"PSS---","Halfling Hopeful":"SPS---","Human Catcher":"PPSS--","Dwarf Lineman":"P-S--P","Human Thrower":"PSSP--","Dwarf Runner":"PSSP--","Human Blitzer":"PSP---","Dwarf Blitzer":"P-PS--","Troll Slayer":"PSP---","Ogre":"SSP---","Altern Forest Treeman":"SSPS--","Journeyman":"PSS---"},"Orcs":{"Lineman":"PSP--S","Goblin":"SPSS-P","Thrower":"PSSP-S","Blitzer":"PSP--S","Big Un Blocker":"PSP--S","Troll":"SSPS--","Journey Orc":"PSP--S"},"Shambling Undead":{"Skeleton Lineman":"PSS--S","Zombie Lineman":"PSS--P","Ghoul Runner":"PPSS-S","Wight Blitzer":"PSP--S","Mummy":"SSP---","Raised Zombie":"PSS--P","Skeleton Journeyman":"PSS--S","Zombie Journeyman":"PSS--P"},"Slann":{"Lineman":"PSS---","Catcher":"PPSS--","Blitzer":"PPPS--","Kroxigor":"SSP---","Journey Slann":"PSS---"},"Skaven":{"ClanRat":"PSS-SP","Thrower":"PSSPSS","Gutter Runner":"PPS-SP","Blitzer":"PSP-SS","Rat Ogre":"SSP-S-","Journey ClanRat":"PSS-SP"},"Tomb King":{"Skeleton Lineman":"PSS--S","Tomb King Thrower":"PSSP-S","Tomb King Blitzers":"PSP--S","Tomb Guardian":"SSP---","Journey Skeleton":"PSS--S"},"Snotling":{"Snotling":"SPS---","Fungus Flinga":"SPSP--","Fun-hoppa":"SPS---","Stilty Runna":"SPS---","Pump Wagon":"SSP---","Trained Troll":"SSPS--","Journey Snotling":"SPS---"},"Underworld Denizens":{"Goblin":"SPSSPP","Snotling":"SP--PP","Skaven Clanrat":"PSS-PP","Skaven Thrower":"PSSPPS","Gutter Runner":"PPS-PP","Skaven Blitzer":"PSP-PS","Troll":"SSPSP-","Rat Ogre":"SSPSP-","Journey Goblin":"SPSSPP"},"Vampire":{"Thrall":"PSS---","Vampire Runner":"PPSS--","Vampire Thrower":"PPSP--","Vampire Blitzer":"PPP---","Vargheist":"SSP---","Journey Thrall":"PSS---"},"Elfos Silvanos":{"Lineman":"PP----","Thrower":"PPSP--","Catcher":"PPSS--","Wardancer":"PPSS--","Treeman":"SSPS--","Journey Elf":"PP----"}};
 /* categoría de cada habilidad (rosters/skills.json: los nombres son exactamente los que escribe y lee el juego) */
 let SKILL_CATS = {"Agallas":"G","Equilibrio Firme":"G","Forcejear":"G","Furia":"G","Manos seguras":"G","Patada":"G","Placaje defensivo":"G","Placar":"G","Profesional":"G","Provocar":"G","Robar balón":"G","Zafarse":"G","Atrapar":"A","Echarse a un lado":"A","En pie de un salto":"A","Esprintar":"A","Esquivar":"A","Golpe a la carrera":"A","Pies Firmes":"A","Placaje heroico":"A","Proteger el cuero":"A","Recepción heroica":"A","Romper defensas":"A","Saltar":"A","Atento al balón":"P","Cañonero":"P","Líder":"P","Nervios de acero":"P","Parte nubes":"P","Pasar":"P","Pasar y Seguir":"P","Pase a lo loco":"P","Pase precipitado":"P","Pase seguro":"P","Patada despeje":"P","Precisión":"P","Abrirse paso":"S","Apartar":"S","Brazo fuerte":"S","Cabeza dura":"S","Defensa":"S","Golpe mortífero":"S","Imparable":"S","Llave de brazo":"S","Luchador":"S","Mantenerse firme":"S","Ojo de halcón":"S","Placaje múltiple":"S","Agresor discreto":"T","Crujir":"T","Dejada":"T","Falta rápida":"T","Furtivo":"T","Innovador violento":"T","Jugar sucio":"T","Meter la bota":"T","Perseguir":"T","Piquete de ojos":"T","Saboteador":"T","Vuelo letal":"T","Apariencia asquerosa":"M","Boca monstruosa":"M","Brazos adicionales":"M","Cola prensil":"M","Cuernos":"M","Dos cabezas":"M","Garras":"M","Mano grande":"M","Piel férrea":"M","Piernas muy largas":"M","Presencia perturbadora":"M","Tentáculos":"M"};
+/* personal que se puede comprar durante la liga (20.000 ayudantes y animadoras, máx. 3; apotecario, máx. 1) */
 const STAFF_ROWS = [
-  ['dedicatedFans','Fans devotos comprados',1],
   ['cheerleaders','Animadoras',0],
   ['assistantCoaches','Ayudantes de entrenador',0],
-  ['apothecary','Médico',0],
+  ['apothecary','Apotecario',0],
   ['bribes','Sobornos',0]
 ];
+const STAFF_MAX = { cheerleaders:3, assistantCoaches:3, apothecary:1 };
+const REROLL_PRICE = 100000, APOTHECARY_PRICE = 80000;
+/* fans devotos: 1 gratis al crear el equipo; suben o bajan con los partidos, siempre entre 1 y 5 */
+const FANS_MIN = 1, FANS_MAX = 5;
+const fansTotal = l => (l.matches||[]).reduce((f,m)=>Math.min(FANS_MAX,Math.max(FANS_MIN,f+(m.dedicatedFansGained||0))),1);
 
 /* =========================================================
    Estado
@@ -294,11 +299,12 @@ function impCost(imp, idx){
   if(imp.category==='stat') return row.st;
   return row[(imp.category==='primary'?'p':'s') + (imp.selection==='random'?'r':'c')];
 }
-const sppSpent = p => (p.progression.improvements||[]).reduce((t,i,ix)=>t+impCost(i,ix),0);
+/* Reglas nuevas: las mejoras NO se pagan con SPP (se sube 1 habilidad por partido a un solo jugador). Los SPP son solo orientativos. */
+const sppSpent = p => 0;
 const impValue = p => (p.progression.improvements||[]).concat(p.progression.draftPayments||[]).reduce((t,i)=>t+(i.valueExtra||0),0);
 const skillCount = p => (p.progression.improvements||[]).filter(i=>i.skill).length;   /* habilidades subidas con SPP (para el draft) */
 const DRAFT_BONUS = 15000;
-function recalcSpp(p){ p.progression.sppUnspent = p.progression.sppTotal - sppSpent(p); }
+function recalcSpp(p){ p.progression.sppUnspent = p.progression.sppTotal; }
 
 const L = () => state.data.league;
 const topPlayer = num => state.data.players.find(p=>p.num===num);
@@ -324,7 +330,7 @@ function totals(){
 function economy(){
   const l=L(), pr=prices(), s=l.staff, t=totals();
   const rerolls = (state.data.staff && state.data.staff.rerolls && state.data.staff.rerolls.total) || 0;
-  const staffCost = Math.max(0,(s.dedicatedFans||1)-1)*pr.dedicatedFan + (s.cheerleaders||0)*pr.cheerleader
+  const staffCost = (s.cheerleaders||0)*pr.cheerleader
                   + (s.assistantCoaches||0)*pr.assistantCoach + (s.apothecary||0)*(pr.apothecary||0) + (s.bribes||0)*pr.bribe;
   const playersBase = l.players.reduce((a,p)=>a+(p.price||0),0);
   const playersExtra = l.players.reduce((a,p)=>a+impValue(p),0);
@@ -335,7 +341,7 @@ function economy(){
   const start = (l.economy||{}).startingTreasury||0;
   const treasury = start + t.earnings - t.spent - teamCost + playersExtra - deadCost - valuePaid;
   return { rerolls, staffCost, playersBase, playersExtra, deadCost, valuePaid, teamCost, teamValue, start, treasury,
-           fans:(s.dedicatedFans||1)+t.fansGained, t };
+           fans:fansTotal(l), t };
 }
 
 /* =========================================================
@@ -382,9 +388,9 @@ function lookupPrice(race,pos){
 }
 function apothecaryFor(race){
   const r=String(race||'').trim();
-  if(['Necromantic','Shambling Undead','Nurgle'].includes(r)) return 100000;
+  if(['Necromantic','Shambling Undead','Nurgle'].includes(r)) return APOTHECARY_PRICE;
   const k=Object.keys(CATALOG_APOTHECARY).find(x=>x.toLowerCase()===r.toLowerCase());
-  return k?CATALOG_APOTHECARY[k]:null;
+  return k?APOTHECARY_PRICE:null;
 }
 const normTxt = t => String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,'');
 
@@ -515,7 +521,7 @@ function renderRoster(){
       <td class="num">${esc(tp.ma)}</td><td class="num">${esc(tp.st)}</td><td class="num">${esc(tp.ag)}</td><td class="num">${esc(tp.pa)}</td><td class="num">${esc(tp.av)}</td>
       <td class="skills">${skills}</td>
       ${STAT_COLS.map(([k])=>`<td class="num">${s[k]||0}</td>`).join('')}
-      <td class="num"><strong>${lp.progression.sppTotal}</strong> / ${lp.progression.sppUnspent}</td>
+      <td class="num"><strong>${lp.progression.sppTotal}</strong></td>
       <td class="price"><input type="number" min="0" step="5000" value="${lp.price||0}" data-price="${tp.num}" aria-label="Precio de ${esc(tp.name)}"></td>
       <td><select data-status="${tp.num}" aria-label="Estado de ${esc(tp.name)}">
         <option value="active" ${!out?'selected':''}>Disponible</option>
@@ -525,9 +531,9 @@ function renderRoster(){
   $('#p-roster').innerHTML=`
     <div class="tscroll"><table>
       <thead><tr><th>#</th><th class="l">Jugador</th><th>MO</th><th>FU</th><th>AG</th><th>PA</th><th>AR</th><th class="l">Habilidades</th>
-      ${STAT_COLS.map(([,t])=>`<th>${t}</th>`).join('')}<th>SPP tot / libres</th><th>Precio</th><th>Estado</th><th>Draft</th></tr></thead>
+      ${STAT_COLS.map(([,t])=>`<th>${t}</th>`).join('')}<th>SPP</th><th>Precio</th><th>Estado</th><th>Draft</th></tr></thead>
       <tbody>${rows}</tbody></table></div>
-    <p class="hint">Precio y estado se pueden corregir a mano. Las estadísticas, los SPP y las lesiones se actualizan solos al registrar un partido.</p>`;
+    <p class="hint">Precio y estado se pueden corregir a mano. Las estadísticas, los SPP (solo orientativos) y las lesiones se actualizan solos al registrar un partido.</p>`;
 }
 
 function renderHistory(){
@@ -550,18 +556,19 @@ function renderHistory(){
 
 function renderTeam(){
   const e=economy(), t=e.t, pr=prices(), s=L().staff, rr=state.data.staff&&state.data.staff.rerolls;
-  const row=(key,label,val,min,price,extra='')=>`<div class="staffrow"><div>${label}<br><span class="race">${price===null?'No disponible para esta raza':fmt(price)+' c/u'}</span></div>
+  const row=(key,label,val,min,price,extra='')=>`<div class="staffrow"><div>${label}<br><span class="race">${price===null?'No disponible para esta raza':fmt(price)+' c/u'}${STAFF_MAX[key]?' · máx. '+STAFF_MAX[key]:''}</span></div>
       <div class="stepper"><button class="btn small" type="button" data-staff="${key}" data-d="-1" ${val<=min?'disabled':''} aria-label="Quitar ${label}">−</button>
       <span style="min-width:2ch;text-align:center">${val}</span>
-      <button class="btn small" type="button" data-staff="${key}" data-d="1" ${price===null||(key==='apothecary'&&val>=1)?'disabled':''} aria-label="Añadir ${label}">+</button></div></div>`;
+      <button class="btn small" type="button" data-staff="${key}" data-d="1" ${price===null||val>=(STAFF_MAX[key]??99)||price>e.treasury?'disabled':''} aria-label="Añadir ${label}" title="${val>=(STAFF_MAX[key]??99)?'Máximo alcanzado':price>e.treasury?'Tesorería insuficiente':''}">+</button></div></div>`;
   const priceOf={dedicatedFans:pr.dedicatedFan,cheerleaders:pr.cheerleader,assistantCoaches:pr.assistantCoach,apothecary:pr.apothecary,bribes:pr.bribe};
   $('#p-team').innerHTML=`<div class="two">
     <div class="card"><h3>Personal</h3>
       <div style="padding:8px 0;border-bottom:1px solid var(--line)"><div style="margin-bottom:6px">Logo</div>${logoZoneHTML()}</div>
       <div class="staffrow"><div>Entrenador</div><input type="text" data-coach value="${esc(L().coach||'')}" placeholder="Nombre" style="max-width:220px" aria-label="Entrenador"></div>
       ${rr?row('rerolls','Segundas oportunidades',rr.count,0,rr.pricePerUnit):''}
+      <div class="staffrow"><div>Fans devotos<br><span class="race">1 gratis al crear el equipo · suben o bajan con los partidos (mín. ${FANS_MIN}, máx. ${FANS_MAX})</span></div><strong class="sum">${e.fans}</strong></div>
       ${STAFF_ROWS.map(([k,lab,min])=>row(k,lab,s[k]??min,min,priceOf[k])).join('')}
-      <p class="hint">El primer fan devoto es gratis; los demás se pagan. Las segundas oportunidades se guardan en la parte del equipo que lee el juego.</p></div>
+      <p class="hint">El personal comprado resta de la tesorería y suma al valor del equipo. Los fans no se compran: solo cambian con los partidos. Las segundas oportunidades se guardan en la parte del equipo que lee el juego.</p></div>
     <div class="card"><h3>Economía</h3><dl class="calc">
       <div><dt>Tesorería inicial</dt><dd>${fmt(e.start)}</dd></div>
       <div><dt>+ Ganancias</dt><dd>${fmt(t.earnings)}</dd></div>
@@ -659,8 +666,9 @@ function renderDead(){
 /* =========================================================
    Mejoras: valor extra, categorías y ayudas (reglas del Excel)
    ========================================================= */
+/* valor extra por habilidad nueva (al azar): la primera adquirida y cada una de las siguientes */
 const IMP_VALUE = {
-  skill:{ primary:{random:10000,chosen:20000}, secondary:{random:20000,chosen:40000} },
+  skill:{ primary:{first:10000,next:20000}, secondary:{first:20000,next:30000} },
   stat:{ av:10000, ma:20000, pa:20000, ag:40000, st:80000 }
 };
 const CAT_NAMES = { G:'General', A:'Agilidad', S:'Fuerza', P:'Pase', M:'Mutación', T:'Triquiñuelas' };
@@ -691,11 +699,9 @@ function impDerive(lp,idx,dr){
   const order=lp.progression.improvements.length+idx+1;
   let category,selection,valueExtra,label;
   if(dr.kind==='stat'){ category='stat'; selection='chosen'; valueExtra=IMP_VALUE.stat[dr.attr]||0; label=STAT_IMP_LABEL[dr.attr]||dr.attr; }
-  else{ category=dr.category; selection=dr.selection; valueExtra=(IMP_VALUE.skill[category]||{})[selection]||0;
-        label=`${dr.skill} (${category==='primary'?'primaria':'secundaria'}, ${selection==='chosen'?'elegida':'aleatoria'})`; }
-  const row=IMPROVEMENT_COSTS[order]; let sppCost=0;
-  if(row) sppCost = category==='stat' ? row.st : row[(category==='primary'?'p':'s')+(selection==='random'?'r':'c')];
-  return {order,category,selection,valueExtra,sppCost,label,valid:!!row};
+  else{ category=dr.category; selection=dr.selection||'chosen'; const nSk=skillCount(lp)+idx; valueExtra=(IMP_VALUE.skill[category]||{})[nSk===0?'first':'next']||0;
+        label=`${dr.skill} (${category==='primary'?'primaria':'secundaria'}, ${nSk===0?'1ª':'nueva'})`; }
+  return {order,category,selection,valueExtra,sppCost:0,label,valid:true};
 }
 const impText = im => im.skill ? im.skill : ((STAT_IMP_LABEL[im.attribute]||im.attribute)+' (característica)');
 
@@ -741,7 +747,9 @@ const mvTeam = side => mv.teams.find(t=>t.file===mv[side]);
 /* lee un equipo y lo deja listo para usar; devuelve cuántos jugadores se añadieron al registro de liga */
 function normalizeDoc(d){
   const l=d.league; l.players=l.players||[]; l.matches=l.matches||[]; l.retiredPlayers=l.retiredPlayers||[];
-  l.staff=l.staff||{}; l.economy=l.economy||{startingTreasury:0}; if(!l.teamId) l.teamId=slug(d.teamName);
+  l.staff=l.staff||{}; l.economy=l.economy||{startingTreasury:0};
+  d.staff=d.staff||{}; { const rr=d.staff.rerolls=d.staff.rerolls||{count:0}; rr.count=rr.count||0; rr.pricePerUnit=REROLL_PRICE; rr.total=rr.count*REROLL_PRICE; }
+  { const pp=l.economy.prices=l.economy.prices||{}; if(pp.apothecary!=null) pp.apothecary=APOTHECARY_PRICE; } if(!l.teamId) l.teamId=slug(d.teamName);
   let added=0;
   for(const p of d.players){ if(!l.players.find(x=>x.num===p.num)){ l.players.push(emptyPlayerLeague(p.num,0)); added++; } }
   l.players.forEach(recalcSpp);
@@ -872,11 +880,12 @@ function sideHTML(side){
       ${field('spent','Tesorería gastada (incentivos)','min="0" step="10000"')}
       ${field('points','Puntos de liga','')}
     </div>
+    <p class="hint" data-fanshint="${side}"></p>
     <p class="hint">Fans, ganancias y puntos de liga pueden ser negativos. HL, HG y RIP se rellenan con lo que sumen los jugadores y se pueden corregir.</p>
     <div class="tscroll" style="margin-top:12px"><table>
       <thead><tr><th>#</th><th class="l">Jugador</th>${STAT_COLS.map(([,tt])=>`<th>${tt}</th>`).join('')}<th>Lesión sufrida</th><th class="l">Mejoras</th><th>SPP</th><th class="l">Draft</th></tr></thead>
       <tbody>${rows}</tbody></table></div>
-    <p class="hint">«Lesión sufrida» es lo que le pasó al propio jugador. Los de baja por herido grave no juegan, pero pueden recibir mejoras con los SPP que ya tenían. «Draft» solo se activa en jugadores con al menos una habilidad subida con SPP: «Drafteado» lo saca del equipo; «Pagar valor» lo conserva, resta su valor de la tesorería y le sube su valor 15.000.</p>
+    <p class="hint">«Lesión sufrida» es lo que le pasó al propio jugador. Los de baja por herido grave no juegan, pero pueden recibir una mejora igualmente. Mejoras: 1 por equipo y partido, a un solo jugador (no cuestan SPP). «Draft» solo se activa en jugadores con al menos una habilidad subida: «Drafteado» lo saca del equipo; «Pagar valor» lo conserva, resta su valor de la tesorería y le sube su valor 15.000.</p>
   </fieldset>`;
 }
 
@@ -913,8 +922,8 @@ function renderImpCell(side,num){
   const td=document.querySelector(`[data-impcell="${side}_${num}"]`); if(!td) return;
   const lp=mvTeam(side).doc.league.players.find(p=>p.num===num), drafts=mv.imp[side][num]||[];
   td.innerHTML=drafts.map((dr,i)=>{ const x=impDerive(lp,i,dr);
-    return `<span class="tag">${esc(x.label)} <small>${x.sppCost} SPP</small><button type="button" class="x" data-impdel="${side}_${num}_${i}" aria-label="Quitar mejora">×</button></span>`; }).join('')
-    +`<button class="btn small" type="button" data-impadd="${side}_${num}" ${lp.progression.improvements.length+drafts.length>=6?'disabled':''}>+ Mejora</button>`;
+    return `<span class="tag">${esc(x.label)} <small>+${fmt(x.valueExtra)}</small><button type="button" class="x" data-impdel="${side}_${num}_${i}" aria-label="Quitar mejora">×</button></span>`; }).join('')
+    +`<button class="btn small" type="button" data-impadd="${side}_${num}" >+ Mejora</button>`;
 }
 
 /* actualiza SPP en vivo, sumas automáticas y comprobación de TD de un equipo */
@@ -924,7 +933,7 @@ function updateSide(side){
   t.doc.players.forEach(tp=>{
     const ev=readEv(side,tp.num); td+=ev.touchdowns; sums.hl+=ev.lightInjuries; sums.hg+=ev.seriousInjuries; sums.rip+=ev.deaths;
     const cell=document.querySelector(`[data-sppcell="${side}_${tp.num}"]`);
-    if(cell){ const free=freeSpp(side,tp.num); cell.innerHTML=`+${sppFromStats(ev)} · libres <strong class="${free<0?'neg':''}">${free}</strong>`; }
+    if(cell){ cell.innerHTML=`+${sppFromStats(ev)}`; }
     const sel=f.elements[`${side}_draft_${tp.num}`], inj=f.elements[`${side}_inj_${tp.num}`], info=document.querySelector(`[data-draftinfo="${side}_${tp.num}"]`);
     if(sel){
       const lp=t.doc.league.players.find(p=>p.num===tp.num), n=skillCount(lp)+(mv.imp[side][tp.num]||[]).filter(d=>d.kind==='skill').length;
@@ -932,6 +941,8 @@ function updateSide(side){
       if(info) info.textContent = sel.value==='paid' ? `Pagas ${fmt(paidAmount(side,tp.num))} mo` : (ok?`Draft ${n+1}+`:'');
     }
   });
+  { const cur=fansTotal(t.doc.league), next=Math.min(FANS_MAX,Math.max(FANS_MIN,cur+sint(f.elements[`${side}_fans`].value)));
+    const fh=document.querySelector(`[data-fanshint="${side}"]`); if(fh) fh.textContent=`Fans devotos: ${cur} → ${next} (siempre entre ${FANS_MIN} y ${FANS_MAX}).`; }
   for(const k in sums){ const el=f.elements[`${side}_${k}`]; if(el && !mv.touched[`${side}_${k}`]) el.value=sums[k]; }
   const sc=int(f.elements[`${side}_score`].value), hint=document.querySelector(`[data-tdcheck="${side}"]`);
   if(hint){ hint.className='hint'+(td!==sc?' warn':''); hint.textContent=td===sc?`TD de los jugadores: ${td} (coincide con el marcador).`:`TD de los jugadores: ${td}, pero el marcador es ${sc}. Revísalo antes de registrar.`; }
@@ -942,7 +953,7 @@ const impDlg=$('#impDlg'); let impCtx=null;
 function impReadDraft(){
   if($('#impKind').value==='stat') return {kind:'stat',attr:$('#impStat').value};
   const sel=$('#impSkill').value, other=sel==='__other';
-  return {kind:'skill', skill:other?$('#impOther').value.trim():sel, other, category:$('#impCat').value, selection:$('#impSel').value};
+  return {kind:'skill', skill:other?$('#impOther').value.trim():sel, other, category:$('#impCat').value, selection:$('#impSel').value||'chosen'};
 }
 function impRefresh(){
   if(!impCtx) return;
@@ -957,17 +968,14 @@ function impRefresh(){
   } else $('#impCat').disabled=false;
   const dr=impReadDraft(), d=impDerive(lp,(mv.imp[side][num]||[]).length,dr);
   let err='', info='';
-  if(!d.valid) err='Este jugador ya tiene las 6 mejoras posibles.';
-  else if(isStat){
+  if(isStat){
     const nv=nextAttr(tp,dr.attr);
     if(nv===null) err='Esta característica no se puede mejorar (valor no numérico).';
     else info=`${STAT_IMP_LABEL[dr.attr]}: ${tp[dr.attr]} → ${nv}. `;
   } else if(!dr.skill) err=other?'Escribe el nombre de la habilidad.':'Elige una habilidad.';
   else if(new Set([...(tp.skills||[])].map(normTxt)).has(normTxt(dr.skill))) err='El jugador ya tiene esa habilidad.';
-  if(!err){ const free=freeSpp(side,num)-d.sppCost;
-    info+=`Será la mejora nº ${d.order} del jugador. Coste: ${d.sppCost} SPP · valor extra: +${fmt(d.valueExtra)}. SPP libres después: ${free}.`;
-    if(free<0) info+=` Le faltan ${-free} SPP: de momento no se podrá registrar el partido con esta mejora.`; }
-  $('#impInfo').textContent=info; $('#impInfo').className='hint'+(info.includes('Le faltan')?' warn':'');
+  if(!err) info+=`Será la mejora nº ${d.order} del jugador. No cuesta SPP ni tesorería; sube su valor +${fmt(d.valueExtra)} (${d.order>1&&skillCount(lp)+(mv.imp[side][num]||[]).length>0?'habilidad nueva tras la primera':'primera habilidad nueva'}).`;
+  $('#impInfo').textContent=info; $('#impInfo').className='hint';
   $('#impErr').textContent=err; $('#impOk').disabled=!!err;
 }
 function openImpDialog(side,num){
@@ -1016,8 +1024,7 @@ function collectSide(side){
       return Object.assign({order:x.order,category:x.category,selection:x.selection},
         dr.kind==='skill'?{skill:dr.skill}:{attribute:dr.attr,amount:(dr.attr==='ag'||dr.attr==='pa')?-1:1},{sppCost:x.sppCost,valueExtra:x.valueExtra}); });
     if(imps.length){
-      ev.improvements=imps; const free=lp.progression.sppUnspent+ev.sppEarned-cost;
-      if(free<0) problems.push(`#${tp.num} ${tp.name}: le faltan ${-free} SPP para sus mejoras.`);
+      ev.improvements=imps;
       if(ev.injurySuffered==='dead') problems.push(`#${tp.num} ${tp.name}: un jugador muerto no puede recibir mejoras.`);
     }
     const dsel=f.elements[`${side}_draft_${tp.num}`], dch=dsel&&!dsel.disabled?dsel.value:'';
@@ -1031,6 +1038,8 @@ function collectSide(side){
     if(ev.injurySuffered==='dead') dying.push(ev);
     if(STAT_COLS.some(([k])=>ev[k]) || ev.injurySuffered!=='none' || imps.length || dch) events.push(ev);
   });
+  const nImpTeam=events.reduce((a,e)=>a+(e.improvements||[]).length,0);
+  if(nImpTeam>1) problems.push(`solo se puede subir 1 mejora por partido, a un solo jugador (hay ${nImpTeam}).`);
   return {side,teamId:l.teamId,teamName:d.teamName,race:d.race,score:I('score'),hl:I('hl'),hg:I('hg'),rip:I('rip'),sentOff:I('sentoff'),
           fans:S('fans'),earnings:S('earnings'),spent:I('spent'),points:S('points'),events,dying,drafts:draftPicks,td,mvp,problems};
 }
@@ -1178,7 +1187,7 @@ function mvClick(e){
   if(t.closest('#mvBack')){ backToTeam(); return true; }
   if(t.closest('#mvUndo')){ mvUndo(); return true; }
   if(t.closest('#mvAgain')){ openMatchView(); return true; }
-  const add=t.closest('[data-impadd]'); if(add){ const [s,n]=add.dataset.impadd.split('_'); openImpDialog(s,int(n)); return true; }
+  const add=t.closest('[data-impadd]'); if(add){ const [s,n]=add.dataset.impadd.split('_'); const used=Object.values(mv.imp[s]||{}).reduce((a,l)=>a+l.length,0); if(used>=1){ toast('Solo se puede subir 1 mejora por equipo y partido. Quita la anterior si quieres cambiarla.'); return true; } openImpDialog(s,int(n)); return true; }
   const del=t.closest('[data-impdel]'); if(del){ const [s,n,i]=del.dataset.impdel.split('_'); mv.imp[s][n].splice(int(i),1); renderImpCell(s,int(n)); updateSide(s); return true; }
   return false;
 }
@@ -1219,7 +1228,14 @@ app.addEventListener('click',e=>{
   if(st){
     const key=st.dataset.staff, d=int(st.dataset.d.replace('-','')) * (st.dataset.d.startsWith('-')?-1:1);
     if(key==='rerolls'){ const r=state.data.staff.rerolls; r.count=Math.max(0,r.count+d); r.total=r.count*r.pricePerUnit; }
-    else { const min=(STAFF_ROWS.find(x=>x[0]===key)||[0,0,0])[2]; L().staff[key]=Math.max(min,(L().staff[key]??min)+d); }
+    else {
+      const row0=STAFF_ROWS.find(x=>x[0]===key), min=(row0||[0,0,0])[2], cur=L().staff[key]??min, max=STAFF_MAX[key]??99, pr0=prices();
+      const price={cheerleaders:pr0.cheerleader,assistantCoaches:pr0.assistantCoach,apothecary:pr0.apothecary}[key]||0;
+      if(d>0&&cur>=max){ toast('Ya tienes el máximo.'); return; }
+      if(d>0&&price>economy().treasury){ toast(`Tesorería insuficiente: cuesta ${fmt(price)} y tienes ${fmt(economy().treasury)}.`); return; }
+      L().staff[key]=Math.min(max,Math.max(min,cur+d));
+      markDirty(`Liga T${L().season}: ${state.data.teamName} ${d>0?'compra':'quita'} ${row0?row0[1].toLowerCase():key}`); renderTiles(); renderTeam(); return;
+    }
     markDirty(); renderTiles(); renderTeam();
   }
 });
@@ -1350,17 +1366,17 @@ async function makeSheetPdf(d,e,logo){
 
   /* tabla de jugadores */
   const cols=[['#',6],['NOMBRE JUGADOR',32],['TIPO',22],['MO',6.5],['FU',6.5],['AG',6.5],['PA',6.5],['AR',6.5],
-    ['HABILIDADES',46],['CLAVE JUGADOR',24],['LPP /RT',8],['ESP',6.5],['CP',6.5],['TD',6.5],['DES',6.5],['INT',6.5],
-    ['HL',6.5],['HG',6.5],['RIP',6.5],['MVP',6.5],['SPP Totales',12],['SPP Sin gastar',12],['PRECIO',15],['SUB',8],['DRAFT',8]];
+    ['HABILIDADES',62],['CLAVE JUGADOR',24],['LPP /RT',8],['ESP',6.5],['CP',6.5],['TD',6.5],['DES',6.5],['INT',6.5],
+    ['HL',6.5],['HG',6.5],['RIP',6.5],['MVP',6.5],['SPP Totales',16],['PRECIO',15],['DRAFT',8]];
   const xs=[]; let acc=M; cols.forEach(c=>{ xs.push(acc); acc+=c[1]; });
-  cols.forEach((c,i)=>cell(xs[i],y,c[1],8,{fill:DK,text:c[0],size:i===9||i===20||i===21||i===24?5.2:6,bold:true,color:WH}));
+  cols.forEach((c,i)=>cell(xs[i],y,c[1],8,{fill:DK,text:c[0],size:i===9||i===20||i===22?5.2:6,bold:true,color:WH}));
   y+=8;
   const n=Math.max(11,d.players.length), rowH=Math.min(10.2,112/n);
   const lpOf=num=>l.players.find(p=>p.num===num);
   for(let r=0;r<n;r++){
     const p=d.players[r], lp=p&&lpOf(p.num);
     if(!p){
-      cols.forEach((c,i)=>cell(xs[i],y,c[1],rowH,{fill:i===0?DK:(i===23?GR:(i===24?BL:null)),text:i===0?String(r+1):'',color:WH,bold:true,size:6.5}));
+      cols.forEach((c,i)=>cell(xs[i],y,c[1],rowH,{fill:i===0?DK:(i===22?BL:null),text:i===0?String(r+1):'',color:WH,bold:true,size:6.5}));
       y+=rowH; continue;
     }
     const {key,rest}=sheetSplitSkills(p);
@@ -1369,17 +1385,16 @@ async function makeSheetPdf(d,e,logo){
     const price=((lp&&lp.price)||0)+imps.concat(prog.draftPayments||[]).reduce((a,i)=>a+(i.valueExtra||0),0);
     const out=lp&&lp.status==='missNextGame';
     const vals=[String(p.num),null,p.position,p.ma,p.st,p.ag,p.pa,p.av,rest.join(', '),key,out?'SÍ':'','','','','','','','','',
-      '',String(prog.sppTotal||0),String(prog.sppUnspent||0),fmt(price),'',skillsUp?`${skillsUp+1}+`:''];
+      '',String(prog.sppTotal||0),fmt(price),skillsUp?`${skillsUp+1}+`:''];
     cols.forEach((c,i)=>{
       const o={text:vals[i]??'',size:7}; if(out&&i>0) o.fill=ORG;
       if(i===0){ o.fill=DK; o.color=WH; o.bold=true; }
       if(i===1){ o.text=p.name; o.align='left'; o.bold=true; o.size=7.5; }
       if(i===2||i===8||i===9){ o.align='left'; o.size=6.5; }
       if(i===9){ o.bold=true; }
-      if(i===20||i===21){ o.bold=true; o.size=8; }
-      if(i===22){ o.align='center'; o.size=7; }
-      if(i===23&&!out){ o.fill=GR; }
-      if(i===24){ if(!out) o.fill=BL; o.bold=true; o.size=9; }
+      if(i===20){ o.bold=true; o.size=8; }
+      if(i===21){ o.align='center'; o.size=7; }
+      if(i===22){ if(!out) o.fill=BL; o.bold=true; o.size=9; }
       if(i===10){ o.bold=true; o.size=7.5; }
       cell(xs[i],y,c[1],rowH,o);
     });
@@ -1395,7 +1410,7 @@ async function makeSheetPdf(d,e,logo){
   left.forEach(([lab,val],i)=>{ cell(M,y+i*RH,46,RH,{fill:DK,text:lab,color:WH,bold:true,size:6}); cell(M+46,y+i*RH,28,RH,{text:val,size:7.5,bold:true}); });
 
   const money=v=>fmt(v);
-  const fansCost=Math.max(0,(s.dedicatedFans||1)-1)*pr.dedicatedFan;
+  const fansCost=0;   /* el primer fan es gratis y no se compran más durante la liga */
   const mid=[['FANS',null],
     ['FANS DEVOTOS',[e.fans,pr.dedicatedFan,fansCost]],
     ['MÉDICO',[s.apothecary||0,pr.apothecary||'',(s.apothecary||0)*(pr.apothecary||0)]],
@@ -1428,7 +1443,7 @@ async function makeSheetPdf(d,e,logo){
   pdf.setTextColor(...BK); pdf.setFont('helvetica','normal'); pdf.setFontSize(5.7);
   const ly=y+9*RH+4.5;
   pdf.text('LPP/RT= SÍ: el jugador se pierde el próximo partido (fila naranja)   ESP=(1)   CP=PASE COMPLETADO (1)   TD=TOUCHDOWN (3)   DES=PASE DESVIADO (1)   INT=INTERCEPCIÓN (2)   HL=HERIDA LEVE (2)   HG=HERIDA GRAVE (2)   RIP=MUERTOS (2)   MVP=MEJOR DEL PARTIDO (4)',M,ly);
-  pdf.text('DRAFT: aparece «2+» si el jugador ha subido 1 habilidad con SPP, «3+» si ha subido 2, y así sucesivamente (las habilidades de base no cuentan). Los eventos del partido se anotan en las columnas ESP a MVP y se pasan después al gestor.',M,ly+3.6);
+  pdf.text('DRAFT: aparece «2+» si el jugador ha subido 1 habilidad, «3+» si ha subido 2, y así sucesivamente (las habilidades de base no cuentan). Los eventos del partido se anotan en las columnas ESP a MVP y se pasan después al gestor.',M,ly+3.6);
   return pdf;
 }
 async function downloadSheet(d,e,base,logoUrl){

@@ -191,6 +191,7 @@ const sppSpent=p=>(p.progression.improvements||[]).reduce((t,i,ix)=>t+impCost(i,
 const impValue=p=>(p.progression.improvements||[]).concat(p.progression.draftPayments||[]).reduce((t,i)=>t+(i.valueExtra||0),0);
 const skillCount=p=>(p.progression.improvements||[]).filter(i=>i.skill).length;
 const DRAFT_BONUS=15000;
+const fansTotal=l=>(l.matches||[]).reduce((f,m)=>Math.min(5,Math.max(1,f+(m.dedicatedFansGained||0))),1);
 function totals(d){
   const m=d.league.matches,sum=f=>m.reduce((t,x)=>t+(f(x)||0),0),st=x=>x.statistics||{};
   const r={played:m.length,won:m.filter(x=>x.result.outcome==='win').length,drawn:m.filter(x=>x.result.outcome==='draw').length,lost:m.filter(x=>x.result.outcome==='loss').length};
@@ -203,14 +204,14 @@ function totals(d){
 function economy(d){
   const l=d.league,pr=Object.assign({},DEFAULT_PRICES,(l.economy||{}).prices),s=l.staff||{},t=totals(d);
   const rerolls=(d.staff&&d.staff.rerolls&&d.staff.rerolls.total)||0;
-  const staffCost=Math.max(0,(s.dedicatedFans||1)-1)*pr.dedicatedFan+(s.cheerleaders||0)*pr.cheerleader+(s.assistantCoaches||0)*pr.assistantCoach+(s.apothecary||0)*(pr.apothecary||0)+(s.bribes||0)*pr.bribe;
+  const staffCost=(s.cheerleaders||0)*pr.cheerleader+(s.assistantCoaches||0)*pr.assistantCoach+(s.apothecary||0)*(pr.apothecary||0)+(s.bribes||0)*pr.bribe;
   const playersBase=l.players.reduce((a,p)=>a+(p.price||0),0),playersExtra=l.players.reduce((a,p)=>a+impValue(p),0);
   const deadCost = l.retiredPlayers.filter(p=>p.reason==='dead'||p.reason==='drafted').reduce((a,p)=>a+(p.price||0)+impValue(p),0);
   const valuePaid=l.players.concat(l.retiredPlayers).reduce((a,p)=>a+((p.progression.draftPayments||[]).reduce((b,x)=>b+(x.paid||0),0)),0);
   const teamCost=staffCost+rerolls+playersBase+playersExtra;
   const teamValue=staffCost+rerolls+l.players.filter(p=>p.status!=='missNextGame').reduce((a,p)=>a+(p.price||0)+impValue(p),0);
   const start=(l.economy||{}).startingTreasury||0;
-  return{rerolls,staffCost,playersBase,playersExtra,deadCost,teamCost,teamValue,start,treasury:start+t.earnings-t.spent-teamCost+playersExtra-deadCost-valuePaid,valuePaid,fans:(s.dedicatedFans||1)+t.fansGained,t};
+  return{rerolls,staffCost,playersBase,playersExtra,deadCost,teamCost,teamValue,start,treasury:start+t.earnings-t.spent-teamCost+playersExtra-deadCost-valuePaid,valuePaid,fans:fansTotal(l),t};
 }
 
 /* ---------- carga ---------- */
@@ -350,11 +351,11 @@ function tRoster(d){
     const sk=(p.skills||[]).map(k=>gained.has(normTxt(k))?`<span class="newsk">${esc(k)}</span>`:esc(k)).join(', ');
     return`<tr class="${out?'out':''}"><td class="num">${esc(p.num)}</td><td class="l"><strong>${esc(p.name)}</strong><br><span class="race">${esc(p.position)}</span></td>
     ${['ma','st','ag','pa','av'].map(k=>`<td class="num">${esc(p[k])}</td>`).join('')}<td class="skills">${sk}</td>
-    ${STAT_COLS.map(([k])=>`<td class="num">${s[k]||0}</td>`).join('')}<td class="num"><strong>${l.progression.sppTotal||0}</strong> / ${l.progression.sppUnspent||0}</td>
+    ${STAT_COLS.map(([k])=>`<td class="num">${s[k]||0}</td>`).join('')}<td class="num"><strong>${l.progression.sppTotal||0}</strong></td>
     <td class="num">${fmt((l.price||0)+impValue(l))}</td>
     <td>${out?'<span class="pill out">Baja próximo partido</span>':'<span class="pill ok">Disponible</span>'}</td>
     <td class="draftcell">${skillCount(l)?`${skillCount(l)+1}+`:''}</td></tr>`}).join('');
-  $('#tpanel').innerHTML=`<div class="tscroll"><table><thead><tr><th>#</th><th class="l">Jugador</th><th>MO</th><th>FU</th><th>AG</th><th>PA</th><th>AR</th><th class="l">Habilidades</th>${STAT_COLS.map(([,t])=>`<th>${t}</th>`).join('')}<th>SPP tot / libres</th><th>Valor</th><th>Estado</th><th>Draft</th></tr></thead><tbody>${rows}</tbody></table></div>
+  $('#tpanel').innerHTML=`<div class="tscroll"><table><thead><tr><th>#</th><th class="l">Jugador</th><th>MO</th><th>FU</th><th>AG</th><th>PA</th><th>AR</th><th class="l">Habilidades</th>${STAT_COLS.map(([,t])=>`<th>${t}</th>`).join('')}<th>SPP</th><th>Valor</th><th>Estado</th><th>Draft</th></tr></thead><tbody>${rows}</tbody></table></div>
   <p class="hint">Las habilidades en amarillo son mejoras ganadas en la liga.</p>`;
 }
 function tHistory(d){
@@ -470,17 +471,17 @@ async function makeSheetPdf(d,e,logo){
 
   /* tabla de jugadores */
   const cols=[['#',6],['NOMBRE JUGADOR',32],['TIPO',22],['MO',6.5],['FU',6.5],['AG',6.5],['PA',6.5],['AR',6.5],
-    ['HABILIDADES',46],['CLAVE JUGADOR',24],['LPP /RT',8],['ESP',6.5],['CP',6.5],['TD',6.5],['DES',6.5],['INT',6.5],
-    ['HL',6.5],['HG',6.5],['RIP',6.5],['MVP',6.5],['SPP Totales',12],['SPP Sin gastar',12],['PRECIO',15],['SUB',8],['DRAFT',8]];
+    ['HABILIDADES',62],['CLAVE JUGADOR',24],['LPP /RT',8],['ESP',6.5],['CP',6.5],['TD',6.5],['DES',6.5],['INT',6.5],
+    ['HL',6.5],['HG',6.5],['RIP',6.5],['MVP',6.5],['SPP Totales',16],['PRECIO',15],['DRAFT',8]];
   const xs=[]; let acc=M; cols.forEach(c=>{ xs.push(acc); acc+=c[1]; });
-  cols.forEach((c,i)=>cell(xs[i],y,c[1],8,{fill:DK,text:c[0],size:i===9||i===20||i===21||i===24?5.2:6,bold:true,color:WH}));
+  cols.forEach((c,i)=>cell(xs[i],y,c[1],8,{fill:DK,text:c[0],size:i===9||i===20||i===22?5.2:6,bold:true,color:WH}));
   y+=8;
   const n=Math.max(11,d.players.length), rowH=Math.min(10.2,112/n);
   const lpOf=num=>l.players.find(p=>p.num===num);
   for(let r=0;r<n;r++){
     const p=d.players[r], lp=p&&lpOf(p.num);
     if(!p){
-      cols.forEach((c,i)=>cell(xs[i],y,c[1],rowH,{fill:i===0?DK:(i===23?GR:(i===24?BL:null)),text:i===0?String(r+1):'',color:WH,bold:true,size:6.5}));
+      cols.forEach((c,i)=>cell(xs[i],y,c[1],rowH,{fill:i===0?DK:(i===22?BL:null),text:i===0?String(r+1):'',color:WH,bold:true,size:6.5}));
       y+=rowH; continue;
     }
     const {key,rest}=sheetSplitSkills(p);
@@ -489,17 +490,16 @@ async function makeSheetPdf(d,e,logo){
     const price=((lp&&lp.price)||0)+imps.concat(prog.draftPayments||[]).reduce((a,i)=>a+(i.valueExtra||0),0);
     const out=lp&&lp.status==='missNextGame';
     const vals=[String(p.num),null,p.position,p.ma,p.st,p.ag,p.pa,p.av,rest.join(', '),key,out?'SÍ':'','','','','','','','','',
-      '',String(prog.sppTotal||0),String(prog.sppUnspent||0),fmt(price),'',skillsUp?`${skillsUp+1}+`:''];
+      '',String(prog.sppTotal||0),fmt(price),skillsUp?`${skillsUp+1}+`:''];
     cols.forEach((c,i)=>{
       const o={text:vals[i]??'',size:7}; if(out&&i>0) o.fill=ORG;
       if(i===0){ o.fill=DK; o.color=WH; o.bold=true; }
       if(i===1){ o.text=p.name; o.align='left'; o.bold=true; o.size=7.5; }
       if(i===2||i===8||i===9){ o.align='left'; o.size=6.5; }
       if(i===9){ o.bold=true; }
-      if(i===20||i===21){ o.bold=true; o.size=8; }
-      if(i===22){ o.align='center'; o.size=7; }
-      if(i===23&&!out){ o.fill=GR; }
-      if(i===24){ if(!out) o.fill=BL; o.bold=true; o.size=9; }
+      if(i===20){ o.bold=true; o.size=8; }
+      if(i===21){ o.align='center'; o.size=7; }
+      if(i===22){ if(!out) o.fill=BL; o.bold=true; o.size=9; }
       if(i===10){ o.bold=true; o.size=7.5; }
       cell(xs[i],y,c[1],rowH,o);
     });
@@ -515,7 +515,7 @@ async function makeSheetPdf(d,e,logo){
   left.forEach(([lab,val],i)=>{ cell(M,y+i*RH,46,RH,{fill:DK,text:lab,color:WH,bold:true,size:6}); cell(M+46,y+i*RH,28,RH,{text:val,size:7.5,bold:true}); });
 
   const money=v=>fmt(v);
-  const fansCost=Math.max(0,(s.dedicatedFans||1)-1)*pr.dedicatedFan;
+  const fansCost=0;   /* el primer fan es gratis y no se compran más durante la liga */
   const mid=[['FANS',null],
     ['FANS DEVOTOS',[e.fans,pr.dedicatedFan,fansCost]],
     ['MÉDICO',[s.apothecary||0,pr.apothecary||'',(s.apothecary||0)*(pr.apothecary||0)]],
@@ -548,7 +548,7 @@ async function makeSheetPdf(d,e,logo){
   pdf.setTextColor(...BK); pdf.setFont('helvetica','normal'); pdf.setFontSize(5.7);
   const ly=y+9*RH+4.5;
   pdf.text('LPP/RT= SÍ: el jugador se pierde el próximo partido (fila naranja)   ESP=(1)   CP=PASE COMPLETADO (1)   TD=TOUCHDOWN (3)   DES=PASE DESVIADO (1)   INT=INTERCEPCIÓN (2)   HL=HERIDA LEVE (2)   HG=HERIDA GRAVE (2)   RIP=MUERTOS (2)   MVP=MEJOR DEL PARTIDO (4)',M,ly);
-  pdf.text('DRAFT: aparece «2+» si el jugador ha subido 1 habilidad con SPP, «3+» si ha subido 2, y así sucesivamente (las habilidades de base no cuentan). Los eventos del partido se anotan en las columnas ESP a MVP y se pasan después al gestor.',M,ly+3.6);
+  pdf.text('DRAFT: aparece «2+» si el jugador ha subido 1 habilidad, «3+» si ha subido 2, y así sucesivamente (las habilidades de base no cuentan). Los eventos del partido se anotan en las columnas ESP a MVP y se pasan después al gestor.',M,ly+3.6);
   return pdf;
 }
 async function downloadSheet(d,e,base,logoUrl){

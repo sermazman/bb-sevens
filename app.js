@@ -57,6 +57,10 @@ function renderStaffPanels(){
 }
 
 function adjustReroll(team, delta){
+  if(delta<0 && (teamRerollsLeft[team]||0)>0 && captainSavesReroll(team)){
+    log('🔄 Reroll usado sin coste (Capitán) — ' + teamName(team) + ' mantiene ' + teamRerollsLeft[team] + '.');
+    renderStaffPanels(); broadcastState(); return;
+  }
   teamRerollsLeft[team] = Math.max(0, (teamRerollsLeft[team] || 0) + delta);
   const staff = teamStaff[team];
   const max = (staff && staff.rerolls && typeof staff.rerolls.count === 'number') ? staff.rerolls.count : null;
@@ -322,7 +326,7 @@ function snapshotState(){
     koQueue, pendingKo, teamRace, customColorsEnabled, teamCustomColor, teamTextColor, openingKickoffDone, firstHalfKickingTeam, pitchBackgroundUrl, pitchBackgroundExact, teamStaff, teamRerollsLeft, preMatch, kickoffPendingOOBAfterEvent,
     ballBounceActive, pendingCatch, pendingBallDrop, pendingDriveStart, pendingPassRoll,
     pendingKickPlacement, kickoffBounceStep, kickoffKickingTeam, kickoffReceivingTeam, freeCatchTeam, placingBallFree, kickoffTargetRow, kickoffTargetCol,
-    blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp, chainPushStack, secureBallUsedByTeam, pendingSecureBall, secureBallActivePlayer, handoffUsedByTeam, pendingHandoffChoice, pendingAnimosity, pendingHailMaryChoice, foulUsedByTeam, pendingFoulContext, passUsedByTeam,
+    blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp, chainPushStack, secureBallUsedByTeam, pendingSecureBall, secureBallActivePlayer, handoffUsedByTeam, pendingHandoffChoice, pendingAnimosity, pendingHailMaryChoice, pendingProvocarChoice, luchadorUsed, luchadorPickMode, foulUsedByTeam, pendingFoulContext, passUsedByTeam,
     secureBallModalOpen: document.getElementById('secureBallModal').classList.contains('show'),
     matchEndModalOpen: document.getElementById('matchEndModal').classList.contains('show'),
     forcejearModalOpen: document.getElementById('forcejearModal').classList.contains('show'),
@@ -547,6 +551,9 @@ function applyRemoteState(payload){
   pendingHandoffChoice = payload.pendingHandoffChoice || null;
   pendingAnimosity = payload.pendingAnimosity || null;
   pendingHailMaryChoice = payload.pendingHailMaryChoice || null;
+  pendingProvocarChoice = payload.pendingProvocarChoice || null;
+  luchadorUsed = !!payload.luchadorUsed;
+  luchadorPickMode = !!payload.luchadorPickMode;
   renderAnimosityModal(); renderHailMaryModal();
   secureBallActivePlayer = payload.secureBallActivePlayer;
   pendingSecureBall = payload.pendingSecureBall;
@@ -625,6 +632,7 @@ function applyRemoteState(payload){
     document.getElementById('dodgeActionRow').style.display = 'none';
     document.getElementById('dodgeActionRow').innerHTML = '';
   }
+  refreshDodgeBreakTackle();
 
   document.getElementById('gfiText').textContent = payload.gfiText || '';
   document.getElementById('gfiDie').textContent = payload.gfiDieText || '–';
@@ -692,6 +700,8 @@ function applyRemoteState(payload){
     document.getElementById('blockDiceBtn'+n).classList.toggle('active-toggle', n===payload.blockDiceRecommended);
   });
   blockDiceRolled = !!payload.blockDiceRolled;
+  refreshBlockSkillUi();
+  renderProvocarModal();
   document.getElementById('blockDiceHint').style.display = blockDiceRolled ? 'block' : 'none';
   document.getElementById('blockModal').classList.toggle('show', !!payload.blockModalOpen);
 
@@ -801,7 +811,7 @@ function anyModalOpen(){
          document.getElementById('interceptModal').classList.contains('show') ||
          document.getElementById('heroicReceptionPanel').style.display==='block' ||
          pendingActionMenuPlayer !== null ||
-         pendingAnimosity !== null || pendingHailMaryChoice !== null ||
+         pendingAnimosity !== null || pendingHailMaryChoice !== null || pendingProvocarChoice !== null ||
          document.getElementById('traitCheckModal').classList.contains('show') ||
          document.getElementById('turnoverOverlay').classList.contains('show');
 }
@@ -998,7 +1008,7 @@ function renderRosters(){
       div.innerHTML = `
         <div class="ri-row1">
           <span class="num" style="background:${tokenColorFor(p)}; color:${textColorFor(p)}; ${numBorderStyle}">${p.num}</span>
-          <span class="pname">${p.name}</span>
+          <span class="pname">${p.name}</span>${isCaptain(p) ? '<span class="cap-mini" title="Capitán">C</span>' : ''}
           <span class="pos">${posText}</span>
           ${condTag}${heatTag}
           <button class="rm-btn" title="Eliminar" onclick="removePlayer(${p.id}, event)">✕</button>
@@ -1600,6 +1610,14 @@ function startDrive(){
     document.getElementById('losWarningModal').classList.add('show');
     return;
   }
+  {
+    const outC = ['ko','injured','injuredGrave','dead','expelled'];
+    const missingCap = players.filter(p=>isCaptain(p) && !p.onPitch && !p.heatRest && !outC.includes(p.condition));
+    if(missingCap.length){
+      showInfoModal('Capitán sin desplegar', 'El Capitán debe estar en el campo siempre que sea posible: ' + missingCap.map(p=>p.name + ' (' + teamName(p.team) + ')').join(', ') + '. Colocadlo antes de iniciar la entrada.');
+      return;
+    }
+  }
   players.forEach(p=>{ p.heatRest = false; }); // los descansados por calor ya no pueden colocarse esta entrada: se liberan
   const kicking = document.getElementById('kickSelect').value;
   const receiving = kicking==='A' ? 'B':'A';
@@ -1808,6 +1826,13 @@ function renderPitch(){
           dot.title='Lleva el balón';
           dot.innerHTML = ballImgHtml();
           t.appendChild(dot);
+        }
+        if(isCaptain(occ)){
+          const cb = document.createElement('div');
+          cb.className = 'capitan-badge';
+          cb.textContent = 'C';
+          cb.title = 'Capitán (CAP: Profesional)';
+          t.appendChild(cb);
         }
         if(playerHasSkill(occ, 'veterano', 'veteran')){
           const star = document.createElement('div');
@@ -2434,6 +2459,8 @@ function unstickState(){
   pendingFerocityAttack = null;
   pendingAnimosity = null;
   pendingHailMaryChoice = null;
+  pendingProvocarChoice = null; luchadorUsed = false; luchadorPickMode = false;
+  renderProvocarModal();
   pendingBlitzStabChoice = null;
   pendingHandoffChoice = null;
   pendingFoulContext = null;
@@ -3153,14 +3180,59 @@ function renderBlockDice(indices){
   el.innerHTML = '';
   indices.forEach((idx, i)=>{
     const d = document.createElement('div');
-    d.className = 'block-face clickable-die' + (profesionalPickMode ? ' profesional-pick' : '');
+    const lucPick = luchadorPickMode && BLOCK_OUTCOME_KINDS[idx]==='bothDown';
+    d.className = 'block-face clickable-die' + ((profesionalPickMode || lucPick) ? ' profesional-pick' : '');
     d.innerHTML = blockFaceHtml(idx);
     d.onclick = ()=>{
       if(profesionalPickMode){ rerollBlockDie(i); }
+      else if(luchadorPickMode){ if(BLOCK_OUTCOME_KINDS[idx]==='bothDown') luchadorRerollDie(i); }
       else { applyBlockOutcome(BLOCK_OUTCOME_KINDS[idx]); }
     };
     el.appendChild(d);
   });
+  refreshBlockSkillUi();
+}
+
+// LUCHADOR: al declarar un Placaje (no Blitz) puede repetir UN único dado de "Ambos caen" de toda la tirada.
+function refreshBlockSkillUi(){
+  const btn = document.getElementById('blockLuchadorBtn');
+  const note = document.getElementById('blockLuchadorNote');
+  if(!btn || !note) return;
+  const attacker = activeBlock ? players.find(x=>x.id===activeBlock.attackerId) : null;
+  const hasBoth = currentBlockDiceIndices.some(i=>BLOCK_OUTCOME_KINDS[i]==='bothDown');
+  const avail = !!(attacker && blockDiceRolled && !activeBlock.isBlitz && playerHasSkill(attacker, 'luchador', 'brawler') && !luchadorUsed && hasBoth);
+  btn.style.display = avail ? 'block' : 'none';
+  note.style.display = avail ? 'block' : 'none';
+  if(avail){
+    const rr = teamRerollsLeft[attacker.team] || 0;
+    btn.textContent = luchadorPickMode ? '✖ Cancelar Luchador' : '💪 Usar Luchador (repite solo 1 dado de Ambos caen)';
+    note.textContent = 'LUCHADOR: ' + attacker.name + ' puede repetir un único dado de Ambos caen.' +
+      (rr>0 ? ' O bien gastad una reroll de equipo (' + rr + ' disponible' + (rr===1?'':'s') + ': RR −1 y volved a tirar) para repetir TODOS los dados.' : '');
+  }
+}
+function useLuchador(){
+  if(luchadorUsed || !activeBlock || !blockDiceRolled) return;
+  const attacker = players.find(x=>x.id===activeBlock.attackerId);
+  if(!attacker || activeBlock.isBlitz || !playerHasSkill(attacker, 'luchador', 'brawler')) return;
+  if(luchadorPickMode){ luchadorPickMode = false; renderBlockDice(currentBlockDiceIndices); broadcastState(); return; }
+  const idxs = [];
+  currentBlockDiceIndices.forEach((v,i)=>{ if(BLOCK_OUTCOME_KINDS[v]==='bothDown') idxs.push(i); });
+  if(!idxs.length) return;
+  if(idxs.length===1){ luchadorRerollDie(idxs[0]); return; }
+  luchadorPickMode = true;
+  log('💪 ' + attacker.name + ' usa Luchador — elegid cuál de los dados de Ambos caen repetir (click en él).');
+  renderBlockDice(currentBlockDiceIndices);
+  broadcastState();
+}
+function luchadorRerollDie(i){
+  const attacker = activeBlock ? players.find(x=>x.id===activeBlock.attackerId) : null;
+  const oldFace = BLOCK_FACES[currentBlockDiceIndices[i]];
+  const newIdx = Math.floor(Math.random()*6);
+  currentBlockDiceIndices[i] = newIdx;
+  luchadorUsed = true; luchadorPickMode = false;
+  log('💪 Luchador' + (attacker ? ' (' + attacker.name + ')' : '') + ': dado repetido — ' + oldFace + ' → ' + BLOCK_FACES[newIdx] + '.');
+  renderBlockDice(currentBlockDiceIndices);
+  broadcastState();
 }
 
 function rerollBlockDie(i){
@@ -3176,7 +3248,7 @@ function rerollBlockDie(i){
 function useProfesionalOnBlock(){
   if(blockProfesionalUsed || !activeBlock || !blockDiceRolled) return;
   const attacker = players.find(x=>x.id===activeBlock.attackerId);
-  if(!attacker || !playerHasSkill(attacker, 'profesional', 'pro')) return;
+  if(!attacker || !hasProfesional(attacker)) return;
   blockProfesionalUsed = true;
   document.getElementById('blockProfesionalBtn').style.display = 'none';
   const roll = Math.floor(Math.random()*6)+1;
@@ -3200,13 +3272,55 @@ function rollBlockDiceModal(n){
   blockDiceRolled = true;
   blockProfesionalUsed = false;
   profesionalPickMode = false;
+  luchadorUsed = false; luchadorPickMode = false;
+  renderBlockDice(results);
   const attacker = activeBlock ? players.find(x=>x.id===activeBlock.attackerId) : null;
-  document.getElementById('blockProfesionalBtn').style.display = (attacker && playerHasSkill(attacker, 'profesional', 'pro')) ? 'block' : 'none';
+  document.getElementById('blockProfesionalBtn').style.display = (attacker && hasProfesional(attacker)) ? 'block' : 'none';
   log('🎲 Placaje x' + n + ': ' + results.map(i=>BLOCK_FACES[i]).join(' / '));
   broadcastState();
 }
 
 let pendingForcejearChoice = null; // { attackerId, defenderId, isBlitz }
+let pendingProvocarChoice = null;  // { attackerId, defenderId, followText } — ¿obliga el defensor con Provocar al atacante a seguirle?
+let luchadorUsed = false;          // Luchador ya usado en el placaje actual
+let luchadorPickMode = false;      // eligiendo qué dado de Ambos caen repetir
+
+function tryProvocar(attacker, defender, vacR, vacC, followText){
+  if(!attacker || !defender || !defender.onPitch) return false;
+  if(!playerHasSkill(defender, 'provocar', 'taunt')) return false;
+  if(attacker.rooted) return false; // no vale contra un jugador que ha Echado raíces
+  if(occupiedBy(vacR, vacC)) return false;
+  pendingProvocarChoice = { attackerId: attacker.id, defenderId: defender.id, followText: followText };
+  renderProvocarModal();
+  broadcastState();
+  return true;
+}
+function renderProvocarModal(){
+  const m = document.getElementById('provocarModal');
+  if(!m) return;
+  if(!pendingProvocarChoice){ m.classList.remove('show'); return; }
+  const a = players.find(x=>x.id===pendingProvocarChoice.attackerId);
+  const d = players.find(x=>x.id===pendingProvocarChoice.defenderId);
+  document.getElementById('provocarText').textContent = (d ? d.name : 'El jugador empujado') + ' tiene PROVOCAR. ¿Obliga a ' + (a ? a.name : 'su rival') + ' a hacer el movimiento de impulso (seguirle)?';
+  m.classList.add('show');
+}
+function provocarChoose(yes){
+  const ctx = pendingProvocarChoice;
+  if(!ctx) return;
+  pendingProvocarChoice = null;
+  renderProvocarModal();
+  const a = players.find(x=>x.id===ctx.attackerId);
+  const d = players.find(x=>x.id===ctx.defenderId);
+  if(yes){
+    log('😤 ' + (d ? d.name : 'El jugador') + ' usa PROVOCAR — ' + (a ? a.name : 'el atacante') + ' debe hacer el movimiento de impulso.');
+    resolveFollowUp(true);
+  } else {
+    log('😤 ' + (d ? d.name : 'El jugador') + ' no usa Provocar.');
+    document.getElementById('followUpText').textContent = ctx.followText || '';
+    document.getElementById('followUpModal').classList.add('show');
+    broadcastState();
+  }
+}
 
 function resolveBothDownFall(attacker, defender, isBlitz, forcejearUsed){
   if(forcejearUsed){
@@ -3313,8 +3427,9 @@ function veteranoBlockChooseReroll(){
   log('⭐ ' + attacker.name + ' usa VETERANO — repite la tirada de Placaje x' + n + ': ' + results.map(i=>BLOCK_FACES[i]).join(' / ') + ' (ya gastado para el resto del partido).');
   blockProfesionalUsed = false;
   profesionalPickMode = false;
+  luchadorUsed = false; luchadorPickMode = false;
   renderBlockDice(results);
-  document.getElementById('blockProfesionalBtn').style.display = playerHasSkill(attacker, 'profesional', 'pro') ? 'block' : 'none';
+  document.getElementById('blockProfesionalBtn').style.display = hasProfesional(attacker) ? 'block' : 'none';
   broadcastState();
 }
 
@@ -3606,7 +3721,9 @@ function resolvePush(r,c){
       resolveFollowUp(true);
       return;
     }
-    document.getElementById('followUpText').textContent = `¿${attacker.name} avanza a la casilla que deja libre ${originalPlayer.name}?`;
+    const followTextP = `¿${attacker.name} avanza a la casilla que deja libre ${originalPlayer.name}?`;
+    if(tryProvocar(attacker, originalPlayer, original.fromR, original.fromC, followTextP)) return;
+    document.getElementById('followUpText').textContent = followTextP;
     document.getElementById('followUpModal').classList.add('show');
     broadcastState();
   } else {
@@ -4397,8 +4514,12 @@ function usePassReroll(isSkill){
     passer.passSkillUsedThisTurn = true;
     log('🔁 ' + passer.name + ' repite gratis con su habilidad Pasar.');
   } else {
-    teamRerollsLeft[passer.team] = Math.max(0, (teamRerollsLeft[passer.team]||0) - 1);
-    log('🔄 ' + teamName(passer.team) + ' gasta un reroll — quedan ' + teamRerollsLeft[passer.team] + '.');
+    if(captainSavesReroll(passer.team)){
+      log('🔄 ' + teamName(passer.team) + ' repite la tirada sin gastar reroll (Capitán) — siguen ' + teamRerollsLeft[passer.team] + '.');
+    } else {
+      teamRerollsLeft[passer.team] = Math.max(0, (teamRerollsLeft[passer.team]||0) - 1);
+      log('🔄 ' + teamName(passer.team) + ' gasta un reroll — quedan ' + teamRerollsLeft[passer.team] + '.');
+    }
     renderStaffPanels();
     if(lonerBlocksReroll(passer)){
       renderPassActionRow(passer, pendingPassRoll.lastOutcome);
@@ -4862,6 +4983,25 @@ function resolveBounce(r,c){
   }
 }
 
+// ---------- Capitán / Profesional / habilidades varias ----------
+function hasProfesional(p){
+  if(!p || !p.skills) return false;
+  return p.skills.map(normalizeSkillText).some(t=> t==='pro' || t.includes('profesional') || t.includes('professional'));
+}
+function isCaptain(p){ return playerHasSkill(p, 'cap: profesional', 'cap:profesional', 'capitan', 'captain'); }
+function captainInPlay(team){
+  const out = ['ko','injured','injuredGrave','dead','expelled'];
+  return players.find(p=>p.team===team && isCaptain(p) && p.onPitch && !out.includes(p.condition)) || null;
+}
+// CAP: PROFESIONAL — con el Capitán en el campo, al usar una reroll de equipo se tira 1D6: con un 6 la reroll NO se gasta.
+function captainSavesReroll(team){
+  const cap = captainInPlay(team);
+  if(!cap) return false;
+  const r = rollDieN(6);
+  if(r===6){ log('⭐ Capitán ' + cap.name + ' (' + teamName(team) + '): D6=6 — ¡la reroll NO se gasta!'); return true; }
+  log('⭐ Capitán ' + cap.name + ' (' + teamName(team) + '): D6=' + r + ' — la reroll se gasta con normalidad.');
+  return false;
+}
 const BALL_IMG_SRC = 'icons/spiked_ball_1.png';
 function ballImgHtml(cls){
   return '<img class="ball-ico' + (cls ? ' ' + cls : '') + '" src="' + BALL_IMG_SRC + '" alt="Balón" onerror="this.outerHTML=\'🏈\'">';
@@ -5247,7 +5387,7 @@ function checkActionButtons(prefix, success, p){
       btn.onclick = ()=> useCheckReroll(prefix, false);
       actionRow.appendChild(btn);
     }
-    if(playerHasSkill(p, 'profesional', 'pro') && !p.proRerollUsedThisTurn && selected===p.id){
+    if(hasProfesional(p) && !p.proRerollUsedThisTurn && selected===p.id){
       const btn = document.createElement('button');
       btn.textContent = '🎓 Usar Profesional (3+ para poder repetir)';
       btn.onclick = ()=> useProReroll(prefix);
@@ -5305,8 +5445,12 @@ function useCheckReroll(prefix, isSkill){
   else if(prefix==='secureBall') secureBallRerollUsed = true;
   else catchRerollUsed = true;
   if(!isSkill){
-    teamRerollsLeft[p.team] = Math.max(0, (teamRerollsLeft[p.team]||0) - 1);
-    log('🔄 ' + teamName(p.team) + ' gasta un reroll — quedan ' + teamRerollsLeft[p.team] + '.');
+    if(captainSavesReroll(p.team)){
+      log('🔄 ' + teamName(p.team) + ' repite la tirada sin gastar reroll (Capitán) — siguen ' + teamRerollsLeft[p.team] + '.');
+    } else {
+      teamRerollsLeft[p.team] = Math.max(0, (teamRerollsLeft[p.team]||0) - 1);
+      log('🔄 ' + teamName(p.team) + ' gasta un reroll — quedan ' + teamRerollsLeft[p.team] + '.');
+    }
     renderStaffPanels();
     if(lonerBlocksReroll(p)){
       checkActionButtons(prefix, pending.lastSuccess, p);
@@ -5356,12 +5500,13 @@ function openDodgeModal(p, toR, toC, fromGfi){
   const tz = hasEscurridizo ? 0 : countDodgeTackleZones(toR, toC, p.team);
   const canijoBonus = hasCanijo ? 1 : 0;
   const target = parseAgTarget(p.ag) + tz - canijoBonus;
-  pendingDodge = { playerId:p.id, toR, toC, fromGfi: !!fromGfi, target };
+  pendingDodge = { playerId:p.id, toR, toC, fromGfi: !!fromGfi, target, baseTarget: target, breakTackle: false, btCommitted: false, baseText: '' };
   dodgeRerollUsed = false;
   const msg = (fromGfi
     ? `${p.name} ha superado "a por ellos" pero esa casilla también sale de una zona de marcaje rival. `
     : `${p.name} sale de una zona de marcaje rival. `)
     + `Necesita ${target}+ (AG${p.ag ?? '?'}${hasEscurridizo ? ', Escurridizo ignora el marcaje' : ' + ' + tz + ' zona(s) de marcaje en destino'}${hasCanijo ? ', -1 por Canijo' : ''}). Tirad D6.`;
+  pendingDodge.baseText = msg;
   document.getElementById('dodgeText').textContent = msg;
   document.getElementById('dodgeDie').textContent = '–';
   document.getElementById('dodgeResultText').textContent = '';
@@ -5370,6 +5515,37 @@ function openDodgeModal(p, toR, toC, fromGfi){
   document.getElementById('dodgeActionRow').style.display = 'none';
   document.getElementById('dodgeActionRow').innerHTML = '';
   document.getElementById('dodgeModal').classList.add('show');
+  refreshDodgeBreakTackle();
+  broadcastState();
+}
+
+// ABRIRSE PASO: una vez por turno, al esquivar, +1 (Fuerza ≤3), +2 (Fuerza 4) o +3 (Fuerza ≥5) a la tirada de Agilidad.
+function breakTackleBonusFor(p){
+  const st = parseInt(p.st, 10);
+  if(isNaN(st) || st<=3) return 1;
+  return st===4 ? 2 : 3;
+}
+function refreshDodgeBreakTackle(){
+  const btn = document.getElementById('dodgeBreakTackleBtn');
+  if(!btn) return;
+  const pd = pendingDodge;
+  const p = pd ? players.find(x=>x.id===pd.playerId) : null;
+  const canUse = !!(p && pd && !pd.btCommitted && (pd.lastSuccess===undefined) && playerHasSkill(p, 'abrirse paso', 'break tackle') && !p.breakTackleUsedThisTurn);
+  btn.style.display = canUse ? 'block' : 'none';
+  if(canUse){
+    const b = breakTackleBonusFor(p);
+    btn.textContent = pd.breakTackle ? '✖ Quitar Abrirse paso (no se gasta si no tiras con él)' : ('💪 ¿Usar Abrirse paso? +' + b + ' a esta esquiva (Fuerza ' + (p.st ?? '?') + '). Solo se gasta si lo activas y tiras — 1 vez por turno');
+  }
+}
+function toggleBreakTackle(){
+  if(!pendingDodge || pendingDodge.btCommitted) return;
+  const p = players.find(x=>x.id===pendingDodge.playerId);
+  if(!p || p.breakTackleUsedThisTurn || !playerHasSkill(p, 'abrirse paso', 'break tackle')) return;
+  pendingDodge.breakTackle = !pendingDodge.breakTackle;
+  const bonus = pendingDodge.breakTackle ? breakTackleBonusFor(p) : 0;
+  pendingDodge.target = Math.max(2, pendingDodge.baseTarget - bonus);
+  document.getElementById('dodgeText').textContent = (pendingDodge.baseText || '') + (bonus ? ' ✚ Abrirse paso: +' + bonus + ' (Fuerza ' + (p.st ?? '?') + ') → necesita ' + pendingDodge.target + '+.' : '');
+  refreshDodgeBreakTackle();
   broadcastState();
 }
 
@@ -5378,6 +5554,14 @@ function rollDodgeDie(){
   const r = Math.floor(Math.random()*6)+1;
   document.getElementById('dodgeDie').textContent = r;
   const p = players.find(x=>x.id===pendingDodge.playerId);
+  if(!pendingDodge.btCommitted){
+    pendingDodge.btCommitted = true;
+    if(pendingDodge.breakTackle && p){
+      p.breakTackleUsedThisTurn = true;
+      log('💪 ' + p.name + ' usa Abrirse paso: +' + breakTackleBonusFor(p) + ' a la esquiva (ya no podrá usarlo este turno).');
+    }
+    refreshDodgeBreakTackle();
+  }
   const success = r===6 ? true : (r===1 ? false : r>=pendingDodge.target);
   pendingDodge.lastSuccess = success;
   log('🎲 Esquiva: tirada ' + r + ' (necesitaba ' + pendingDodge.target + '+) → ' + (success?'CONSEGUIDO':'FALLADO'));
@@ -5719,12 +5903,14 @@ function rollInjury(){
   const llaveForInjury = p && !gmForInjury && !llaveDeBrazoUsedOnArmor && llaveAttacker && playerHasSkill(llaveAttacker, 'llave de brazo', 'arm bar');
   document.getElementById('injuryDie1').textContent=d1;
   document.getElementById('injuryDie2').textContent=d2;
-  if(gmForInjury){
-    document.getElementById('injurySum').textContent = 'Suma: ' + sum + ' +1 (Golpe Mortífero de ' + gmAttacker.name + ') = ' + (sum+1);
-    log('🎲 Heridas (' + (p?p.name:'?') + '): ' + d1 + ' + ' + d2 + ' = ' + sum + ' +1 Golpe Mortífero = ' + (sum+1));
-  } else if(llaveForInjury){
-    document.getElementById('injurySum').textContent = 'Suma: ' + sum + ' +1 (Llave de Brazo de ' + llaveAttacker.name + ') = ' + (sum+1);
-    log('🎲 Heridas (' + (p?p.name:'?') + '): ' + d1 + ' + ' + d2 + ' = ' + sum + ' +1 Llave de Brazo = ' + (sum+1));
+  const injBonuses = [];
+  if(gmForInjury) injBonuses.push('Golpe Mortífero de ' + gmAttacker.name);
+  else if(llaveForInjury) injBonuses.push('Llave de Brazo de ' + llaveAttacker.name);
+  if(p && playerHasSkill(p, 'descomposicion', 'descomposición', 'decay')) injBonuses.push('Descomposición de ' + p.name);
+  if(injBonuses.length){
+    const bonusTxt = injBonuses.map(t=>'+1 (' + t + ')').join(' ');
+    document.getElementById('injurySum').textContent = 'Suma: ' + sum + ' ' + bonusTxt + ' = ' + (sum + injBonuses.length);
+    log('🎲 Heridas (' + (p?p.name:'?') + '): ' + d1 + ' + ' + d2 + ' = ' + sum + ' ' + injBonuses.map(t=>'+1 ' + t).join(' ') + ' = ' + (sum + injBonuses.length));
   } else {
     document.getElementById('injurySum').textContent='Suma: '+sum;
     log('🎲 Heridas (' + (p?p.name:'?') + '): ' + d1 + ' + ' + d2 + ' = ' + sum);
@@ -5917,6 +6103,7 @@ function beginTurn(team){
     p.justStoodThisActivation = false;
     p.catchSkillUsedThisTurn = false;
     p.passSkillUsedThisTurn = false;
+    p.breakTackleUsedThisTurn = false;
   });
   renderScoreboard(); renderRosters(); renderPitch();
   updateStatus('Turno de ' + teamName(team));
@@ -6339,6 +6526,9 @@ function cancelActiveModal(modalId){
     case 'preMatchModal':
       preMatch.open = false;
       break;
+    case 'provocarModal':
+      provocarChoose(false);
+      break;
     default:
       // Modales puramente informativos (aviso de línea, fin de partida, partida guardada, touchdown, KO...): basta con cerrarlos.
       break;
@@ -6411,7 +6601,7 @@ function setupModalEnhancements(){
 document.addEventListener('DOMContentLoaded', setupModalEnhancements);
 if(document.readyState==='complete' || document.readyState==='interactive'){ setupModalEnhancements(); }
 
-window.APP_JS_VERSION = 'A_V37'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V39'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

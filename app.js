@@ -323,7 +323,7 @@ function snapshotState(){
   return {
     players, ball, ballInFlight, phase, state, pendingTD, pendingDodge, pendingGfi, armorForPlayer, nextId,
     mySelected: selected, myDeclaredAction: declaredAction,
-    koQueue, pendingKo, teamRace, customColorsEnabled, teamCustomColor, teamTextColor, openingKickoffDone, firstHalfKickingTeam, pitchBackgroundUrl, pitchBackgroundExact, teamStaff, teamRerollsLeft, preMatch, kickoffPendingOOBAfterEvent,
+    koQueue, pendingKo, teamRace, customColorsEnabled, teamCustomColor, teamTextColor, openingKickoffDone, firstHalfKickingTeam, pitchBackgroundUrl, pitchBackgroundExact, teamStaff, teamRerollsLeft, preMatch, teamVerify, kickoffPendingOOBAfterEvent,
     ballBounceActive, pendingCatch, pendingBallDrop, pendingDriveStart, pendingPassRoll,
     pendingKickPlacement, kickoffBounceStep, kickoffKickingTeam, kickoffReceivingTeam, freeCatchTeam, placingBallFree, kickoffTargetRow, kickoffTargetCol,
     blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp, chainPushStack, secureBallUsedByTeam, pendingSecureBall, secureBallActivePlayer, handoffUsedByTeam, pendingHandoffChoice, pendingAnimosity, pendingHailMaryChoice, pendingProvocarChoice, luchadorUsed, luchadorPickMode, foulUsedByTeam, pendingFoulContext, passUsedByTeam,
@@ -508,6 +508,7 @@ function applyRemoteState(payload){
   teamStaff = payload.teamStaff || { A:null, B:null };
   teamRerollsLeft = payload.teamRerollsLeft || { A:0, B:0 };
   preMatch = mergePreMatch(payload.preMatch);
+  teamVerify = Object.assign({ A:'none', B:'none' }, payload.teamVerify || {});
   kickoffPendingOOBAfterEvent = !!payload.kickoffPendingOOBAfterEvent;
   if(payload.pitchBackgroundUrl && payload.pitchBackgroundExact){
     document.getElementById('pitchBgSelect').value = payload.pitchBackgroundUrl;
@@ -791,6 +792,7 @@ function log(msg){
 function updateStatus(msg){ document.getElementById('statusLine').textContent = msg; }
 function anyModalOpen(){
   return document.getElementById('preMatchModal').classList.contains('show') ||
+         document.getElementById('leagueMismatchModal').classList.contains('show') ||
          document.getElementById('tdModal').classList.contains('show') ||
          document.getElementById('dodgeModal').classList.contains('show') ||
          document.getElementById('gfiModal').classList.contains('show') ||
@@ -844,50 +846,204 @@ function importTeamFile(team, inputEl){
     try{ data = JSON.parse(e.target.result); }
     catch(err){ alert('El archivo no es un JSON válido.'); return; }
     if(!data.players || !Array.isArray(data.players)){ alert('El JSON debe tener un array "players".'); return; }
-    if(data.teamName){
-      const nameInput = document.getElementById(team==='A' ? 'teamAName':'teamBName');
-      nameInput.value = data.teamName;
-      nameInput.readOnly = true;
-      nameInput.title = 'Nombre bloqueado — viene del JSON del equipo. Usad "Borrar Equipo" para poder cambiarlo.';
-      teamNameLocked[team] = true;
-    }
-    teamRace[team] = data.race || '';
-    if(data.color){
-      teamCustomColor[team] = data.color;
-      if(!customColorsEnabled){ setCustomColors(true); }
-    }
-    if(data.textColor){
-      teamTextColor[team] = data.textColor;
-    }
-    if(data.staff){
-      teamStaff[team] = data.staff;
-      teamRerollsLeft[team] = (data.staff.rerolls && typeof data.staff.rerolls.count === 'number') ? data.staff.rerolls.count : 0;
-    }
-    // Staff de liga (JSON gestionado desde el gestor): hinchas dedicados, animadoras, etc. Vive en league.staff, no en staff.
-    if(data.league && data.league.staff && typeof data.league.staff==='object'){
-      teamStaff[team] = Object.assign({}, teamStaff[team] || {}, { leagueStaff: data.league.staff });
-    }
-    teamFormation[team] = Array.isArray(data.formation) ? data.formation : [];
-    data.players.forEach(pd=>{
-      const ma = pd.ma || 6;
-      players.push({
-        id: nextId++, team,
-        num: pd.num ?? '?',
-        name: pd.name || ('Jugador ' + (pd.num ?? '')),
-        ma, remainingMove: ma, gfiUsed:0, condition:'standing', blockedThisActivation:false, freePushOverride:false, dodgeSkillUsedThisTurn:false, catchSkillUsedThisTurn:false, justStoodThisActivation:false,
-        st: pd.st, ag: pd.ag, pa: pd.pa, av: pd.av,
-        position: pd.position || null,
-        skills: pd.skills || [],
-        row:null, col:null, activated:false, onPitch:false
-      });
+    // Equipos sin sección de liga (amistosos, rosters.html): se cargan sin comprobar nada.
+    if(!data.league || typeof data.league!=='object'){ applyImportedTeam(team, data, 'none'); return; }
+    updateStatus('Verificando el roster con la liga…');
+    verifyTeamAgainstLeague(data).then(res=>{
+      if(res.status==='ok') applyImportedTeam(team, data, 'ok', res);
+      else if(res.status==='error') applyImportedTeam(team, data, 'unverified', res);
+      else showLeagueMismatchModal(team, data, res);
     });
-    renderRosters(); renderScoreboard(); renderPitch(); updateKickSelectLabels();
-    log('📁 Equipo cargado para ' + teamName(team) + ': ' + data.players.length + ' jugadores.');
-    updateStatus('Equipo importado.');
-    broadcastState();
   };
   reader.readAsText(file);
   inputEl.value = '';
+}
+
+function applyImportedTeam(team, data, verifyState, res){
+  if(data.teamName){
+    const nameInput = document.getElementById(team==='A' ? 'teamAName':'teamBName');
+    nameInput.value = data.teamName;
+    nameInput.readOnly = true;
+    nameInput.title = 'Nombre bloqueado — viene del JSON del equipo. Usad "Borrar Equipo" para poder cambiarlo.';
+    teamNameLocked[team] = true;
+  }
+  teamRace[team] = data.race || '';
+  if(data.color){
+    teamCustomColor[team] = data.color;
+    if(!customColorsEnabled){ setCustomColors(true); }
+  }
+  if(data.textColor){
+    teamTextColor[team] = data.textColor;
+  }
+  if(data.staff){
+    teamStaff[team] = data.staff;
+    teamRerollsLeft[team] = (data.staff.rerolls && typeof data.staff.rerolls.count === 'number') ? data.staff.rerolls.count : 0;
+  }
+  // Staff de liga (JSON gestionado desde el gestor): hinchas dedicados, animadoras, etc. Vive en league.staff, no en staff.
+  if(data.league && data.league.staff && typeof data.league.staff==='object'){
+    teamStaff[team] = Object.assign({}, teamStaff[team] || {}, { leagueStaff: data.league.staff });
+  }
+  teamFormation[team] = Array.isArray(data.formation) ? data.formation : [];
+  data.players.forEach(pd=>{
+    const ma = pd.ma || 6;
+    players.push({
+      id: nextId++, team,
+      num: pd.num ?? '?',
+      name: pd.name || ('Jugador ' + (pd.num ?? '')),
+      ma, remainingMove: ma, gfiUsed:0, condition:'standing', blockedThisActivation:false, freePushOverride:false, dodgeSkillUsedThisTurn:false, catchSkillUsedThisTurn:false, justStoodThisActivation:false,
+      st: pd.st, ag: pd.ag, pa: pd.pa, av: pd.av,
+      position: pd.position || null,
+      skills: pd.skills || [],
+      row:null, col:null, activated:false, onPitch:false
+    });
+  });
+  renderRosters(); renderScoreboard(); renderPitch(); updateKickSelectLabels();
+  log('📁 Equipo cargado para ' + teamName(team) + ': ' + data.players.length + ' jugadores.');
+  updateStatus('Equipo importado.');
+  teamVerify[team] = verifyState || 'none';
+  if(verifyState==='ok'){
+    log('✅ Roster de ' + teamName(team) + ' VERIFICADO contra la liga (' + (res && res.path ? res.path : 'repositorio') + ').');
+  } else if(verifyState==='diff'){
+    const list = (res && res.diffs) ? res.diffs.slice(0,12).join(' | ') : (res && res.status==='notfound' ? 'equipo no encontrado en la liga' : '');
+    log('🚨 ATENCIÓN: ' + teamName(team) + ' se ha cargado con un roster que NO coincide con la liga (acordado entre los jugadores). ' + list);
+  } else if(verifyState==='unverified'){
+    log('⚠️ No se ha podido verificar el roster de ' + teamName(team) + ' contra la liga (' + ((res && res.reason) || 'sin acceso al repositorio') + '). Se carga SIN VERIFICAR.');
+    showInfoModal('⚠️ Roster sin verificar', 'No se ha podido comprobar el roster de ' + teamName(team) + ' contra la liga (' + ((res && res.reason) || 'sin acceso al repositorio') + '). Se ha cargado igualmente: ambos equipos quedáis avisados de que este roster NO está verificado.');
+  }
+  renderScoreboard();
+  broadcastState();
+}
+
+// ---------- Verificación del roster contra el repositorio de la liga ----------
+let teamVerify = { A:'none', B:'none' };  // none | ok | diff | unverified (sincronizado a ambos equipos)
+let pendingLeagueMismatch = null;          // local de quien carga: { team, data, res }
+const VERIFY_IGNORE_TOP_KEYS = ['color','textColor','formation']; // cosméticos/tácticos: no cuentan como trampa
+
+function leagueRepoInfo(){
+  let owner = 'sermazman', repo = 'bb-sevens';
+  try{
+    const h = location.hostname;
+    if(h.endsWith('.github.io')){
+      owner = h.split('.')[0];
+      const seg = location.pathname.split('/').filter(Boolean)[0];
+      repo = (seg && !/\.html?$/i.test(seg)) ? seg : h;
+    }
+  }catch(e){}
+  return { owner, repo, branch:'main' };
+}
+async function fetchLeagueRepoJson(path){
+  const { owner, repo, branch } = leagueRepoInfo();
+  try{ // 1) API de contenidos de GitHub: sin la caché de GitHub Pages, siempre la versión más reciente
+    const r = await fetch('https://api.github.com/repos/' + owner + '/' + repo + '/contents/' + path.split('/').map(encodeURIComponent).join('/') + '?ref=' + branch,
+      { headers:{ 'Accept':'application/vnd.github.raw+json' }, cache:'no-store' });
+    if(r.status===200) return { found:true, json: JSON.parse(await r.text()) };
+    if(r.status===404) return { found:false };
+  }catch(e){}
+  try{ // 2) respaldo: el propio sitio (GitHub Pages)
+    const r2 = await fetch(path + '?t=' + Date.now(), { cache:'no-store' });
+    if(r2.status===200) return { found:true, json: await r2.json() };
+    if(r2.status===404) return { found:false };
+  }catch(e){}
+  throw new Error('sin acceso al repositorio');
+}
+async function searchLeagueTeamPath(teamId){
+  const { owner, repo, branch } = leagueRepoInfo();
+  const r = await fetch('https://api.github.com/repos/' + owner + '/' + repo + '/git/trees/' + branch + '?recursive=1', { cache:'no-store' });
+  if(!r.ok) throw new Error('no se pudo listar el repositorio (' + r.status + ')');
+  const j = await r.json();
+  const esc = String(teamId).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp('^liga/.+/equipos/' + esc + '\\.json$', 'i');
+  const hit = (j.tree || []).find(t=>t.type==='blob' && re.test(t.path));
+  return hit ? hit.path : null;
+}
+async function verifyTeamAgainstLeague(data){
+  const teamId = data.league && data.league.teamId;
+  if(!teamId) return { status:'error', reason:'el JSON no trae league.teamId' };
+  try{
+    let path = 'liga/t' + data.league.season + '/equipos/' + teamId + '.json';
+    let r = await fetchLeagueRepoJson(path);
+    if(!r.found){
+      const found = await searchLeagueTeamPath(teamId);
+      if(!found) return { status:'notfound', teamId };
+      path = found;
+      r = await fetchLeagueRepoJson(found);
+      if(!r.found) return { status:'notfound', teamId };
+    }
+    const diffs = diffLeagueTeam(r.json, data);
+    return diffs.length ? { status:'diff', diffs, path } : { status:'ok', path };
+  }catch(e){
+    return { status:'error', reason: String((e && e.message) || e) };
+  }
+}
+// Compara oficial (repo) → subido. Devuelve líneas legibles; vacío = idéntico.
+function diffLeagueTeam(official, uploaded){
+  const out = [];
+  const isObj = v=> v && typeof v==='object' && !Array.isArray(v);
+  const nz = v=> v===undefined ? null : v;
+  const lab = v=> v===null ? '(vacío)' : (typeof v==='object' ? JSON.stringify(v).slice(0,70) : String(v));
+  const walk = (a, b, path, top)=>{
+    if(out.length>=40) return;
+    a = nz(a); b = nz(b);
+    if(a===null && b===null) return;
+    if(isObj(a) && isObj(b)){
+      const keys = new Set(Object.keys(a).concat(Object.keys(b)));
+      keys.forEach(k=>{ if(top && VERIFY_IGNORE_TOP_KEYS.includes(k)) return; walk(a[k], b[k], path ? path + '.' + k : k, false); });
+      return;
+    }
+    if(Array.isArray(a) && Array.isArray(b)){
+      const keyed = arr=> arr.length>0 && arr.every(x=>isObj(x) && x.num!==undefined);
+      if(keyed(a) && keyed(b)){
+        const ma = {}, mb = {};
+        a.forEach(x=>{ ma[String(x.num)] = x; }); b.forEach(x=>{ mb[String(x.num)] = x; });
+        new Set(Object.keys(ma).concat(Object.keys(mb))).forEach(k=>{
+          const nm = (mb[k] && mb[k].name) || (ma[k] && ma[k].name) || '';
+          walk(ma[k], mb[k], path + '[#' + k + (nm ? ' ' + nm : '') + ']', false);
+        });
+        return;
+      }
+      const prim = arr=> arr.every(x=> x===null || typeof x!=='object');
+      if(prim(a) && prim(b)){
+        const sa = a.map(String).sort().join(', '), sb = b.map(String).sort().join(', ');
+        if(sa!==sb) out.push(path + ': [' + sa + '] → [' + sb + ']');
+        return;
+      }
+      for(let i=0;i<Math.max(a.length,b.length);i++) walk(a[i], b[i], path + '[' + i + ']', false);
+      return;
+    }
+    if(a===null || b===null || typeof a!==typeof b || String(a)!==String(b)){
+      out.push(path + ': ' + lab(a) + ' → ' + lab(b));
+    }
+  };
+  walk(official, uploaded, '', true);
+  return out;
+}
+function showLeagueMismatchModal(team, data, res){
+  pendingLeagueMismatch = { team, data, res };
+  const notfound = res.status==='notfound';
+  document.getElementById('leagueMismatchTitle').textContent = notfound ? '🚨 EQUIPO NO ENCONTRADO EN LA LIGA' : '🚨 EL ROSTER NO COINCIDE CON LA LIGA';
+  document.getElementById('leagueMismatchText').textContent = notfound
+    ? 'El equipo "' + (data.teamName || res.teamId) + '" (' + res.teamId + ') dice pertenecer a una liga pero no existe en el repositorio.'
+    : 'El archivo cargado para "' + (data.teamName || 'el equipo') + '" es distinto de la versión oficial de la liga. Cada línea: campo — valor OFICIAL → valor del archivo cargado.';
+  const list = document.getElementById('leagueMismatchList');
+  list.innerHTML = '';
+  (res.diffs || []).slice(0, 40).forEach(d=>{ const li = document.createElement('li'); li.textContent = d; list.appendChild(li); });
+  list.style.display = (res.diffs && res.diffs.length) ? 'block' : 'none';
+  document.getElementById('leagueMismatchModal').classList.add('show');
+  updateStatus('Roster no coincide con la liga: decidid si seguís adelante.');
+}
+function leagueMismatchCancel(){
+  const c = pendingLeagueMismatch;
+  pendingLeagueMismatch = null;
+  document.getElementById('leagueMismatchModal').classList.remove('show');
+  if(c){ log('❌ Carga cancelada: el roster de "' + (c.data.teamName || 'equipo') + '" no coincide con la liga.'); }
+  updateStatus('Carga de equipo cancelada.');
+  broadcastState();
+}
+function leagueMismatchProceed(){
+  const c = pendingLeagueMismatch;
+  pendingLeagueMismatch = null;
+  document.getElementById('leagueMismatchModal').classList.remove('show');
+  if(c) applyImportedTeam(c.team, c.data, 'diff', c.res);
 }
 
 function clearTeam(team){
@@ -910,6 +1066,7 @@ function clearTeam(team){
   teamTextColor[team] = 'auto';
   teamStaff[team] = null;
   teamRerollsLeft[team] = 0;
+  teamVerify[team] = 'none';
 
   log('🗑️ ' + oldName + ' borrado por completo (jugadores, nombre, colores, raza y staff restablecidos).');
   renderRosters(); renderPitch(); renderSelInfo(); renderScoreboard(); updateKickSelectLabels();
@@ -6529,6 +6686,10 @@ function cancelActiveModal(modalId){
     case 'provocarModal':
       provocarChoose(false);
       break;
+    case 'leagueMismatchModal':
+      pendingLeagueMismatch = null;
+      log('❌ Carga de equipo cancelada manualmente.');
+      break;
     default:
       // Modales puramente informativos (aviso de línea, fin de partida, partida guardada, touchdown, KO...): basta con cerrarlos.
       break;
@@ -6601,7 +6762,7 @@ function setupModalEnhancements(){
 document.addEventListener('DOMContentLoaded', setupModalEnhancements);
 if(document.readyState==='complete' || document.readyState==='interactive'){ setupModalEnhancements(); }
 
-window.APP_JS_VERSION = 'A_V39'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V41'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

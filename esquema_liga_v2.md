@@ -109,3 +109,7 @@ Las habilidades se añaden además a `players[].skills` (nombre exacto de `roste
 - Mejoras de habilidad: el gestor puede marcarlas como `chosen` (elegida) o `random` (proceso externo); el valor extra es el mismo (tabla primera/siguiente).
 - Hoja PDF: se elimina la columna SUB (el sustituto se gestiona en el juego); la columna DRAFT ya marca las habilidades extra.
 - Hall of Fame: pendiente.
+
+## Dados (15-oct)
+- En cada partido se registran las calaveras y los unos sacados por cada equipo: `statistics.skullsFor/skullsAgainst`, `statistics.onesFor/onesAgainst`. Se acumulan en la ficha del equipo (gestor y visor).
+- Hoja PDF: fila FANS = total actual (mín. 1, máx. 5); FANS DEVOTOS = 1 inicial gratis; Médico muestra 80.000; sin «Novatos alborotadores»; columna de casillas calavera / 1 a la derecha de las segundas oportunidades (usa `icons/attacker-down.png`).

@@ -196,7 +196,7 @@ function totals(d){
   const m=d.league.matches,sum=f=>m.reduce((t,x)=>t+(f(x)||0),0),st=x=>x.statistics||{};
   const r={played:m.length,won:m.filter(x=>x.result.outcome==='win').length,drawn:m.filter(x=>x.result.outcome==='draw').length,lost:m.filter(x=>x.result.outcome==='loss').length};
   r.tdFor=sum(x=>x.result.teamScore);r.tdAgainst=sum(x=>x.result.opponentScore);
-  for(const k of['lightInjuries','seriousInjuries','deaths','sentOff']){r[k+'For']=sum(x=>st(x)[k+'For']);r[k+'Against']=sum(x=>st(x)[k+'Against'])}
+  for(const k of['lightInjuries','seriousInjuries','deaths','sentOff','skulls','ones']){r[k+'For']=sum(x=>st(x)[k+'For']);r[k+'Against']=sum(x=>st(x)[k+'Against'])}
   r.casFor=r.lightInjuriesFor+r.seriousInjuriesFor+r.deathsFor;r.casAgainst=r.lightInjuriesAgainst+r.seriousInjuriesAgainst+r.deathsAgainst;
   r.points=sum(x=>x.leaguePoints);r.earnings=sum(x=>x.earnings);r.spent=sum(x=>x.treasurySpent);r.fansGained=sum(x=>x.dedicatedFansGained);
   return r;
@@ -338,7 +338,7 @@ function renderTeam(){
   <div class="teamhead">${logoImg(t,'lgh')}<span class="badge-team">${esc(d.teamName)}</span><span class="race">${esc(d.race||'')}${d.league.coach?' · Entrenador: '+esc(d.league.coach):''}</span>
    <button class="btn small primary" type="button" data-dl="${esc(t.file)}">Descargar EQUIPO</button>
    <button class="btn small" type="button" data-sheet="${esc(t.file)}">Hoja de partido (PDF)</button></div>
-  <div class="tiles">${tile('Jugados',x.played)+tile('G / E / P',`${x.won} / ${x.drawn} / ${x.lost}`)+tile('Puntos',x.points)+tile('TD',`${x.tdFor} - ${x.tdAgainst}`)+tile('Fans',e.fans)+tile('Tesorería',fmt(e.treasury),e.treasury<0?'neg':'')+tile('Valor equipo',fmt(e.teamValue))}</div>
+  <div class="tiles">${tile('Jugados',x.played)+tile('G / E / P',`${x.won} / ${x.drawn} / ${x.lost}`)+tile('Puntos',x.points)+tile('TD',`${x.tdFor} - ${x.tdAgainst}`)+tile('Fans',e.fans)+tile('Calaveras / Unos',`${x.skullsFor} / ${x.onesFor}`)+tile('Tesorería',fmt(e.treasury),e.treasury<0?'neg':'')+tile('Valor equipo',fmt(e.teamValue))}</div>
   <nav class="tabs" role="tablist">${TEAM_TABS.map(([id,l])=>`<button class="tab" role="tab" data-tt="${id}" aria-selected="${ui.teamTab===id}">${l}</button>`).join('')}</nav>
   <div id="tpanel"></div>`;
   $('#mainTabs').innerHTML=MAIN_TABS.map(([id,l])=>`<button class="tab" role="tab" data-main="${id}" aria-selected="false">${l}</button>`).join('');
@@ -367,7 +367,7 @@ function tHistory(d){
       return`<li>#${esc(ev.num)} ${esc(ev.name||'')}${acts?': '+acts:''} · <strong>+${ev.sppEarned||0} SPP</strong>${ev.injurySuffered&&ev.injurySuffered!=='none'?` · <span class="warn">${INJURY_LABEL[ev.injurySuffered]||''}</span>`:''}${(ev.improvements||[]).map(im=>` · <span class="newsk">Mejora: ${esc(impText(im))}</span>`).join('')}${ev.draft==='drafted'?` · <span class="warn">Drafteado (${esc(ev.draftValue||'')})</span>`:''}${ev.draft==='paidValue'?` · <span class="warn">Pagó ${fmt(ev.valuePaid)} para no ser drafteado (+${fmt(DRAFT_BONUS)} de valor)</span>`:''}</li>`}).join('');
     const s=m.statistics||{};
     return`<div class="card"><h3>${esc(m.id)} · ${m.homeAway==='home'?'(local) ':m.homeAway==='away'?'(visitante) ':''}vs ${esc(m.opponent.teamName)} <span class="res ${m.result.outcome}">${m.result.teamScore} - ${m.result.opponentScore}</span><span class="pill ${m.result.outcome==='win'?'ok':m.result.outcome==='loss'?'out':''}">${label[m.result.outcome]||''}</span></h3>
-    <div class="meta">${esc(m.opponent.race||'')} · Puntos ${m.leaguePoints} · Ganancias ${fmt(m.earnings)} · Fans ${sgn(m.dedicatedFansGained||0)} · HL ${s.lightInjuriesFor}-${s.lightInjuriesAgainst} · HG ${s.seriousInjuriesFor}-${s.seriousInjuriesAgainst} · RIP ${s.deathsFor}-${s.deathsAgainst}</div>
+    <div class="meta">${esc(m.opponent.race||'')} · Puntos ${m.leaguePoints} · Ganancias ${fmt(m.earnings)} · Fans ${sgn(m.dedicatedFansGained||0)} · HL ${s.lightInjuriesFor}-${s.lightInjuriesAgainst} · HG ${s.seriousInjuriesFor}-${s.seriousInjuriesAgainst} · RIP ${s.deathsFor}-${s.deathsAgainst} · Calaveras ${s.skullsFor||0}-${s.skullsAgainst||0} · Unos ${s.onesFor||0}-${s.onesAgainst||0}</div>
     ${evs?`<ul>${evs}</ul>`:''}${m.notes?`<div class="meta">${esc(m.notes)}</div>`:''}</div>`}).join('')+'</div>';
 }
 function tEcon(d){
@@ -423,8 +423,12 @@ function sheetSplitSkills(p){
 function loadImgDims(dataUrl){
   return new Promise(ok=>{ const im=new Image(); im.onload=()=>ok({dataUrl,w:im.naturalWidth,h:im.naturalHeight}); im.onerror=()=>ok(null); im.src=dataUrl; });
 }
+function loadIconData(url){
+  return new Promise(ok=>{ const im=new Image(); im.onload=()=>{ try{ const c=document.createElement('canvas'); c.width=im.naturalWidth; c.height=im.naturalHeight; c.getContext('2d').drawImage(im,0,0); ok(c.toDataURL('image/png')); }catch(err){ ok(null); } }; im.onerror=()=>ok(null); im.src=url; });
+}
 async function makeSheetPdf(d,e,logo){
   const JsPDF=await ensureJsPDF();
+  const skullImg=await loadIconData('icons/attacker-down.png');
   const pdf=new JsPDF({orientation:'landscape',unit:'mm',format:'a4'});
   const l=d.league, pr=Object.assign({},DEFAULT_PRICES,(l.economy||{}).prices), s=l.staff||{};
   const rr=(d.staff&&d.staff.rerolls)||{count:0,pricePerUnit:100000};
@@ -516,14 +520,13 @@ async function makeSheetPdf(d,e,logo){
 
   const money=v=>fmt(v);
   const fansCost=0;   /* el primer fan es gratis y no se compran más durante la liga */
-  const mid=[['FANS',null],
-    ['FANS DEVOTOS',[e.fans,pr.dedicatedFan,fansCost]],
-    ['MÉDICO',[s.apothecary||0,pr.apothecary||'',(s.apothecary||0)*(pr.apothecary||0)]],
+  const mid=[['FANS',[e.fans,'','']],
+    ['FANS DEVOTOS',[1,pr.dedicatedFan,fansCost]],
+    ['MÉDICO',[s.apothecary||0,pr.apothecary||80000,(s.apothecary||0)*(pr.apothecary||80000)]],
     ['ANIMADORAS',[s.cheerleaders||0,pr.cheerleader,(s.cheerleaders||0)*pr.cheerleader]],
     ['AYUDANTES ENTRENADOR',[s.assistantCoaches||0,pr.assistantCoach,(s.assistantCoaches||0)*pr.assistantCoach]],
     ['SOBORNOS',[s.bribes||0,pr.bribe,(s.bribes||0)*pr.bribe]],
-    ['MASTER CHEF',[0,300000,0]],
-    ['NOVATOS ALBOROTADORES',null]];
+    ['MASTER CHEF',[0,300000,0]]];
   const right=[['SEGUNDAS OPORTUNIDADES TOTALES',[rr.count||0,rr.pricePerUnit||100000,e.rerolls]],
     ['ENTRENAMIENTO EXTRA',[0,150000,0]],['BARRILES BLOODWEISER',[0,50000,0]],['ANIMADORAS TEMP.',[0,30000,0]],
     ['AYUDANTES ENTRENADOR T.P.',[0,30000,0]],['MEDIDAS DESESPERADAS',[0,50000,0]],['JUGADAS ESPECIALES',[0,100000,0]],
@@ -538,11 +541,21 @@ async function makeSheetPdf(d,e,logo){
       cell(x,yy,5,RH,{text:'x',size:6.5}); x+=5;
       cell(x,yy,17,RH,{text:v[1]===''?'':money(v[1]),size:7}); x+=17;
       cell(x,yy,6,RH,{text:'mo',size:6}); x+=6;
-      cell(x,yy,14,RH,{fill:GR,text:money(v[2]),size:7.5,bold:true});
+      cell(x,yy,14,RH,{fill:GR,text:v[2]===''?'':money(v[2]),size:7.5,bold:true});
     });
   }
   block(M+74+3,40,mid);
   block(M+74+3+40+51+3,52,right);
+
+  /* casillas para anotar las calaveras y los unos que se sacan en el partido */
+  { const dx=M+275, dw=9, dh=9*RH/4;
+    cell(dx,y,dw,dh,{}); cell(dx,y+dh,dw,dh,{}); cell(dx,y+2*dh,dw,dh,{}); cell(dx,y+3*dh,dw,dh,{});
+    if(skullImg){ const sz=6.4; try{ pdf.addImage(skullImg,'PNG',dx+(dw-sz)/2,y+(dh-sz)/2,sz,sz); }catch(err){} }
+    else { pdf.setFont('helvetica','bold'); pdf.setFontSize(6); pdf.setTextColor(...BK); pdf.text('CAL.',dx+dw/2,y+dh/2+1,{align:'center'}); }
+    const q=5.6, qx=dx+(dw-q)/2, qy=y+2*dh+(dh-q)/2;
+    pdf.setDrawColor(90,90,90); pdf.setLineWidth(0.35); pdf.roundedRect(qx,qy,q,q,1,1,'S');
+    pdf.setFillColor(0,0,0); pdf.circle(qx+q/2,qy+q/2,0.55,'F');
+    pdf.setDrawColor(110,110,110); pdf.setLineWidth(0.2); }
 
   /* leyenda */
   pdf.setTextColor(...BK); pdf.setFont('helvetica','normal'); pdf.setFontSize(5.7);

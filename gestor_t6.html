@@ -317,7 +317,7 @@ function totals(){
   const r = { played:m.length, won:m.filter(x=>x.result.outcome==='win').length,
     drawn:m.filter(x=>x.result.outcome==='draw').length, lost:m.filter(x=>x.result.outcome==='loss').length };
   r.tdFor=sum(x=>x.result.teamScore); r.tdAgainst=sum(x=>x.result.opponentScore);
-  for(const k of ['lightInjuries','seriousInjuries','deaths','sentOff']){
+  for(const k of ['lightInjuries','seriousInjuries','deaths','sentOff','skulls','ones']){
     r[k+'For']=sum(x=>st(x)[k+'For']); r[k+'Against']=sum(x=>st(x)[k+'Against']);
   }
   r.casFor=r.lightInjuriesFor+r.seriousInjuriesFor+r.deathsFor;
@@ -506,7 +506,7 @@ function renderTiles(){
   const tile=(k,v,cls='')=>`<div class="tile"><div class="k">${k}</div><div class="v ${cls}">${v}</div></div>`;
   $('#tiles').innerHTML =
     tile('Jugados',t.played)+tile('G / E / P',`${t.won} / ${t.drawn} / ${t.lost}`)+tile('Puntos',t.points)+
-    tile('TD',`${t.tdFor} - ${t.tdAgainst}`)+tile('Fans',e.fans)+
+    tile('TD',`${t.tdFor} - ${t.tdAgainst}`)+tile('Fans',e.fans)+tile('Calaveras / Unos',`${t.skullsFor} / ${t.onesFor}`)+
     tile('Tesorería',fmt(e.treasury),e.treasury<0?'neg':'')+tile('Coste equipo',fmt(e.teamCost))+tile('Valor equipo',fmt(e.teamValue));
 }
 
@@ -549,7 +549,7 @@ function renderHistory(){
     return `<div class="card"><h3>${esc(m.id)} · ${m.homeAway==='home'?'(local) ':m.homeAway==='away'?'(visitante) ':''}vs ${esc(m.opponent.teamName)}
         <span class="res ${m.result.outcome}">${m.result.teamScore} - ${m.result.opponentScore}</span><span class="pill ${m.result.outcome==='win'?'ok':m.result.outcome==='loss'?'out':''}">${label[m.result.outcome]}</span></h3>
       <div class="meta">${esc(m.opponent.race||'')} · Puntos ${m.leaguePoints} · Ganancias ${fmt(m.earnings)} · Gastado ${fmt(m.treasurySpent)} · Fans ${sgn(m.dedicatedFansGained||0)}
-        · HL ${s.lightInjuriesFor}-${s.lightInjuriesAgainst} · HG ${s.seriousInjuriesFor}-${s.seriousInjuriesAgainst} · RIP ${s.deathsFor}-${s.deathsAgainst} · Expulsados ${s.sentOffFor}-${s.sentOffAgainst}</div>
+        · HL ${s.lightInjuriesFor}-${s.lightInjuriesAgainst} · HG ${s.seriousInjuriesFor}-${s.seriousInjuriesAgainst} · RIP ${s.deathsFor}-${s.deathsAgainst} · Expulsados ${s.sentOffFor}-${s.sentOffAgainst} · Calaveras ${s.skullsFor||0}-${s.skullsAgainst||0} · Unos ${s.onesFor||0}-${s.onesAgainst||0}</div>
       ${evs?`<ul>${evs}</ul>`:''}${m.notes?`<div class="meta">${esc(m.notes)}</div>`:''}</div>`;
   }).join('')+'</div>';
 }
@@ -872,6 +872,8 @@ function sideHTML(side){
       ${field('hg','Heridas graves causadas (HG)',`min="0" data-auto="${side}_hg"`)}
       ${field('rip','Muertos causados (RIP)',`min="0" data-auto="${side}_rip"`)}
       ${field('sentoff','Jugadores expulsados','min="0"')}
+      ${field('skulls','Calaveras sacadas (dados)','min="0"')}
+      ${field('ones','Unos sacados (dados)','min="0"')}
     </div>
     <p class="hint" data-tdcheck="${side}"></p>
     <div class="grid" style="margin-top:10px">
@@ -1040,7 +1042,7 @@ function collectSide(side){
   });
   const nImpTeam=events.reduce((a,e)=>a+(e.improvements||[]).length,0);
   if(nImpTeam>1) problems.push(`solo se puede subir 1 mejora por partido, a un solo jugador (hay ${nImpTeam}).`);
-  return {side,teamId:l.teamId,teamName:d.teamName,race:d.race,score:I('score'),hl:I('hl'),hg:I('hg'),rip:I('rip'),sentOff:I('sentoff'),
+  return {side,teamId:l.teamId,teamName:d.teamName,race:d.race,score:I('score'),hl:I('hl'),hg:I('hg'),rip:I('rip'),sentOff:I('sentoff'),skulls:I('skulls'),ones:I('ones'),
           fans:S('fans'),earnings:S('earnings'),spent:I('spent'),points:S('points'),events,dying,drafts:draftPicks,td,mvp,problems};
 }
 
@@ -1091,7 +1093,7 @@ function applyMatchSide(doc,S,O,meta){
     opponent:{teamId:O.teamId,teamName:O.teamName,race:O.race},
     result:{teamScore:S.score,opponentScore:O.score,outcome:S.score>O.score?'win':S.score<O.score?'loss':'draw'},
     statistics:{lightInjuriesFor:S.hl,lightInjuriesAgainst:O.hl,seriousInjuriesFor:S.hg,seriousInjuriesAgainst:O.hg,
-      deathsFor:S.rip,deathsAgainst:O.rip,sentOffFor:S.sentOff,sentOffAgainst:O.sentOff},
+      deathsFor:S.rip,deathsAgainst:O.rip,sentOffFor:S.sentOff,sentOffAgainst:O.sentOff,skullsFor:S.skulls,skullsAgainst:O.skulls,onesFor:S.ones,onesAgainst:O.ones},
     dedicatedFansGained:S.fans,treasurySpent:S.spent,earnings:S.earnings,leaguePoints:S.points,
     playerEvents:S.events,notes:meta.notes,registeredAt:meta.at});
 }
@@ -1318,8 +1320,12 @@ function sheetSplitSkills(p){
 function loadImgDims(dataUrl){
   return new Promise(ok=>{ const im=new Image(); im.onload=()=>ok({dataUrl,w:im.naturalWidth,h:im.naturalHeight}); im.onerror=()=>ok(null); im.src=dataUrl; });
 }
+function loadIconData(url){
+  return new Promise(ok=>{ const im=new Image(); im.onload=()=>{ try{ const c=document.createElement('canvas'); c.width=im.naturalWidth; c.height=im.naturalHeight; c.getContext('2d').drawImage(im,0,0); ok(c.toDataURL('image/png')); }catch(err){ ok(null); } }; im.onerror=()=>ok(null); im.src=url; });
+}
 async function makeSheetPdf(d,e,logo){
   const JsPDF=await ensureJsPDF();
+  const skullImg=await loadIconData('icons/attacker-down.png');
   const pdf=new JsPDF({orientation:'landscape',unit:'mm',format:'a4'});
   const l=d.league, pr=Object.assign({},DEFAULT_PRICES,(l.economy||{}).prices), s=l.staff||{};
   const rr=(d.staff&&d.staff.rerolls)||{count:0,pricePerUnit:100000};
@@ -1411,14 +1417,13 @@ async function makeSheetPdf(d,e,logo){
 
   const money=v=>fmt(v);
   const fansCost=0;   /* el primer fan es gratis y no se compran más durante la liga */
-  const mid=[['FANS',null],
-    ['FANS DEVOTOS',[e.fans,pr.dedicatedFan,fansCost]],
-    ['MÉDICO',[s.apothecary||0,pr.apothecary||'',(s.apothecary||0)*(pr.apothecary||0)]],
+  const mid=[['FANS',[e.fans,'','']],
+    ['FANS DEVOTOS',[1,pr.dedicatedFan,fansCost]],
+    ['MÉDICO',[s.apothecary||0,pr.apothecary||80000,(s.apothecary||0)*(pr.apothecary||80000)]],
     ['ANIMADORAS',[s.cheerleaders||0,pr.cheerleader,(s.cheerleaders||0)*pr.cheerleader]],
     ['AYUDANTES ENTRENADOR',[s.assistantCoaches||0,pr.assistantCoach,(s.assistantCoaches||0)*pr.assistantCoach]],
     ['SOBORNOS',[s.bribes||0,pr.bribe,(s.bribes||0)*pr.bribe]],
-    ['MASTER CHEF',[0,300000,0]],
-    ['NOVATOS ALBOROTADORES',null]];
+    ['MASTER CHEF',[0,300000,0]]];
   const right=[['SEGUNDAS OPORTUNIDADES TOTALES',[rr.count||0,rr.pricePerUnit||100000,e.rerolls]],
     ['ENTRENAMIENTO EXTRA',[0,150000,0]],['BARRILES BLOODWEISER',[0,50000,0]],['ANIMADORAS TEMP.',[0,30000,0]],
     ['AYUDANTES ENTRENADOR T.P.',[0,30000,0]],['MEDIDAS DESESPERADAS',[0,50000,0]],['JUGADAS ESPECIALES',[0,100000,0]],
@@ -1433,11 +1438,21 @@ async function makeSheetPdf(d,e,logo){
       cell(x,yy,5,RH,{text:'x',size:6.5}); x+=5;
       cell(x,yy,17,RH,{text:v[1]===''?'':money(v[1]),size:7}); x+=17;
       cell(x,yy,6,RH,{text:'mo',size:6}); x+=6;
-      cell(x,yy,14,RH,{fill:GR,text:money(v[2]),size:7.5,bold:true});
+      cell(x,yy,14,RH,{fill:GR,text:v[2]===''?'':money(v[2]),size:7.5,bold:true});
     });
   }
   block(M+74+3,40,mid);
   block(M+74+3+40+51+3,52,right);
+
+  /* casillas para anotar las calaveras y los unos que se sacan en el partido */
+  { const dx=M+275, dw=9, dh=9*RH/4;
+    cell(dx,y,dw,dh,{}); cell(dx,y+dh,dw,dh,{}); cell(dx,y+2*dh,dw,dh,{}); cell(dx,y+3*dh,dw,dh,{});
+    if(skullImg){ const sz=6.4; try{ pdf.addImage(skullImg,'PNG',dx+(dw-sz)/2,y+(dh-sz)/2,sz,sz); }catch(err){} }
+    else { pdf.setFont('helvetica','bold'); pdf.setFontSize(6); pdf.setTextColor(...BK); pdf.text('CAL.',dx+dw/2,y+dh/2+1,{align:'center'}); }
+    const q=5.6, qx=dx+(dw-q)/2, qy=y+2*dh+(dh-q)/2;
+    pdf.setDrawColor(90,90,90); pdf.setLineWidth(0.35); pdf.roundedRect(qx,qy,q,q,1,1,'S');
+    pdf.setFillColor(0,0,0); pdf.circle(qx+q/2,qy+q/2,0.55,'F');
+    pdf.setDrawColor(110,110,110); pdf.setLineWidth(0.2); }
 
   /* leyenda */
   pdf.setTextColor(...BK); pdf.setFont('helvetica','normal'); pdf.setFontSize(5.7);

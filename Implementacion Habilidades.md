@@ -63,9 +63,21 @@ una casilla de su zona de defensa. Además, este jugador puede aplicar un modifi
 Cuando este jugador realice una acción de Pase o una acción especial de Lanzar una bomba, puede declarar cualquier casilla del campo como casilla objetivo en lugar de usar la regla de pases. Haz un chequeo de Pase de
 forma normal, tratando el lanzamiento corno una Bomba larga y cualquier resultado de pase preciso como un pase impreciso. Un Pase a lo loco no puede interceptarse.
 
-☣️- LUCHADOR
+☣️- PROVOCAR: desde 15-10-2026
+Cuando este jugador es empujado debido a una acción de Placaje (sea placaje o blitz) realizada contra él, su Entrenador puede obligar al jugador rival a que haga un movimiento de impulso. Esta habilidad no puede usarse contra un Jugador rival que haya Echado raíces debido al rasgo Echar raíces.
+Habrá que preguntar al equipo con un modal que tiene ese jugador si quiere que le siga o no.
 
-☣️- PIES FIRMES
+☣️-  LUCHADOR: desde 15-10-2026
+Cuando este jugador declara una acción de Placaje, puede repetir un único resultado de Ambos jugadores derribados de toda la tirada de dados que pueda hacer.
+Habrá que avisar en el modal si quiere usar reroll (si tiene) para lanzar todos los dados o usar LUCHADOR para lanzar solo 1 dado con resultado ambos caidos.
+Y el siguiente proceso es igual, si tiene varios dados se elige el que quiere el entrenador del equipo segun tenemos ahora programado, no hay que cambiar nada.
+
+☣️-  DESCOMPOSICION: desde 15-10-2026
+Aplica un modificador de +1 a todas las tiradas de Lesiones que se hagan contra este jugador.
+Hablamos de lesiones cuando se saca un 10, 11 o 12 despues de pasar la armadura (se aplica sobre Herido leve, Herido Grave o Muerto)
+
+☣️-  ABRIRSE PASO: desde 15-10-2026
+Una vez por turno, cuando este jugador intente esquivar, puede aplicar a su chequeo de Agilidad un modificador de +1 si su atributo Fuerza es de 3 o menos, o bien un modificador de +2 si su atributo Fuerza es de 4, o bien un modificador de +3 si su atributo Fuerza es de 5 o más.
 
 // HABILIDADES TRAS IMPLEMENTAR PASAR: //
 HUMANOIDE BALA (tras poner lanzar compañero de equipo)

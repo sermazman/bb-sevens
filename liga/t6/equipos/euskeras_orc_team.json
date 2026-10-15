@@ -1,0 +1,399 @@
+{
+  "teamName": "EUSKERAS ORC TEAM",
+  "race": "Orcs",
+  "color": "#17c10b",
+  "textColor": "#b80000",
+  "leagueStarted": false,
+  "staff": {
+    "rerolls": {
+      "clave": "reroll",
+      "count": 0,
+      "pricePerUnit": 100000,
+      "total": 0
+    },
+    "fans": {
+      "clave": "fans",
+      "count": 0,
+      "pricePerUnit": 20000,
+      "total": 0,
+      "free": 1
+    },
+    "assistants": {
+      "clave": "assistants",
+      "count": 0,
+      "pricePerUnit": 20000,
+      "total": 0
+    },
+    "cheerleaders": {
+      "clave": "cheerleaders",
+      "count": 0,
+      "pricePerUnit": 20000,
+      "total": 0
+    },
+    "apothecary": {
+      "clave": "apothecary",
+      "count": 0,
+      "pricePerUnit": 80000,
+      "total": 0
+    }
+  },
+  "players": [
+    {
+      "num": 1,
+      "name": "KASYESO",
+      "position": "Lineman",
+      "ma": 5,
+      "st": 3,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "10+",
+      "skills": [
+        "Linea - Orc"
+      ]
+    },
+    {
+      "num": 2,
+      "name": "KASYMARKO",
+      "position": "Lineman",
+      "ma": 5,
+      "st": 3,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "10+",
+      "skills": [
+        "Linea - Orc"
+      ]
+    },
+    {
+      "num": 3,
+      "name": "DURACELL",
+      "position": "Big Un Blocker",
+      "ma": 5,
+      "st": 4,
+      "ag": "4+",
+      "pa": "6+",
+      "av": "10+",
+      "skills": [
+        "Cabeza Dura",
+        "Golper Mortífero",
+        "Provocar",
+        "Tembloroso",
+        "Defensor - Orc"
+      ]
+    },
+    {
+      "num": 4,
+      "name": "THE ROCK",
+      "position": "Blitzer",
+      "ma": 6,
+      "st": 3,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "10+",
+      "skills": [
+        "Placar",
+        "Abrirse paso",
+        "CAP: PROFESIONAL",
+        "Blitzer - Orc"
+      ]
+    },
+    {
+      "num": 5,
+      "name": "IL MURO",
+      "position": "Blitzer",
+      "ma": 6,
+      "st": 3,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "10+",
+      "skills": [
+        "Placar",
+        "Abrirse paso",
+        "Blitzer - Orc"
+      ]
+    },
+    {
+      "num": 6,
+      "name": "GRUÑON",
+      "position": "Lineman",
+      "ma": 5,
+      "st": 3,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "10+",
+      "skills": [
+        "Linea - Orc"
+      ]
+    },
+    {
+      "num": 7,
+      "name": "KABEZON",
+      "position": "Lineman",
+      "ma": 4,
+      "st": 3,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "10+",
+      "skills": [
+        "Veterano",
+        "Linea - Orc"
+      ]
+    },
+    {
+      "num": 8,
+      "name": "TRUENO",
+      "position": "Thrower",
+      "ma": 5,
+      "st": 3,
+      "ag": "3+",
+      "pa": "3+",
+      "av": "9+",
+      "skills": [
+        "Pasar",
+        "Manos seguras",
+        "Lanzador - Orc"
+      ]
+    }
+  ],
+  "formation": [
+    {
+      "num": 1,
+      "col": 1,
+      "row": 0
+    },
+    {
+      "num": 2,
+      "col": 9,
+      "row": 0
+    },
+    {
+      "num": 3,
+      "col": 5,
+      "row": 0
+    },
+    {
+      "num": 4,
+      "col": 2,
+      "row": 0
+    },
+    {
+      "num": 5,
+      "col": 8,
+      "row": 0
+    },
+    {
+      "num": 7,
+      "col": 6,
+      "row": 0
+    },
+    {
+      "num": 8,
+      "col": 4,
+      "row": 0
+    }
+  ],
+  "league": {
+    "schemaVersion": 2,
+    "season": 6,
+    "coach": "CARLOS",
+    "teamId": "euskeras_orc_team",
+    "economy": {
+      "startingTreasury": 600000,
+      "prices": {
+        "dedicatedFan": 20000,
+        "cheerleader": 20000,
+        "assistantCoach": 20000,
+        "apothecary": null,
+        "bribe": 100000
+      }
+    },
+    "staff": {
+      "dedicatedFans": 1,
+      "cheerleaders": 0,
+      "assistantCoaches": 0,
+      "apothecary": 0,
+      "bribes": 0
+    },
+    "players": [
+      {
+        "num": 1,
+        "price": 50000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 2,
+        "price": 50000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 3,
+        "price": 95000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 4,
+        "price": 85000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 5,
+        "price": 85000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 6,
+        "price": 50000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 7,
+        "price": 50000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 8,
+        "price": 75000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      }
+    ],
+    "matches": [],
+    "retiredPlayers": [],
+    "logo": "euskeras_orc_team.png"
+  }
+}

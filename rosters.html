@@ -641,7 +641,7 @@ function loadTeamData(data){
       else s.skills = s.skills.filter(k => k !== 'Veterano');
     }
     if(s.skills.includes(CAPTAIN_SKILL)){
-      if(capOk && !capFound){ s.captain = true; capFound = true; }
+      if(capOk && !isBigGuyEntry(entry) && !capFound){ s.captain = true; capFound = true; }
       else s.skills = s.skills.filter(k => k !== CAPTAIN_SKILL);
     }
   });
@@ -781,6 +781,11 @@ function captainAllowed(race){
   return CAPTAIN_RACES.includes(normKey(race));
 }
 
+// Un Grandullón (Clave con "Grandullón") no puede ser Capitán.
+function isBigGuyEntry(entry){
+  return !!(entry && entry.clave && normText(entry.clave).includes('grandullon'));
+}
+
 function clearCaptainState(p){
   if(!p.captain) return;
   p.skills = p.skills.filter(s => s !== CAPTAIN_SKILL);
@@ -798,6 +803,11 @@ function toggleCaptain(_uid, checked){
   if(checked){
     if(!captainAllowed(team.race)){
       showFormationModal('Esta raza no puede tener Capitán', 'Solo los equipos de Orcos y Humanos pueden nombrar un Capitán.');
+      renderPlayers();
+      return;
+    }
+    if(isBigGuyEntry(findCatalogEntry(team.race, p.position))){
+      showFormationModal('Un Grandullón no puede ser Capitán', 'Los jugadores con Clave Grandullón no pueden ser nombrados Capitán del equipo.');
       renderPlayers();
       return;
     }
@@ -870,7 +880,9 @@ function onPositionChange(_uid, value){
     p.av = entry.av != null ? entry.av + '+' : '';
     p.skills = Array.isArray(entry.skills) ? [...entry.skills] : [];
   }
-  // El Capitán conserva su estatus al cambiar de posición (el Veterano no: exige Clave Línea y se reinicia).
+  // El Capitán conserva su estatus al cambiar de posición (el Veterano no: exige Clave Línea y se reinicia),
+  // salvo que la nueva posición sea un Grandullón, que no puede ser Capitán.
+  if(p.captain && isBigGuyEntry(entry)) p.captain = false;
   if(p.captain && !p.skills.includes(CAPTAIN_SKILL)) p.skills.push(CAPTAIN_SKILL);
   renderPlayers();
 }
@@ -1089,7 +1101,7 @@ function renderPlayers(){
     const accessTitle = catEntry && catEntry.primSec ? 'Acceso a habilidades según posición (Primaria / Secundaria)' : 'Sin dato de acceso para esta raza/posición en el catálogo';
     const priceText = catEntry && catEntry.prize != null ? catEntry.prize.toLocaleString('es-ES') : '–';
     const isLinea = catEntry && claveCategory(catEntry.clave) === 'linea';
-    const canCaptain = !!p.position && captainAllowed(team.race);
+    const canCaptain = !!p.position && captainAllowed(team.race) && !isBigGuyEntry(catEntry);
     const flagItems = [];
     if(isLinea){
       flagItems.push(`<label class="flag-item"><input type="checkbox" ${p.veteran ? 'checked' : ''} onchange="toggleVeteran(${p._uid}, this.checked)">Veterano</label>`);
@@ -1523,6 +1535,6 @@ loadSkillCatalog();
 loadPositionsCatalog();
 loadStaffCatalog();
 </script>
-<div class="small-note" style="text-align:center; padding:14px 0 6px 0; opacity:0.55; font-family:'JetBrains Mono', monospace;">Build rosters.html: 15102026-1614</div>
+<div class="small-note" style="text-align:center; padding:14px 0 6px 0; opacity:0.55; font-family:'JetBrains Mono', monospace;">Build rosters.html: 15102026-1739</div>
 </body>
 </html>

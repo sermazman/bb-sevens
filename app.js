@@ -853,6 +853,10 @@ function importTeamFile(team, inputEl){
       teamStaff[team] = data.staff;
       teamRerollsLeft[team] = (data.staff.rerolls && typeof data.staff.rerolls.count === 'number') ? data.staff.rerolls.count : 0;
     }
+    // Staff de liga (JSON gestionado desde el gestor): hinchas dedicados, animadoras, etc. Vive en league.staff, no en staff.
+    if(data.league && data.league.staff && typeof data.league.staff==='object'){
+      teamStaff[team] = Object.assign({}, teamStaff[team] || {}, { leagueStaff: data.league.staff });
+    }
     teamFormation[team] = Array.isArray(data.formation) ? data.formation : [];
     data.players.forEach(pd=>{
       const ma = pd.ma || 6;
@@ -1292,18 +1296,39 @@ function weatherKind(){ return (preMatch && preMatch.weather) || ''; }
 function rollDieN(n){ return Math.floor(Math.random()*n)+1; }
 
 function getFanFactor(team){
-  // Busca en el staff del equipo (JSON) una clave de hinchas/fans; si no hay dato, 0.
+  // Lee el Factor de hinchas del staff del equipo (JSON): "dedicatedFans" (prioritario) o cualquier clave con "fan"/"hincha".
+  // Acepta número, texto numérico ("1") u objeto con count/value/factor/total/amount. Si no hay dato, 0.
   const st = teamStaff[team];
-  if(!st || typeof st!=='object') return { value:0, found:false };
-  const pick = (v)=>{
-    if(typeof v==='number') return v;
-    if(v && typeof v==='object'){ for(const k of ['count','value','factor','total']){ if(typeof v[k]==='number') return v[k]; } }
+  if(!st || typeof st!=='object') return { value:0, found:false, keys:[] };
+  const toNum = (v)=>{
+    if(typeof v==='number' && isFinite(v)) return v;
+    if(typeof v==='string' && v.trim()!=='' && isFinite(Number(v.trim()))) return Number(v.trim());
+    if(v && typeof v==='object'){
+      for(const k of ['count','value','factor','total','amount','dedicatedFans']){ const n = toNum(v[k]); if(n!==null) return n; }
+    }
     return null;
   };
-  for(const [k,v] of Object.entries(st)){
-    if(/fan|hincha/i.test(k)){ const n = pick(v); if(n!==null) return { value:n, found:true }; }
+  if(st.leagueStaff && typeof st.leagueStaff==='object'){
+    const n = toNum(st.leagueStaff.dedicatedFans);
+    if(n!==null) return { value:n, found:true, keys:['league.staff.dedicatedFans'] };
   }
-  return { value:0, found:false };
+  const entries = Object.entries(st);
+  const ordered = entries.filter(([k])=>/dedicated/i.test(k)).concat(entries.filter(([k])=>!/dedicated/i.test(k)));
+  for(const [k,v] of ordered){
+    if(/fan|hincha/i.test(k)){ const n = toNum(v); if(n!==null) return { value:n, found:true, keys:[k] }; }
+  }
+  // Búsqueda en profundidad (por si el dato viene anidado dentro del staff)
+  const deep = (o, depth)=>{
+    if(!o || typeof o!=='object' || depth>3) return null;
+    for(const [k,v] of Object.entries(o)){
+      if(/dedicated|fan|hincha/i.test(k)){ const n = toNum(v); if(n!==null) return { value:n, found:true, keys:[k] }; }
+      const r = deep(v, depth+1); if(r) return r;
+    }
+    return null;
+  };
+  const d = deep(st, 0);
+  if(d) return d;
+  return { value:0, found:false, keys:entries.map(([k])=>k) };
 }
 
 function preMatchBegin(){
@@ -1316,7 +1341,7 @@ function preMatchBegin(){
       preMatch.fanFactor[t] = ff.value;
       preMatch.fanFound[t] = ff.found;
       preMatch.fanTotal[t] = d + ff.value;
-      log('📣 Hinchas de ' + teamName(t) + ': D3=' + d + ' + Factor ' + ff.value + ' = ' + (d+ff.value) + (ff.found ? '' : ' (sin dato de hinchas en el equipo cargado: se usa 0)') + '.');
+      log('📣 Hinchas de ' + teamName(t) + ': D3=' + d + ' + Factor ' + ff.value + ' = ' + (d+ff.value) + (ff.found ? '' : ' (sin dato de hinchas en el staff del equipo cargado — claves vistas: ' + (ff.keys.join(', ') || 'ninguna') + ' — se usa 0)') + '.');
     });
     preMatch.fanRolled = true;
     preMatch.step = 'fans';
@@ -6386,7 +6411,7 @@ function setupModalEnhancements(){
 document.addEventListener('DOMContentLoaded', setupModalEnhancements);
 if(document.readyState==='complete' || document.readyState==='interactive'){ setupModalEnhancements(); }
 
-window.APP_JS_VERSION = 'A_V35'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V37'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

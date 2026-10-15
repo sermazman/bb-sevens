@@ -1,0 +1,368 @@
+{
+  "teamName": "MAGRITTA CONQUERORS",
+  "race": "Old World Alliance",
+  "color": "#d3d182",
+  "textColor": "#5570dd",
+  "leagueStarted": false,
+  "staff": {
+    "rerolls": {
+      "clave": "reroll",
+      "count": 1,
+      "pricePerUnit": 100000,
+      "total": 100000
+    },
+    "fans": {
+      "clave": "fans",
+      "count": 0,
+      "pricePerUnit": 20000,
+      "total": 0,
+      "free": 1
+    },
+    "assistants": {
+      "clave": "assistants",
+      "count": 0,
+      "pricePerUnit": 20000,
+      "total": 0
+    },
+    "cheerleaders": {
+      "clave": "cheerleaders",
+      "count": 0,
+      "pricePerUnit": 20000,
+      "total": 0
+    },
+    "apothecary": {
+      "clave": "apothecary",
+      "count": 0,
+      "pricePerUnit": 80000,
+      "total": 0
+    }
+  },
+  "players": [
+    {
+      "num": 1,
+      "name": "MARCOSCORRÓN",
+      "position": "Troll Slayer",
+      "ma": 5,
+      "st": 3,
+      "ag": "4+",
+      "pa": "5+",
+      "av": "9+",
+      "skills": [
+        "Placar",
+        "Furia",
+        "Agallas",
+        "Cabeza dura",
+        "Odio (Troll)",
+        "Dwarf - Especial"
+      ]
+    },
+    {
+      "num": 2,
+      "name": "MÁXIMO DÉCIMO NEGRIDIO",
+      "position": "Human Blitzer",
+      "ma": 7,
+      "st": 3,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "9+",
+      "skills": [
+        "Placar",
+        "Placaje defensivo",
+        "Blitzer - Human"
+      ]
+    },
+    {
+      "num": 3,
+      "name": "LÓPEZ DE VEGA",
+      "position": "Human Catcher",
+      "ma": 8,
+      "st": 3,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "8+",
+      "skills": [
+        "Atrapar",
+        "Esquivar",
+        "Human - Receptor"
+      ]
+    },
+    {
+      "num": 4,
+      "name": "RINCONETE",
+      "position": "Dwarf Lineman",
+      "ma": 4,
+      "st": 3,
+      "ag": "4+",
+      "pa": "5+",
+      "av": "10+",
+      "skills": [
+        "Cabeza dura",
+        "Placar",
+        "Romper defensas",
+        "Dwarf - Linea"
+      ]
+    },
+    {
+      "num": 5,
+      "name": "CORTADILLO",
+      "position": "Dwarf Lineman",
+      "ma": 4,
+      "st": 3,
+      "ag": "4+",
+      "pa": "5+",
+      "av": "10+",
+      "skills": [
+        "Cabeza dura",
+        "Placar",
+        "Romper defensas",
+        "Dwarf - Linea"
+      ]
+    },
+    {
+      "num": 6,
+      "name": "EL BURLADOR DE MYRMIDIA",
+      "position": "Human Lineman",
+      "ma": 5,
+      "st": 3,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "9+",
+      "skills": [
+        "Veterano",
+        "Human - Linea"
+      ]
+    },
+    {
+      "num": 7,
+      "name": "ISABELLA DE LA ARBOLEDA",
+      "position": "Human Lineman",
+      "ma": 6,
+      "st": 3,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "9+",
+      "skills": [
+        "Human - Linea"
+      ]
+    }
+  ],
+  "formation": [
+    {
+      "num": 1,
+      "col": 5,
+      "row": 0
+    },
+    {
+      "num": 2,
+      "col": 2,
+      "row": 0
+    },
+    {
+      "num": 3,
+      "col": 8,
+      "row": 0
+    },
+    {
+      "num": 4,
+      "col": 9,
+      "row": 0
+    },
+    {
+      "num": 5,
+      "col": 6,
+      "row": 0
+    },
+    {
+      "num": 6,
+      "col": 4,
+      "row": 0
+    },
+    {
+      "num": 7,
+      "col": 1,
+      "row": 0
+    }
+  ],
+  "league": {
+    "schemaVersion": 2,
+    "season": 6,
+    "coach": "JMCASTRO",
+    "teamId": "magritta_conquerors",
+    "economy": {
+      "startingTreasury": 600000,
+      "prices": {
+        "dedicatedFan": 20000,
+        "cheerleader": 20000,
+        "assistantCoach": 20000,
+        "apothecary": 80000,
+        "bribe": 100000
+      }
+    },
+    "staff": {
+      "dedicatedFans": 1,
+      "cheerleaders": 0,
+      "assistantCoaches": 0,
+      "apothecary": 0,
+      "bribes": 0
+    },
+    "players": [
+      {
+        "num": 1,
+        "price": 95000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 2,
+        "price": 85000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 3,
+        "price": 75000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 4,
+        "price": 70000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 5,
+        "price": 70000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 6,
+        "price": 50000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 7,
+        "price": 50000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      }
+    ],
+    "matches": [],
+    "retiredPlayers": [],
+    "logo": "magritta_conquerors.png"
+  }
+}

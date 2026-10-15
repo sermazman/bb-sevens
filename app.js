@@ -4837,7 +4837,7 @@ function resolveBounce(r,c){
   }
 }
 
-const BALL_IMG_SRC = 'icons/spiked_ball_1.PNG';
+const BALL_IMG_SRC = 'icons/spiked_ball_1.png';
 function ballImgHtml(cls){
   return '<img class="ball-ico' + (cls ? ' ' + cls : '') + '" src="' + BALL_IMG_SRC + '" alt="Balón" onerror="this.outerHTML=\'🏈\'">';
 }

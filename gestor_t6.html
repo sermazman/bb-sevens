@@ -1286,9 +1286,8 @@ $('#sheetBtn').addEventListener('click',async()=>{
 });
 $('#downloadBtn').addEventListener('click',()=>{
   if(!state.data||!state.data.league) return;
-  const base=state.fileName.replace(/\.json$/i,'').replace(/_liga\d+$/i,'').replace(/-[0-9a-f]{8}$/i,'');
-  const name=`${base}_liga${state.data.league.season}.json`;
-  const blob=new Blob([JSON.stringify(state.data,null,2)],{type:'application/json'});
+  const name=`${state.data.league.teamId}.json`;   /* mismo nombre que en el repositorio, sin sufijos */
+  const blob=new Blob([JSON.stringify(state.data,null,2)+'\n'],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
   if(state.logoPending&&state.logoData){ const a2=document.createElement('a'); a2.href=state.logoData; a2.download=state.data.league.teamId+'.png'; document.body.appendChild(a2); a2.click(); a2.remove(); toast('Descargados '+name+' y el logo: súbelos juntos a la carpeta de la liga.'); }

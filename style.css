@@ -656,7 +656,7 @@ button.full{width:100%; margin-top:6px;}
 .conn-dot.on{background:var(--good);}
 
 /* --- Versión del archivo (para el badge de verificación en el pie) --- */
-:root{ --css-version: "S_V36"; }
+:root{ --css-version: "S_V39"; }
 
 /* ---- Iconos dorados (se tiñen con el color del marcador mediante máscara) ---- */
 .gold-icon{display:inline-block; width:18px; height:18px; vertical-align:middle; background:var(--gold);
@@ -691,3 +691,23 @@ button.full{width:100%; margin-top:6px;}
 .loose-ball .ball-ico{width:22px; height:22px; vertical-align:baseline;}
 .token .carrier-dot{width:16px; height:16px; top:-7px; right:-7px; background:none; border:none; border-radius:0; z-index:2; display:flex; align-items:center; justify-content:center;}
 .token .carrier-dot .ball-ico{width:100%; height:100%; vertical-align:baseline; filter:drop-shadow(0 1px 1px rgba(0,0,0,0.9));}
+
+/* ---- Capitán: insignia "C" ---- */
+.token .capitan-badge{
+  position:absolute; bottom:-5px; left:-5px; width:14px; height:14px; border-radius:50%;
+  background:#1c1712; border:1.5px solid var(--gold); color:var(--gold);
+  font-family:'Anton',sans-serif; font-size:9px; line-height:11px; text-align:center;
+  pointer-events:none; z-index:2; box-shadow:0 1px 2px rgba(0,0,0,0.7);
+}
+.cap-mini{
+  display:inline-block; width:13px; height:13px; border-radius:50%; margin-left:4px;
+  background:#1c1712; border:1.5px solid var(--gold); color:var(--gold);
+  font-family:'Anton',sans-serif; font-size:8px; line-height:10px; text-align:center; vertical-align:middle;
+}
+
+/* ---- Verificación de roster contra la liga ---- */
+.modal.danger-red{background:#2a0707; border:3px solid #ff3b30; box-shadow:0 0 30px rgba(255,59,48,0.55); max-width:560px;}
+.modal.danger-red h2{color:#ff6b60; letter-spacing:1.5px;}
+.modal.danger-red p{color:#ffd0cb;}
+.mismatch-list{max-height:220px; overflow-y:auto; margin:8px 0; padding:8px 8px 8px 22px; text-align:left; background:rgba(0,0,0,0.35); border:1px solid #7a1c16; border-radius:4px; font-family:'JetBrains Mono',monospace; font-size:11px; color:#ffb3a7; line-height:1.5;}
+.mismatch-warn{font-size:11px; margin-top:8px;}

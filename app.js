@@ -428,7 +428,7 @@ function snapshotState(){
     blockModalOpen: document.getElementById('blockModal').classList.contains('show'),
     blockText: document.getElementById('blockText').textContent,
     blockDiceAreaHtml: document.getElementById('blockDiceArea').innerHTML,
-    currentBlockDiceIndices, blockProfesionalUsed, profesionalPickMode,
+    currentBlockDiceIndices, blockProfesionalUsed, profesionalPickMode, blockProNote, pendingHeroicTackle,
     blockProfesionalBtnVisible: document.getElementById('blockProfesionalBtn').style.display==='block',
     blockOutcomeRowVisible: document.getElementById('blockOutcomeRow').classList.contains('active'),
     blockFreePushBtnText: document.getElementById('blockFreePushBtn').textContent,
@@ -714,6 +714,8 @@ function applyRemoteState(payload){
   currentBlockDiceIndices = payload.currentBlockDiceIndices || [];
   blockProfesionalUsed = !!payload.blockProfesionalUsed;
   profesionalPickMode = !!payload.profesionalPickMode;
+  blockProNote = payload.blockProNote || '';
+  pendingHeroicTackle = payload.pendingHeroicTackle || null;
   renderBlockDice(currentBlockDiceIndices);
   document.getElementById('blockProfesionalBtn').style.display = payload.blockProfesionalBtnVisible ? 'block' : 'none';
   document.getElementById('blockOutcomeRow').classList.toggle('active', !!payload.blockOutcomeRowVisible);
@@ -730,7 +732,7 @@ function applyRemoteState(payload){
   });
   blockDiceRolled = !!payload.blockDiceRolled;
   refreshBlockSkillUi();
-  renderProvocarModal();
+  renderProvocarModal(); renderHeroicTackleModal();
   document.getElementById('blockDiceHint').style.display = blockDiceRolled ? 'block' : 'none';
   document.getElementById('blockModal').classList.toggle('show', !!payload.blockModalOpen);
 
@@ -841,7 +843,7 @@ function anyModalOpen(){
          document.getElementById('interceptModal').classList.contains('show') ||
          document.getElementById('heroicReceptionPanel').style.display==='block' ||
          pendingActionMenuPlayer !== null ||
-         pendingAnimosity !== null || pendingHailMaryChoice !== null || pendingProvocarChoice !== null ||
+         pendingAnimosity !== null || pendingHailMaryChoice !== null || pendingProvocarChoice !== null || pendingHeroicTackle !== null ||
          document.getElementById('traitCheckModal').classList.contains('show') ||
          document.getElementById('turnoverOverlay').classList.contains('show');
 }
@@ -2654,8 +2656,9 @@ function unstickState(){
   pendingFerocityAttack = null;
   pendingAnimosity = null;
   pendingHailMaryChoice = null;
-  pendingProvocarChoice = null; luchadorUsed = false; luchadorPickMode = false;
-  renderProvocarModal();
+  pendingProvocarChoice = null; luchadorUsed = false; luchadorPickMode = false; blockProNote = '';
+  pendingHeroicTackle = null;
+  renderProvocarModal(); renderHeroicTackleModal();
   pendingBlitzStabChoice = null;
   pendingHandoffChoice = null;
   pendingFoulContext = null;
@@ -3369,6 +3372,7 @@ let currentBlockDiceIndices = [];
 
 let blockProfesionalUsed = false;
 let profesionalPickMode = false;
+let blockProNote = ''; // '' | 'ok' | 'fail' — resultado visible de la tirada de Profesional en el modal de Placaje
 
 function renderBlockDice(indices){
   const el = document.getElementById('blockDiceArea');
@@ -3376,7 +3380,7 @@ function renderBlockDice(indices){
   indices.forEach((idx, i)=>{
     const d = document.createElement('div');
     const lucPick = luchadorPickMode && BLOCK_OUTCOME_KINDS[idx]==='bothDown';
-    d.className = 'block-face clickable-die' + ((profesionalPickMode || lucPick) ? ' profesional-pick' : '');
+    d.className = 'block-face clickable-die' + (profesionalPickMode ? ' pro-pick' : (lucPick ? ' profesional-pick' : ''));
     d.innerHTML = blockFaceHtml(idx);
     d.onclick = ()=>{
       if(profesionalPickMode){ rerollBlockDie(i); }
@@ -3390,6 +3394,12 @@ function renderBlockDice(indices){
 
 // LUCHADOR: al declarar un Placaje (no Blitz) puede repetir UN único dado de "Ambos caen" de toda la tirada.
 function refreshBlockSkillUi(){
+  const proNote = document.getElementById('blockProNote');
+  if(proNote){
+    if(blockProNote==='ok'){ proNote.style.display='block'; proNote.className='pro-note ok'; proNote.textContent='✅ Éxito al usar PROFESIONAL: elige el dado a repetir'; }
+    else if(blockProNote==='fail'){ proNote.style.display='block'; proNote.className='pro-note fail'; proNote.textContent='❌ Tirada Profesional fallada'; }
+    else { proNote.style.display='none'; proNote.textContent=''; }
+  }
   const btn = document.getElementById('blockLuchadorBtn');
   const note = document.getElementById('blockLuchadorNote');
   if(!btn || !note) return;
@@ -3434,7 +3444,7 @@ function rerollBlockDie(i){
   const oldFace = BLOCK_FACES[currentBlockDiceIndices[i]];
   const newIdx = Math.floor(Math.random()*6);
   currentBlockDiceIndices[i] = newIdx;
-  profesionalPickMode = false;
+  profesionalPickMode = false; blockProNote = '';
   log('🎓 Profesional: dado repetido — ' + oldFace + ' → ' + BLOCK_FACES[newIdx] + '.');
   renderBlockDice(currentBlockDiceIndices);
   broadcastState();
@@ -3449,10 +3459,12 @@ function useProfesionalOnBlock(){
   const roll = Math.floor(Math.random()*6)+1;
   if(roll>=3){
     log('🎓 ' + attacker.name + ' usa Profesional: tirada ' + roll + ' (3+) — elegid qué dado repetir (click en él).');
-    profesionalPickMode = true;
+    profesionalPickMode = true; blockProNote = 'ok';
     renderBlockDice(currentBlockDiceIndices);
   } else {
     log('🎓 ' + attacker.name + ' intenta usar Profesional: tirada ' + roll + ' (1-2) — no puede repetir ningún dado.');
+    blockProNote = 'fail';
+    refreshBlockSkillUi();
   }
   broadcastState();
 }
@@ -3466,7 +3478,7 @@ function rollBlockDiceModal(n){
   document.getElementById('blockDiceHint').style.display = 'block';
   blockDiceRolled = true;
   blockProfesionalUsed = false;
-  profesionalPickMode = false;
+  profesionalPickMode = false; blockProNote = '';
   luchadorUsed = false; luchadorPickMode = false;
   renderBlockDice(results);
   const attacker = activeBlock ? players.find(x=>x.id===activeBlock.attackerId) : null;
@@ -3621,7 +3633,7 @@ function veteranoBlockChooseReroll(){
   currentBlockDiceIndices = results;
   log('⭐ ' + attacker.name + ' usa VETERANO — repite la tirada de Placaje x' + n + ': ' + results.map(i=>BLOCK_FACES[i]).join(' / ') + ' (ya gastado para el resto del partido).');
   blockProfesionalUsed = false;
-  profesionalPickMode = false;
+  profesionalPickMode = false; blockProNote = '';
   luchadorUsed = false; luchadorPickMode = false;
   renderBlockDice(results);
   document.getElementById('blockProfesionalBtn').style.display = hasProfesional(attacker) ? 'block' : 'none';
@@ -3877,7 +3889,10 @@ function resolvePush(r,c){
   if(rootInfo.kind==='pow'){
     effectiveFallKind = 'pow';
   } else if(rootInfo.kind==='stumble'){
-    if(originalPlayer && playerHasSkill(originalPlayer, 'esquiva', 'dodge')){
+    if(originalPlayer && playerHasSkill(originalPlayer, 'esquiva', 'dodge') && attacker && playerHasSkill(attacker, 'placaje defensivo', 'defensive tackle')){
+      effectiveFallKind = 'pow';
+      log('⛔ ' + attacker.name + ' tiene PLACAJE DEFENSIVO — ' + originalPlayer.name + ' no puede usar Esquiva: el Desequilibrado se trata como un POW.');
+    } else if(originalPlayer && playerHasSkill(originalPlayer, 'esquiva', 'dodge')){
       log('🤸 ' + originalPlayer.name + ' tiene Esquiva — el Desequilibrado se trata como un simple empujón, no cae.');
     } else {
       effectiveFallKind = 'pow';
@@ -5563,7 +5578,7 @@ function checkActionButtons(prefix, success, p){
 
   const usedFlag = prefix==='dodge' ? dodgeRerollUsed : prefix==='gfi' ? gfiRerollUsed : prefix==='secureBall' ? secureBallRerollUsed : catchRerollUsed;
   if(!usedFlag){
-    const hasDodgeSkill = prefix==='dodge' && playerHasSkill(p, 'esquiva', 'dodge') && !p.dodgeSkillUsedThisTurn;
+    const hasDodgeSkill = prefix==='dodge' && playerHasSkill(p, 'esquiva', 'dodge') && !p.dodgeSkillUsedThisTurn && !dodgeBlockedByDefensiveTackle(p);
     const isAtraparCatch = prefix==='catch' && pendingCatch && pendingCatch.useAtraparSkill;
     const hasCatchSkill = prefix==='catch' && !p.catchSkillUsedThisTurn &&
       (isAtraparCatch ? playerHasSkill(p, 'atrapar', 'catch') : playerHasSkill(p, 'manos seguras', 'sure hands'));
@@ -5627,6 +5642,8 @@ function useProReroll(prefix){
   } else {
     log('🎓 ' + p.name + ' intenta usar Profesional: tirada ' + proRoll + ' (1-2) — NO puede repetir. Habilidad gastada.');
     checkActionButtons(prefix, pending.lastSuccess, p);
+    const proFailEl = document.getElementById(prefix+'ResultText');
+    if(proFailEl){ proFailEl.innerHTML = proFailEl.textContent + '<br><span style="color:#ff4b3e;font-weight:700;">❌ Tirada Profesional fallada</span>'; }
   }
 }
 
@@ -5689,18 +5706,85 @@ function useVeteranoReroll(prefix){
   broadcastState();
 }
 
+// PLACAJE DEFENSIVO: un rival con esta habilidad marcando la casilla de origen anula la habilidad Esquivar del que esquiva.
+function defensiveTacklersAt(p){
+  return opponentTackleZonePlayers(p.row, p.col, p.team).filter(o=>playerHasSkill(o, 'placaje defensivo', 'defensive tackle'));
+}
+function dodgeBlockedByDefensiveTackle(p){ return defensiveTacklersAt(p).length>0; }
+// PLACAJE HEROICO: rivales en pie con la habilidad que marcan la casilla de origen.
+function heroicTacklersAt(p){
+  return opponentTackleZonePlayers(p.row, p.col, p.team).filter(o=>playerHasSkill(o, 'placaje heroico', 'heroic tackle'));
+}
+let pendingHeroicTackle = null; // { candidateIds:[...] } — el entrenador rival decide si usa Placaje heroico tras la esquiva
+function renderHeroicTackleModal(){
+  const m = document.getElementById('heroicTackleModal');
+  if(!m) return;
+  if(!pendingHeroicTackle || !pendingDodge){ m.classList.remove('show'); return; }
+  const dodger = players.find(x=>x.id===pendingDodge.playerId);
+  const lastDie = pendingDodge.lastDie;
+  const newTarget = pendingDodge.target + 2;
+  const wouldFail = !(lastDie===6 || (lastDie!==1 && lastDie>=newTarget));
+  document.getElementById('heroicTackleText').textContent = (dodger ? dodger.name : 'El rival') + ' ha superado su esquiva (tirada ' + lastDie + ', necesitaba ' + pendingDodge.target + '+). ¿Algún rival usa PLACAJE HEROICO? Aplica −2 a esa tirada (pasaría a necesitar ' + newTarget + '+, ' + (wouldFail ? 'FALLARÍA' : 'seguiría superándola') + ') y el placador queda Tumbado en la casilla que deja vacante. Solo uno puede usarlo.';
+  const box = document.getElementById('heroicTackleBtns');
+  box.innerHTML = '';
+  pendingHeroicTackle.candidateIds.forEach(id=>{
+    const h = players.find(x=>x.id===id);
+    if(!h) return;
+    const b = document.createElement('button');
+    b.className = 'primary';
+    b.textContent = '⚔️ #' + h.num + ' ' + h.name + ' usa Placaje heroico';
+    b.onclick = ()=> heroicTackleChoose(id);
+    box.appendChild(b);
+  });
+  const no = document.createElement('button');
+  no.textContent = 'No usarlo';
+  no.onclick = ()=> heroicTackleChoose(null);
+  box.appendChild(no);
+  m.classList.add('show');
+}
+function heroicTackleChoose(id){
+  if(!pendingHeroicTackle || !pendingDodge) { pendingHeroicTackle = null; renderHeroicTackleModal(); return; }
+  pendingHeroicTackle = null;
+  pendingDodge.heroicAsked = true;
+  renderHeroicTackleModal();
+  const dodger = players.find(x=>x.id===pendingDodge.playerId);
+  let success = true;
+  if(id!==null){
+    const h = players.find(x=>x.id===id);
+    pendingDodge.heroicId = id;
+    const nt = pendingDodge.target + 2;
+    const r = pendingDodge.lastDie;
+    success = (r===6) || (r!==1 && r>=nt);
+    log('⚔️ ' + (h ? h.name : 'Un rival') + ' usa PLACAJE HEROICO: −2 a la esquiva de ' + (dodger ? dodger.name : 'su rival') + ' (tirada ' + r + ', ahora necesita ' + nt + '+) → ' + (success ? 'la supera igualmente' : 'FALLA') + '. ' + (h ? h.name : 'El placador') + ' queda Tumbado en la casilla vacante.');
+  } else {
+    log('⚔️ Nadie usa Placaje heroico.');
+  }
+  resolveDodge(success);
+}
+function applyHeroicTackleFall(heroId, vacR, vacC){
+  const h = players.find(x=>x.id===heroId);
+  if(!h) return;
+  const hadBall = ball.carrierId===h.id;
+  h.row = vacR; h.col = vacC;
+  h.condition = 'tumbado'; h.rooted = false;
+  renderRosters(); renderPitch(); renderSelInfo();
+  if(hadBall) queueBallDropIfCarrier(h.id, vacR, vacC);
+}
+
 function openDodgeModal(p, toR, toC, fromGfi){
   const hasEscurridizo = playerHasSkill(p, 'escurridizo', 'diving tackle immune', 'slippery');
   const hasCanijo = playerHasSkill(p, 'canijo', 'puny');
   const tz = hasEscurridizo ? 0 : countDodgeTackleZones(toR, toC, p.team);
   const canijoBonus = hasCanijo ? 1 : 0;
   const target = parseAgTarget(p.ag) + tz - canijoBonus;
-  pendingDodge = { playerId:p.id, toR, toC, fromGfi: !!fromGfi, target, baseTarget: target, breakTackle: false, btCommitted: false, baseText: '' };
+  pendingDodge = { playerId:p.id, toR, toC, fromGfi: !!fromGfi, target, baseTarget: target, breakTackle: false, btCommitted: false, baseText: '', lastDie: null, heroicAsked: false, heroicId: null };
   dodgeRerollUsed = false;
+  const defTk = defensiveTacklersAt(p);
   const msg = (fromGfi
     ? `${p.name} ha superado "a por ellos" pero esa casilla también sale de una zona de marcaje rival. `
     : `${p.name} sale de una zona de marcaje rival. `)
-    + `Necesita ${target}+ (AG${p.ag ?? '?'}${hasEscurridizo ? ', Escurridizo ignora el marcaje' : ' + ' + tz + ' zona(s) de marcaje en destino'}${hasCanijo ? ', -1 por Canijo' : ''}). Tirad D6.`;
+    + `Necesita ${target}+ (AG${p.ag ?? '?'}${hasEscurridizo ? ', Escurridizo ignora el marcaje' : ' + ' + tz + ' zona(s) de marcaje en destino'}${hasCanijo ? ', -1 por Canijo' : ''}). Tirad D6.`
+    + (defTk.length && playerHasSkill(p, 'esquiva', 'dodge') ? ' ⛔ PLACAJE DEFENSIVO de ' + defTk.map(o=>o.name).join(', ') + ': no puede usar Esquivar.' : '');
   pendingDodge.baseText = msg;
   document.getElementById('dodgeText').textContent = msg;
   document.getElementById('dodgeDie').textContent = '–';
@@ -5759,6 +5843,7 @@ function rollDodgeDie(){
   }
   const success = r===6 ? true : (r===1 ? false : r>=pendingDodge.target);
   pendingDodge.lastSuccess = success;
+  pendingDodge.lastDie = r;
   log('🎲 Esquiva: tirada ' + r + ' (necesitaba ' + pendingDodge.target + '+) → ' + (success?'CONSEGUIDO':'FALLADO'));
   checkActionButtons('dodge', success, p);
   broadcastState();
@@ -5766,7 +5851,18 @@ function rollDodgeDie(){
 
 function resolveDodge(success){
   if(!pendingDodge) return;
-  const { playerId, toR, toC, fromGfi } = pendingDodge;
+  if(success && !pendingDodge.heroicAsked && pendingDodge.lastDie!==null){
+    const dp = players.find(x=>x.id===pendingDodge.playerId);
+    const cands = dp ? heroicTacklersAt(dp) : [];
+    if(cands.length){
+      pendingHeroicTackle = { candidateIds: cands.map(o=>o.id) };
+      document.getElementById('dodgeModal').classList.remove('show');
+      renderHeroicTackleModal();
+      broadcastState();
+      return;
+    }
+  }
+  const { playerId, toR, toC, fromGfi, heroicId } = pendingDodge;
   const p = players.find(x=>x.id===playerId);
   const fromR = p ? p.row : null, fromC = p ? p.col : null;
   document.getElementById('dodgeModal').classList.remove('show');
@@ -5775,7 +5871,8 @@ function resolveDodge(success){
 
   if(success){
     completeStep(p, toR, toC, fromGfi ? 'none' : 'normal');
-  } else if(checkEquilibrioFirme(p)){
+    if(heroicId) applyHeroicTackleFall(heroicId, fromR, fromC);
+  } else if(checkEquilibrioFirme(p) && !heroicId){
     completeStep(p, toR, toC, fromGfi ? 'none' : 'normal');
   } else {
     p.row = toR; p.col = toC;
@@ -5790,6 +5887,7 @@ function resolveDodge(success){
       llaveDeBrazoMap[p.id] = llaveCandidates[0].id;
       log('💪 ' + llaveCandidates[0].name + ' puede usar Llave de Brazo contra ' + p.name + '.');
     }
+    if(heroicId) applyHeroicTackleFall(heroicId, fromR, fromC);
     broadcastState();
     pendingTurnoverAfterResolve = true;
     openArmorModal(p);
@@ -6724,6 +6822,9 @@ function cancelActiveModal(modalId){
     case 'provocarModal':
       provocarChoose(false);
       break;
+    case 'heroicTackleModal':
+      heroicTackleChoose(null);
+      break;
     case 'leagueMismatchModal':
       pendingLeagueMismatch = null;
       log('❌ Carga de equipo cancelada manualmente.');
@@ -6801,7 +6902,7 @@ document.addEventListener('DOMContentLoaded', setupModalEnhancements);
 if(document.readyState==='complete' || document.readyState==='interactive'){ setupModalEnhancements(); }
 
 try{ updateTackleZonesButtons(); }catch(e){}
-window.APP_JS_VERSION = 'A_V44'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V45'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

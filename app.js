@@ -129,6 +129,34 @@ let teamCustomColor = { A: null, B: null };
 let teamNameLocked = { A: false, B: false };
 let teamTextColor = { A: 'auto', B: 'auto' };
 let customColorsEnabled = true;
+// Zonas de defensa (ayuda visual local: cada jugador la activa o no en su navegador; NO se sincroniza). Desactivada por defecto.
+let showTackleZones = false;
+try{ showTackleZones = localStorage.getItem('bb7_showTackleZones') === '1'; }catch(e){}
+function setShowTackleZones(v){
+  showTackleZones = !!v;
+  try{ localStorage.setItem('bb7_showTackleZones', showTackleZones ? '1' : '0'); }catch(e){}
+  updateTackleZonesButtons();
+  renderPitch();
+}
+function updateTackleZonesButtons(){
+  const on = document.getElementById('tzOnBtn'), off = document.getElementById('tzOffBtn');
+  if(on) on.classList.toggle('active', showTackleZones);
+  if(off) off.classList.toggle('active', !showTackleZones);
+}
+// Nº de rivales en pie (sin Canijo, igual que en las esquivas) que marcan cada casilla respecto al jugador seleccionado.
+function tackleZoneCountMap(sel){
+  const map = {};
+  players.forEach(o=>{
+    if(!o.onPitch || o.team===sel.team || o.condition!=='standing' || playerHasSkill(o,'canijo','puny')) return;
+    for(let dr=-1; dr<=1; dr++) for(let dc=-1; dc<=1; dc++){
+      if(!dr && !dc) continue;
+      const r=o.row+dr, c=o.col+dc;
+      if(r<0||r>=ROWS||c<0||c>=COLS) continue;
+      map[r+'_'+c] = (map[r+'_'+c]||0) + 1;
+    }
+  });
+  return map;
+}
 function tokenColorFor(p){
   return (customColorsEnabled && teamCustomColor[p.team]) ? teamCustomColor[p.team] : teamColorHex[p.team];
 }
@@ -1871,10 +1899,20 @@ function renderPitch(){
     return passRangeZone(r-passOriginPlayer.row, c-passOriginPlayer.col);
   };
 
+  const tzSel = (showTackleZones && phase==='live' && selected!==null) ? players.find(x=>x.id===selected && x.onPitch) : null;
+  const tzMap = tzSel ? tackleZoneCountMap(tzSel) : null;
+
   for(let r=0;r<ROWS;r++){
     for(let c=0;c<COLS;c++){
       const cell = document.createElement('div');
       cell.className = cellClass(r,c);
+      if(tzMap){
+        const n = tzMap[r+'_'+c];
+        if(n && !posMap[r+'_'+c]){
+          cell.classList.add('tz-cell');
+          cell.style.setProperty('--tz-a', (1 - Math.pow(1-0.14, Math.min(n,5))).toFixed(3));
+        }
+      }
       if(passOriginPlayer){
         const z = passRangeZone(r-passOriginPlayer.row, c-passOriginPlayer.col);
         if(z!==-1){
@@ -6762,7 +6800,8 @@ function setupModalEnhancements(){
 document.addEventListener('DOMContentLoaded', setupModalEnhancements);
 if(document.readyState==='complete' || document.readyState==='interactive'){ setupModalEnhancements(); }
 
-window.APP_JS_VERSION = 'A_V42'; // ← sube este número cada vez que edites app.js
+try{ updateTackleZonesButtons(); }catch(e){}
+window.APP_JS_VERSION = 'A_V44'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

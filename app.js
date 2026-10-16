@@ -3626,7 +3626,7 @@ function veteranoBlockChooseReroll(){
   document.getElementById('veteranoBlockModal').classList.remove('show');
   const attacker = activeBlock ? players.find(x=>x.id===activeBlock.attackerId) : null;
   if(!attacker){ broadcastState(); return; }
-  attacker.veteranoUsedThisMatch = true;
+  attacker.veteranoUsedThisMatch = true; renderScoreboard();
   const n = currentBlockDiceIndices.length;
   const results = [];
   for(let i=0;i<n;i++){ results.push(Math.floor(Math.random()*6)); }
@@ -4748,7 +4748,7 @@ function usePassVeteranoReroll(){
   if(!pendingPassRoll) return;
   pendingPassRoll.rerollUsed = true;
   const passer = players.find(x=>x.id===pendingPassRoll.passerId);
-  passer.veteranoUsedThisMatch = true;
+  passer.veteranoUsedThisMatch = true; renderScoreboard();
   log('⭐ ' + passer.name + ' repite su tirada de Pase usando VETERANO (1 vez por partido).');
   document.getElementById('passActionRow').style.display = 'none';
   document.getElementById('passRollBtn').style.display = 'block';
@@ -5695,7 +5695,7 @@ function useVeteranoReroll(prefix){
   else if(prefix==='gfi') gfiRerollUsed = true;
   else if(prefix==='secureBall') secureBallRerollUsed = true;
   else catchRerollUsed = true;
-  p.veteranoUsedThisMatch = true;
+  p.veteranoUsedThisMatch = true; renderScoreboard();
   log('⭐ ' + p.name + ' repite la tirada usando VETERANO (1 vez por partido).');
   pending.lastSuccess = undefined;
   document.getElementById(prefix+'ActionRow').style.display = 'none';
@@ -6591,8 +6591,14 @@ function renderScoreboard(){
   document.getElementById('sbRaceB').textContent = teamRace.B || '';
   const vetA = document.getElementById('sbVeteranoA');
   const vetB = document.getElementById('sbVeteranoB');
-  if(vetA) vetA.style.display = players.some(p=>p.team==='A' && playerHasSkill(p, 'veterano', 'veteran')) ? 'block' : 'none';
-  if(vetB) vetB.style.display = players.some(p=>p.team==='B' && playerHasSkill(p, 'veterano', 'veteran')) ? 'block' : 'none';
+  [['A',vetA],['B',vetB]].forEach(([t,el])=>{
+    if(!el) return;
+    const vets = players.filter(p=>p.team===t && playerHasSkill(p, 'veterano', 'veteran'));
+    el.style.display = vets.length ? 'flex' : 'none';
+    const avail = vets.some(p=>!p.veteranoUsedThisMatch);
+    el.classList.toggle('used', !avail);
+    el.title = avail ? 'Veterano disponible' : 'Veterano usado';
+  });
   document.getElementById('halfNum').textContent = state.half;
   document.getElementById('turnA').textContent = Math.min(state.turns.A,6);
   document.getElementById('turnB').textContent = Math.min(state.turns.B,6);
@@ -6902,7 +6908,7 @@ document.addEventListener('DOMContentLoaded', setupModalEnhancements);
 if(document.readyState==='complete' || document.readyState==='interactive'){ setupModalEnhancements(); }
 
 try{ updateTackleZonesButtons(); }catch(e){}
-window.APP_JS_VERSION = 'A_V45'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V46'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

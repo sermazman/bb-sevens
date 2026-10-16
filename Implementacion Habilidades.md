@@ -26,58 +26,59 @@ Cuando este jugador intente realizar una acción de Pase o de Entregar el balón
 termina de Inmediato.
 Algunos Jugadores pueden tener Animosidad (todos), en cuyo caso esta regla se aplica a todos sus compañeros de equipo, sin Importar las claves que tengan.
 
-_________ SOLO SALE AVISO, NO ESTÁ AUTOMATIZADO 100% ___________
-☣️- CABEZA DURA (pruebas desde 08-09-2026 - Sale aviso de que tiene esta habilidad, no se optimiza hasta que se tire automaticamente Heridas) De momento, avisar en el modal cuando se haga una tirada de Heridas contra ese jugador en letras de color rojo que tiene "Jugador con CABEZA DURA" para avisarnos al elegir el resultado
-
-
 ☣️☣️☣️__________ ¿¿¿ EN PRUEBAS ??? (las habilidades con guión, están en Pruebas) __________☣️☣️☣️
 
-☣️- PROFESIONAL (pruebas desde 01-09-2026) Ok con recoger balón // PDTE de dados bloqueo / Esquivar / A por Ellos
+☣️-  ABRIRSE PASO: desde 15-10-2026
+Una vez por turno, cuando este jugador intente esquivar, puede aplicar a su chequeo de Agilidad un modificador de +1 si su atributo Fuerza es de 3 o menos, o bien un modificador de +2 si su atributo Fuerza es de 4, o bien un modificador de +3 si su atributo Fuerza es de 5 o más.
 
 ☣️- ATRAPAR (pruebas desde 03-09-2026) - 17-09-26 funciona pero falta mas testeo
 
-☣️- ROMPER DEFENSAS (pruebas desde 10-09-2026) Durante los turnos del equipo rival, los jugadores rivales Marcados por este jugador no pueden usar las habilidades Defensa ni Meter la bota.
-
-☣️- DEFENSA (pruebas desde 10-09-2026) Este jugador siempre puede ofrecer apoyos tanto ofensivos como defensivos en las acciones de Placaje, sin importar por cuántos jugadores rivales esté siendo Marcado.
-
-☣️- METER LA BOTA (pruebas desde 10-09-2026) Este jugador puede prestar apoyos ofensivos cuando un compañero realiza una acción de Falta sin importar cuántos Jugadores rivales estén Marcando a este jugador.
-
-☣️- PASE SEGURO (pruebas desde 16-09-2026) Si este Jugador saca un 1 natural al realizar un chequeo de Pase, no se producirá un balón perdido. En lugar de eso, este jugador mantendrá la posesión del balón y su activación terminará de inmediato. Eso no provoca un cambio de turno.
-
-☣️- NERVIOS DE ACERO (pruebas desde 16-09-2026) Este jugador puede ignorar todos los modificadores por estar siendo Marcado al hacer un chequeo de Agilidad para atrapar el balón, o al hacer un chequeo de Pase para pasar el balón.
-
-☣️- ESCURRIDIZO (pruebas desde 17-09-2026 - falta Tabla Heridas Escurridizo) Cuando este jugador intente esquivar, no sufre modificadores negativos a su chequeo de Agilidad por estar siendo Marcado por jugadores rivales. Además, este jugador aplica un modificador de-1 a su chequeo de Agilidad al intentar interceptar el balón.
+☣️- CABEZA DURA (pruebas desde 08-09-2026 - Sale aviso de que tiene esta habilidad, no se optimiza hasta que se tire automaticamente Heridas) De momento, avisar en el modal cuando se haga una tirada de Heridas contra ese jugador en letras de color rojo que tiene "Jugador con CABEZA DURA" para avisarnos al elegir el resultado _________ SOLO SALE AVISO, NO ESTÁ AUTOMATIZADO 100% ___________
 
 ☣️- CANIJO (pruebas desde 17-09-2026) Este jugador puede aplicar un modificador de +1 a sus chequeos de Agilidad para intentar esquivar. Aparte de esto, si un jugador rival intenta esquivar moviéndose a una casilla en la zona de defensa de este jugador, este jugador no aplicará un modificador de -1 al chequeo de Agilidad del jugador rival por estarlo Marcando.
 
-☣️- ROBAR BALON (pruebas desde 17-09-2026) Cuando este jugador realice una acción de Placaje (o placaje dentro de BLITZ) contra un jugador rival que sea el portador del balón, si el jugador rivales empujado dejará caer el balón en la casilla a la que sea empujado, y el balón rebotará desde ella una vez. Dicho rebote ocurre antes de que el jugador rival quede Tumbado boca arriba (si eso es sucede) pero después de que este jugador elija si hacer movimiento de impulso. Hay que tenerlo bien definido esta habilidad por los pasos a seguir en el rebote del balon.
+☣️- DEFENSA (pruebas desde 10-09-2026) Este jugador siempre puede ofrecer apoyos tanto ofensivos como defensivos en las acciones de Placaje, sin importar por cuántos jugadores rivales esté siendo Marcado.
 
-☣️- REGENERACION (desde 23-09-2026)
-Cuando este jugador sufra una Lesión, antes de hacer su tirada de Lesiones, tira 1D6. Con 1-3, el jugador sufre la Lesión de manera normal. Con 4+, en cambio, el jugador se regenera, la Lesión se ignora y este jugador es colocado en la zona de Reservas de su equipo.
+☣️-  DESCOMPOSICION: desde 15-10-2026
+Aplica un modificador de +1 a todas las tiradas de Lesiones que se hagan contra este jugador.
+Hablamos de lesiones cuando se saca un 10, 11 o 12 despues de pasar la armadura (se aplica sobre Herido leve, Herido Grave o Muerto)
 
-☣️- RECEPCIÓN HERÓICA (desde 23-09-2026)
-Este jugador puede intentar atrapar el balón si cae en una casilla de su zona de defensa debido a un pase, una patada inicial o una devolución. Esta habilidad no le permite Intentar atrapar el balón si este rebota hasta
-una casilla de su zona de defensa. Además, este jugador puede aplicar un modificador de +1 a su chequeo de Agilidad al intentar atrapar el balón como parte de una acción de Pase si está en la casilla objetivo del mismo.
-
-☣️- PASE A LO LOCO (desde 28-09-2026)
-Cuando este jugador realice una acción de Pase o una acción especial de Lanzar una bomba, puede declarar cualquier casilla del campo como casilla objetivo en lugar de usar la regla de pases. Haz un chequeo de Pase de
-forma normal, tratando el lanzamiento corno una Bomba larga y cualquier resultado de pase preciso como un pase impreciso. Un Pase a lo loco no puede interceptarse.
-
-☣️- PROVOCAR: desde 15-10-2026
-Cuando este jugador es empujado debido a una acción de Placaje (sea placaje o blitz) realizada contra él, su Entrenador puede obligar al jugador rival a que haga un movimiento de impulso. Esta habilidad no puede usarse contra un Jugador rival que haya Echado raíces debido al rasgo Echar raíces.
-Habrá que preguntar al equipo con un modal que tiene ese jugador si quiere que le siga o no.
+☣️- ESCURRIDIZO (pruebas desde 17-09-2026 - falta Tabla Heridas Escurridizo) Cuando este jugador intente esquivar, no sufre modificadores negativos a su chequeo de Agilidad por estar siendo Marcado por jugadores rivales. Además, este jugador aplica un modificador de-1 a su chequeo de Agilidad al intentar interceptar el balón.
 
 ☣️-  LUCHADOR: desde 15-10-2026
 Cuando este jugador declara una acción de Placaje, puede repetir un único resultado de Ambos jugadores derribados de toda la tirada de dados que pueda hacer.
 Habrá que avisar en el modal si quiere usar reroll (si tiene) para lanzar todos los dados o usar LUCHADOR para lanzar solo 1 dado con resultado ambos caidos.
 Y el siguiente proceso es igual, si tiene varios dados se elige el que quiere el entrenador del equipo segun tenemos ahora programado, no hay que cambiar nada.
 
-☣️-  DESCOMPOSICION: desde 15-10-2026
-Aplica un modificador de +1 a todas las tiradas de Lesiones que se hagan contra este jugador.
-Hablamos de lesiones cuando se saca un 10, 11 o 12 despues de pasar la armadura (se aplica sobre Herido leve, Herido Grave o Muerto)
+☣️- METER LA BOTA (pruebas desde 10-09-2026) Este jugador puede prestar apoyos ofensivos cuando un compañero realiza una acción de Falta sin importar cuántos Jugadores rivales estén Marcando a este jugador.
 
-☣️-  ABRIRSE PASO: desde 15-10-2026
-Una vez por turno, cuando este jugador intente esquivar, puede aplicar a su chequeo de Agilidad un modificador de +1 si su atributo Fuerza es de 3 o menos, o bien un modificador de +2 si su atributo Fuerza es de 4, o bien un modificador de +3 si su atributo Fuerza es de 5 o más.
+☣️- NERVIOS DE ACERO (pruebas desde 16-09-2026) Este jugador puede ignorar todos los modificadores por estar siendo Marcado al hacer un chequeo de Agilidad para atrapar el balón, o al hacer un chequeo de Pase para pasar el balón.
+
+☣️- PASE A LO LOCO (desde 28-09-2026)
+Cuando este jugador realice una acción de Pase o una acción especial de Lanzar una bomba, puede declarar cualquier casilla del campo como casilla objetivo en lugar de usar la regla de pases. Haz un chequeo de Pase de
+forma normal, tratando el lanzamiento corno una Bomba larga y cualquier resultado de pase preciso como un pase impreciso. Un Pase a lo loco no puede interceptarse.
+
+☣️- PASE SEGURO (pruebas desde 16-09-2026) Si este Jugador saca un 1 natural al realizar un chequeo de Pase, no se producirá un balón perdido. En lugar de eso, este jugador mantendrá la posesión del balón y su activación terminará de inmediato. Eso no provoca un cambio de turno.
+
+☣️- PROFESIONAL (pruebas desde 01-09-2026) Ok con recoger balón // PDTE de dados bloqueo / Esquivar / A por Ellos
+
+☣️- PROVOCAR: desde 15-10-2026
+Cuando este jugador es empujado debido a una acción de Placaje (sea placaje o blitz) realizada contra él, su Entrenador puede obligar al jugador rival a que haga un movimiento de impulso. Esta habilidad no puede usarse contra un Jugador rival que haya Echado raíces debido al rasgo Echar raíces.
+Habrá que preguntar al equipo con un modal que tiene ese jugador si quiere que le siga o no.
+
+☣️- RECEPCIÓN HERÓICA (desde 23-09-2026)
+Este jugador puede intentar atrapar el balón si cae en una casilla de su zona de defensa debido a un pase, una patada inicial o una devolución. Esta habilidad no le permite Intentar atrapar el balón si este rebota hasta
+una casilla de su zona de defensa. Además, este jugador puede aplicar un modificador de +1 a su chequeo de Agilidad al intentar atrapar el balón como parte de una acción de Pase si está en la casilla objetivo del mismo.
+
+☣️- REGENERACION (desde 23-09-2026)
+Cuando este jugador sufra una Lesión, antes de hacer su tirada de Lesiones, tira 1D6. Con 1-3, el jugador sufre la Lesión de manera normal. Con 4+, en cambio, el jugador se regenera, la Lesión se ignora y este jugador es colocado en la zona de Reservas de su equipo.
+
+☣️- ROBAR BALON (pruebas desde 17-09-2026) Cuando este jugador realice una acción de Placaje (o placaje dentro de BLITZ) contra un jugador rival que sea el portador del balón, si el jugador rivales empujado dejará caer el balón en la casilla a la que sea empujado, y el balón rebotará desde ella una vez. Dicho rebote ocurre antes de que el jugador rival quede Tumbado boca arriba (si eso es sucede) pero después de que este jugador elija si hacer movimiento de impulso. Hay que tenerlo bien definido esta habilidad por los pasos a seguir en el rebote del balon.
+
+☣️- ROMPER DEFENSAS (pruebas desde 10-09-2026) Durante los turnos del equipo rival, los jugadores rivales Marcados por este jugador no pueden usar las habilidades Defensa ni Meter la bota.
+
+
+
 
 // HABILIDADES TRAS IMPLEMENTAR PASAR: //
 HUMANOIDE BALA (tras poner lanzar compañero de equipo)
@@ -88,4 +89,3 @@ PROYECTIL VOMITO
 
 
 LANZAR COMPAÑERO
-

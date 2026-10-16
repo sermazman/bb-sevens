@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-w-version="W_V38">
+<html lang="es" data-w-version="W_V39">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -53,6 +53,15 @@
         <button id="colorsOffBtn" class="mini-toggle" onclick="setCustomColors(false)">NO</button>
       </div>
 
+      <h3 style="margin-top:14px;">Zonas de defensa</h3>
+      <div class="small-note">Al seleccionar un jugador, tiñe de violeta suave las casillas vacías marcadas por rivales en pie (más intenso = más marcadores). Solo lo ves tú; cada jugador lo activa en su navegador.</div>
+      <div class="row" style="margin-top:6px;">
+        <button id="tzOnBtn" class="mini-toggle" onclick="setShowTackleZones(true)">SÍ</button>
+        <button id="tzOffBtn" class="mini-toggle active" onclick="setShowTackleZones(false)">NO</button>
+      </div>
+
+      <!-- Fondo del campo: oculto a propósito (la lógica sigue en app.js). Quitar el display:none para recuperarlo. -->
+      <div id="pitchBgBlock" style="display:none;">
       <h3 style="margin-top:14px;">Fondo del campo</h3>
       <label>Campo oficial</label>
       <select id="pitchBgSelect" onchange="selectPitchBackground(this.value)">
@@ -64,6 +73,7 @@
       <div class="row">
         <button onclick="applyPitchBackground()">Aplicar URL</button>
         <button onclick="clearPitchBackground()">Quitar</button>
+      </div>
       </div>
     </div>
   </div>

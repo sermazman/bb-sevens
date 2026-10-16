@@ -85,13 +85,15 @@ Cuando este jugador sufra una Lesión, antes de hacer su tirada de Lesiones, tir
 
 ☣️- ROMPER DEFENSAS (pruebas desde 10-09-2026) Durante los turnos del equipo rival, los jugadores rivales Marcados por este jugador no pueden usar las habilidades Defensa ni Meter la bota.
 
-
-// HABILIDADES TRAS IMPLEMENTAR PASAR: //
-HUMANOIDE BALA (tras poner lanzar compañero de equipo)
-
+SUGUIENTES:
+ODIO
+HUMANOIDE BALA
+LANZAR COMPAÑERO
 SIEMPRE HAMBRIENTO
-
 PROYECTIL VOMITO
-
+BRAZO FUERTE
+TRONCO VA
+MANTENERSE FIRME
+TEMBLOROSO
 
 LANZAR COMPAÑERO

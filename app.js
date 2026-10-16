@@ -902,7 +902,7 @@ function applyImportedTeam(team, data, verifyState, res){
   updateStatus('Equipo importado.');
   teamVerify[team] = verifyState || 'none';
   if(verifyState==='ok'){
-    log('✅ Roster de ' + teamName(team) + ' VERIFICADO contra la liga (' + (res && res.path ? res.path : 'repositorio') + ').');
+    log('✅ Equipo ' + teamName(team) + ' verificado con LIGA T' + ((data.league && data.league.season) || '6') + '.');
   } else if(verifyState==='diff'){
     const list = (res && res.diffs) ? res.diffs.slice(0,12).join(' | ') : (res && res.status==='notfound' ? 'equipo no encontrado en la liga' : '');
     log('🚨 ATENCIÓN: ' + teamName(team) + ' se ha cargado con un roster que NO coincide con la liga (acordado entre los jugadores). ' + list);
@@ -6762,7 +6762,7 @@ function setupModalEnhancements(){
 document.addEventListener('DOMContentLoaded', setupModalEnhancements);
 if(document.readyState==='complete' || document.readyState==='interactive'){ setupModalEnhancements(); }
 
-window.APP_JS_VERSION = 'A_V41'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V42'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

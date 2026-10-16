@@ -60,6 +60,14 @@ forma normal, tratando el lanzamiento corno una Bomba larga y cualquier resultad
 
 ☣️- PASE SEGURO (pruebas desde 16-09-2026) Si este Jugador saca un 1 natural al realizar un chequeo de Pase, no se producirá un balón perdido. En lugar de eso, este jugador mantendrá la posesión del balón y su activación terminará de inmediato. Eso no provoca un cambio de turno.
 
+☣️- PLACAJE DEFENSIVO (desde 16-10-2026)
+Cuando un jugador rival intente esquivar para salir de una casilla en la zona de defensa de este jugador, no podrá usar su habilidad Esquivar. Además, cuando este jugador realice una acción de Placaje contra un jugador rival, se considerará que dicho rival no tiene la habilidad de Esquivar si se elige un resultado de Desequilibrado.
+
+☣️- PLACAJE HEROICO (desde 16-10-2026)
+Cuando un jugador rival intente salir de la zona de defensa de este jugador esquivando, saltando o brincando, tras hacer su chequeo de Agilidad y que se apliquen todos los modificadores y repeticiones, este jugador puede usar esta habilidad. Por lo que deberiamos de sacar un modal preguntando a su entrenados si la usa.
+Se aplica de inmediato un modificador de -2 al chequeo de Agilidad del jugador rival y este jugador se coloca Tumbado boca arriba en la casilla que ha dejado vacante el rival.
+Si un jugador intenta salir de una casilla en la Zona de defensa de varios Jugadores con esta habilidad, solo uno de ellos podrá utilizarla.
+
 ☣️- PROFESIONAL (pruebas desde 01-09-2026) Ok con recoger balón // PDTE de dados bloqueo / Esquivar / A por Ellos
 
 ☣️- PROVOCAR: desde 15-10-2026
@@ -76,8 +84,6 @@ Cuando este jugador sufra una Lesión, antes de hacer su tirada de Lesiones, tir
 ☣️- ROBAR BALON (pruebas desde 17-09-2026) Cuando este jugador realice una acción de Placaje (o placaje dentro de BLITZ) contra un jugador rival que sea el portador del balón, si el jugador rivales empujado dejará caer el balón en la casilla a la que sea empujado, y el balón rebotará desde ella una vez. Dicho rebote ocurre antes de que el jugador rival quede Tumbado boca arriba (si eso es sucede) pero después de que este jugador elija si hacer movimiento de impulso. Hay que tenerlo bien definido esta habilidad por los pasos a seguir en el rebote del balon.
 
 ☣️- ROMPER DEFENSAS (pruebas desde 10-09-2026) Durante los turnos del equipo rival, los jugadores rivales Marcados por este jugador no pueden usar las habilidades Defensa ni Meter la bota.
-
-
 
 
 // HABILIDADES TRAS IMPLEMENTAR PASAR: //

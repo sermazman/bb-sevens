@@ -656,7 +656,7 @@ button.full{width:100%; margin-top:6px;}
 .conn-dot.on{background:var(--good);}
 
 /* --- Versión del archivo (para el badge de verificación en el pie) --- */
-:root{ --css-version: "S_V42"; }
+:root{ --css-version: "S_V43"; }
 
 /* ---- Iconos dorados (se tiñen con el color del marcador mediante máscara) ---- */
 .gold-icon{display:inline-block; width:18px; height:18px; vertical-align:middle; background:var(--gold);
@@ -721,3 +721,7 @@ button.full{width:100%; margin-top:6px;}
 .pro-note{margin-top:8px; font-weight:700; font-size:13px; text-align:center;}
 .pro-note.ok{color:#8fd19e;}
 .pro-note.fail{color:#ff4b3e;}
+
+/* Veterano usado: icono gris oscuro */
+.sb-veterano-badge.used img{filter:grayscale(1) brightness(0.35); opacity:0.8;}
+.sb-veterano-badge.used .fallback-star{color:#4a4540;}

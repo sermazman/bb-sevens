@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-w-version="W_V41">
+<html lang="es" data-w-version="W_V42">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -48,29 +48,18 @@
       <input type="file" id="loadSaveInput" accept="application/json" style="display:none" onchange="loadSaveFile(this)">
 
       <h3 style="margin-top:14px;">Colores personalizados</h3>
-      <div class="small-note">El color de cada equipo (ficha y número) se define al cargar su equipo. Si trae color secundario, aquí eliges cuál ves tú (solo en tu pantalla).</div>
-      <div class="small-note" id="ccALabel" style="margin-top:6px; color:var(--gold);">LOCAL</div>
-      <div class="row" style="margin-top:2px;">
-        <button id="ccAMain" class="mini-toggle active" onclick="setColorChoice('A','main')">PRINCIPAL</button>
-        <button id="ccASec" class="mini-toggle" onclick="setColorChoice('A','sec')">SECUNDARIO</button>
-      </div>
-      <div class="small-note" id="ccBLabel" style="margin-top:6px; color:var(--gold);">VISITANTE</div>
-      <div class="row" style="margin-top:2px;">
-        <button id="ccBMain" class="mini-toggle active" onclick="setColorChoice('B','main')">PRINCIPAL</button>
-        <button id="ccBSec" class="mini-toggle" onclick="setColorChoice('B','sec')">SECUNDARIO</button>
-      </div>
-      <div class="small-note" style="margin-top:8px;">Usar colores personalizados:</div>
-      <div class="row" style="margin-top:2px;">
-        <button id="colorsOnBtn" class="mini-toggle active" onclick="setCustomColors(true)">SÍ</button>
-        <button id="colorsOffBtn" class="mini-toggle" onclick="setCustomColors(false)">NO</button>
-      </div>
+      <div class="small-note">El color de cada equipo se define al cargar su equipo. Si trae color secundario, aquí eliges cuál ves tú (solo en tu pantalla).</div>
+      <div class="sw-row"><span class="sw-label" id="ccALabel">LOCAL</span>
+        <button class="sw" id="ccASw" data-on="SECUNDARIO" data-off="PRINCIPAL" onclick="setColorChoice('A', colorChoice.A==='sec'?'main':'sec')"><span class="sw-txt">PRINCIPAL</span><span class="sw-knob"></span></button></div>
+      <div class="sw-row"><span class="sw-label" id="ccBLabel">VISITANTE</span>
+        <button class="sw" id="ccBSw" data-on="SECUNDARIO" data-off="PRINCIPAL" onclick="setColorChoice('B', colorChoice.B==='sec'?'main':'sec')"><span class="sw-txt">PRINCIPAL</span><span class="sw-knob"></span></button></div>
+      <div class="sw-row"><span class="sw-label">Colores de equipo</span>
+        <button class="sw on" id="colorsSw" data-on="SÍ" data-off="NO" onclick="setCustomColors(!customColorsEnabled)"><span class="sw-txt">SÍ</span><span class="sw-knob"></span></button></div>
 
       <h3 style="margin-top:14px;">Zonas de defensa</h3>
       <div class="small-note">Al seleccionar un jugador, tiñe de violeta suave las casillas vacías marcadas por rivales en pie (más intenso = más marcadores). Solo lo ves tú; cada jugador lo activa en su navegador.</div>
-      <div class="row" style="margin-top:6px;">
-        <button id="tzOnBtn" class="mini-toggle" onclick="setShowTackleZones(true)">SÍ</button>
-        <button id="tzOffBtn" class="mini-toggle active" onclick="setShowTackleZones(false)">NO</button>
-      </div>
+      <div class="sw-row"><span class="sw-label">Mostrar zonas</span>
+        <button class="sw" id="tzSw" data-on="SÍ" data-off="NO" onclick="setShowTackleZones(!showTackleZones)"><span class="sw-txt">NO</span><span class="sw-knob"></span></button></div>
 
       <h3 style="margin-top:14px;">Fondo del campo</h3>
       <label>Campo oficial</label>

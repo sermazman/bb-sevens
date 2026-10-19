@@ -142,6 +142,12 @@
   .tcc-field input[type=color]{width:46px; height:30px; padding:1px; cursor:pointer; margin-bottom:0;}
   .tcc-field select{width:auto; margin-bottom:0; padding:5px 7px; font-size:12px;}
   .tcc-preview{margin-left:auto;}
+  .color-zones{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+  @media (max-width:700px){ .color-zones{grid-template-columns:1fr;} }
+  .color-zone-title{
+    font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--gold);
+    margin-bottom:8px;
+  }
   .token-chip.token-preview-sm{width:42px; height:42px; font-size:15px; border-width:2px;}
 
   /* ---- Panel Datos del equipo, subdividido ---- */
@@ -261,27 +267,55 @@
 
     <div class="panel" id="teamColorPanel">
       <h2>🎨 Color del equipo</h2>
-      <div class="team-color-compact">
-        <div class="tcc-field">
-          <label>Fondo</label>
-          <input type="color" id="teamColorInput" value="#c0392b" oninput="onTeamColorChange(this.value)">
+      <div class="color-zones">
+        <div class="color-zone">
+          <div class="color-zone-title">Principal</div>
+          <div class="team-color-compact">
+            <div class="tcc-field">
+              <label>Fondo</label>
+              <input type="color" id="colorInput-primary" oninput="onColorChange('primary', this.value)">
+            </div>
+            <div class="tcc-field">
+              <label>Número</label>
+              <select id="textMode-primary" onchange="onTextModeChange('primary', this.value)">
+                <option value="auto">Auto</option>
+                <option value="custom">Manual</option>
+              </select>
+            </div>
+            <div class="tcc-field" id="customField-primary" style="display:none;">
+              <label>&nbsp;</label>
+              <input type="color" id="textColorInput-primary" oninput="onTextColorChange('primary', this.value)">
+            </div>
+            <div class="tcc-preview">
+              <div class="token-chip token-preview-sm" id="tokenPreview-primary">7</div>
+            </div>
+          </div>
         </div>
-        <div class="tcc-field">
-          <label>Número</label>
-          <select id="textColorMode" onchange="onTextColorModeChange(this.value)">
-            <option value="auto">Auto</option>
-            <option value="custom">Manual</option>
-          </select>
-        </div>
-        <div class="tcc-field" id="customColorField" style="display:none;">
-          <label>&nbsp;</label>
-          <input type="color" id="teamTextColorInput" value="#ffffff" oninput="onTeamTextColorChange(this.value)">
-        </div>
-        <div class="tcc-preview">
-          <div class="token-chip token-preview-sm" id="tokenPreview">7</div>
+        <div class="color-zone">
+          <div class="color-zone-title">Secundario</div>
+          <div class="team-color-compact">
+            <div class="tcc-field">
+              <label>Fondo</label>
+              <input type="color" id="colorInput-secondary" oninput="onColorChange('secondary', this.value)">
+            </div>
+            <div class="tcc-field">
+              <label>Número</label>
+              <select id="textMode-secondary" onchange="onTextModeChange('secondary', this.value)">
+                <option value="auto">Auto</option>
+                <option value="custom">Manual</option>
+              </select>
+            </div>
+            <div class="tcc-field" id="customField-secondary" style="display:none;">
+              <label>&nbsp;</label>
+              <input type="color" id="textColorInput-secondary" oninput="onTextColorChange('secondary', this.value)">
+            </div>
+            <div class="tcc-preview">
+              <div class="token-chip token-preview-sm" id="tokenPreview-secondary">7</div>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="small-note" style="margin-top:6px;">"Auto" calcula blanco o negro según el contraste con el fondo.</div>
+      <div class="small-note" style="margin-top:8px;">"Auto" calcula blanco o negro según el contraste con el fondo. El color secundario sirve de alternativa si el principal se confunde con el del rival.</div>
     </div>
   </div>
 
@@ -392,7 +426,7 @@
 
 <script>
 function emptyStaff(){ return { fans: 0, assistants: 0, cheerleaders: 0, apothecary: 0 }; }
-let team = { teamName: 'Nuevo Equipo', race: '', color: '#c0392b', textColor: 'auto', rerolls: 0, staff: emptyStaff(), leagueStarted: false, players: [] };
+let team = { teamName: 'Nuevo Equipo', race: '', color: '#c0392b', textColor: 'auto', colorSecondary: '#ffffff', textColorSecondary: '#000000', rerolls: 0, staff: emptyStaff(), leagueStarted: false, players: [] };
 let uid = 1;
 
 // Razas que pueden nombrar Capitán (nombres tal cual aparecen en positions.json). "Black Orc" NO entra.
@@ -581,7 +615,7 @@ function stripTrailingClave(position, skillsArr){
 function newTeam(){
   const hasData = team.players && team.players.some(p => p.position || p.name);
   if(hasData && !confirm('Esto borra la plantilla actual sin guardar. ¿Continuar?')) return;
-  team = { teamName: 'Nuevo Equipo', race: '', color: '#c0392b', textColor: 'auto', rerolls: 0, staff: emptyStaff(), leagueStarted: false, players: buildEmptySlots() };
+  team = { teamName: 'Nuevo Equipo', race: '', color: '#c0392b', textColor: 'auto', colorSecondary: '#ffffff', textColorSecondary: '#000000', rerolls: 0, staff: emptyStaff(), leagueStarted: false, players: buildEmptySlots() };
   document.getElementById('teamNameInput').value = team.teamName;
   populateRaceSelect(Object.keys(POSITIONS_BY_RACE).length ? Object.keys(POSITIONS_BY_RACE).sort() : FALLBACK_RACES);
   syncColorUI();
@@ -595,6 +629,8 @@ function loadTeamData(data){
   team.race = data.race || '';
   team.color = data.color || '#c0392b';
   team.textColor = data.textColor || 'auto';
+  team.colorSecondary = data.color_secundary || '#ffffff';
+  team.textColorSecondary = data.textColor_secundary || '#000000';
   team.rerolls = (data.staff && data.staff.rerolls && data.staff.rerolls.count) || 0;
   team.staff = emptyStaff();
   Object.keys(STAFF_ITEMS).forEach(k => {
@@ -671,49 +707,66 @@ function autoTextColor(hex){
   return yiq >= 140 ? '#1c1712' : '#ffffff';
 }
 
+const COLOR_SLOTS = {
+  primary:   { colorKey: 'color',          textKey: 'textColor',          defBg: '#c0392b' },
+  secondary: { colorKey: 'colorSecondary', textKey: 'textColorSecondary', defBg: '#ffffff' }
+};
+
+function slotColors(slot){
+  const cfg = COLOR_SLOTS[slot];
+  const bg = team[cfg.colorKey] || cfg.defBg;
+  const t = team[cfg.textKey];
+  const txt = (!t || t === 'auto') ? autoTextColor(bg) : t;
+  return { bg, txt };
+}
+
 function renderTokenPreview(){
-  const chip = document.getElementById('tokenPreview');
-  if(!chip) return;
-  const bg = team.color || '#c0392b';
-  const txt = (!team.textColor || team.textColor === 'auto') ? autoTextColor(bg) : team.textColor;
-  chip.style.background = bg;
-  chip.style.color = txt;
+  Object.keys(COLOR_SLOTS).forEach(slot => {
+    const chip = document.getElementById('tokenPreview-' + slot);
+    if(!chip) return;
+    const c = slotColors(slot);
+    chip.style.background = c.bg;
+    chip.style.color = c.txt;
+  });
 }
 
 function syncColorUI(){
-  document.getElementById('teamColorInput').value = team.color || '#c0392b';
-  const isAuto = !team.textColor || team.textColor === 'auto';
-  document.getElementById('textColorMode').value = isAuto ? 'auto' : 'custom';
-  const customField = document.getElementById('customColorField');
-  const customInput = document.getElementById('teamTextColorInput');
-  customField.style.display = isAuto ? 'none' : 'flex';
-  if(!isAuto) customInput.value = team.textColor;
+  Object.keys(COLOR_SLOTS).forEach(slot => {
+    const cfg = COLOR_SLOTS[slot];
+    document.getElementById('colorInput-' + slot).value = team[cfg.colorKey] || cfg.defBg;
+    const t = team[cfg.textKey];
+    const isAuto = !t || t === 'auto';
+    document.getElementById('textMode-' + slot).value = isAuto ? 'auto' : 'custom';
+    document.getElementById('customField-' + slot).style.display = isAuto ? 'none' : 'flex';
+    if(!isAuto) document.getElementById('textColorInput-' + slot).value = t;
+  });
   renderTokenPreview();
 }
 
-function onTeamColorChange(val){
-  team.color = val;
+function onColorChange(slot, val){
+  team[COLOR_SLOTS[slot].colorKey] = val;
   renderTokenPreview();
   scheduleJsonRefresh();
 }
 
-function onTextColorModeChange(mode){
-  const customField = document.getElementById('customColorField');
-  const customInput = document.getElementById('teamTextColorInput');
+function onTextModeChange(slot, mode){
+  const cfg = COLOR_SLOTS[slot];
+  const customField = document.getElementById('customField-' + slot);
+  const customInput = document.getElementById('textColorInput-' + slot);
   if(mode === 'auto'){
-    team.textColor = 'auto';
+    team[cfg.textKey] = 'auto';
     customField.style.display = 'none';
   } else {
-    team.textColor = customInput.value || autoTextColor(team.color);
-    customInput.value = team.textColor;
+    team[cfg.textKey] = customInput.value || slotColors(slot).txt;
+    customInput.value = team[cfg.textKey];
     customField.style.display = 'flex';
   }
   renderTokenPreview();
   scheduleJsonRefresh();
 }
 
-function onTeamTextColorChange(val){
-  team.textColor = val;
+function onTextColorChange(slot, val){
+  team[COLOR_SLOTS[slot].textKey] = val;
   renderTokenPreview();
   scheduleJsonRefresh();
 }
@@ -1349,6 +1402,8 @@ function buildExportData(){
     race: team.race,
     color: team.color || '#c0392b',
     textColor: team.textColor || 'auto',
+    color_secundary: team.colorSecondary || '#ffffff',
+    textColor_secundary: team.textColorSecondary || '#000000',
     leagueStarted: !!team.leagueStarted,
     staff: staffOut,
     players: filled.map(p => ({
@@ -1535,6 +1590,6 @@ loadSkillCatalog();
 loadPositionsCatalog();
 loadStaffCatalog();
 </script>
-<div class="small-note" style="text-align:center; padding:14px 0 6px 0; opacity:0.55; font-family:'JetBrains Mono', monospace;">Build rosters.html: 15102026-1739</div>
+<div class="small-note" style="text-align:center; padding:14px 0 6px 0; opacity:0.55; font-family:'JetBrains Mono', monospace;">Build rosters.html: 19102026-1340</div>
 </body>
 </html>

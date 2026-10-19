@@ -85,7 +85,9 @@ Cuando este jugador sufra una Lesión, antes de hacer su tirada de Lesiones, tir
 
 ☣️- ROMPER DEFENSAS (pruebas desde 10-09-2026) Durante los turnos del equipo rival, los jugadores rivales Marcados por este jugador no pueden usar las habilidades Defensa ni Meter la bota.
 
-SUGUIENTES:
+SIGUIENTES:
+COLA PRENSIL
+INSIGNIFICANTE
 ODIO
 HUMANOIDE BALA
 LANZAR COMPAÑERO

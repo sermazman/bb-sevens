@@ -135,6 +135,14 @@ let teamText2 = { A: 'auto', B: 'auto' };
 // Qué juego de colores ve CADA jugador para cada equipo: preferencia LOCAL (no se sincroniza), guardada en el navegador.
 let colorChoice = { A: 'main', B: 'main' };
 try{ const cc = JSON.parse(localStorage.getItem('bb7_colorChoice') || 'null'); if(cc && (cc.A==='sec'||cc.A==='main') && (cc.B==='sec'||cc.B==='main')) colorChoice = cc; }catch(e){}
+function setSwitch(id, on){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.classList.toggle('on', !!on);
+  const t = el.querySelector('.sw-txt');
+  if(t) t.textContent = on ? el.dataset.on : el.dataset.off;
+  el.setAttribute('aria-pressed', on ? 'true' : 'false');
+}
 function useSecondary(team){ return colorChoice[team]==='sec' && !!teamColor2[team]; }
 function effColor(team){ return useSecondary(team) ? teamColor2[team] : teamCustomColor[team]; }
 function effTextSetting(team){ return useSecondary(team) ? (teamText2[team] || 'auto') : teamTextColor[team]; }
@@ -146,14 +154,18 @@ function setColorChoice(team, which){
 }
 function updateColorChoiceButtons(){
   ['A','B'].forEach(t=>{
-    const m = document.getElementById('cc'+t+'Main'), s2 = document.getElementById('cc'+t+'Sec');
-    if(!m || !s2) return;
-    m.classList.toggle('active', colorChoice[t]!=='sec');
-    s2.classList.toggle('active', colorChoice[t]==='sec');
-    s2.title = teamColor2[t] ? '' : 'Este equipo no tiene color secundario en su archivo';
-    s2.style.opacity = teamColor2[t] ? '1' : '0.45';
+    const sw = document.getElementById('cc'+t+'Sw');
+    if(!sw) return;
+    setSwitch('cc'+t+'Sw', useSecondary(t));
+    sw.title = teamColor2[t] ? 'Cambiar entre color principal y secundario (solo en tu pantalla)' : 'Este equipo no tiene color secundario en su archivo';
+    sw.style.opacity = teamColor2[t] ? '1' : '0.45';
     const lab = document.getElementById('cc'+t+'Label');
-    if(lab) lab.textContent = (t==='A' ? 'LOCAL' : 'VISITANTE') + ' — ' + teamName(t);
+    if(lab){
+      lab.textContent = '';
+      const b1 = document.createElement('div'); b1.textContent = (t==='A' ? 'LOCAL' : 'VISITANTE');
+      const b2 = document.createElement('div'); b2.className = 'sw-sub'; b2.textContent = teamName(t);
+      lab.appendChild(b1); lab.appendChild(b2);
+    }
   });
 }// Zonas de defensa (ayuda visual local: cada jugador la activa o no en su navegador; NO se sincroniza). Desactivada por defecto.
 let showTackleZones = false;
@@ -164,11 +176,7 @@ function setShowTackleZones(v){
   updateTackleZonesButtons();
   renderPitch();
 }
-function updateTackleZonesButtons(){
-  const on = document.getElementById('tzOnBtn'), off = document.getElementById('tzOffBtn');
-  if(on) on.classList.toggle('active', showTackleZones);
-  if(off) off.classList.toggle('active', !showTackleZones);
-}
+function updateTackleZonesButtons(){ setSwitch('tzSw', showTackleZones); }
 // Nº de rivales en pie (sin Canijo, igual que en las esquivas) que marcan cada casilla respecto al jugador seleccionado.
 function tackleZoneCountMap(sel){
   const map = {};
@@ -203,8 +211,7 @@ function textColorFor(p){
 }
 function setCustomColors(v){
   customColorsEnabled = v;
-  document.getElementById('colorsOnBtn').classList.toggle('active', v);
-  document.getElementById('colorsOffBtn').classList.toggle('active', !v);
+  setSwitch('colorsSw', v);
   renderRosters(); renderPitch(); applyTeamColorAccents();
   broadcastState();
 }
@@ -577,8 +584,7 @@ function applyRemoteState(payload){
     document.getElementById('pitchBgInput').value = '';
     document.getElementById('pitchBgSelect').value = '';
   }
-  document.getElementById('colorsOnBtn').classList.toggle('active', customColorsEnabled);
-  document.getElementById('colorsOffBtn').classList.toggle('active', !customColorsEnabled);
+  setSwitch('colorsSw', customColorsEnabled);
   ballBounceActive = !!payload.ballBounceActive;
   pendingCatch = payload.pendingCatch;
   updateCatchTitle();
@@ -6942,8 +6948,8 @@ function setupModalEnhancements(){
 document.addEventListener('DOMContentLoaded', setupModalEnhancements);
 if(document.readyState==='complete' || document.readyState==='interactive'){ setupModalEnhancements(); }
 
-try{ updateTackleZonesButtons(); updateColorChoiceButtons(); }catch(e){}
-window.APP_JS_VERSION = 'A_V47'; // ← sube este número cada vez que edites app.js
+try{ updateTackleZonesButtons(); updateColorChoiceButtons(); setSwitch('colorsSw', customColorsEnabled); }catch(e){}
+window.APP_JS_VERSION = 'A_V48'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

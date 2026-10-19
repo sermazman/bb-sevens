@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-w-version="W_V40">
+<html lang="es" data-w-version="W_V41">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -36,7 +36,8 @@
         <span class="small-note">Código de sala:</span>
         <span class="room-code-inline" id="roomCodeText">----</span>
       </div>
-      <button class="danger full" style="margin-top:8px;" onclick="unstickState()">🆘 Desatascar (cerrar modales colgados)</button>
+      <!-- Botón "Desatascar" oculto a propósito (la función unstickState sigue en app.js). Quitar display:none para recuperarlo. -->
+      <button class="danger full" style="margin-top:8px; display:none;" onclick="unstickState()">🆘 Desatascar (cerrar modales colgados)</button>
 
       <h3 style="margin-top:14px;">Partida</h3>
       <div class="small-note">Se guarda sola en este navegador tras cada acción. Si se cae la conexión, recargad la página y os ofrecerá recuperarla.</div>
@@ -47,8 +48,19 @@
       <input type="file" id="loadSaveInput" accept="application/json" style="display:none" onchange="loadSaveFile(this)">
 
       <h3 style="margin-top:14px;">Colores personalizados</h3>
-      <div class="small-note">El color de cada equipo (ficha y número) se define al cargar su JSON — campos "color" y "textColor".</div>
-      <div class="row" style="margin-top:6px;">
+      <div class="small-note">El color de cada equipo (ficha y número) se define al cargar su equipo. Si trae color secundario, aquí eliges cuál ves tú (solo en tu pantalla).</div>
+      <div class="small-note" id="ccALabel" style="margin-top:6px; color:var(--gold);">LOCAL</div>
+      <div class="row" style="margin-top:2px;">
+        <button id="ccAMain" class="mini-toggle active" onclick="setColorChoice('A','main')">PRINCIPAL</button>
+        <button id="ccASec" class="mini-toggle" onclick="setColorChoice('A','sec')">SECUNDARIO</button>
+      </div>
+      <div class="small-note" id="ccBLabel" style="margin-top:6px; color:var(--gold);">VISITANTE</div>
+      <div class="row" style="margin-top:2px;">
+        <button id="ccBMain" class="mini-toggle active" onclick="setColorChoice('B','main')">PRINCIPAL</button>
+        <button id="ccBSec" class="mini-toggle" onclick="setColorChoice('B','sec')">SECUNDARIO</button>
+      </div>
+      <div class="small-note" style="margin-top:8px;">Usar colores personalizados:</div>
+      <div class="row" style="margin-top:2px;">
         <button id="colorsOnBtn" class="mini-toggle active" onclick="setCustomColors(true)">SÍ</button>
         <button id="colorsOffBtn" class="mini-toggle" onclick="setCustomColors(false)">NO</button>
       </div>
@@ -60,20 +72,20 @@
         <button id="tzOffBtn" class="mini-toggle active" onclick="setShowTackleZones(false)">NO</button>
       </div>
 
-      <!-- Fondo del campo: oculto a propósito (la lógica sigue en app.js). Quitar el display:none para recuperarlo. -->
-      <div id="pitchBgBlock" style="display:none;">
       <h3 style="margin-top:14px;">Fondo del campo</h3>
       <label>Campo oficial</label>
       <select id="pitchBgSelect" onchange="selectPitchBackground(this.value)">
         <option value="">Clásico (actual)</option>
-        <!-- El resto de campos se cargan solos desde field/fields.json -->
+        <!-- El resto de campos homologados se cargan solos desde field/fields.json -->
       </select>
-      <div class="small-note" style="margin-top:6px;">O probar una imagen suelta por URL (no se guarda como opción fija):</div>
-      <input type="text" id="pitchBgInput" placeholder="https://...">
-      <div class="row">
-        <button onclick="applyPitchBackground()">Aplicar URL</button>
-        <button onclick="clearPitchBackground()">Quitar</button>
-      </div>
+      <!-- Cargar imagen suelta por URL: oculto a propósito (la lógica sigue en app.js). Quitar display:none para recuperarlo. -->
+      <div id="pitchBgUrlBlock" style="display:none;">
+        <div class="small-note" style="margin-top:6px;">O probar una imagen suelta por URL (no se guarda como opción fija):</div>
+        <input type="text" id="pitchBgInput" placeholder="https://...">
+        <div class="row">
+          <button onclick="applyPitchBackground()">Aplicar URL</button>
+          <button onclick="clearPitchBackground()">Quitar</button>
+        </div>
       </div>
     </div>
   </div>

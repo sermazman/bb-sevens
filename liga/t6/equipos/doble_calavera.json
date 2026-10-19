@@ -1,0 +1,419 @@
+{
+  "teamName": "DOBLE CALAVERA",
+  "race": "Underworld Denizens",
+  "color": "#0a0a0a",
+  "textColor": "#04ff00",
+  "color_secundary": "#00ff2a",
+  "textColor_secundary": "auto",
+  "leagueStarted": false,
+  "staff": {
+    "rerolls": {
+      "clave": "reroll",
+      "count": 1,
+      "pricePerUnit": 100000,
+      "total": 100000
+    },
+    "fans": {
+      "clave": "fans",
+      "count": 0,
+      "pricePerUnit": 20000,
+      "total": 0,
+      "free": 1
+    },
+    "assistants": {
+      "clave": "assistants",
+      "count": 0,
+      "pricePerUnit": 20000,
+      "total": 0
+    },
+    "cheerleaders": {
+      "clave": "cheerleaders",
+      "count": 0,
+      "pricePerUnit": 20000,
+      "total": 0
+    },
+    "apothecary": {
+      "clave": "apothecary",
+      "count": 0,
+      "pricePerUnit": 80000,
+      "total": 0
+    }
+  },
+  "players": [
+    {
+      "num": 1,
+      "name": "RATMINATOR",
+      "position": "Rat Ogre",
+      "ma": 6,
+      "st": 5,
+      "ag": "4+",
+      "pa": "6+",
+      "av": "9+",
+      "skills": [
+        "Ferocidad animal",
+        "Furia",
+        "Solitario (4+)",
+        "Golpe mortífero",
+        "Cola prensil",
+        "Grandullon - Skaven"
+      ]
+    },
+    {
+      "num": 2,
+      "name": "RADOLF",
+      "position": "Skaven Blitzer",
+      "ma": 8,
+      "st": 3,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "9+",
+      "skills": [
+        "Animosidad (Goblin)",
+        "Placar",
+        "Robar Balón",
+        "Skaven - Blitzer"
+      ]
+    },
+    {
+      "num": 3,
+      "name": "RAKAROT",
+      "position": "Gutter Runner",
+      "ma": 9,
+      "st": 2,
+      "ag": "2+",
+      "pa": "4+",
+      "av": "8+",
+      "skills": [
+        "Animosidad (Goblin)",
+        "Esquivar",
+        "Apuñalar",
+        "Skaven - Corredor"
+      ]
+    },
+    {
+      "num": 4,
+      "name": "EL BATU",
+      "position": "Goblin",
+      "ma": 5,
+      "st": 2,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "8+",
+      "skills": [
+        "Esquivar",
+        "Humanoide bala",
+        "Escurridizo",
+        "Veterano",
+        "Goblin - Linea"
+      ]
+    },
+    {
+      "num": 5,
+      "name": "JOHN COBRA",
+      "position": "Goblin",
+      "ma": 6,
+      "st": 2,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "8+",
+      "skills": [
+        "Esquivar",
+        "Humanoide bala",
+        "Escurridizo",
+        "Goblin - Linea"
+      ]
+    },
+    {
+      "num": 6,
+      "name": "PREDATOR",
+      "position": "Goblin",
+      "ma": 6,
+      "st": 2,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "8+",
+      "skills": [
+        "Esquivar",
+        "Humanoide bala",
+        "Escurridizo",
+        "Goblin - Linea"
+      ]
+    },
+    {
+      "num": 7,
+      "name": "ALIEN",
+      "position": "Goblin",
+      "ma": 6,
+      "st": 2,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "8+",
+      "skills": [
+        "Esquivar",
+        "Humanoide bala",
+        "Escurridizo",
+        "Goblin - Linea"
+      ]
+    },
+    {
+      "num": 8,
+      "name": "EL CHIKY",
+      "position": "Snotling",
+      "ma": 5,
+      "st": 1,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "6+",
+      "skills": [
+        "Esquivar",
+        "Humanoide bala",
+        "Echarse a un lado",
+        "Escurridizo",
+        "Insifnificante",
+        "Canijo",
+        "Snotling - Linea"
+      ]
+    }
+  ],
+  "formation": [
+    {
+      "num": 1,
+      "col": 5,
+      "row": 0
+    },
+    {
+      "num": 2,
+      "col": 4,
+      "row": 0
+    },
+    {
+      "num": 3,
+      "col": 6,
+      "row": 0
+    },
+    {
+      "num": 4,
+      "col": 1,
+      "row": 0
+    },
+    {
+      "num": 5,
+      "col": 9,
+      "row": 0
+    },
+    {
+      "num": 6,
+      "col": 2,
+      "row": 0
+    },
+    {
+      "num": 7,
+      "col": 8,
+      "row": 0
+    }
+  ],
+  "league": {
+    "schemaVersion": 2,
+    "season": 6,
+    "coach": "VICTOR",
+    "teamId": "doble_calavera",
+    "economy": {
+      "startingTreasury": 600000,
+      "prices": {
+        "dedicatedFan": 20000,
+        "cheerleader": 20000,
+        "assistantCoach": 20000,
+        "apothecary": 80000,
+        "bribe": 100000
+      }
+    },
+    "staff": {
+      "dedicatedFans": 1,
+      "cheerleaders": 0,
+      "assistantCoaches": 0,
+      "apothecary": 0,
+      "bribes": 0
+    },
+    "players": [
+      {
+        "num": 1,
+        "price": 150000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 2,
+        "price": 90000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 3,
+        "price": 85000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 4,
+        "price": 40000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 5,
+        "price": 40000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 6,
+        "price": 40000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 7,
+        "price": 40000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 8,
+        "price": 15000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      }
+    ],
+    "matches": [],
+    "retiredPlayers": [],
+    "logo": "doble_calavera.png"
+  }
+}

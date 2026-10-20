@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-w-version="W_V42">
+<html lang="es" data-w-version="W_V43">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -626,12 +626,24 @@
   </div>
 </div>
 
+<div class="modal-back" id="insigModal">
+  <div class="modal danger-red">
+    <h2>🚨 DEMASIADOS INSIGNIFICANTES</h2>
+    <p id="insigText"></p>
+    <p class="mismatch-warn">Cargad otro equipo, o si los dos jugadores aceptáis jugar así, seguid adelante (quedará registrado en el Historial).</p>
+    <div class="row" style="justify-content:center; gap:8px; margin-top:10px;">
+      <button class="danger" onclick="insignificanteCancel()">❌ Cancelar carga</button>
+      <button onclick="insignificanteProceed()">Ambos aceptamos, cargar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-back" id="leagueMismatchModal">
   <div class="modal danger-red">
     <h2 id="leagueMismatchTitle">🚨 EL ROSTER NO COINCIDE CON LA LIGA</h2>
     <p id="leagueMismatchText"></p>
     <ul id="leagueMismatchList" class="mismatch-list"></ul>
-    <p class="mismatch-warn">Si seguís adelante quedará registrado en el Historial y marcado en el marcador como MODIFICADO. Decidid entre los dos jugadores.</p>
+    <p class="mismatch-warn">Si seguís adelante quedará registrado en el Historial. Decidid entre los dos jugadores.</p>
     <div class="row" style="justify-content:center; gap:8px; margin-top:10px;">
       <button class="danger" onclick="leagueMismatchCancel()">❌ Cancelar carga</button>
       <button onclick="leagueMismatchProceed()">Seguir adelante (de acuerdo)</button>

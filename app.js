@@ -1552,7 +1552,13 @@ function getFanFactor(team){
   const entries = Object.entries(st);
   const ordered = entries.filter(([k])=>/dedicated/i.test(k)).concat(entries.filter(([k])=>!/dedicated/i.test(k)));
   for(const [k,v] of ordered){
-    if(/fan|hincha/i.test(k)){ const n = toNum(v); if(n!==null) return { value:n, found:true, keys:[k] }; }
+    if(/fan|hincha/i.test(k)){
+      // Formato del gestor sin sección league: staff.fans = { count: comprados, free: gratis } → total = comprados + gratis.
+      if(v && typeof v==='object' && toNum(v.free)!==null){
+        return { value: (toNum(v.count) || 0) + toNum(v.free), found:true, keys:[k + '.count + ' + k + '.free'] };
+      }
+      const n = toNum(v); if(n!==null) return { value:n, found:true, keys:[k] };
+    }
   }
   // Búsqueda en profundidad (por si el dato viene anidado dentro del staff)
   const deep = (o, depth)=>{
@@ -6949,7 +6955,7 @@ document.addEventListener('DOMContentLoaded', setupModalEnhancements);
 if(document.readyState==='complete' || document.readyState==='interactive'){ setupModalEnhancements(); }
 
 try{ updateTackleZonesButtons(); updateColorChoiceButtons(); setSwitch('colorsSw', customColorsEnabled); }catch(e){}
-window.APP_JS_VERSION = 'A_V48'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V49'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

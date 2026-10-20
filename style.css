@@ -656,7 +656,7 @@ button.full{width:100%; margin-top:6px;}
 .conn-dot.on{background:var(--good);}
 
 /* --- Versión del archivo (para el badge de verificación en el pie) --- */
-:root{ --css-version: "S_V45"; }
+:root{ --css-version: "S_V46"; }
 
 /* ---- Iconos dorados (se tiñen con el color del marcador mediante máscara) ---- */
 .gold-icon{display:inline-block; width:18px; height:18px; vertical-align:middle; background:var(--gold);
@@ -713,7 +713,14 @@ button.full{width:100%; margin-top:6px;}
 .mismatch-warn{font-size:11px; margin-top:8px;}
 
 /* ---- Zonas de defensa (ayuda visual, violeta suave; alpha acumulativo vía --tz-a) ---- */
-.cell.tz-cell::before{content:""; position:absolute; inset:0; background:rgba(150,90,230,var(--tz-a,0.14)); pointer-events:none;}
+.cell.tz-cell::before{content:""; position:absolute; inset:0; pointer-events:none;
+  background:rgba(150,90,230,var(--tz-a,0.14));}
+/* Cola prensil: mismo color, rayado diagonal a 45º (franjas con color y sin color) */
+.cell.tz-cell.tz-tail::before{
+  background:
+    repeating-linear-gradient(45deg, rgba(150,90,230,var(--tz-t,0.3)) 0 4px, transparent 4px 8px),
+    rgba(150,90,230,var(--tz-a,0));
+}
 
 /* ---- Profesional: dado a repetir en rojo parpadeante + mensajes ---- */
 @keyframes proBlink{ 0%,100%{ border-color:#ff2a1a; box-shadow:0 0 8px 2px rgba(255,42,26,0.8);} 50%{ border-color:rgba(255,42,26,0.25); box-shadow:0 0 0 0 rgba(255,42,26,0);} }

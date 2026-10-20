@@ -179,17 +179,26 @@ function setShowTackleZones(v){
 function updateTackleZonesButtons(){ setSwitch('tzSw', showTackleZones); }
 // Nº de rivales en pie (sin Canijo, igual que en las esquivas) que marcan cada casilla respecto al jugador seleccionado.
 function tackleZoneCountMap(sel){
+  // Devuelve { 'r_c': { flat:n marcadores normales, tail:n marcadores con Cola prensil } }.
   const map = {};
   players.forEach(o=>{
-    if(!o.onPitch || o.team===sel.team || o.condition!=='standing' || playerHasSkill(o,'canijo','puny')) return;
+    if(!o.onPitch || o.team===sel.team || o.condition!=='standing') return;
+    const tail = hasColaPrensil(o);
+    if(!tail && playerHasSkill(o,'canijo','puny')) return;
     for(let dr=-1; dr<=1; dr++) for(let dc=-1; dc<=1; dc++){
       if(!dr && !dc) continue;
       const r=o.row+dr, c=o.col+dc;
       if(r<0||r>=ROWS||c<0||c>=COLS) continue;
-      map[r+'_'+c] = (map[r+'_'+c]||0) + 1;
+      const e = map[r+'_'+c] || (map[r+'_'+c] = { flat:0, tail:0 });
+      if(tail) e.tail++; else e.flat++;
     }
   });
   return map;
+}
+// COLA PRENSIL: rival en pie que marca la casilla de origen de una esquiva → −1 adicional (solo uno aplica).
+function hasColaPrensil(p){ return playerHasSkill(p, 'cola prensil', 'prehensile tail'); }
+function prehensileTailersAt(p){
+  return opponentTackleZonePlayers(p.row, p.col, p.team).filter(hasColaPrensil);
 }
 function tokenColorFor(p){
   return (customColorsEnabled && effColor(p.team)) ? effColor(p.team) : teamColorHex[p.team];
@@ -858,6 +867,7 @@ function updateStatus(msg){ document.getElementById('statusLine').textContent = 
 function anyModalOpen(){
   return document.getElementById('preMatchModal').classList.contains('show') ||
          document.getElementById('leagueMismatchModal').classList.contains('show') ||
+         document.getElementById('insigModal').classList.contains('show') ||
          document.getElementById('tdModal').classList.contains('show') ||
          document.getElementById('dodgeModal').classList.contains('show') ||
          document.getElementById('gfiModal').classList.contains('show') ||
@@ -912,16 +922,51 @@ function importTeamFile(team, inputEl){
     catch(err){ alert('El archivo no es un JSON válido.'); return; }
     if(!data.players || !Array.isArray(data.players)){ alert('El JSON debe tener un array "players".'); return; }
     // Equipos sin sección de liga (amistosos, rosters.html): se cargan sin comprobar nada.
-    if(!data.league || typeof data.league!=='object'){ applyImportedTeam(team, data, 'none'); return; }
+    if(!data.league || typeof data.league!=='object'){ applyImportedTeamGuarded(team, data, 'none'); return; }
     updateStatus('Verificando el roster con la liga…');
     verifyTeamAgainstLeague(data).then(res=>{
-      if(res.status==='ok') applyImportedTeam(team, data, 'ok', res);
-      else if(res.status==='error') applyImportedTeam(team, data, 'unverified', res);
+      if(res.status==='ok') applyImportedTeamGuarded(team, data, 'ok', res);
+      else if(res.status==='error') applyImportedTeamGuarded(team, data, 'unverified', res);
       else showLeagueMismatchModal(team, data, res);
     });
   };
   reader.readAsText(file);
   inputEl.value = '';
+}
+
+// INSIGNIFICANTE: en la hoja de equipo no puede haber más jugadores con el rasgo que sin él.
+function hasInsignificante(skills){
+  return (skills || []).some(sk=>{ const t = normalizeSkillText(String(sk)); return t.includes('insignific') || t.includes('insifnific'); });
+}
+function insignificanteViolation(data){
+  const list = Array.isArray(data.players) ? data.players : [];
+  const withT = list.filter(pd=>hasInsignificante(pd.skills)).length;
+  const without = list.length - withT;
+  return withT > without ? { withT, without } : null;
+}
+let pendingInsignificante = null; // { team, data, verifyState, res, v }
+function applyImportedTeamGuarded(team, data, verifyState, res){
+  const v = insignificanteViolation(data);
+  if(!v){ applyImportedTeam(team, data, verifyState, res); return; }
+  pendingInsignificante = { team, data, verifyState, res, v };
+  document.getElementById('insigText').textContent = 'El equipo "' + (data.teamName || 'sin nombre') + '" tiene ' + v.withT + ' jugador(es) con INSIGNIFICANTE y solo ' + v.without + ' sin él. En la hoja de equipo no puede haber más jugadores con este rasgo que sin él.';
+  document.getElementById('insigModal').classList.add('show');
+  updateStatus('Roster con demasiados Insignificantes: decidid si lo cargáis igualmente.');
+}
+function insignificanteCancel(){
+  const c = pendingInsignificante; pendingInsignificante = null;
+  document.getElementById('insigModal').classList.remove('show');
+  if(c) log('❌ Carga cancelada: "' + (c.data.teamName || 'equipo') + '" tiene más jugadores Insignificantes que sin el rasgo.');
+  updateStatus('Carga de equipo cancelada.');
+  broadcastState();
+}
+function insignificanteProceed(){
+  const c = pendingInsignificante; pendingInsignificante = null;
+  document.getElementById('insigModal').classList.remove('show');
+  if(!c) return;
+  applyImportedTeam(c.team, c.data, c.verifyState, c.res);
+  log('⚠️ ' + teamName(c.team) + ' se ha cargado con más jugadores Insignificantes (' + c.v.withT + ') que sin el rasgo (' + c.v.without + '), aceptado por ambos jugadores.');
+  broadcastState();
 }
 
 function applyImportedTeam(team, data, verifyState, res){
@@ -1111,7 +1156,7 @@ function leagueMismatchProceed(){
   const c = pendingLeagueMismatch;
   pendingLeagueMismatch = null;
   document.getElementById('leagueMismatchModal').classList.remove('show');
-  if(c) applyImportedTeam(c.team, c.data, 'diff', c.res);
+  if(c) applyImportedTeamGuarded(c.team, c.data, 'diff', c.res);
 }
 
 function clearTeam(team){
@@ -1955,10 +2000,14 @@ function renderPitch(){
       const cell = document.createElement('div');
       cell.className = cellClass(r,c);
       if(tzMap){
-        const n = tzMap[r+'_'+c];
-        if(n && !posMap[r+'_'+c]){
+        const e = tzMap[r+'_'+c];
+        if(e && !posMap[r+'_'+c]){
           cell.classList.add('tz-cell');
-          cell.style.setProperty('--tz-a', (1 - Math.pow(1-0.14, Math.min(n,5))).toFixed(3));
+          cell.style.setProperty('--tz-a', e.flat ? (1 - Math.pow(1-0.14, Math.min(e.flat,5))).toFixed(3) : '0');
+          if(e.tail){
+            cell.classList.add('tz-tail');
+            cell.style.setProperty('--tz-t', (1 - Math.pow(1-0.30, Math.min(e.tail,4))).toFixed(3));
+          }
         }
       }
       if(passOriginPlayer){
@@ -5822,14 +5871,16 @@ function openDodgeModal(p, toR, toC, fromGfi){
   const hasCanijo = playerHasSkill(p, 'canijo', 'puny');
   const tz = hasEscurridizo ? 0 : countDodgeTackleZones(toR, toC, p.team);
   const canijoBonus = hasCanijo ? 1 : 0;
-  const target = parseAgTarget(p.ag) + tz - canijoBonus;
+  const tailers = prehensileTailersAt(p);
+  const tailPenalty = tailers.length ? 1 : 0;
+  const target = parseAgTarget(p.ag) + tz - canijoBonus + tailPenalty;
   pendingDodge = { playerId:p.id, toR, toC, fromGfi: !!fromGfi, target, baseTarget: target, breakTackle: false, btCommitted: false, baseText: '', lastDie: null, heroicAsked: false, heroicId: null };
   dodgeRerollUsed = false;
   const defTk = defensiveTacklersAt(p);
   const msg = (fromGfi
     ? `${p.name} ha superado "a por ellos" pero esa casilla también sale de una zona de marcaje rival. `
     : `${p.name} sale de una zona de marcaje rival. `)
-    + `Necesita ${target}+ (AG${p.ag ?? '?'}${hasEscurridizo ? ', Escurridizo ignora el marcaje' : ' + ' + tz + ' zona(s) de marcaje en destino'}${hasCanijo ? ', -1 por Canijo' : ''}). Tirad D6.`
+    + `Necesita ${target}+ (AG${p.ag ?? '?'}${hasEscurridizo ? ', Escurridizo ignora el marcaje' : ' + ' + tz + ' zona(s) de marcaje en destino'}${hasCanijo ? ', -1 por Canijo' : ''}${tailPenalty ? ', +1 por Cola prensil de ' + tailers[0].name : ''}). Tirad D6.`
     + (defTk.length && playerHasSkill(p, 'esquiva', 'dodge') ? ' ⛔ PLACAJE DEFENSIVO de ' + defTk.map(o=>o.name).join(', ') + ': no puede usar Esquivar.' : '');
   pendingDodge.baseText = msg;
   document.getElementById('dodgeText').textContent = msg;
@@ -6878,6 +6929,9 @@ function cancelActiveModal(modalId){
     case 'heroicTackleModal':
       heroicTackleChoose(null);
       break;
+    case 'insigModal':
+      insignificanteCancel();
+      break;
     case 'leagueMismatchModal':
       pendingLeagueMismatch = null;
       log('❌ Carga de equipo cancelada manualmente.');
@@ -6955,7 +7009,7 @@ document.addEventListener('DOMContentLoaded', setupModalEnhancements);
 if(document.readyState==='complete' || document.readyState==='interactive'){ setupModalEnhancements(); }
 
 try{ updateTackleZonesButtons(); updateColorChoiceButtons(); setSwitch('colorsSw', customColorsEnabled); }catch(e){}
-window.APP_JS_VERSION = 'A_V49'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V50'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

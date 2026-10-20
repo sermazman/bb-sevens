@@ -37,6 +37,11 @@ Una vez por turno, cuando este jugador intente esquivar, puede aplicar a su cheq
 
 ☣️- CANIJO (pruebas desde 17-09-2026) Este jugador puede aplicar un modificador de +1 a sus chequeos de Agilidad para intentar esquivar. Aparte de esto, si un jugador rival intenta esquivar moviéndose a una casilla en la zona de defensa de este jugador, este jugador no aplicará un modificador de -1 al chequeo de Agilidad del jugador rival por estarlo Marcando.
 
+☣️- COLA PRENSIL
+Si un jugador rival intenta esquivar, saltar o brincar desde una casilla en la zona de defensa de este jugador sufre un modificador adicional de -1 a su chequeo de agilidad para esquivar.
+Si la casilla desde la que intenta esquivar un jugador, esta en la zona de defensa de varios jugadores con Cola prensil, sólo uno de ellos puede utilizarla.
+No se que de dificil es, pero si cuando ponemos en el menu que salgan las zonas de defensa de los jugadores, podemos marcar las zonas de defensa de este jugador en el mismo color pero que sean rayadas en diagonal 45º haciendo lineas de color establecido y sin color, quedaría bien no?? asi marcamos todas las zonas de defensa con el mismo color pero las diferenciamos un poco.
+
 ☣️- DEFENSA (pruebas desde 10-09-2026) Este jugador siempre puede ofrecer apoyos tanto ofensivos como defensivos en las acciones de Placaje, sin importar por cuántos jugadores rivales esté siendo Marcado.
 
 ☣️-  DESCOMPOSICION: desde 15-10-2026
@@ -44,6 +49,9 @@ Aplica un modificador de +1 a todas las tiradas de Lesiones que se hagan contra 
 Hablamos de lesiones cuando se saca un 10, 11 o 12 despues de pasar la armadura (se aplica sobre Herido leve, Herido Grave o Muerto)
 
 ☣️- ESCURRIDIZO (pruebas desde 17-09-2026 - falta Tabla Heridas Escurridizo) Cuando este jugador intente esquivar, no sufre modificadores negativos a su chequeo de Agilidad por estar siendo Marcado por jugadores rivales. Además, este jugador aplica un modificador de-1 a su chequeo de Agilidad al intentar interceptar el balón.
+
+☣️- INSIGNIFICANTE
+En la hoja de equipo, no puede haber más jugadores con este rasgo que sin el. Si esto pasa al cargar el equipo, es necesario que salga un modal avisando para que se cargue otro equipo o si ambos aceptan jugar así, dejar cargarlo
 
 ☣️-  LUCHADOR: desde 15-10-2026
 Cuando este jugador declara una acción de Placaje, puede repetir un único resultado de Ambos jugadores derribados de toda la tirada de dados que pueda hacer.
@@ -86,8 +94,6 @@ Cuando este jugador sufra una Lesión, antes de hacer su tirada de Lesiones, tir
 ☣️- ROMPER DEFENSAS (pruebas desde 10-09-2026) Durante los turnos del equipo rival, los jugadores rivales Marcados por este jugador no pueden usar las habilidades Defensa ni Meter la bota.
 
 SIGUIENTES:
-COLA PRENSIL
-INSIGNIFICANTE
 ODIO
 HUMANOIDE BALA
 LANZAR COMPAÑERO
@@ -99,3 +105,6 @@ MANTENERSE FIRME
 TEMBLOROSO
 
 LANZAR COMPAÑERO
+
+
+

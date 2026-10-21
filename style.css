@@ -656,7 +656,7 @@ button.full{width:100%; margin-top:6px;}
 .conn-dot.on{background:var(--good);}
 
 /* --- Versión del archivo (para el badge de verificación en el pie) --- */
-:root{ --css-version: "S_V47"; }
+:root{ --css-version: "S_V48"; }
 
 /* ---- Iconos dorados (se tiñen con el color del marcador mediante máscara) ---- */
 .gold-icon{display:inline-block; width:18px; height:18px; vertical-align:middle; background:var(--gold);
@@ -750,3 +750,17 @@ button.full{width:100%; margin-top:6px;}
 .sb-bribe .gold-icon{width:22px; height:22px;}
 .sb-bribe.used{cursor:default;}
 .sb-bribe.used .gold-icon{background:#4a4540;}
+
+/* ===== S_V48 — añadir AL FINAL de style.css (no sustituye al archivo) ===== */
+.hd{height:18px; width:auto; vertical-align:middle; margin:0 1px;}
+/* Dados de 6 caras con icono (icons/dado1.png … dado6.png); el número se oculta pero se conserva en el texto */
+.die-face[data-d6]{
+  color:transparent; background-color:transparent; background-repeat:no-repeat;
+  background-position:center; background-size:contain;
+}
+.die-face[data-d6="1"]{background-image:url(icons/dado1.png);}
+.die-face[data-d6="2"]{background-image:url(icons/dado2.png);}
+.die-face[data-d6="3"]{background-image:url(icons/dado3.png);}
+.die-face[data-d6="4"]{background-image:url(icons/dado4.png);}
+.die-face[data-d6="5"]{background-image:url(icons/dado5.png);}
+.die-face[data-d6="6"]{background-image:url(icons/dado6.png);}

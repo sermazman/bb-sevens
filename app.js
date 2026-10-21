@@ -213,6 +213,7 @@ function contrastTextColor(hex){
   return luminance > 0.6 ? '#161311' : '#fff';
 }
 function textColorFor(p){
+  if(!customColorsEnabled) return '#fff';
   const override = effTextSetting(p.team);
   if(override==='white') return '#fff';
   if(override==='black') return '#161311';
@@ -857,10 +858,20 @@ function playerTooltipText(p, extra){
   if(extra) txt += '\n' + extra;
   return txt;
 }
+function dieImgHtml(n, h){
+  return '<img class="hd" src="icons/dado' + n + '.png" alt="' + n + '"' + (h ? ' style="height:' + h + 'px"' : '') + '>';
+}
+function logDiceHtml(msg){
+  const esc = String(msg).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return esc
+    .replace(/\(2D6\): ([1-6]) \+ ([1-6]) =/g, (m,a,b)=>'(2D6): ' + dieImgHtml(a) + ' + ' + dieImgHtml(b) + ' =')
+    .replace(/D6\s*=\s*([1-6])(?![0-9])/g, (m,a)=>'D6 ' + dieImgHtml(a))
+    .replace(/D6\(([1-6])\)/g, (m,a)=>'D6 ' + dieImgHtml(a));
+}
 function log(msg){
   const h = document.getElementById('hist');
   const d = document.createElement('div');
-  d.textContent = msg;
+  d.innerHTML = logDiceHtml(msg);
   h.prepend(d);
 }
 function updateStatus(msg){ document.getElementById('statusLine').textContent = msg; }
@@ -1725,7 +1736,7 @@ function renderPreMatch(){
   const title = document.getElementById('preMatchTitle');
   const body = document.getElementById('preMatchBody');
   const actions = document.getElementById('preMatchActions');
-  const dieFace = (v)=>'<div class="die-face">' + v + '</div>';
+  const dieFace = (v, six)=>'<div class="die-face"' + (six ? ' data-d6="' + v + '"' : '') + '>' + v + '</div>';
   const nameOf = (t)=> teamName(t);
   actions.innerHTML = '';
   const okBtn = (label, fn)=>{ const b = document.createElement('button'); b.className='primary'; b.textContent=label; b.onclick=fn; actions.appendChild(b); };
@@ -1739,7 +1750,7 @@ function renderPreMatch(){
   } else if(step==='weather'){
     const w = WEATHER_TABLE[preMatch.weather] || WEATHER_TABLE.perfecto;
     title.textContent = '🌦️ CLIMA';
-    body.innerHTML = '<div class="pm-dice">' + dieFace(preMatch.wDie.a) + dieFace(preMatch.wDie.b) + '</div>' +
+    body.innerHTML = '<div class="pm-dice">' + dieFace(preMatch.wDie.a, true) + dieFace(preMatch.wDie.b, true) + '</div>' +
       '<div class="pm-note">Suma: <b style="color:var(--gold)">' + (preMatch.wDie.a + preMatch.wDie.b) + '</b></div>' +
       '<div class="pm-weather"><span class="gold-icon lg" style="--icon:url(\'icons/' + w.icon + '\')"></span>' +
       '<div class="pm-wname">' + w.name + '</div><div class="pm-wdesc">' + w.desc + '</div></div>';
@@ -1753,7 +1764,7 @@ function renderPreMatch(){
   } else if(step==='coin'){
     title.textContent = '🪙 SORTEO DE PATADA';
     body.innerHTML = '<div class="pm-dice">' + ['A','B'].map(t=>
-      '<div class="pm-team"><div class="pm-name">' + nameOf(t) + '</div>' + dieFace(preMatch.coinDie[t]) + '</div>').join('') + '</div>' +
+      '<div class="pm-team"><div class="pm-name">' + nameOf(t) + '</div>' + dieFace(preMatch.coinDie[t], true) + '</div>').join('') + '</div>' +
       '<div class="pm-note">🏆 Gana <b style="color:var(--gold)">' + nameOf(preMatch.coinWinner) + '</b>. ¿Quién patea en la 1ª mitad? (en la 2ª patea el otro equipo)</div>';
     ['A','B'].forEach(t=>{
       const b = document.createElement('button'); b.className = (t===preMatch.coinWinner ? 'primary' : '');
@@ -2168,16 +2179,15 @@ function renderPitch(){
 }
 
 function renderEndzoneLabels(pitch){
-  if(!customColorsEnabled) return;
   ['A','B'].forEach(team=>{
-    if(!effColor(team)) return;
+    if(customColorsEnabled && !effColor(team)) return;
     const col = team==='A' ? 0 : COLS-1;
     const label = document.createElement('div');
     label.className = 'endzone-label' + (team==='B' ? ' endzone-label-flip' : '');
     label.style.left = (col*35) + 'px';
     label.style.height = (ROWS*35-1) + 'px';
     label.textContent = teamName(team);
-    label.style.color = textColorFor({ team });
+    label.style.color = customColorsEnabled ? textColorFor({ team }) : '#fff';
     pitch.appendChild(label);
   });
 }
@@ -5490,6 +5500,7 @@ const KICKOFF_EVENTS = {
   12:{ name:'INVASIÓN DE CAMPO', desc:'El Entrenador que saque un total más bajo, o ambos Entrenadores en caso de empate, selecciona al azar un jugador de su equipo que esté sobre el campo. Dichos jugadores son colocados Tumbados boca arriba y quedan Aturdidos.' }
 };
 let kickoffEvt = null;          // { phase:'roll'|'show'|'board', d1, d2, sum, kind:'alert'|'high', n, moved:[], sel:-1 }
+let kickoffLandingOverride = null;   // Clima perfecto (Clima cambiante): aterrizaje tras 3 escoras, sustituye al 2º rebote
 let teamFreeRR = { A:-1, B:-1 };   // -1 = sin RR gratuita; si no, nº de RR que tenía el equipo ANTES de recibir la gratuita (Entrenador brillante)
 let teamBribe = { A:'none', B:'none' };   // none | active | used  (Soborno gratuito de Árbitro intimidado)
 let cheerBonus = { A:'none', B:'none' };  // none | pending | active | used  (Los hinchas animan: +1 apoyo en el primer Placaje del próximo turno)
@@ -5556,8 +5567,7 @@ function showKickoffEvent(){
   cheerBonus = { A:'none', B:'none' };
   kickoffEvt = { phase:'roll', d1:0, d2:0, sum:0, kind:'', n:0, moved:[], sel:-1 };
   renderKickoffEvent();
-  updateStatus('Evento de patada inicial: tirad 2D6.');
-  broadcastState();
+  rollKickoffEvent2D6();
 }
 
 function rollKickoffEvent2D6(){
@@ -5804,7 +5814,8 @@ function acceptKickoffEvent(){
               log('🌦️ Clima perfecto — escora ' + i + '/3: D8=' + dir + ' → casilla (fila ' + (nr+1) + ', col ' + (nc+1) + ').');
             }
           }
-          if(out) kickoffPendingOOBAfterEvent = true;
+          kickoffLandingOverride = out ? { r:-1, c:-1 } : { r:ball.row, c:ball.col };
+          log('🌦️ Las 3 escoras sustituyen al rebote final: el balón cae al suelo.');
           renderPitch();
         }
       }
@@ -5889,6 +5900,12 @@ function continueAfterKickoffEvent(){
   if(kickoffPendingOOBAfterEvent){
     kickoffPendingOOBAfterEvent = false;
     finishKickoffAsFreeCatch();
+    return;
+  }
+  if(kickoffLandingOverride){
+    const lo = kickoffLandingOverride; kickoffLandingOverride = null;
+    kickoffBounceStep = 2; kickoffDistance = 1;
+    resolveKickoffBounce(lo.r, lo.c);
     return;
   }
   const occ = occupiedBy(ball.row, ball.col);
@@ -7448,7 +7465,16 @@ document.addEventListener('DOMContentLoaded', setupModalEnhancements);
 if(document.readyState==='complete' || document.readyState==='interactive'){ setupModalEnhancements(); }
 
 try{ updateTackleZonesButtons(); updateColorChoiceButtons(); setSwitch('colorsSw', customColorsEnabled); }catch(e){}
-window.APP_JS_VERSION = 'A_V52'; // ← sube este número cada vez que edites app.js
+// Dados de 6 caras: los cuadros de dado muestran el icono dadoN.png (el texto se conserva, solo se oculta por CSS vía data-d6)
+(function(){
+  const ids = ['kickoffDistDie','dodgeDie','gfiDie','animosityDie','armorDie1','armorDie2','regenDie','injuryDie1','injuryDie2','koDie','traitCheckDie','catchDie','jumpUpDie','interceptDie','passDie','secureBallDie','keDie1','keDie2'];
+  const upd = el=>{ if(!el) return; const t = (el.textContent||'').trim(); if(/^[1-6]$/.test(t)) el.setAttribute('data-d6', t); else el.removeAttribute('data-d6'); };
+  try{
+    const mo = new MutationObserver(ms=>ms.forEach(m=>upd(m.target.nodeType===1 ? m.target : m.target.parentElement)));
+    ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
+  }catch(e){}
+})();
+window.APP_JS_VERSION = 'A_V54'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

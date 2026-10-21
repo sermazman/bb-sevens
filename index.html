@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-w-version="W_V43">
+<html lang="es" data-w-version="W_V45">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -128,6 +128,7 @@
           <div class="sb-veterano-badge" id="sbVeteranoA" style="display:none;" title="Equipo con Veterano(s)">
             <img src="icons/veterano.png" alt="Veterano" onerror="this.outerHTML='<span class=&quot;fallback-star&quot;>⭐</span>'">
           </div>
+          <div class="sb-bribe" id="sbBribeA" style="display:none;" onclick="useBribe('A')"><span class="gold-icon" style="--icon:url('icons/soborno.png')"></span></div>
           <div class="sb-team-main">
             <div class="label" id="sbNameA">Rojo</div>
             <div class="sb-race mono" id="sbRaceA"></div>
@@ -150,6 +151,7 @@
           <div class="sb-veterano-badge" id="sbVeteranoB" style="display:none;" title="Equipo con Veterano(s)">
             <img src="icons/veterano.png" alt="Veterano" onerror="this.outerHTML='<span class=&quot;fallback-star&quot;>⭐</span>'">
           </div>
+          <div class="sb-bribe" id="sbBribeB" style="display:none;" onclick="useBribe('B')"><span class="gold-icon" style="--icon:url('icons/soborno.png')"></span></div>
           <div class="sb-reroll" id="sbRerollB" style="display:flex;">
             <div class="sb-rr-grid">
               <span class="sb-reroll-label">RR</span>
@@ -187,15 +189,9 @@
     </div>
 
     <div class="panel" id="kickoffEventPanel" style="display:none; border-color:#7db8e8;">
-      <h2 style="color:#7db8e8;">🎲 Evento de patada inicial</h2>
-      <div class="small-note">Tirad 2D6 y aplicad el resultado de vuestra tabla de eventos.</div>
-      <div class="row" style="justify-content:center; gap:10px; margin-top:8px;">
-        <div class="die-face" id="kickoffEventDie1">–</div>
-        <div class="die-face" id="kickoffEventDie2">–</div>
-      </div>
-      <div class="mono" id="kickoffEventSum" style="margin:8px 0; color:var(--gold);">Suma: –</div>
-      <button class="full primary" onclick="rollKickoffEvent2D6()">Tirar 2D6</button>
-      <button class="full" style="margin-top:8px;" onclick="continueAfterKickoffEvent()">➡️ Continuar al rebote final</button>
+      <h2 style="color:#7db8e8;" id="kickoffBoardTitle">🎲 Evento de patada inicial</h2>
+      <div class="small-note" id="kickoffBoardText"></div>
+      <button class="full primary" id="kickoffBoardBtn" style="margin-top:8px;" onclick="kickoffBoardContinue()">➡️ Continuar al rebote final</button>
     </div>
 
     <div class="panel" id="freeCatchPanel" style="display:none; border-color:var(--gold);">
@@ -623,6 +619,21 @@
     <h2>⚔️ PLACAJE HEROICO</h2>
     <p id="heroicTackleText"></p>
     <div class="row" id="heroicTackleBtns" style="justify-content:center; gap:8px; flex-wrap:wrap;"></div>
+  </div>
+</div>
+
+<div class="modal-back" id="kickoffEventModal">
+  <div class="modal">
+    <h2>🎲 EVENTO DE PATADA INICIAL</h2>
+    <div class="row" style="justify-content:center; gap:10px; margin-top:8px;">
+      <div class="die-face" id="keDie1">–</div>
+      <div class="die-face" id="keDie2">–</div>
+    </div>
+    <div class="mono" id="keSum" style="margin:8px 0; color:var(--gold); text-align:center;"></div>
+    <h3 id="keName" style="text-align:center; color:var(--gold); margin:6px 0;"></h3>
+    <p id="keDesc" style="text-align:center;"></p>
+    <button class="full primary" id="keRollBtn" onclick="rollKickoffEvent2D6()">Tirar 2D6</button>
+    <button class="full primary" id="keOkBtn" style="display:none;" onclick="acceptKickoffEvent()">Aceptar</button>
   </div>
 </div>
 

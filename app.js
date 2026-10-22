@@ -41,6 +41,65 @@ let teamRerollsLeft = { A: 0, B: 0 };
 let teamFormation = { A: [], B: [] };
 let preMatch = defaultPreMatch(); // secuencia previa al partido (hinchas, clima, sustitutos, sorteo)
 
+// ---- Iconos de recursos en el marcador (amarillo = disponible, gris = gastado; solo aparecen si el equipo los tiene) ----
+const RES_ICONS = [
+  { key:'apothecary',   icon:'apotecario.png',          name:'Apotecario',           once:true  },
+  { key:'wizard',       icon:'mago.png',                name:'Mago deportivo',       once:true  },
+  { key:'morgue',       icon:'ayudante_morgue.png',     name:'Ayudante de la morgue', once:true  },
+  { key:'cheerleaders', icon:'animadora.png',           name:'Animadoras',           once:false },
+  { key:'assistants',   icon:'ayudante_entrenador.png', name:'Ayudantes de entrenador', once:false },
+  { key:'keg',          icon:'barril.png',              name:'Barril de cerveza Estrella Blitzer', once:false },
+  { key:'plague',       icon:'medico_peste.png',        name:'Médico de la peste',   once:true  },
+  { key:'chef',         icon:'chef_halfling.png',       name:'Chef maestro halfling', once:false }
+];
+function resTotal(team, key){
+  return ['morgue','wizard','keg','plague','chef'].includes(key) ? incCount(team, key) : getStaffCount(team, key);
+}
+function renderResourceIcons(){
+  ['A','B'].forEach(t=>{
+    const box = document.getElementById('sbIcons'+t);
+    if(!box) return;
+    let html = '';
+    RES_ICONS.forEach(r=>{
+      const total = resTotal(t, r.key);
+      if(!(total>0)) return;
+      const used = r.once ? Math.min(total, (teamUsedRes[t] || {})[r.key] || 0) : 0;
+      const left = total - used;
+      const gone = r.once && left<=0;
+      const num = r.once ? (total>1 ? left : '') : (total>1 ? total : '');
+      const title = r.once
+        ? (gone ? r.name + ' usado' : r.name + ' disponible' + (total>1 ? ' (' + left + '/' + total + ')' : '') + ' — clic para marcarlo como usado')
+        : r.name + ': ' + total;
+      html += '<span class="sb-ico' + (gone ? ' used' : '') + (r.once && !gone ? ' clickable' : '') + '" title="' + title + '"' +
+        (r.once && !gone ? ' onclick="useResource(\'' + t + '\',\'' + r.key + '\')"' : '') + '>' +
+        '<span class="gold-icon" style="--icon:url(\'icons/' + r.icon + '\')"></span>' +
+        (num!=='' ? '<b class="mono">' + num + '</b>' : '') + '</span>';
+    });
+    box.innerHTML = html;
+  });
+  // Reroll: el icono sustituye a la etiqueta "RR" (amarillo con rerolls, gris sin ninguna)
+  ['A','B'].forEach(t=>{
+    const el = document.getElementById('sbRerollLabel'+t);
+    if(el){ const empty = !(teamRerollsLeft[t] > 0); el.classList.toggle('empty', empty); el.title = empty ? 'Sin Segundas oportunidades' : 'Segundas oportunidades'; }
+  });
+}
+function useResource(team, key){
+  const r = RES_ICONS.find(x=>x.key===key);
+  if(!r || !r.once) return;
+  const total = resTotal(team, key), used = (teamUsedRes[team] || {})[key] || 0;
+  if(used>=total) return;
+  if(!confirm('¿Marcar como USADO: ' + r.name + ' de ' + teamName(team) + '?')) return;
+  teamUsedRes[team] = Object.assign({}, teamUsedRes[team] || {}); teamUsedRes[team][key] = used + 1;
+  log('🧰 ' + teamName(team) + ' usa: ' + r.name + '.');
+  renderResourceIcons();
+  broadcastState();
+}
+// Segundas oportunidades por parte: las del roster (staff.rerolls) + Entrenamientos adicionales (incentivo, teamInc.rerolls)
+function rerollMax(team){
+  const staff = teamStaff[team];
+  if(!(staff && staff.rerolls && typeof staff.rerolls.count === 'number')) return null;
+  return staff.rerolls.count + incCount(team, 'rerolls');
+}
 function renderStaffPanels(){
   ['A','B'].forEach(team=>{
     const panel = document.getElementById('sbReroll'+team);
@@ -49,10 +108,11 @@ function renderStaffPanels(){
     const rerollCountEl = document.getElementById('sbRerollCount'+team);
     if(rerollCountEl){
       const staff = teamStaff[team];
-      const max = (staff && staff.rerolls && typeof staff.rerolls.count === 'number') ? staff.rerolls.count : null;
+      const max = rerollMax(team);
       rerollCountEl.textContent = max!==null ? (teamRerollsLeft[team] + '/' + max) : String(teamRerollsLeft[team] || 0);
     }
   });
+  renderResourceIcons();
   if(typeof renderPreMatchBadges==='function') renderPreMatchBadges();
 }
 
@@ -63,7 +123,7 @@ function adjustReroll(team, delta){
   }
   teamRerollsLeft[team] = Math.max(0, (teamRerollsLeft[team] || 0) + delta);
   const staff = teamStaff[team];
-  const max = (staff && staff.rerolls && typeof staff.rerolls.count === 'number') ? staff.rerolls.count : null;
+  const max = rerollMax(team);
   const suffix = max!==null ? ('/' + max) : '';
   log((delta<0 ? '🔄 Reroll usado' : '↩️ Reroll añadido') + ' — ' + teamName(team) + ': ' + teamRerollsLeft[team] + suffix + '.');
   renderStaffPanels();
@@ -74,9 +134,8 @@ function resetRerollsForNewHalf(){
   teamFreeRR = { A:-1, B:-1 };
   ['A','B'].forEach(team=>{
     const staff = teamStaff[team];
-    if(staff && staff.rerolls && typeof staff.rerolls.count === 'number'){
-      teamRerollsLeft[team] = staff.rerolls.count;
-    }
+    const rm = rerollMax(team);
+    if(rm!==null){ teamRerollsLeft[team] = rm; }
   });
   renderStaffPanels();
 }
@@ -512,7 +571,7 @@ function snapshotState(){
     kickoffStepText: document.getElementById('kickoffStepText').textContent,
     kickoffDistRowVisible: document.getElementById('kickoffDistRow').style.display!=='none',
     kickoffDistance,
-    kickoffEvt, teamBribe, cheerBonus, teamFreeRR,
+    kickoffEvt, teamBribe, cheerBonus, teamFreeRR, teamInc, teamUsedRes,
     kickoffDirDieText: document.getElementById('kickoffDirDie').textContent,
     kickoffDistDieText: document.getElementById('kickoffDistDie').textContent,
     bounceDirDieText: document.getElementById('bounceDirDie').textContent,
@@ -832,6 +891,8 @@ function applyRemoteState(payload){
   teamBribe = Object.assign({A:'none',B:'none'}, payload.teamBribe || {});
   cheerBonus = Object.assign({A:'none',B:'none'}, payload.cheerBonus || {});
   teamFreeRR = Object.assign({A:-1,B:-1}, payload.teamFreeRR || {});
+  teamInc = Object.assign({A:{},B:{}}, payload.teamInc || {});
+  teamUsedRes = Object.assign({A:{},B:{}}, payload.teamUsedRes || {});
   renderKickoffEvent();
   document.getElementById('kickoffDistRow').style.display = payload.kickoffDistRowVisible ? 'flex' : 'none';
   kickoffDistance = payload.kickoffDistance || 1;
@@ -1195,6 +1256,7 @@ function clearTeam(team){
   teamRerollsLeft[team] = 0;
   teamVerify[team] = 'none';
   teamBribe[team] = 'none'; cheerBonus[team] = 'none';
+  teamInc[team] = {}; teamUsedRes[team] = {};
 
   log('🗑️ ' + oldName + ' borrado por completo (jugadores, nombre, colores, raza y staff restablecidos).');
   renderRosters(); renderPitch(); renderSelInfo(); renderScoreboard(); updateKickSelectLabels();
@@ -5645,15 +5707,35 @@ function finishKickoffEvent(){
   continueAfterKickoffEvent();
 }
 
+let teamInc = { A:{}, B:{} };           // Incentivos comprados (cheerleaders, assistants, apothecary, wizard, keg, morgue...) — se rellena al implementar la compra
+let teamUsedRes = { A:{}, B:{} };       // usos consumidos por partido: apothecary, wizard, morgue
+function incCount(team, key){ const n = (teamInc[team] || {})[key]; return (typeof n==='number' && isFinite(n)) ? n : 0; }
 function getStaffCount(team, key){
+  return getStaffBase(team, key) + incCount(team, key);
+}
+const STAFF_ALIASES = {
+  apothecary:['apothecary','apothecaries','apotecario','apotecarios'],
+  assistants:['assistants','assistantCoaches','assistant_coaches','ayudantes'],
+  cheerleaders:['cheerleaders','animadoras']
+};
+function getStaffBase(team, key){
   const st = teamStaff[team];
   if(!st || typeof st!=='object') return 0;
   const num = v=> (typeof v==='number' && isFinite(v)) ? v : (typeof v==='string' && v.trim()!=='' && isFinite(Number(v)) ? Number(v) : null);
-  if(st.leagueStaff && num(st.leagueStaff[key])!==null) return num(st.leagueStaff[key]);
-  const c = st[key];
-  if(c && typeof c==='object'){ const n = num(c.count); if(n!==null) return n; }
-  const n2 = num(c);
-  return n2!==null ? n2 : 0;
+  const names = STAFF_ALIASES[key] || [key];
+  const read = (o)=>{
+    if(!o || typeof o!=='object') return null;
+    for(const k of names){
+      const c = o[k];
+      if(c && typeof c==='object'){ const n = num(c.count); if(n!==null) return n; }
+      const n2 = num(c); if(n2!==null) return n2;
+    }
+    return null;
+  };
+  const fromLeague = read(st.leagueStaff);
+  if(fromLeague!==null) return fromLeague;
+  const fromRoster = read(st);
+  return fromRoster!==null ? fromRoster : 0;
 }
 function getCheerleaders(team){ return getStaffCount(team,'cheerleaders'); }
 function getAssistants(team){ return getStaffCount(team,'assistants'); }
@@ -7150,6 +7232,7 @@ function renderScoreboard(){
     el.classList.toggle('used', st==='used');
     el.title = st==='used' ? 'Soborno usado' : 'Soborno disponible (clic para marcarlo como usado)';
   });
+  renderResourceIcons();
   document.getElementById('halfNum').textContent = state.half;
   document.getElementById('turnA').textContent = Math.min(state.turns.A,6);
   document.getElementById('turnB').textContent = Math.min(state.turns.B,6);
@@ -7400,6 +7483,56 @@ function cancelActiveModal(modalId){
   broadcastState();
 }
 
+// ---------- Borde del modal con el color del equipo que tira / decide ----------
+function modalActorTeam(id){
+  const other = t=>t==='A' ? 'B' : 'A';
+  const act = state.active;
+  const pteam = pid=>{ const p = players.find(x=>x.id===pid); return p ? p.team : null; };
+  switch(id){
+    case 'infoModal': case 'losWarningModal': case 'matchEndModal': case 'resumeModal': case 'preMatchModal':
+    case 'leagueMismatchModal': case 'insigModal': case 'kickoffEventModal':
+      return null;   // neutros: sin color de equipo
+    case 'tdModal': return pendingTD ? pendingTD.team : act;
+    case 'koModal': return pendingKo!=null ? pteam(pendingKo) : null;
+    case 'catchModal': return pendingCatch ? pteam(pendingCatch.playerId) : act;
+    case 'interceptModal': return pendingInterceptionRoll ? pteam(pendingInterceptionRoll.interceptorId) : other(act);
+    case 'provocarModal': return pendingProvocarChoice ? pteam(pendingProvocarChoice.defenderId) : other(act);
+    case 'heroicTackleModal': return other(act);
+    case 'jumpUpModal': return pendingJumpUpCheck!=null ? pteam(pendingJumpUpCheck) : act;
+    case 'forcejearModal': {
+      if(!pendingForcejearChoice) return act;
+      const at = players.find(x=>x.id===pendingForcejearChoice.attackerId);
+      return (at && playerHasSkill(at, 'forcejear', 'wrestle')) ? at.team : other(at ? at.team : act);
+    }
+    case 'blockModal': {
+      // quien ELIGE el dado (el banner de la modal lo indica); si no hay elección, quien tira (el atacante)
+      const ban = document.getElementById('blockChooserBanner');
+      if(ban && ban.style.background){
+        const tmp = document.createElement('div');
+        for(const t of ['A','B']){ tmp.style.background = tokenColorFor({ team:t }); if(tmp.style.background===ban.style.background) return t; }
+      }
+      return act;
+    }
+    default: return act;
+  }
+}
+function tintModal(back){
+  const modal = back.querySelector('.modal');
+  if(!modal) return;
+  if(!back.classList.contains('show')){ return; }
+  const team = modalActorTeam(back.id);
+  if(!team){ modal.removeAttribute('data-tint'); modal.removeAttribute('data-actor'); return; }
+  modal.style.setProperty('--modal-team', tokenColorFor({ team }));
+  modal.style.setProperty('--modal-team-text', textColorFor({ team }));
+  modal.setAttribute('data-tint', '1');
+  modal.setAttribute('data-actor', 'TIRA / DECIDE: ' + teamName(team).toUpperCase());
+}
+function setupModalTint(){
+  const mo = new MutationObserver(ms=>ms.forEach(m=>{ const b = m.target; if(b.classList && b.classList.contains('show')) tintModal(b); }));
+  document.querySelectorAll('.modal-back').forEach(b=>mo.observe(b, { attributes:true, attributeFilter:['class'] }));
+}
+try{ setupModalTint(); }catch(e){}
+
 // ---------- Botón de cerrar + arrastre para TODOS los modales ----------
 function setupModalEnhancements(){
   document.querySelectorAll('.modal-back').forEach(back=>{
@@ -7474,7 +7607,7 @@ try{ updateTackleZonesButtons(); updateColorChoiceButtons(); setSwitch('colorsSw
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V54'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V56'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

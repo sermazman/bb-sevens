@@ -113,3 +113,9 @@ Las habilidades se añaden además a `players[].skills` (nombre exacto de `roste
 ## Dados (15-oct)
 - En cada partido se registran las calaveras y los unos sacados por cada equipo: `statistics.skullsFor/skullsAgainst`, `statistics.onesFor/onesAgainst`. Se acumulan en la ficha del equipo (gestor y visor).
 - Hoja PDF: fila FANS = total actual (mín. 1, máx. 5); FANS DEVOTOS = 1 inicial gratis; Médico muestra 80.000; sin «Novatos alborotadores»; columna de casillas calavera / 1 a la derecha de las segundas oportunidades (usa `icons/attacker-down.png`).
+
+## Clasificación (22-oct)
+- Se calcula en el visor, no se guarda. `leaguePoints` queda a 0 (el campo «Puntos de liga» se quitó del registro).
+- Orden: % victorias ((G + 0,5·E)/PJ) → ≠ → calaverunos → diferencia de TD → SPP ganados.
+- ≠ = calaverunos × 0,5 + Dif3 (victorias por ≥3 TD) + A«0» (partidos con 0 TD encajados) + 3H (partidos con ≥3 bajas causadas).
+- Calaverunos = skullsFor + onesFor de cada partido (solo los del propio equipo). Pasan los 4 primeros.

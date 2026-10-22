@@ -505,7 +505,7 @@ function renderTiles(){
   const e=economy(), t=e.t;
   const tile=(k,v,cls='')=>`<div class="tile"><div class="k">${k}</div><div class="v ${cls}">${v}</div></div>`;
   $('#tiles').innerHTML =
-    tile('Jugados',t.played)+tile('G / E / P',`${t.won} / ${t.drawn} / ${t.lost}`)+tile('Puntos',t.points)+
+    tile('Jugados',t.played)+tile('G / E / P',`${t.won} / ${t.drawn} / ${t.lost}`)+tile('% Vict.',t.played?((t.won+0.5*t.drawn)/t.played*100).toFixed(1).replace('.',',')+' %':'0,0 %')+
     tile('TD',`${t.tdFor} - ${t.tdAgainst}`)+tile('Fans',e.fans)+tile('Calaveras / Unos',`${t.skullsFor} / ${t.onesFor}`)+
     tile('Tesorería',fmt(e.treasury),e.treasury<0?'neg':'')+tile('Coste equipo',fmt(e.teamCost))+tile('Valor equipo',fmt(e.teamValue));
 }
@@ -548,7 +548,7 @@ function renderHistory(){
     const s=m.statistics||{};
     return `<div class="card"><h3>${esc(m.id)} · ${m.homeAway==='home'?'(local) ':m.homeAway==='away'?'(visitante) ':''}vs ${esc(m.opponent.teamName)}
         <span class="res ${m.result.outcome}">${m.result.teamScore} - ${m.result.opponentScore}</span><span class="pill ${m.result.outcome==='win'?'ok':m.result.outcome==='loss'?'out':''}">${label[m.result.outcome]}</span></h3>
-      <div class="meta">${esc(m.opponent.race||'')} · Puntos ${m.leaguePoints} · Ganancias ${fmt(m.earnings)} · Gastado ${fmt(m.treasurySpent)} · Fans ${sgn(m.dedicatedFansGained||0)}
+      <div class="meta">${esc(m.opponent.race||'')} · Ganancias ${fmt(m.earnings)} · Gastado ${fmt(m.treasurySpent)} · Fans ${sgn(m.dedicatedFansGained||0)}
         · HL ${s.lightInjuriesFor}-${s.lightInjuriesAgainst} · HG ${s.seriousInjuriesFor}-${s.seriousInjuriesAgainst} · RIP ${s.deathsFor}-${s.deathsAgainst} · Expulsados ${s.sentOffFor}-${s.sentOffAgainst} · Calaveras ${s.skullsFor||0}-${s.skullsAgainst||0} · Unos ${s.onesFor||0}-${s.onesAgainst||0}</div>
       ${evs?`<ul>${evs}</ul>`:''}${m.notes?`<div class="meta">${esc(m.notes)}</div>`:''}</div>`;
   }).join('')+'</div>';
@@ -589,7 +589,7 @@ function renderTeam(){
       <div><dt>· graves</dt><dd>${t.seriousInjuriesFor} / ${t.seriousInjuriesAgainst}</dd></div>
       <div><dt>· muertos</dt><dd>${t.deathsFor} / ${t.deathsAgainst}</dd></div>
       <div><dt>Expulsados</dt><dd>${t.sentOffFor} / ${t.sentOffAgainst}</dd></div>
-      <div><dt>Puntos de liga</dt><dd>${t.points}</dd></div></dl></div></div>${signHTML()}`;
+      <div><dt>% de victorias</dt><dd>${t.played?((t.won+0.5*t.drawn)/t.played*100).toFixed(1).replace('.',','):'0,0'} %</dd></div></dl></div></div>${signHTML()}`;
 }
 
 
@@ -880,10 +880,9 @@ function sideHTML(side){
       ${field('fans','Fans devotos ganados (+/−)','')}
       ${field('earnings','Ganancias','step="10000"')}
       ${field('spent','Tesorería gastada (incentivos)','min="0" step="10000"')}
-      ${field('points','Puntos de liga','')}
     </div>
     <p class="hint" data-fanshint="${side}"></p>
-    <p class="hint">Fans, ganancias y puntos de liga pueden ser negativos. HL, HG y RIP se rellenan con lo que sumen los jugadores y se pueden corregir.</p>
+    <p class="hint">Fans y ganancias pueden ser negativos. HL, HG y RIP se rellenan con lo que sumen los jugadores y se pueden corregir.</p>
     <div class="tscroll" style="margin-top:12px"><table>
       <thead><tr><th>#</th><th class="l">Jugador</th>${STAT_COLS.map(([,tt])=>`<th>${tt}</th>`).join('')}<th>Lesión sufrida</th><th class="l">Mejoras</th><th>SPP</th><th class="l">Draft</th></tr></thead>
       <tbody>${rows}</tbody></table></div>

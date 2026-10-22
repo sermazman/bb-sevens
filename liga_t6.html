@@ -145,6 +145,9 @@ a:hover{text-decoration:underline}
 .tcard .btn{text-decoration:none;display:inline-block}
 h2.round{font-family:var(--f-title);text-transform:uppercase;letter-spacing:.06em;font-size:22px;margin:22px 0 10px}
 td.l a{text-decoration:none}
+table.standings th,table.standings td{padding:8px 6px}
+table.standings tr.cut td{border-bottom:3px dashed var(--accent)}
+table.standings tr.in td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
 </style>
 </head>
 <body>
@@ -198,7 +201,14 @@ function totals(d){
   r.tdFor=sum(x=>x.result.teamScore);r.tdAgainst=sum(x=>x.result.opponentScore);
   for(const k of['lightInjuries','seriousInjuries','deaths','sentOff','skulls','ones']){r[k+'For']=sum(x=>st(x)[k+'For']);r[k+'Against']=sum(x=>st(x)[k+'Against'])}
   r.casFor=r.lightInjuriesFor+r.seriousInjuriesFor+r.deathsFor;r.casAgainst=r.lightInjuriesAgainst+r.seriousInjuriesAgainst+r.deathsAgainst;
-  r.points=sum(x=>x.leaguePoints);r.earnings=sum(x=>x.earnings);r.spent=sum(x=>x.treasurySpent);r.fansGained=sum(x=>x.dedicatedFansGained);
+  r.pct=r.played?(r.won+0.5*r.drawn)/r.played:0;
+  r.calav=r.skullsFor+r.onesFor;
+  r.a0=m.filter(x=>x.result.opponentScore===0).length;
+  r.dif3=m.filter(x=>x.result.teamScore-x.result.opponentScore>=3).length;
+  r.h3=m.filter(x=>(st(x).lightInjuriesFor||0)+(st(x).seriousInjuriesFor||0)+(st(x).deathsFor||0)>=3).length;
+  r.tie=r.calav*0.5+r.dif3+r.a0+r.h3;
+  r.spp=sum(x=>(x.playerEvents||[]).reduce((t,e)=>t+(e.sppEarned||0),0));
+  r.earnings=sum(x=>x.earnings);r.spent=sum(x=>x.treasurySpent);r.fansGained=sum(x=>x.dedicatedFansGained);
   return r;
 }
 function economy(d){
@@ -283,15 +293,20 @@ function render(){
   ({standings:renderStandings,teams:renderTeams,matches:renderMatches})[ui.tab]();
 }
 function badge(t){const d=t.doc;return`<span class="dot" style="background:${colorOf(d)}"></span>`}
+const pctTxt=p=>(p*100).toFixed(1).replace('.',',')+' %';
+const numTxt=n=>String(n).replace('.',',');
+const QUALIFY=4;
 function renderStandings(){
   if(!teams.length){$('#view').innerHTML='<div class="empty">Todavía no hay equipos inscritos.</div>';return}
-  const rows=teams.map(t=>{const x=totals(t.doc);return{t,x,tdd:x.tdFor-x.tdAgainst,cas:x.casFor-x.casAgainst}})
-    .sort((a,b)=>b.x.points-a.x.points||b.tdd-a.tdd||b.cas-a.cas||b.x.tdFor-a.x.tdFor||a.t.name.localeCompare(b.t.name,'es'));
-  $('#view').innerHTML=`<div class="tscroll"><table><thead><tr><th>#</th><th class="l">Equipo</th><th>Pts</th><th>J</th><th>G</th><th>E</th><th>P</th><th>TD+</th><th>TD−</th><th>Dif</th><th>HER+</th><th>HER−</th></tr></thead><tbody>
-  ${rows.map((r,i)=>`<tr><td class="num">${i+1}</td><td class="l"><a href="#team=${encodeURIComponent(r.t.file)}">${logoImg(r.t,'lg')||badge(r.t)}<strong>${esc(r.t.name)}</strong></a><br><span class="race">${esc(r.t.doc.race||'')}</span></td>
-   <td class="num"><strong>${r.x.points}</strong></td><td class="num">${r.x.played}</td><td class="num">${r.x.won}</td><td class="num">${r.x.drawn}</td><td class="num">${r.x.lost}</td>
-   <td class="num">${r.x.tdFor}</td><td class="num">${r.x.tdAgainst}</td><td class="num">${sgn(r.tdd)}</td><td class="num">${r.x.casFor}</td><td class="num">${r.x.casAgainst}</td></tr>`).join('')}
-  </tbody></table></div><p class="hint">Desempate: puntos, diferencia de TD, diferencia de heridas y TD a favor. HER = heridas leves + graves + muertes causadas.</p>`;
+  const rows=teams.map(t=>{const x=totals(t.doc);return{t,x,tdd:x.tdFor-x.tdAgainst}})
+    .sort((a,b)=>b.x.pct-a.x.pct||b.x.tie-a.x.tie||b.x.calav-a.x.calav||b.tdd-a.tdd||b.x.spp-a.x.spp||a.t.name.localeCompare(b.t.name,'es'));
+  const H=(t,tip)=>`<th title="${tip}">${t}</th>`;
+  $('#view').innerHTML=`<div class="tscroll"><table class="standings"><thead><tr><th>Pos</th><th class="l">Equipo</th>${H('% Vict.','Porcentaje de victorias: ganado 1, empatado 0,5, perdido 0')}${H('≠','Puntos de desempate: calaverunos × 0,5 + Dif3 + A«0» + 3H')}${H('PJ','Partidos jugados')}${H('PG','Ganados')}${H('PE','Empatados')}${H('PP','Perdidos')}${H('TD+','Touchdowns a favor')}${H('TD−','Touchdowns en contra')}${H('Dif','Diferencia de TD')}${H('Calav.','Calaverunos: calaveras y unos naturales sacados')}${H('PtsE','Puntos de estrellato (SPP ganados por los jugadores)')}${H('HER','Heridas causadas (leves + graves + muertes)')}${H('†','Muertes causadas')}${H('Dif3','Victorias por 3 TD o más de diferencia')}${H('A«0»','Partidos en que dejas al rival a 0')}${H('3H','Partidos en que causas 3 o más bajas')}</tr></thead><tbody>
+  ${rows.map((r,i)=>`<tr class="${i+1===QUALIFY&&rows.length>QUALIFY?'cut':''}${i<QUALIFY?' in':''}"><td class="num">${i+1}</td><td class="l"><a href="#team=${encodeURIComponent(r.t.file)}">${logoImg(r.t,'lg')||badge(r.t)}<strong>${esc(r.t.name)}</strong></a><br><span class="race">${esc(r.t.doc.race||'')}</span></td>
+   <td class="num"><strong>${pctTxt(r.x.pct)}</strong></td><td class="num"><strong>${numTxt(r.x.tie)}</strong></td><td class="num">${r.x.played}</td><td class="num">${r.x.won}</td><td class="num">${r.x.drawn}</td><td class="num">${r.x.lost}</td>
+   <td class="num">${r.x.tdFor}</td><td class="num">${r.x.tdAgainst}</td><td class="num">${sgn(r.tdd)}</td><td class="num">${r.x.calav}</td><td class="num">${r.x.spp}</td><td class="num">${r.x.casFor}</td><td class="num">${r.x.deathsFor}</td><td class="num">${r.x.dif3}</td><td class="num">${r.x.a0}</td><td class="num">${r.x.h3}</td></tr>`).join('')}
+  </tbody></table></div>
+  <p class="hint">Se ordena por % de victorias (ganado 1, empatado 0,5, perdido 0). Si hay empate, por orden: puntos de desempate (≠), calaverunos, diferencia de TD y puntos de estrellato. <strong>≠</strong> = calaverunos × 0,5 + Dif3 (victoria por 3 TD o más) + A«0» (rival a 0 TD) + 3H (3 o más bajas causadas), sumado partido a partido. Calaverunos = calaveras y unos naturales sacados por el equipo. Pasan a la fase final los ${QUALIFY} primeros.</p>`;
 }
 function renderTeams(){
   if(!teams.length){$('#view').innerHTML='<div class="empty">Todavía no hay equipos inscritos.</div>';return}
@@ -338,7 +353,7 @@ function renderTeam(){
   <div class="teamhead">${logoImg(t,'lgh')}<span class="badge-team">${esc(d.teamName)}</span><span class="race">${esc(d.race||'')}${d.league.coach?' · Entrenador: '+esc(d.league.coach):''}</span>
    <button class="btn small primary" type="button" data-dl="${esc(t.file)}">Descargar EQUIPO</button>
    <button class="btn small" type="button" data-sheet="${esc(t.file)}">Hoja de partido (PDF)</button></div>
-  <div class="tiles">${tile('Jugados',x.played)+tile('G / E / P',`${x.won} / ${x.drawn} / ${x.lost}`)+tile('Puntos',x.points)+tile('TD',`${x.tdFor} - ${x.tdAgainst}`)+tile('Fans',e.fans)+tile('Calaveras / Unos',`${x.skullsFor} / ${x.onesFor}`)+tile('Tesorería',fmt(e.treasury),e.treasury<0?'neg':'')+tile('Valor equipo',fmt(e.teamValue))}</div>
+  <div class="tiles">${tile('Jugados',x.played)+tile('G / E / P',`${x.won} / ${x.drawn} / ${x.lost}`)+tile('% Vict.',pctTxt(x.pct))+tile('TD',`${x.tdFor} - ${x.tdAgainst}`)+tile('Fans',e.fans)+tile('Calaveras / Unos',`${x.skullsFor} / ${x.onesFor}`)+tile('Tesorería',fmt(e.treasury),e.treasury<0?'neg':'')+tile('Valor equipo',fmt(e.teamValue))}</div>
   <nav class="tabs" role="tablist">${TEAM_TABS.map(([id,l])=>`<button class="tab" role="tab" data-tt="${id}" aria-selected="${ui.teamTab===id}">${l}</button>`).join('')}</nav>
   <div id="tpanel"></div>`;
   $('#mainTabs').innerHTML=MAIN_TABS.map(([id,l])=>`<button class="tab" role="tab" data-main="${id}" aria-selected="false">${l}</button>`).join('');
@@ -367,7 +382,7 @@ function tHistory(d){
       return`<li>#${esc(ev.num)} ${esc(ev.name||'')}${acts?': '+acts:''} · <strong>+${ev.sppEarned||0} SPP</strong>${ev.injurySuffered&&ev.injurySuffered!=='none'?` · <span class="warn">${INJURY_LABEL[ev.injurySuffered]||''}</span>`:''}${(ev.improvements||[]).map(im=>` · <span class="newsk">Mejora: ${esc(impText(im))}</span>`).join('')}${ev.draft==='drafted'?` · <span class="warn">Drafteado (${esc(ev.draftValue||'')})</span>`:''}${ev.draft==='paidValue'?` · <span class="warn">Pagó ${fmt(ev.valuePaid)} para no ser drafteado (+${fmt(DRAFT_BONUS)} de valor)</span>`:''}</li>`}).join('');
     const s=m.statistics||{};
     return`<div class="card"><h3>${esc(m.id)} · ${m.homeAway==='home'?'(local) ':m.homeAway==='away'?'(visitante) ':''}vs ${esc(m.opponent.teamName)} <span class="res ${m.result.outcome}">${m.result.teamScore} - ${m.result.opponentScore}</span><span class="pill ${m.result.outcome==='win'?'ok':m.result.outcome==='loss'?'out':''}">${label[m.result.outcome]||''}</span></h3>
-    <div class="meta">${esc(m.opponent.race||'')} · Puntos ${m.leaguePoints} · Ganancias ${fmt(m.earnings)} · Fans ${sgn(m.dedicatedFansGained||0)} · HL ${s.lightInjuriesFor}-${s.lightInjuriesAgainst} · HG ${s.seriousInjuriesFor}-${s.seriousInjuriesAgainst} · RIP ${s.deathsFor}-${s.deathsAgainst} · Calaveras ${s.skullsFor||0}-${s.skullsAgainst||0} · Unos ${s.onesFor||0}-${s.onesAgainst||0}</div>
+    <div class="meta">${esc(m.opponent.race||'')} · Ganancias ${fmt(m.earnings)} · Fans ${sgn(m.dedicatedFansGained||0)} · HL ${s.lightInjuriesFor}-${s.lightInjuriesAgainst} · HG ${s.seriousInjuriesFor}-${s.seriousInjuriesAgainst} · RIP ${s.deathsFor}-${s.deathsAgainst} · Calaveras ${s.skullsFor||0}-${s.skullsAgainst||0} · Unos ${s.onesFor||0}-${s.onesAgainst||0}</div>
     ${evs?`<ul>${evs}</ul>`:''}${m.notes?`<div class="meta">${esc(m.notes)}</div>`:''}</div>`}).join('')+'</div>';
 }
 function tEcon(d){
@@ -389,7 +404,7 @@ function tEcon(d){
   <div class="card"><h3>Totales de liga</h3><dl class="calc">
    <div><dt>Partidos</dt><dd>${t.played} (${t.won}G ${t.drawn}E ${t.lost}P)</dd></div><div><dt>TD a favor / en contra</dt><dd>${t.tdFor} / ${t.tdAgainst}</dd></div>
    <div><dt>Heridas causadas / sufridas</dt><dd>${t.casFor} / ${t.casAgainst}</dd></div><div><dt>Expulsados</dt><dd>${t.sentOffFor} / ${t.sentOffAgainst}</dd></div>
-   <div><dt>Puntos de liga</dt><dd>${t.points}</dd></div></dl></div></div>`;
+   <div><dt>% de victorias</dt><dd>${pctTxt(t.pct)}</dd></div></dl></div></div>`;
 }
 function tDead(d){
   const r=d.league.retiredPlayers;

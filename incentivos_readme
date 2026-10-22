@@ -22,12 +22,63 @@ LISTA DE INCENTIVOS disponibles y su coste
 Que hace cada incentivo:
 - Animadoras temporales, suma 1 o 2 a las animadoras para ese partido
 - Ayudantes a tiempo parcial, suma 1 o 2 a los ayudantes de entrenador
-- Barriles de cerveza,
+- Barriles de cerveza, Hasta el final del partido, por cada Barril de cerveza Estrella Blitzer que hayas adquirido, aplica un modificador de +1 a todas tus tiradas para determinar si tus jugadores Inconscientes se recuperan.
 - Entrenamientos adicionales, suma 1 a 6 Reroll al equipo
-- Sobornos, suma 1 o 2 sobornos a los que tenga el equipo
-- Apotecario herrante, suma 1 apotecario a los que pueda traer el equipo
-- Ayudante de la morgue
-- Médico de la peste
-- Chef maestro Halfling
+- Sobornos, suma 1 o 2 sobornos a los que tenga el equipo. Cuando uno de tus Jugadores sea Expulsado, tras tu intento de Protestar al árbitro, puedes usar un Soborno (si dispones de él). En tal caso, tira 1D6. Con 2+, el
+Jugador en cuestión no es Expulsado y no se produce cambio de turno, Con un 1 natural, el-arbitro se embolsa el dinero pero expulsa al Jugador igualmente. El jugador es Expulsado, hay cambio de turno y el Soborno se pierde.
+- Apotecario herrante, suma 1 apotecario a los que pueda traer el equipo. Si adquieres un Apotecario errante, puedes usarlo una vez por partido del mismo modo que un Apotecario normal.
+- Ayudante de la morgue, Si adquieres un Ayudante de la morgue, puedes usarlo una vez por partido para repetir una tirada de Regeneración fallida de un jugador de tu equipo.
+- Médico de la peste, Si adquieres un Médico de la peste, puedes usarlo una vez por partido para repetir una tirada de Regeneración fallida de un jugador de tu equipo. Como alternativa, puedes usar al Médico de la peste 
+del mismo modo que un Apotecario.
+- Chef maestro Halfling, Al inicio de cada parte del partido, antes de la Patada inicial, un equipo que haya adquirido un Chef Maestro Halfling puede tirar tres D6. Por cada 4+, el equipo gana una Segunda oportunidad 
+adicional para esa parte, y el equipo rival pierde una Segunda oportunidad para esa parte. Las Segundas oportunidades otorgadas por habilidades, rasgos y otras reglas especiales no pueden perderse asi.
+
+- Plegarias de Nuffle, por cada plegaria se lanza 1 dado de 8, duran hasta el final del partido siempre que la propia plegaria no diga lo contrario. SI hay que elegir al azar un jugador o lanzar algún dado que se haga
+automaticamente y que se vea en el Historial tras poner en el modal el resultado de la plegaria. Son las siguientes:
+1 TRAMPILLA TRAICIONERA: Cada vez que un jugador, sea del equipo que sea, entre por cualquier motivo en una casilla que contiene una trampilla, tira 1D6. Con un 1, la trampilla se abre y el jugador cae por ella. Haz una 
+tirada de Lesiones contra ese jugador como si hubiera sido empujado fuera del campo. Si el jugador era el portador del balón, éste rebota desde la casilla de la trampilla.
+2 PUÑAL: Elige al azar un jugador de tu equipo que esté jugando este partido. Hasta el final del partido, dicho jugador obtiene el rasgo Apuñalar.
+3 MÚSCULOS DE HIERRO: Elige un jugador de tu equipo que esté jugando este partido. Hasta el final del partido, dicho jugador aumenta en 1 su atributo AR, hasta un máximo de 11+.
+4 NUDILLERAS: Elige un jugador de tu equipo que esté jugando este partido. Hasta el final del partido, dicho jugador obtiene la habilidad Golpe mortífero.
+5 BENDICIÓN DE NUFFLE: Elige al azar a un jugador de tu equipo que esté jugando este partido. Hasta el final del partido, dicho jugador obtiene la habilidad Profesional.
+6 TOPOS BAJO EL CAMPO: Los jugadores rivales aplican un modificador -1 a sus intentos de forzar la marcha.
+7 ESCRUTINIO ARBITRAL: Cualquier jugador rival que realice una acción de Falta será automáticamente Expulsado si rompe la armadura, aunque no saque un doble natural.
+8 ENTRENAMIENTO INTENSIVO: Elige al azar a un jugador de tu equipo que esté jugando este partido. Hasta el final del partido, dicho jugador obtiene una habilidad Primaria a tu elección.
+
+La trampilla traicionera se pinta en el campo en dos casillas, si contamos como la 1ra casilla de la izquierda arriba, se coloca la 1ª trampilla en la casilla:   y la 2ª trampilla en la casilla:
+
 - Medidas desesperadas
-- Plegarias de Nuffle: 
+1 IDOPAJE!: Uno de tus jugadores ha estado experimentando con pociones para mejorar su rendimiento. Puedes usar esta Medida desesperada después de que ambos equipos se hayan desplegado, pero antes de la patada inicial. 
+Elige un jugador de tu equipo y aumenta en 1 su FU o AG (a tu elección) durante el resto del partido. Sin embargo, al final de cualquier entrada en la que participe, tira 1D6. Con 3+, todo va bien y puede seguirjugando. 
+Sin embargo, con 1-2 al jugador le da un bajón y queda Inconsciente inmediatamente. No puedes tirar para ver si se recupera durante esta secuencia de final de entrada.
+2 JUGAR AL DESPISTE: Puedes usar esta Medida desesperada cuando activas un jugador. Eljugador puede declarar dos acciones durante su activación en lugar de una. Sin embargo, no puede declarar la misma acción dos veces, 
+ni puede declarar dos acciones que incluyan ambas una acción de Movimiento.
+3 RESACA: Puedes usar esta Medida desesperada antes de empezar el despliegue de los equipos al inicio del partido. Elige un jugador rival; el jugador elegido no puede participar en la primera entrada del partido.
+4 AJUSTE DE CUENTAS: Puedes usar esta Medida desesperada cuando activas un jugador. El jugador puede declarar una acción de Falta aunque tu equipo ya haya declarado una acción de Falta en este turno. Además, 
+el jugador no puede ser Expulsado al cometer esa acción de Falta.
+5 ESCENA ENSAYADA: Puedes usar esta Medida desesperada cuando uno de tus jugadores realice una acción de Pase.
+Ignora el PS del jugador lanzador; el Pase será automáticamente un pase preciso con cualquier resultado de 2+. Además, ignora la AG del jugador receptor; atrapará automáticamente el balón con cualquier resultado de 2+.
+6 ESPIONAJE DEPORTIVO: Puedes usar esta Medida desesperada cuando tu equipo sufra un cambio de turno. Tu equipo obtiene dos Segundas oportunidades tras resolver el cambio de turno 
+(no pueden usarse para repetir la tirada que provocó dicho cambio de turno).
+7 PIEL DE PLÁTANO: Puedes usar esta Medida desesperada cuando un jugador rival entre en la zona de defensa de uno de tus jugadores. El jugador rival es Tumbado boca arriba inmediatamente y su activación termina. 
+Esto no provoca un cambio de turno a menos que dicho jugador fuera el portador del balón.
+8 PERGAMINO MÁGICO: Un tipo sospechoso de un sindicato de apuestas deportivas te ha dado un extraño pergamino. Sería una insensatez que lo leyeras en voz alta... ¿no? Puedes usar esta Medida desesperada antes de que se 
+despliegue cualquiera de los dos equipos. Tu equipo obtiene un único Incentivo de Mago deportivo de manera gratuita
+
+MAGO DEPORTIVO
+Una vez por partido, un Mago Deportivo puede lanzar uno de los siguientes dos hechizos:
+BOLA DE FUEG0
+Al final de cualquier turno, antes de que empiece el tumo siguiente, puedes elegir una casilla del campo0 y tirar 1D6 por cada jugador en esa casilla o una adyacente. Con 1-3, el jugador esquiva la bola de fuego y no le ocurre nada. 
+Con 4+, el jugador es alcanzado por la bola de fuego.
+Si un jugador En pie es alcanzado por la bola de fuego, es Derribado de inmediato y se aplica un modificador de +1 a la tirada de Armadura contra él. 
+Si un jugador Tumbado boca arriba o Aturdido es alcanzado por la bola de fuego, se hace de inmediato una tirada de Armadura contra él con un modificador de +1. Estos modificadores deben aplicarse siempre.
+¡ZAP!
+Al final de cualquier turno, antes de que empiece el turno siguiente, puedes elegir un jugador sobre el campo y tirar 1D6. Si el resultado de la tirada menor que la FU del jugador elegido, o
+si es un 1 natural, no ocurre nada. Si el resultado de la tirada es igual o superior a la FU del jugador elegido, o si es un 6 natural, el jugador se convierte en Rana. Si era el portador del
+balón, el balón rebota desde su casilla.
+Una Rana tiene el siguiente perfil:
+RANA (CLAVE: ESPECIAL, RANA) MV 5 FU 1 AG 2+ PS 6+ AR 5+ HABILIDADES Y RASGOS: Canijo, Escurridizo, Esquivar, Pieras muy largas, Saltar, Sin balón
+Si una Rana sufre una Lesión, no hagas tirada de Lesiones: en lugar de eso, sufre automáticamente un resultado de Magullado. No podrá usarse un Apotecario para remendarla. 
+Al final de la entrada en curso, el jugador transformado en Rana recobra su forma normal sin efectos negativos, y se coloca en la zona de Reservas, listo para la siguiente entrada.
+
+La rana la representamos con el icono rana.png y la pintaremos con el color del equipo para diferenciarlo

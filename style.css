@@ -656,7 +656,7 @@ button.full{width:100%; margin-top:6px;}
 .conn-dot.on{background:var(--good);}
 
 /* --- Versión del archivo (para el badge de verificación en el pie) --- */
-:root{ --css-version: "S_V49"; }
+:root{ --css-version: "S_V51"; }
 
 /* ---- Iconos dorados (se tiñen con el color del marcador mediante máscara) ---- */
 .gold-icon{display:inline-block; width:18px; height:18px; vertical-align:middle; background:var(--gold);
@@ -751,7 +751,7 @@ button.full{width:100%; margin-top:6px;}
 .sb-bribe.used{cursor:default;}
 .sb-bribe.used .gold-icon{background:#4a4540;}
 
-/* ===== S_V49 — dados de 6 caras con icono ===== */
+/* ===== S_V51 — dados de 6 caras con icono ===== */
 /* Personalizables (futuro, p. ej. desde el JSON del equipo): --die-bg (fondo del dado) y --die-pip (color de los puntos).
    Se pueden fijar en :root o en el propio elemento (style="--die-bg:#c0392b; --die-pip:#fff"). */
 :root{ --die-bg:#fff; --die-pip:#1c1712; --die-radius:8px; }
@@ -773,3 +773,22 @@ button.full{width:100%; margin-top:6px;}
 .die-face[data-d6="6"]{--die-img:url(icons/dado6.png);}
 /* Dados en el Historial: mismo cuadrado blanco redondeado */
 .hd{height:18px; width:18px; padding:1px; vertical-align:middle; margin:0 1px; background:var(--die-bg); border-radius:4px; object-fit:contain;}
+
+/* ---- Iconos de recursos en el marcador (reroll, apotecario, animadoras, ayudantes, mago, barril, morgue) ---- */
+.sb-reroll-label .gold-icon{width:18px; height:18px; display:block;}
+.sb-reroll-label.empty .gold-icon{background:#4a4540;}
+.sb-icons{display:flex; justify-content:center; flex-wrap:wrap; gap:10px; margin-top:6px;}
+.sb-ico{display:inline-flex; align-items:center; gap:2px;}
+.sb-ico .gold-icon{width:22px; height:22px;}
+.sb-ico b{font-size:11px; color:var(--gold);}
+.sb-ico.clickable{cursor:pointer;}
+.sb-ico.used .gold-icon{background:#4a4540;}
+.sb-ico.used b{color:#4a4540;}
+
+/* ---- Borde del modal con el color del equipo que tira / decide ---- */
+.modal[data-tint]{border-color:var(--modal-team); box-shadow:0 0 0 2px var(--modal-team), 0 8px 30px rgba(0,0,0,0.6);}
+.modal[data-tint]::before{
+  content:attr(data-actor); display:block; width:max-content; max-width:100%; margin:-6px auto 10px auto;
+  padding:3px 12px; border-radius:12px; font-family:'Oswald',sans-serif; font-size:11px; font-weight:700; letter-spacing:1px;
+  background:var(--modal-team); color:var(--modal-team-text,#fff);
+}

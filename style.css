@@ -656,7 +656,7 @@ button.full{width:100%; margin-top:6px;}
 .conn-dot.on{background:var(--good);}
 
 /* --- Versión del archivo (para el badge de verificación en el pie) --- */
-:root{ --css-version: "S_V54"; }
+:root{ --css-version: "S_V55"; }
 
 /* ---- Iconos dorados (se tiñen con el color del marcador mediante máscara) ---- */
 .gold-icon{display:inline-block; width:18px; height:18px; vertical-align:middle; background:var(--gold);
@@ -751,7 +751,7 @@ button.full{width:100%; margin-top:6px;}
 .sb-bribe.used{cursor:default;}
 .sb-bribe.used .gold-icon{background:#4a4540;}
 
-/* ===== S_V54 — dados de 6 caras con icono ===== */
+/* ===== S_V55 — dados de 6 caras con icono ===== */
 /* Personalizables (futuro, p. ej. desde el JSON del equipo): --die-bg (fondo del dado) y --die-pip (color de los puntos).
    Se pueden fijar en :root o en el propio elemento (style="--die-bg:#c0392b; --die-pip:#fff"). */
 :root{ --die-bg:#fff; --die-pip:#1c1712; --die-radius:8px; }
@@ -820,3 +820,8 @@ button.full{width:100%; margin-top:6px;}
 .cell.trapdoor-cell .trapdoor-ico{position:absolute; inset:2px; pointer-events:none; z-index:1;
   background:#4a2c12; -webkit-mask:url(icons/trampilla.png) center/contain no-repeat; mask:url(icons/trampilla.png) center/contain no-repeat;}
 .sb-ico.alert .gold-icon{background:#e0281b;}
+
+.ri-vet{display:inline-flex;align-items:center;margin-left:4px}
+.ri-vet img{height:16px;width:auto}
+.ri-vet.used{filter:grayscale(1);opacity:.5}
+.ri-row3 u{text-decoration:underline;font-weight:700}

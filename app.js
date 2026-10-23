@@ -49,6 +49,7 @@ const RES_ICONS = [
   { key:'cheerleaders', icon:'animadora.png',           name:'Animadoras',           once:false },
   { key:'assistants',   icon:'ayudante_entrenador.png', name:'Ayudantes de entrenador', once:false },
   { key:'keg',          icon:'barril.png',              name:'Barril de cerveza Estrella Blitzer', once:false },
+  { key:'bribes',       icon:'soborno.png',             name:'Soborno (incentivo)',  once:true  },
   { key:'plague',       icon:'medico_peste.png',        name:'Médico de la peste',   once:true  },
   { key:'chef',         icon:'chef_halfling.png',       name:'Chef maestro halfling', once:false }
 ];
@@ -75,6 +76,9 @@ function renderResourceIcons(){
         '<span class="gold-icon" style="--icon:url(\'icons/' + r.icon + '\')"></span>' +
         (num!=='' ? '<b class="mono">' + num + '</b>' : '') + '</span>';
     });
+    if(prayerFlag(t==='A'?'B':'A','escrutinio')){
+      html += '<span class="sb-ico alert" title="Escrutinio arbitral: si rompe la armadura en una Falta, este equipo es Expulsado automáticamente"><span class="gold-icon" style="--icon:url(\'icons/silbato.png\')"></span></span>';
+    }
     box.innerHTML = html;
   });
   // Reroll: el icono sustituye a la etiqueta "RR" (amarillo con rerolls, gris sin ninguna)
@@ -571,7 +575,7 @@ function snapshotState(){
     kickoffStepText: document.getElementById('kickoffStepText').textContent,
     kickoffDistRowVisible: document.getElementById('kickoffDistRow').style.display!=='none',
     kickoffDistance,
-    kickoffEvt, teamBribe, cheerBonus, teamFreeRR, teamInc, teamUsedRes,
+    kickoffEvt, teamBribe, cheerBonus, teamFreeRR, teamInc, teamUsedRes, trapChecked, regenHelperOpen,
     kickoffDirDieText: document.getElementById('kickoffDirDie').textContent,
     kickoffDistDieText: document.getElementById('kickoffDistDie').textContent,
     bounceDirDieText: document.getElementById('bounceDirDie').textContent,
@@ -586,6 +590,7 @@ let lastAppliedSeq = 0;
 
 function broadcastState(){
   if(applyingRemote) return;
+  try{ scheduleTrapTick(); }catch(e){}
   const snap = snapshotState();
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify(snap)); }catch(e){}
   if(stateRef){
@@ -892,6 +897,9 @@ function applyRemoteState(payload){
   cheerBonus = Object.assign({A:'none',B:'none'}, payload.cheerBonus || {});
   teamFreeRR = Object.assign({A:-1,B:-1}, payload.teamFreeRR || {});
   teamInc = Object.assign({A:{},B:{}}, payload.teamInc || {});
+  trapChecked = payload.trapChecked || {};
+  regenHelperOpen = !!payload.regenHelperOpen;
+  try{ renderRegenHelper(); }catch(e){}
   teamUsedRes = Object.assign({A:{},B:{}}, payload.teamUsedRes || {});
   renderKickoffEvent();
   document.getElementById('kickoffDistRow').style.display = payload.kickoffDistRowVisible ? 'flex' : 'none';
@@ -1068,6 +1076,10 @@ function applyImportedTeam(team, data, verifyState, res){
   // Staff de liga (JSON gestionado desde el gestor): hinchas dedicados, animadoras, etc. Vive en league.staff, no en staff.
   if(data.league && data.league.staff && typeof data.league.staff==='object'){
     teamStaff[team] = Object.assign({}, teamStaff[team] || {}, { leagueStaff: data.league.staff });
+  }
+  if(data.league && typeof data.league==='object'){
+    const ec = econFromTeamJson(data);
+    if(Object.keys(ec).length){ teamStaff[team] = Object.assign({}, teamStaff[team] || {}, { leagueEcon: ec }); }
   }
   teamFormation[team] = Array.isArray(data.formation) ? data.formation : [];
   data.players.forEach(pd=>{
@@ -1637,7 +1649,7 @@ function defaultPreMatch(){
     fanDie:{A:0,B:0}, fanFactor:{A:0,B:0}, fanTotal:{A:0,B:0}, fanFound:{A:false,B:false}, fanRolled:false,
     wDie:{a:0,b:0}, weather:'',
     subs:{A:0,B:0},
-    coinDie:{A:0,B:0}, coinWinner:'' };
+    coinDie:{A:0,B:0}, coinWinner:'', inc:{} };
 }
 function mergePreMatch(src){
   const d = defaultPreMatch();
@@ -1734,6 +1746,7 @@ function preMatchNext(){
   } else if(preMatch.step==='weather'){
     addSubstitutesIfNeeded();
     preMatch.step = 'inducements';
+    incInit();
   } else if(preMatch.step==='inducements'){
     let a, b;
     do { a = rollDieN(6); b = rollDieN(6); } while(a===b);
@@ -1789,6 +1802,385 @@ function addSubstitutesIfNeeded(){
   renderRosters();
 }
 
+// ================== INCENTIVOS (paso de la secuencia previa) ==================
+const INC_ITEMS = [
+  { key:'cheerleaders', name:'Animadoras temporales',            max:2, cost:15000,  icon:'animadora.png' },
+  { key:'assistants',   name:'Ayudantes a tiempo parcial',       max:2, cost:15000,  icon:'ayudante_entrenador.png' },
+  { key:'keg',          name:'Barriles de cerveza Estrella Blitzer', max:2, cost:50000, icon:'barril.png' },
+  { key:'prayers',      name:'Plegarias a Nuffle',               max:2, cost:5000 },
+  { key:'rerolls',      name:'Entrenamientos adicionales',       max:6, cost:125000, icon:'reroll.png' },
+  { key:'bribes',       name:'Sobornos',                         max:2, cost:100000, discount:{ rule:'corrupt', cost:50000 }, icon:'soborno.png' },
+  { key:'apothecary',   name:'Apotecario errante',               max:1, cost:100000, need:'apoth',   needTxt:'solo equipos que puedan contratar Apotecario', icon:'apotecario.png' },
+  { key:'morgue',       name:'Ayudante de la morgue',            max:1, cost:100000, need:'undead',  needTxt:'solo Señores de los No Muertos', icon:'ayudante_morgue.png' },
+  { key:'plague',       name:'Médico de la peste',               max:1, cost:100000, need:'nurgle',  needTxt:'solo Elegidos de Nurgle', icon:'medico_peste.png' },
+  { key:'chef',         name:'Chef maestro halfling',            max:1, cost:300000, discount:{ rule:'halfling', cost:100000 }, icon:'chef_halfling.png' },
+  { key:'desperate',    name:'Medidas desesperadas',             max:5, cost:50000 }
+];
+const INC_RULES = [
+  { k:'corrupt',  label:'Sobornos y corrupción' },
+  { k:'undead',   label:'Señores de los No Muertos' },
+  { k:'nurgle',   label:'Elegidos de Nurgle' },
+  { k:'halfling', label:'Halfling' },
+  { k:'apoth',    label:'Puede contratar Apotecario' }
+];
+const TRAP_CELLS = [ { r:1, c:5 }, { r:9, c:14 } ];   // 2ª fila/6ª columna y 10ª fila/15ª columna (contando desde arriba-izquierda)
+function trapdoorActive(){ return prayerFlag('A','trapdoor') || prayerFlag('B','trapdoor'); }
+function isTrapCell(r,c){ return TRAP_CELLS.some(t=>t.r===r && t.c===c); }
+let trapChecked = {};   // playerId -> 'r_c' ya comprobado (para no repetir la tirada mientras siga en la casilla)
+let trapTickTimer = null, trapTries = 0;
+function scheduleTrapTick(){
+  if(!trapdoorActive() || phase!=='live') return;
+  if(trapTickTimer) return;
+  trapTickTimer = setTimeout(()=>{ trapTickTimer = null; trapdoorTick(); }, 450);
+}
+function trapdoorBusy(){
+  return anyModalOpen() || pendingPush || pendingFollowUp || (pendingArmorQueue && pendingArmorQueue.length) || pendingCatch || pendingBallDrop || ballBounceActive || pendingTurnoverAfterResolve || pendingTD || kickoffBounceStep || (kickoffEvt && kickoffEvt.phase);
+}
+function trapdoorTick(){
+  if(!trapdoorActive() || phase!=='live') return;
+  // limpiar a quien ya no está en una casilla de trampilla
+  players.forEach(p=>{ if(trapChecked[p.id] && !(p.onPitch && isTrapCell(p.row,p.col))) delete trapChecked[p.id]; });
+  const entrant = players.find(p=>p.onPitch && p.row!==null && isTrapCell(p.row,p.col) && trapChecked[p.id]!==(p.row+'_'+p.col));
+  if(!entrant){ trapTries = 0; return; }
+  if(trapdoorBusy()){ if(++trapTries<40){ trapTickTimer = setTimeout(()=>{ trapTickTimer = null; trapdoorTick(); }, 600); } return; }
+  trapTries = 0;
+  trapChecked[entrant.id] = entrant.row + '_' + entrant.col;
+  const d = rollDieN(6);
+  log('🕳️ TRAMPILLA TRAICIONERA: ' + entrant.name + ' (' + teamName(entrant.team) + ') entra en una casilla con trampilla — D6=' + d + (d===1 ? ': ¡la trampilla se abre y cae por ella!' : ': la trampilla aguanta.'));
+  if(d===1){
+    const r = entrant.row, c = entrant.col;
+    queueBallDropIfCarrier(entrant.id, r, c);
+    entrant.onPitch = false; entrant.row = null; entrant.col = null; entrant.rooted = false;
+    renderRosters(); renderPitch(); broadcastState();
+    openInjuryDirect(entrant);
+  } else {
+    broadcastState();
+    scheduleTrapTick();
+  }
+}
+const PRAYERS = {
+  1:{ name:'TRAMPILLA TRAICIONERA', desc:'Cada vez que un jugador, sea del equipo que sea, entre en una casilla con trampilla, tira 1D6: con un 1 la trampilla se abre y cae por ella (Lesiones como empujado fuera del campo; si llevaba el balón, rebota desde la trampilla).', mode:'flag' },
+  2:{ name:'PUÑAL', desc:'Un jugador al azar de tu equipo obtiene el rasgo Apuñalar hasta el final del partido.', mode:'random', skill:'Apuñalar' },
+  3:{ name:'MÚSCULOS DE HIERRO', desc:'Elige un jugador de tu equipo: +1 a su AR (máximo 11+) hasta el final del partido.', mode:'pick' },
+  4:{ name:'NUDILLERAS', desc:'Elige un jugador de tu equipo: obtiene la habilidad Golpe mortífero hasta el final del partido.', mode:'pick', skill:'Golpe mortífero' },
+  5:{ name:'BENDICIÓN DE NUFFLE', desc:'Un jugador al azar de tu equipo obtiene la habilidad Profesional hasta el final del partido.', mode:'random', skill:'Profesional' },
+  6:{ name:'TOPOS BAJO EL CAMPO', desc:'Los jugadores rivales aplican un −1 a sus intentos de forzar la marcha (a por ellos).', mode:'flag' },
+  7:{ name:'ESCRUTINIO ARBITRAL', desc:'Cualquier jugador rival que realice una acción de Falta será Expulsado automáticamente si rompe la armadura, aunque no saque doble natural.', mode:'flag' },
+  8:{ name:'ENTRENAMIENTO INTENSIVO', desc:'Un jugador al azar de tu equipo obtiene una habilidad Primaria a tu elección hasta el final del partido.', mode:'randomPick' }
+};
+const DESPERATE = {
+  1:'¡IDOPAJE! — antes de la patada inicial: +1 FU o AG a un jugador (al final de cada entrada que juegue, D6: 1-2 queda Inconsciente).',
+  2:'JUGAR AL DESPISTE — al activar un jugador puede declarar dos acciones (distintas y sin dos Movimientos).',
+  3:'RESACA — antes del despliegue: un jugador rival no puede jugar la primera entrada.',
+  4:'AJUSTE DE CUENTAS — un jugador puede declarar Falta aunque ya se haya declarado una, y no puede ser Expulsado.',
+  5:'ESCENA ENSAYADA — en un Pase: pase preciso y recepción automática con 2+.',
+  6:'ESPIONAJE DEPORTIVO — tras un cambio de turno propio, el equipo obtiene 2 Segundas oportunidades.',
+  7:'PIEL DE PLÁTANO — un rival que entre en zona de defensa de uno tuyo queda Tumbado y su activación termina.',
+  8:'PERGAMINO MÁGICO — el equipo obtiene un Mago deportivo gratis (ya añadido).'
+};
+function incSt(){
+  if(!preMatch.inc || typeof preMatch.inc!=='object') preMatch.inc = {};
+  const i = preMatch.inc;   // se normaliza EN SITIO (mismo objeto siempre), porque RTDB elimina vacíos y 0
+  if(i.sub===undefined) i.sub = 'setup';
+  if(i.high===undefined) i.high = '';
+  if(i.cash===undefined) i.cash = 0;
+  ['vae','tre','spent','fromTre'].forEach(k=>{ if(!i[k] || typeof i[k]!=='object') i[k] = {}; if(i[k].A===undefined) i[k].A = 0; if(i[k].B===undefined) i[k].B = 0; });
+  ['cart','rules','flags'].forEach(k=>{ if(!i[k] || typeof i[k]!=='object') i[k] = {}; if(!i[k].A || typeof i[k].A!=='object') i[k].A = {}; if(!i[k].B || typeof i[k].B!=='object') i[k].B = {}; });
+  ['prayers','desp'].forEach(k=>{
+    if(!i[k] || typeof i[k]!=='object') i[k] = {};
+    ['A','B'].forEach(t=>{ const v = i[k][t]; if(!Array.isArray(v)) i[k][t] = (v && typeof v==='object') ? Object.values(v) : []; });
+  });
+  return i;
+}
+function incCommit(){ renderPreMatch(); broadcastState(); }
+function fmtMO(n){ return (Number(n)||0).toLocaleString('es-ES') + ' M.O.'; }
+function raceRules(team){
+  const r = String(teamRace[team] || '').toLowerCase();
+  const undead = /undead|no.?muert|necro|khemri|tomb|vampir/.test(r);
+  const nurgle = /nurgle/.test(r);
+  return { corrupt:false, undead, nurgle, halfling:/halfling/.test(r), apoth: !(undead || nurgle) };
+}
+function econFromTeamJson(data){
+  // VAE y Tesorería a partir del JSON del gestor (data.league.economy / players[].price / staff). Son una ESTIMACIÓN editable.
+  const lg = data && data.league;
+  if(!lg || typeof lg!=='object') return {};
+  const pr = (lg.economy && lg.economy.prices) || {};
+  const price = (k, d)=> (typeof pr[k]==='number' ? pr[k] : d);
+  const st = lg.staff || {};
+  const n = v=> (typeof v==='number' && isFinite(v)) ? v : 0;
+  const rerollTotal = (data.staff && data.staff.rerolls && typeof data.staff.rerolls.total==='number') ? data.staff.rerolls.total : 0;
+  const staffVal = rerollTotal + n(st.cheerleaders)*price('cheerleader',20000) + n(st.assistantCoaches)*price('assistantCoach',20000) +
+                   n(st.apothecary)*price('apothecary',80000) + n(st.dedicatedFans)*price('dedicatedFan',20000);
+  const plist = Array.isArray(lg.players) ? lg.players : [];
+  const activeVal = plist.filter(p=>!p.status || p.status==='active').reduce((a,p)=>a + n(p.price), 0);
+  const allVal = plist.reduce((a,p)=>a + n(p.price), 0);
+  const out = { vae: activeVal + staffVal };
+  const noMatches = !Array.isArray(lg.matches) || lg.matches.length===0;
+  if(noMatches && typeof (lg.economy && lg.economy.startingTreasury)==='number'){
+    out.treasury = Math.max(0, lg.economy.startingTreasury - allVal - staffVal - n(st.bribes)*price('bribe',100000));
+    out.treasuryEstimated = true;
+  }
+  return out;
+}
+function incInit(){
+  preMatch.inc = {};
+  const i = incSt();
+  ['A','B'].forEach(t=>{
+    const ec = (teamStaff[t] && teamStaff[t].leagueEcon) || {};
+    if(typeof ec.vae==='number') i.vae[t] = ec.vae;
+    if(typeof ec.treasury==='number') i.tre[t] = ec.treasury;
+    i.rules[t] = raceRules(t);
+  });
+  i.inited = true; i.sub = 'setup';
+}
+function incSetNum(kind, team, val){ const i = incSt(); i[kind][team] = Math.max(0, parseInt(val,10) || 0); incCommit(); }
+function incSetRule(team, k, on){ const i = incSt(); i.rules[team][k] = !!on; incCommit(); }
+function incCost(team, it){
+  const i = incSt();
+  if(it.discount && i.rules[team][it.discount.rule]) return it.discount.cost;
+  return it.cost;
+}
+function incAvail(team, it){
+  const i = incSt();
+  if(it.need && !i.rules[team][it.need]) return { ok:false, why:it.needTxt };
+  return { ok:true };
+}
+function incCartTotal(team){
+  const i = incSt(); let tot = 0;
+  INC_ITEMS.forEach(it=>{ const n = i.cart[team][it.key] || 0; if(n>0 && incAvail(team,it).ok) tot += n * incCost(team,it); });
+  return tot;
+}
+function incSetQty(team, key, delta){
+  const i = incSt();
+  if(!((i.sub==='buyHigh' && i.high===team) || (i.sub==='buyLow' && i.high && i.high!==team))) return;
+  const it = INC_ITEMS.find(x=>x.key===key); if(!it) return;
+  const cur = i.cart[team][key] || 0;
+  const n = Math.max(0, Math.min(it.max, cur + delta));
+  if(n===cur) return;
+  i.cart[team][key] = n;
+  incCommit();
+}
+function incBudget(team){
+  const i = incSt();
+  if(i.sub==='buyHigh') return { cash:0, treAllow:i.tre[team], total:i.tre[team] };
+  const treAllow = Math.min(50000, i.tre[team]);
+  return { cash:i.cash, treAllow, total:i.cash + treAllow };
+}
+function incStartBuying(){
+  const i = incSt();
+  if(i.vae.A===i.vae.B){
+    log('💰 INCENTIVOS: ambos equipos tienen el mismo VAE (' + fmtMO(i.vae.A) + ') — están igualados: ninguno puede gastar Tesorería en Incentivos.');
+    i.sub = 'done'; incFinish(); return;
+  }
+  i.high = i.vae.A > i.vae.B ? 'A' : 'B';
+  const low = i.high==='A' ? 'B' : 'A';
+  i.cash = Math.abs(i.vae.A - i.vae.B);
+  log('💰 INCENTIVOS: VAE ' + teamName('A') + ' ' + fmtMO(i.vae.A) + ' — ' + teamName('B') + ' ' + fmtMO(i.vae.B) + '. ' + teamName(i.high) + ' (mayor VAE) compra primero con su Tesorería (' + fmtMO(i.tre[i.high]) + '). ' + teamName(low) + ' recibirá ' + fmtMO(i.cash) + ' de diferencia más lo que gaste el otro equipo, y hasta 50.000 M.O. de su Tesorería.');
+  i.sub = 'buyHigh';
+  incCommit();
+}
+function incApplyCart(team){
+  const i = incSt();
+  teamInc[team] = Object.assign({}, teamInc[team] || {});
+  const parts = [];
+  INC_ITEMS.forEach(it=>{
+    const n = i.cart[team][it.key] || 0;
+    if(!(n>0) || !incAvail(team,it).ok) return;
+    parts.push(n + '× ' + it.name);
+    if(it.key==='prayers'){ for(let k=0;k<n;k++) i.prayers[team].push({ done:false, n:0 }); return; }
+    if(it.key==='desperate'){
+      for(let k=0;k<n;k++){
+        const d = rollDieN(8);
+        i.desp[team].push({ n:d });
+        log('📜 Medida desesperada de ' + teamName(team) + ': D8=' + d + ' → ' + DESPERATE[d]);
+        if(d===8){ teamInc[team].wizard = (teamInc[team].wizard || 0) + 1; }
+      }
+      return;
+    }
+    teamInc[team][it.key] = (teamInc[team][it.key] || 0) + n;
+    if(it.key==='rerolls'){ teamRerollsLeft[team] = (teamRerollsLeft[team] || 0) + n; }
+  });
+  log('🛒 ' + teamName(team) + ' compra Incentivos: ' + (parts.length ? parts.join(', ') : 'nada') + '.');
+  renderStaffPanels();
+}
+function incConfirm(team){
+  const i = incSt();
+  const tot = incCartTotal(team), b = incBudget(team);
+  if(tot > b.total) return;
+  if(i.sub==='buyHigh' && i.high===team){
+    i.spent[team] = tot; i.fromTre[team] = tot;
+    log('💰 ' + teamName(team) + ' gasta ' + fmtMO(tot) + ' de su Tesorería en Incentivos (queda ' + fmtMO(i.tre[team] - tot) + ').');
+    incApplyCart(team);
+    const low = team==='A' ? 'B' : 'A';
+    i.cash = Math.abs(i.vae.A - i.vae.B) + tot;
+    i.sub = 'buyLow';
+    log('💰 ' + teamName(low) + ' dispone de ' + fmtMO(i.cash) + ' en efectivo (lo que no gaste se pierde) y hasta ' + fmtMO(Math.min(50000, i.tre[low])) + ' de su Tesorería.');
+    incCommit();
+  } else if(i.sub==='buyLow' && i.high!==team){
+    const fromTre = Math.max(0, tot - i.cash);
+    i.spent[team] = tot; i.fromTre[team] = fromTre;
+    log('💰 ' + teamName(team) + ' gasta ' + fmtMO(tot) + ' (efectivo ' + fmtMO(Math.min(tot, i.cash)) + (fromTre ? ' + ' + fmtMO(fromTre) + ' de su Tesorería, queda ' + fmtMO(i.tre[team] - fromTre) : '') + (tot < i.cash ? '; se pierden ' + fmtMO(i.cash - tot) + ' de efectivo sin gastar' : '') + ').');
+    incApplyCart(team);
+    incFinish();
+  }
+}
+function incPlayingPlayers(team){
+  const retired = ['ko','injured','injuredGrave','dead','expelled'];
+  return players.filter(p=>p.team===team && !retired.includes(p.condition));
+}
+function incFinish(){
+  const i = incSt();
+  const any = ['A','B'].some(t=> i.prayers[t].length>0);
+  if(!any){ i.sub = 'summary'; incCommit(); return; }
+  i.sub = 'prayers';
+  ['A','B'].forEach(t=>{
+    i.prayers[t].forEach((pr, idx)=>{
+      if(pr.n) return;
+      pr.n = rollDieN(8);
+      const def = PRAYERS[pr.n];
+      log('🙏 Plegaria a Nuffle de ' + teamName(t) + ': D8=' + pr.n + ' → ' + def.name + '. ' + def.desc);
+      if(def.mode==='flag'){
+        i.flags[t][pr.n===1 ? 'trapdoor' : pr.n===6 ? 'topos' : 'escrutinio'] = true;
+        pr.done = true;
+        if(pr.n===1) log('🙏 Trampilla traicionera: efecto registrado (las casillas de trampilla se definirán aparte).');
+      } else if(def.mode==='random'){
+        const pool = incPlayingPlayers(t);
+        const p = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
+        if(p){ p.skills = (p.skills || []).concat([def.skill]); pr.target = p.id; log('🙏 ' + p.name + ' (' + teamName(t) + ') obtiene ' + def.skill + ' hasta el final del partido.'); }
+        pr.done = true;
+      } else if(def.mode==='randomPick'){
+        const pool = incPlayingPlayers(t);
+        const p = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
+        if(p){ pr.target = p.id; log('🙏 Entrenamiento intensivo: ' + p.name + ' (' + teamName(t) + ') ha sido elegido al azar; su entrenador elige una habilidad Primaria.'); }
+        else pr.done = true;
+      }
+    });
+  });
+  renderRosters();
+  incCommit();
+}
+function incPrayerPick(team, idx){
+  const i = incSt(); const pr = i.prayers[team][idx]; if(!pr || pr.done) return;
+  const def = PRAYERS[pr.n];
+  let p = null;
+  if(def.mode==='pick'){
+    const sel = document.getElementById('incSel_' + team + '_' + idx);
+    p = players.find(x=>x.id===parseInt(sel && sel.value,10));
+    if(!p) return;
+    if(pr.n===3){
+      const m = String(p.av).match(/\d+/); const n = m ? parseInt(m[0],10) : NaN;
+      if(isNaN(n)){ return; }
+      const nn = Math.min(11, n+1);
+      log('🙏 MÚSCULOS DE HIERRO: ' + p.name + ' (' + teamName(team) + ') AR ' + p.av + ' → ' + nn + '+ hasta el final del partido.');
+      p.av = nn + '+';
+    } else {
+      p.skills = (p.skills || []).concat([def.skill]);
+      log('🙏 NUDILLERAS: ' + p.name + ' (' + teamName(team) + ') obtiene ' + def.skill + ' hasta el final del partido.');
+    }
+    pr.target = p.id;
+  } else if(def.mode==='randomPick'){
+    p = players.find(x=>x.id===pr.target);
+    const inp = document.getElementById('incTxt_' + team + '_' + idx);
+    const txt = inp ? inp.value.trim() : '';
+    if(!p || !txt) return;
+    p.skills = (p.skills || []).concat([txt]);
+    log('🙏 ENTRENAMIENTO INTENSIVO: ' + p.name + ' (' + teamName(team) + ') obtiene la habilidad ' + txt + ' hasta el final del partido.');
+  }
+  pr.done = true;
+  renderRosters();
+  incCommit();
+}
+function prayerFlag(team, key){ return !!(preMatch && preMatch.inc && preMatch.inc.flags && preMatch.inc.flags[team] && preMatch.inc.flags[team][key]); }
+function gfiTargetFor(p){
+  const other = p.team==='A' ? 'B' : 'A';
+  return (weatherKind()==='ventisca' ? 3 : 2) + (prayerFlag(other, 'topos') ? 1 : 0);
+}
+function incNext(){
+  const i = incSt();
+  if(i.sub==='setup') return incStartBuying();
+  preMatchNext();
+}
+function renderIncentives(body, actions){
+  const i = incSt();
+  const okBtn = (label, fn, disabled)=>{ const b = document.createElement('button'); b.className='primary'; b.textContent=label; b.disabled = !!disabled; b.onclick=fn; actions.appendChild(b); return b; };
+  const subTxt = ['A','B'].filter(t=>preMatch.subs[t]>0).map(t=> teamName(t) + ': +' + preMatch.subs[t] + ' Sustituto' + (preMatch.subs[t]===1?'':'s')).join(' · ');
+  let h = subTxt ? '<div class="pm-note">🧍 Sustitutos añadidos: ' + subTxt + '</div>' : '';
+  const num = (kind,t)=>'<input type="number" min="0" step="5000" value="' + i[kind][t] + '" onchange="incSetNum(\'' + kind + '\',\'' + t + '\',this.value)">';
+  if(i.sub==='setup'){
+    const estNote = ['A','B'].filter(t=>teamStaff[t] && teamStaff[t].leagueEcon).map(t=> teamName(t) + ': ' + (teamStaff[t].leagueEcon.treasuryEstimated ? 'VAE y Tesorería calculados desde el JSON de liga (estimación)' : 'VAE calculado desde el JSON de liga; la Tesorería actual no viene en el JSON, escribidla')).join(' · ');
+    if(estNote) h += '<div class="pm-note">ℹ️ ' + estNote + '. Revisad los números.</div>';
+    h += '<div class="pm-note">Indicad el VAE (valor actual de equipo) y la Tesorería de cada equipo. El equipo con mayor VAE compra primero con su Tesorería; el de menor VAE recibe la diferencia más lo gastado por el otro, y hasta 50.000 M.O. de su Tesorería. Con el mismo VAE nadie puede gastar Tesorería.</div><div class="inc-cols">';
+    ['A','B'].forEach(t=>{
+      h += '<div class="inc-team" style="border-color:' + tokenColorFor({team:t}) + '"><h3>' + teamName(t) + '</h3>' +
+        '<label>VAE (M.O.)</label>' + num('vae',t) + '<label>Tesorería (M.O.)</label>' + num('tre',t) +
+        '<label>Reglas especiales</label>' + INC_RULES.map(r=>'<label class="inc-chk"><input type="checkbox" ' + (i.rules[t][r.k] ? 'checked' : '') + ' onchange="incSetRule(\'' + t + '\',\'' + r.k + '\',this.checked)"> ' + r.label + '</label>').join('') + '</div>';
+    });
+    h += '</div>';
+    body.innerHTML = h;
+    okBtn('Continuar → compra de Incentivos', incNext);
+    const sk = document.createElement('button'); sk.textContent = 'Sin Incentivos'; sk.onclick = ()=>{ log('💰 INCENTIVOS: sin compras en este partido.'); i.sub='summary'; incCommit(); }; actions.appendChild(sk);
+    return;
+  }
+  if(i.sub==='buyHigh' || i.sub==='buyLow'){
+    const team = i.sub==='buyHigh' ? i.high : (i.high==='A' ? 'B' : 'A');
+    const tot = incCartTotal(team), b = incBudget(team);
+    const over = tot > b.total;
+    h += '<div class="inc-buyer" style="background:' + tokenColorFor({team}) + '; color:' + textColorFor({team}) + ';">🛒 COMPRA: ' + teamName(team).toUpperCase() + (i.sub==='buyHigh' ? ' (mayor VAE — gasta de su Tesorería)' : ' (menor VAE — efectivo + máx. 50.000 de Tesorería)') + '</div>';
+    h += '<div class="pm-note">' + (i.sub==='buyHigh'
+      ? 'Tesorería: <b>' + fmtMO(i.tre[team]) + '</b>'
+      : 'Efectivo: <b>' + fmtMO(i.cash) + '</b> + Tesorería permitida: <b>' + fmtMO(b.treAllow) + '</b> = presupuesto <b>' + fmtMO(b.total) + '</b>') +
+      ' · Gasto: <b class="' + (over ? 'inc-bad' : '') + '">' + fmtMO(tot) + '</b></div>';
+    h += '<div class="inc-list">';
+    INC_ITEMS.forEach(it=>{
+      const av = incAvail(team, it), n = i.cart[team][it.key] || 0, c = incCost(team, it);
+      h += '<div class="inc-row' + (av.ok ? '' : ' off') + '"><span class="inc-name">' + (it.icon ? '<span class="gold-icon" style="--icon:url(\'icons/' + it.icon + '\')"></span>' : '') + it.name + ' <small>(0-' + it.max + ' · ' + fmtMO(c) + ')</small>' + (av.ok ? '' : '<small class="inc-bad"> — ' + av.why + '</small>') + '</span>' +
+        '<span class="inc-qty"><button onclick="incSetQty(\'' + team + '\',\'' + it.key + '\',-1)" ' + (av.ok && n>0 ? '' : 'disabled') + '>−</button><b class="mono">' + n + '</b><button onclick="incSetQty(\'' + team + '\',\'' + it.key + '\',1)" ' + (av.ok && n<it.max ? '' : 'disabled') + '>+</button></span></div>';
+    });
+    h += '</div>';
+    body.innerHTML = h;
+    okBtn(over ? 'Presupuesto superado' : (tot===0 ? 'No comprar nada' : 'Confirmar compra (' + fmtMO(tot) + ')'), ()=>incConfirm(team), over);
+    return;
+  }
+  if(i.sub==='prayers'){
+    h += '<div class="pm-note">🙏 Plegarias a Nuffle (D8 automático; duran hasta el final del partido)</div><div class="inc-list">';
+    let pending = 0;
+    ['A','B'].forEach(t=>{
+      i.prayers[t].forEach((pr, idx)=>{
+        const def = PRAYERS[pr.n]; if(!def) return;
+        const tgt = players.find(x=>x.id===pr.target);
+        let ctl = '';
+        if(!pr.done){
+          pending++;
+          if(def.mode==='pick'){
+            ctl = '<select id="incSel_' + t + '_' + idx + '">' + incPlayingPlayers(t).map(p=>'<option value="' + p.id + '">#' + p.num + ' ' + p.name + '</option>').join('') + '</select> <button onclick="incPrayerPick(\'' + t + '\',' + idx + ')">Aplicar</button>';
+          } else if(def.mode==='randomPick'){
+            ctl = '<b>' + (tgt ? '#' + tgt.num + ' ' + tgt.name : '—') + '</b> <input type="text" id="incTxt_' + t + '_' + idx + '" placeholder="Habilidad Primaria elegida"> <button onclick="incPrayerPick(\'' + t + '\',' + idx + ')">Aplicar</button>';
+          }
+        } else {
+          ctl = tgt ? '<small>→ #' + tgt.num + ' ' + tgt.name + '</small>' : '<small>registrada</small>';
+        }
+        h += '<div class="inc-pray" style="border-left:4px solid ' + tokenColorFor({team:t}) + '"><div><b>' + teamName(t) + ' — ' + pr.n + ' ' + def.name + '</b></div><div class="inc-desc">' + def.desc + '</div><div>' + ctl + '</div></div>';
+      });
+    });
+    h += '</div>';
+    ['A','B'].forEach(t=>{ i.desp[t].forEach(d=>{ h += '<div class="inc-desc" style="margin-top:6px;">📜 Medida desesperada de ' + teamName(t) + ' (' + d.n + '): ' + DESPERATE[d.n] + '</div>'; }); });
+    body.innerHTML = h;
+    okBtn(pending ? 'Faltan plegarias por aplicar' : 'OK → Sorteo de patada', preMatchNext, pending>0);
+    return;
+  }
+  // summary / done
+  const lines = [];
+  ['A','B'].forEach(t=>{
+    const inc = teamInc[t] || {};
+    const bits = INC_ITEMS.filter(it=>inc[it.key]>0 && it.key!=='prayers').map(it=>inc[it.key] + '× ' + it.name);
+    lines.push('<div><b>' + teamName(t) + ':</b> ' + (bits.join(', ') || 'sin Incentivos') + '</div>');
+  });
+  h += '<div class="pm-note" style="text-align:left;">' + lines.join('') + '</div>';
+  ['A','B'].forEach(t=>{ i.desp[t].forEach(d=>{ h += '<div class="inc-desc">📜 Medida desesperada de ' + teamName(t) + ' (' + d.n + '): ' + DESPERATE[d.n] + '</div>'; }); });
+  body.innerHTML = h;
+  okBtn('OK → Sorteo de patada', preMatchNext);
+}
+
 function renderPreMatch(){
   const modal = document.getElementById('preMatchModal');
   if(!modal) return;
@@ -1819,10 +2211,7 @@ function renderPreMatch(){
     okBtn('OK', preMatchNext);
   } else if(step==='inducements'){
     title.textContent = '💰 INCENTIVOS';
-    const subTxt = ['A','B'].filter(t=>preMatch.subs[t]>0).map(t=> nameOf(t) + ': +' + preMatch.subs[t] + ' Sustituto' + (preMatch.subs[t]===1?'':'s')).join('<br>');
-    body.innerHTML = (subTxt ? '<div class="pm-note">🧍 Sustitutos añadidos (Línea + Solitario 4+):<br>' + subTxt + '</div>' : '') +
-      '<div class="pm-note" style="margin-top:12px;">La compra de Incentivos se definirá más adelante. Por ahora, pulsad OK para continuar.</div>';
-    okBtn('OK → Sorteo de patada', preMatchNext);
+    renderIncentives(body, actions);
   } else if(step==='coin'){
     title.textContent = '🪙 SORTEO DE PATADA';
     body.innerHTML = '<div class="pm-dice">' + ['A','B'].map(t=>
@@ -1833,8 +2222,10 @@ function renderPreMatch(){
       b.textContent = 'Patea ' + nameOf(t); b.onclick = ()=>preMatchChooseKicker(t); actions.appendChild(b);
     });
   }
+  { const m = modal.querySelector('.modal'); if(m) m.classList.toggle('wide', step==='inducements'); }
   renderSetupPanelPreMatch();
   renderPreMatchBadges();
+  try{ tintModal(modal); }catch(e){}
 }
 
 function renderSetupPanelPreMatch(){
@@ -2074,6 +2465,10 @@ function renderPitch(){
     for(let c=0;c<COLS;c++){
       const cell = document.createElement('div');
       cell.className = cellClass(r,c);
+      if(trapdoorActive() && isTrapCell(r,c)){
+        cell.classList.add('trapdoor-cell');
+        const tdi = document.createElement('span'); tdi.className = 'trapdoor-ico'; tdi.title = 'Trampilla traicionera'; cell.appendChild(tdi);
+      }
       if(tzMap){
         const e = tzMap[r+'_'+c];
         if(e && !posMap[r+'_'+c]){
@@ -5514,8 +5909,26 @@ let kickoffDistance = 1;
 let kickoffPendingOOBAfterEvent = false;
 let freeCatchTeam = null;
 
+function chefHalflingAtHalfStart(){
+  ['A','B'].forEach(t=>{
+    const n = incCount(t, 'chef');
+    if(!(n>0)) return;
+    const other = t==='A' ? 'B' : 'A';
+    const dice = [rollDieN(6), rollDieN(6), rollDieN(6)];
+    const hits = dice.filter(d=>d>=4).length;
+    log('👨‍🍳 CHEF MAESTRO HALFLING (' + teamName(t) + '): D6 ' + dice.join(', ') + ' → ' + hits + ' acierto(s) (4+).');
+    if(hits>0){
+      const lose = Math.min(hits, teamRerollsLeft[other] || 0);
+      teamRerollsLeft[t] = (teamRerollsLeft[t] || 0) + hits;
+      teamRerollsLeft[other] = Math.max(0, (teamRerollsLeft[other] || 0) - lose);
+      log('👨‍🍳 ' + teamName(t) + ' gana ' + hits + ' Segunda(s) oportunidad(es) para esta parte y ' + teamName(other) + ' pierde ' + lose + '.');
+    }
+  });
+  renderStaffPanels();
+}
 function beginKickPlacement(kicking, receiving){
   expireFreeRR();
+  if((state.turns.A||0)===0 && (state.turns.B||0)===0){ chefHalflingAtHalfStart(); }
   pendingKickPlacement = { kickingTeam: kicking, receivingTeam: receiving };
   document.getElementById('kickPlacementPanel').style.display = 'block';
   document.getElementById('kickPlacementText').textContent =
@@ -5716,6 +6129,7 @@ function getStaffCount(team, key){
 const STAFF_ALIASES = {
   apothecary:['apothecary','apothecaries','apotecario','apotecarios'],
   assistants:['assistants','assistantCoaches','assistant_coaches','ayudantes'],
+  bribes:['bribes','sobornos'],
   cheerleaders:['cheerleaders','animadoras']
 };
 function getStaffBase(team, key){
@@ -6511,8 +6925,8 @@ function openGfiModal(p, toR, toC, chainDodge, blockDefenderId, stabDefenderId){
   pendingGfi = { playerId:p.id, toR, toC, chainDodge: !!chainDodge, blockDefenderId: blockDefenderId || null, stabDefenderId: stabDefenderId || null };
   gfiRerollUsed = false;
   const attempt = (p.gfiUsed ?? 0) + 1;
-  const gfiNeed = weatherKind()==='ventisca' ? 3 : 2;
-  const gfiWx = gfiNeed>2 ? ' (-1 por Ventisca)' : '';
+  const gfiNeed = gfiTargetFor(p);
+  const gfiWx = (weatherKind()==='ventisca' ? ' (-1 por Ventisca)' : '') + (prayerFlag(p.team==='A'?'B':'A','topos') ? ' (-1 por Topos bajo el campo)' : '');
   let msg = `${p.name} intenta "a por ellos" — casilla extra ${attempt}/${maxGfiFor(p)}. Necesita ${gfiNeed}+${gfiWx}${gfiNeed===2 ? ' (solo falla con un 1)' : ''}. Tirad D6.`;
   if(blockDefenderId){
     msg = `${p.name} ya no le queda MA para el placaje del Blitz — tirad D6 "a por ellos" para intentarlo igualmente (necesita ${gfiNeed}+${gfiWx}).`;
@@ -6537,7 +6951,7 @@ function rollGfiDie(){
   const r = Math.floor(Math.random()*6)+1;
   document.getElementById('gfiDie').textContent = r;
   const p = players.find(x=>x.id===pendingGfi.playerId);
-  const success = r >= (weatherKind()==='ventisca' ? 3 : 2);
+  const success = r >= gfiTargetFor(p);
   pendingGfi.lastSuccess = success;
   log('🎲 A por ellos: tirada ' + r + ' → ' + (success?'CONSEGUIDO':'FALLADO'));
   checkActionButtons('gfi', success, p);
@@ -6721,6 +7135,7 @@ function showInjuryBlockAfterArmorBroken(p){
 
 function armorResult(broken){
   const p = players.find(x=>x.id===armorForPlayer);
+  if(broken && pendingFoulContext && p && pendingFoulContext.targetId===p.id){ pendingFoulContext.armorBroken = true; }
   if(broken){
     document.getElementById('armorPassRow').style.display='none';
     showInjuryBlockAfterArmorBroken(p);
@@ -6742,6 +7157,7 @@ let pendingRegenInjuryKind = null; // kind pendiente de aplicar si la Regeneraci
 
 function openRegenAfterInjury(p, kind){
   pendingRegenInjuryKind = kind;
+  regenHelperOpen = false; regenRerolled = false;
   document.getElementById('injuryBlock').style.display = 'none';
   document.getElementById('regenDie').textContent = '–';
   document.getElementById('regenResultText').textContent = '';
@@ -6752,8 +7168,51 @@ function openRegenAfterInjury(p, kind){
   broadcastState();
 }
 
-function rollRegenDie(){
+let regenHelperOpen = false;     // modal de regeneración esperando decisión: ¿repetir con Ayudante de la morgue / Médico de la peste?
+let regenRerolled = false;
+function regenHelpersAvailable(team){
+  return ['morgue','plague'].filter(k=> incCount(team,k) - ((teamUsedRes[team]||{})[k]||0) > 0);
+}
+function renderRegenHelper(){
+  const row = document.getElementById('regenHelperRow');
+  if(!row) return;
   const p = players.find(x=>x.id===armorForPlayer);
+  row.style.display = (regenHelperOpen && p) ? 'block' : 'none';
+  if(!(regenHelperOpen && p)) return;
+  const names = { morgue:'Ayudante de la morgue', plague:'Médico de la peste' };
+  document.getElementById('regenHelperText').textContent = 'La Regeneración de ' + p.name + ' ha fallado. ' + teamName(p.team) + ' puede repetirla una vez con un ayudante (se gasta el uso del partido).';
+  const box = document.getElementById('regenHelperBtns');
+  box.innerHTML = '';
+  regenHelpersAvailable(p.team).forEach(k=>{
+    const b = document.createElement('button'); b.className = 'primary'; b.textContent = 'Repetir con ' + names[k]; b.onclick = ()=>regenUseHelper(k); box.appendChild(b);
+  });
+  const no = document.createElement('button'); no.textContent = 'No repetir'; no.onclick = regenDeclineHelper; box.appendChild(no);
+}
+function regenFinish(p, success){
+  setTimeout(()=>{
+    if(success){
+      resolveRegenerationSuccess();
+    } else {
+      if(!regenRerolled && p && regenHelpersAvailable(p.team).length){
+        regenHelperOpen = true; renderRegenHelper(); broadcastState();
+        return;
+      }
+      regenApplyFailure(p);
+    }
+  }, 700);
+}
+function regenApplyFailure(p){
+  regenHelperOpen = false; renderRegenHelper();
+  const kind = pendingRegenInjuryKind;
+  pendingRegenInjuryKind = null;
+  document.getElementById('regenRow').style.display = 'none';
+  applyInjuryOutcome(p, kind);
+  crowdPushMode = false;
+  renderRosters(); renderPitch(); renderSelInfo();
+  closeArmorModal();
+  broadcastState();
+}
+function regenRoll(p, tag){
   const roll = Math.floor(Math.random()*6)+1;
   document.getElementById('regenDie').textContent = roll;
   document.getElementById('regenRollBtn').style.display = 'none';
@@ -6761,22 +7220,30 @@ function rollRegenDie(){
   const resEl = document.getElementById('regenResultText');
   resEl.textContent = success ? '✅ ¡SE REGENERA!' : '❌ No se regenera';
   resEl.className = 'check-result ' + (success ? 'ok' : 'fail');
-  log('🎲 Regeneración de ' + (p?p.name:'?') + ': ' + roll + (success ? ' (4+) — se regenera, la Lesión se ignora y pasa a Reservas.' : ' (1-3) — sufre la Lesión con normalidad.'));
+  log('🎲 Regeneración' + (tag||'') + ' de ' + (p?p.name:'?') + ': ' + roll + (success ? ' (4+) — se regenera, la Lesión se ignora y pasa a Reservas.' : ' (1-3) — sufre la Lesión con normalidad.'));
   broadcastState();
-  setTimeout(()=>{
-    if(success){
-      resolveRegenerationSuccess();
-    } else {
-      const kind = pendingRegenInjuryKind;
-      pendingRegenInjuryKind = null;
-      document.getElementById('regenRow').style.display = 'none';
-      applyInjuryOutcome(p, kind);
-      crowdPushMode = false;
-      renderRosters(); renderPitch(); renderSelInfo();
-      closeArmorModal();
-      broadcastState();
-    }
-  }, 700);
+  regenFinish(p, success);
+}
+function rollRegenDie(){
+  const p = players.find(x=>x.id===armorForPlayer);
+  regenRerolled = false;
+  regenRoll(p, '');
+}
+function regenUseHelper(key){
+  const p = players.find(x=>x.id===armorForPlayer);
+  if(!p || !regenHelpersAvailable(p.team).includes(key)) return;
+  teamUsedRes[p.team] = Object.assign({}, teamUsedRes[p.team] || {});
+  teamUsedRes[p.team][key] = (teamUsedRes[p.team][key] || 0) + 1;
+  const nm = key==='morgue' ? 'Ayudante de la morgue' : 'Médico de la peste';
+  log('🧰 ' + teamName(p.team) + ' usa su ' + nm + ' para repetir la Regeneración de ' + p.name + '.');
+  regenHelperOpen = false; regenRerolled = true;
+  renderRegenHelper(); renderResourceIcons();
+  regenRoll(p, ' (repetida con ' + nm + ')');
+}
+function regenDeclineHelper(){
+  const p = players.find(x=>x.id===armorForPlayer);
+  regenHelperOpen = false; regenRerolled = true; renderRegenHelper();
+  regenApplyFailure(p);
 }
 
 function resolveRegenerationSuccess(){
@@ -6931,9 +7398,15 @@ function closeArmorModal(){
   if(pendingFoulContext && pendingFoulContext.targetId===resolvedPlayerId){
     const ctx = pendingFoulContext;
     pendingFoulContext = null;
+    const fouler = players.find(x=>x.id===ctx.foulerId);
     if(ctx.doubleDetected){
-      const fouler = players.find(x=>x.id===ctx.foulerId);
       if(fouler) startRefereeArgument(fouler);
+    } else if(ctx.armorBroken && fouler && prayerFlag(fouler.team==='A' ? 'B' : 'A', 'escrutinio')){
+      fouler.condition = 'expelled'; fouler.onPitch = false; fouler.row = null; fouler.col = null;
+      if(ball.carrierId===fouler.id) ball.carrierId = null;
+      log('🟥 ESCRUTINIO ARBITRAL: ' + fouler.name + ' (' + teamName(fouler.team) + ') rompe la armadura en su Falta y es Expulsado automáticamente.');
+      renderRosters(); renderPitch(); renderScoreboard(); renderSelInfo(); broadcastState();
+      autoTurnoverThenEndTurn();
     }
   }
 }
@@ -6953,7 +7426,7 @@ function processNextKo(){
   const p = players.find(x=>x.id===id);
   if(!p || p.condition!=='ko'){ processNextKo(); return; }
   pendingKo = id;
-  document.getElementById('koText').textContent = `Recuperación de ${p.name} (${teamName(p.team)}). Tirad D6 y decidid.`;
+  document.getElementById('koText').textContent = `Recuperación de ${p.name} (${teamName(p.team)}). Tirad D6 y decidid.` + ((teamInc[p.team] && teamInc[p.team].keg>0) ? ' 🍺 +' + teamInc[p.team].keg + ' a la tirada por Barril(es) de cerveza Estrella Blitzer.' : '');
   document.getElementById('koDie').textContent = '–';
   document.getElementById('koModal').classList.add('show');
   broadcastState();
@@ -7445,6 +7918,7 @@ function cancelActiveModal(modalId){
       break;
     }
     case 'armorModal':
+      regenHelperOpen = false;
       armorForPlayer = null; pendingArmorQueue = [];
       log('❌ Tirada de armadura cancelada manualmente.');
       break;
@@ -7489,7 +7963,12 @@ function modalActorTeam(id){
   const act = state.active;
   const pteam = pid=>{ const p = players.find(x=>x.id===pid); return p ? p.team : null; };
   switch(id){
-    case 'infoModal': case 'losWarningModal': case 'matchEndModal': case 'resumeModal': case 'preMatchModal':
+    case 'preMatchModal': {
+      const ii = preMatch && preMatch.inc;
+      if(preMatch && preMatch.step==='inducements' && ii && (ii.sub==='buyHigh' || ii.sub==='buyLow') && ii.high) return ii.sub==='buyHigh' ? ii.high : other(ii.high);
+      return null;
+    }
+    case 'infoModal': case 'losWarningModal': case 'matchEndModal': case 'resumeModal':
     case 'leagueMismatchModal': case 'insigModal': case 'kickoffEventModal':
       return null;   // neutros: sin color de equipo
     case 'tdModal': return pendingTD ? pendingTD.team : act;
@@ -7525,7 +8004,7 @@ function tintModal(back){
   modal.style.setProperty('--modal-team', tokenColorFor({ team }));
   modal.style.setProperty('--modal-team-text', textColorFor({ team }));
   modal.setAttribute('data-tint', '1');
-  modal.setAttribute('data-actor', 'TIRA / DECIDE: ' + teamName(team).toUpperCase());
+  modal.setAttribute('data-actor', (back.id==='preMatchModal' ? 'COMPRA: ' : 'TIRA / DECIDE: ') + teamName(team).toUpperCase());
 }
 function setupModalTint(){
   const mo = new MutationObserver(ms=>ms.forEach(m=>{ const b = m.target; if(b.classList && b.classList.contains('show')) tintModal(b); }));
@@ -7607,7 +8086,7 @@ try{ updateTackleZonesButtons(); updateColorChoiceButtons(); setSwitch('colorsSw
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V56'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V59'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

@@ -14,7 +14,7 @@
   "players": [
     {
       "num": 1,
-      "name": "Pímenth \"OldYoungElf\"",
+      "name": "PIMENTH OLDYOUNGELF",
       "position": "Lineman",
       "ma": 5,
       "st": 3,
@@ -29,7 +29,7 @@
     },
     {
       "num": 2,
-      "name": "Gobenroth \"Gullkiller\"",
+      "name": "GOBENROTH GULLKILLER",
       "position": "Lineman",
       "ma": 6,
       "st": 3,
@@ -43,7 +43,7 @@
     },
     {
       "num": 3,
-      "name": "Elarion \"GondelHook\"",
+      "name": "ELARION GOLDENHOOK",
       "position": "Thrower",
       "ma": 6,
       "st": 3,
@@ -58,7 +58,7 @@
     },
     {
       "num": 4,
-      "name": "Aelindor \"Blackwing\"",
+      "name": "AELINDOR BLACKWING",
       "position": "Blitzer",
       "ma": 7,
       "st": 3,
@@ -73,7 +73,7 @@
     },
     {
       "num": 5,
-      "name": "Therion \"Powerfists\"",
+      "name": "THERION POWERFISTS",
       "position": "Blitzer",
       "ma": 7,
       "st": 3,
@@ -88,7 +88,7 @@
     },
     {
       "num": 6,
-      "name": "Carlion \"Silvershadow\"",
+      "name": "CARLION SILVERSHADOW",
       "position": "Catcher",
       "ma": 8,
       "st": 3,
@@ -104,7 +104,7 @@
     },
     {
       "num": 7,
-      "name": "Lethain \"Coincrawler\"",
+      "name": "LETHIAN COINCRAWLER",
       "position": "Lineman",
       "ma": 6,
       "st": 3,

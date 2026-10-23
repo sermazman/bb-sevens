@@ -656,7 +656,7 @@ button.full{width:100%; margin-top:6px;}
 .conn-dot.on{background:var(--good);}
 
 /* --- Versión del archivo (para el badge de verificación en el pie) --- */
-:root{ --css-version: "S_V51"; }
+:root{ --css-version: "S_V54"; }
 
 /* ---- Iconos dorados (se tiñen con el color del marcador mediante máscara) ---- */
 .gold-icon{display:inline-block; width:18px; height:18px; vertical-align:middle; background:var(--gold);
@@ -751,7 +751,7 @@ button.full{width:100%; margin-top:6px;}
 .sb-bribe.used{cursor:default;}
 .sb-bribe.used .gold-icon{background:#4a4540;}
 
-/* ===== S_V51 — dados de 6 caras con icono ===== */
+/* ===== S_V54 — dados de 6 caras con icono ===== */
 /* Personalizables (futuro, p. ej. desde el JSON del equipo): --die-bg (fondo del dado) y --die-pip (color de los puntos).
    Se pueden fijar en :root o en el propio elemento (style="--die-bg:#c0392b; --die-pip:#fff"). */
 :root{ --die-bg:#fff; --die-pip:#1c1712; --die-radius:8px; }
@@ -777,7 +777,7 @@ button.full{width:100%; margin-top:6px;}
 /* ---- Iconos de recursos en el marcador (reroll, apotecario, animadoras, ayudantes, mago, barril, morgue) ---- */
 .sb-reroll-label .gold-icon{width:18px; height:18px; display:block;}
 .sb-reroll-label.empty .gold-icon{background:#4a4540;}
-.sb-icons{display:flex; justify-content:center; flex-wrap:wrap; gap:10px; margin-top:6px;}
+.sb-icons{display:flex; justify-content:center; flex-wrap:wrap; gap:4px 12px; max-width:230px; margin:8px auto 0 auto;}
 .sb-ico{display:inline-flex; align-items:center; gap:2px;}
 .sb-ico .gold-icon{width:22px; height:22px;}
 .sb-ico b{font-size:11px; color:var(--gold);}
@@ -792,3 +792,31 @@ button.full{width:100%; margin-top:6px;}
   padding:3px 12px; border-radius:12px; font-family:'Oswald',sans-serif; font-size:11px; font-weight:700; letter-spacing:1px;
   background:var(--modal-team); color:var(--modal-team-text,#fff);
 }
+
+/* ---- Incentivos (paso de la secuencia previa) ---- */
+.modal.wide{max-width:700px; width:min(700px,94vw);}
+.modal.wide #preMatchBody{max-height:62vh; overflow-y:auto; text-align:left;}
+.inc-cols{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:8px;}
+@media (max-width:640px){ .inc-cols{grid-template-columns:1fr;} }
+.inc-team{border:2px solid var(--panel-line); border-radius:6px; padding:10px;}
+.inc-team h3{margin:0 0 6px 0; font-size:14px; color:var(--gold);}
+.inc-chk{display:flex; align-items:center; gap:6px; font-size:11px; text-transform:none; letter-spacing:0; margin:2px 0;}
+.inc-chk input{width:auto; margin:0;}
+.inc-buyer{font-family:'Anton',sans-serif; letter-spacing:1px; text-align:center; padding:8px; border-radius:5px; margin-top:8px; font-size:14px;}
+.inc-list{margin-top:8px;}
+.inc-row{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:5px 2px; border-bottom:1px dashed var(--panel-line); font-size:12.5px;}
+.inc-row.off{opacity:0.45;}
+.inc-name{display:flex; align-items:center; gap:6px; flex-wrap:wrap;}
+.inc-name small{color:#8a7d64;}
+.inc-qty{display:flex; align-items:center; gap:6px; flex:0 0 auto;}
+.inc-qty button{padding:2px 9px; min-width:0;}
+.inc-bad{color:#ff6b60;}
+.inc-pray{padding:6px 8px; margin-bottom:6px; background:rgba(255,255,255,0.03); border-radius:4px; font-size:12px;}
+.inc-desc{font-size:11.5px; color:#c9bda3; margin:2px 0;}
+.inc-pray select, .inc-pray input[type=text]{width:auto; min-width:140px; margin:2px 4px 2px 0; padding:4px 6px; font-size:12px;}
+
+/* ---- Trampilla traicionera (casilla marrón claro con icono marrón oscuro) y silbato de Escrutinio arbitral ---- */
+.cell.trapdoor-cell{background:#b58d5d !important;}
+.cell.trapdoor-cell .trapdoor-ico{position:absolute; inset:2px; pointer-events:none; z-index:1;
+  background:#4a2c12; -webkit-mask:url(icons/trampilla.png) center/contain no-repeat; mask:url(icons/trampilla.png) center/contain no-repeat;}
+.sb-ico.alert .gold-icon{background:#e0281b;}

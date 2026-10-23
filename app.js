@@ -1361,7 +1361,9 @@ function renderRosters(){
                      : p.condition==='aturdido' ? `<span class="downed-tag">ATURDIDO</span>`
                      : p.condition==='despistado' ? `<span class="downed-tag">DESPISTADO</span>` : '';
       const heatTag = p.indigestOut ? `<span class="ri-weather" title="Indigestión: encerrado en la letrina el resto de la entrada">🤢 LETRINA</span>` : p.heatRest ? `<span class="ri-weather" title="Descansa por Calor Asfixiante: no se puede colocar esta entrada"><span class="gold-icon" style="--icon:url('icons/calor_asfixiante.png')"></span>DESCANSA</span>` : '';
-      const skillsText = (p.skills && p.skills.length) ? p.skills.join(', ') : 'Sin habilidades';
+      const prayLeft = (p.prayerSkills || []).slice();
+      const skillsText = (p.skills && p.skills.length) ? p.skills.map(sk=>{ const k = prayLeft.indexOf(sk); if(k>=0){ prayLeft.splice(k,1); return '<u title="Ganada por Plegaria a Nuffle">' + sk + '</u>'; } return sk; }).join(', ') : 'Sin habilidades';
+      const vetTag = playerHasSkill(p, 'veterano', 'veteran') ? `<span class="ri-vet${p.veteranoUsedThisMatch ? ' used' : ''}" title="Veterano${p.veteranoUsedThisMatch ? ' (ya usado)' : ''}"><img src="icons/veterano.png" alt="Veterano" onerror="this.outerHTML='<span>⭐</span>'"></span>` : '';
       const posBorder = positionBorderColor(p);
       const numBorderStyle = posBorder ? ('border-color:'+posBorder+';') : '';
       div.innerHTML = `
@@ -1369,7 +1371,7 @@ function renderRosters(){
           <span class="num" style="background:${tokenColorFor(p)}; color:${textColorFor(p)}; ${numBorderStyle}">${p.num}</span>
           <span class="pname">${p.name}</span>${isCaptain(p) ? '<span class="cap-mini" title="Capitán">C</span>' : ''}
           <span class="pos">${posText}</span>
-          ${condTag}${heatTag}
+          ${vetTag}${condTag}${heatTag}
           <button class="rm-btn" title="Eliminar" onclick="removePlayer(${p.id}, event)">✕</button>
         </div>
         <div class="ri-row2 mono">MA ${p.ma ?? '-'} · ST ${p.st ?? '-'} · AG ${p.ag ?? '-'} · PA ${p.pa ?? '-'} · AV ${p.av ?? '-'}</div>
@@ -1910,7 +1912,7 @@ function econFromTeamJson(data){
   const n = v=> (typeof v==='number' && isFinite(v)) ? v : 0;
   const rerollTotal = (data.staff && data.staff.rerolls && typeof data.staff.rerolls.total==='number') ? data.staff.rerolls.total : 0;
   const staffVal = rerollTotal + n(st.cheerleaders)*price('cheerleader',20000) + n(st.assistantCoaches)*price('assistantCoach',20000) +
-                   n(st.apothecary)*price('apothecary',80000) + n(st.dedicatedFans)*price('dedicatedFan',20000);
+                   n(st.apothecary)*price('apothecary',80000) + Math.max(0, n(st.dedicatedFans)-1)*price('dedicatedFan',20000); // el 1.er Fan dedicado es gratuito
   const plist = Array.isArray(lg.players) ? lg.players : [];
   const activeVal = plist.filter(p=>!p.status || p.status==='active').reduce((a,p)=>a + n(p.price), 0);
   const allVal = plist.reduce((a,p)=>a + n(p.price), 0);
@@ -1955,7 +1957,8 @@ function incSetQty(team, key, delta){
   if(!((i.sub==='buyHigh' && i.high===team) || (i.sub==='buyLow' && i.high && i.high!==team))) return;
   const it = INC_ITEMS.find(x=>x.key===key); if(!it) return;
   const cur = i.cart[team][key] || 0;
-  const n = Math.max(0, Math.min(it.max, cur + delta));
+  let n = Math.max(0, Math.min(it.max, cur + delta));
+  if(n>cur && incCartTotal(team) + (n-cur)*incCost(team,it) > incBudget(team).total) return;
   if(n===cur) return;
   i.cart[team][key] = n;
   incCommit();
@@ -2046,7 +2049,7 @@ function incFinish(){
       } else if(def.mode==='random'){
         const pool = incPlayingPlayers(t);
         const p = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
-        if(p){ p.skills = (p.skills || []).concat([def.skill]); pr.target = p.id; log('🙏 ' + p.name + ' (' + teamName(t) + ') obtiene ' + def.skill + ' hasta el final del partido.'); }
+        if(p){ p.skills = [def.skill].concat(p.skills || []); p.prayerSkills = (p.prayerSkills || []).concat([def.skill]); pr.target = p.id; log('🙏 ' + p.name + ' (' + teamName(t) + ') obtiene ' + def.skill + ' hasta el final del partido.'); }
         pr.done = true;
       } else if(def.mode==='randomPick'){
         const pool = incPlayingPlayers(t);
@@ -2074,7 +2077,7 @@ function incPrayerPick(team, idx){
       log('🙏 MÚSCULOS DE HIERRO: ' + p.name + ' (' + teamName(team) + ') AR ' + p.av + ' → ' + nn + '+ hasta el final del partido.');
       p.av = nn + '+';
     } else {
-      p.skills = (p.skills || []).concat([def.skill]);
+      p.skills = [def.skill].concat(p.skills || []); p.prayerSkills = (p.prayerSkills || []).concat([def.skill]);
       log('🙏 NUDILLERAS: ' + p.name + ' (' + teamName(team) + ') obtiene ' + def.skill + ' hasta el final del partido.');
     }
     pr.target = p.id;
@@ -2133,12 +2136,15 @@ function renderIncentives(body, actions){
     h += '<div class="inc-list">';
     INC_ITEMS.forEach(it=>{
       const av = incAvail(team, it), n = i.cart[team][it.key] || 0, c = incCost(team, it);
-      h += '<div class="inc-row' + (av.ok ? '' : ' off') + '"><span class="inc-name">' + (it.icon ? '<span class="gold-icon" style="--icon:url(\'icons/' + it.icon + '\')"></span>' : '') + it.name + ' <small>(0-' + it.max + ' · ' + fmtMO(c) + ')</small>' + (av.ok ? '' : '<small class="inc-bad"> — ' + av.why + '</small>') + '</span>' +
-        '<span class="inc-qty"><button onclick="incSetQty(\'' + team + '\',\'' + it.key + '\',-1)" ' + (av.ok && n>0 ? '' : 'disabled') + '>−</button><b class="mono">' + n + '</b><button onclick="incSetQty(\'' + team + '\',\'' + it.key + '\',1)" ' + (av.ok && n<it.max ? '' : 'disabled') + '>+</button></span></div>';
+      const noFunds = tot + c > b.total;
+      const canAdd = av.ok && n<it.max && !noFunds;
+      const greyed = !av.ok || (n===0 && noFunds);
+      h += '<div class="inc-row' + (greyed ? ' off' : '') + '"><span class="inc-name">' + (it.icon ? '<span class="gold-icon" style="--icon:url(\'icons/' + it.icon + '\')"></span>' : '') + it.name + ' <small>(0-' + it.max + ' · ' + fmtMO(c) + ')</small>' + (av.ok ? '' : '<small class="inc-bad"> — ' + av.why + '</small>') + '</span>' +
+        '<span class="inc-qty"><button onclick="incSetQty(\'' + team + '\',\'' + it.key + '\',-1)" ' + (av.ok && n>0 ? '' : 'disabled') + '>−</button><b class="mono">' + n + '</b><button onclick="incSetQty(\'' + team + '\',\'' + it.key + '\',1)" ' + (canAdd ? '' : 'disabled') + '>+</button></span></div>';
     });
     h += '</div>';
     body.innerHTML = h;
-    okBtn(over ? 'Presupuesto superado' : (tot===0 ? 'No comprar nada' : 'Confirmar compra (' + fmtMO(tot) + ')'), ()=>incConfirm(team), over);
+    okBtn(b.total<=0 ? (i.sub==='buyHigh' ? 'Sin tesorería disponible - Continuar' : 'Sin presupuesto disponible - Continuar') : over ? 'Presupuesto superado' : (tot===0 ? 'No comprar nada' : 'Confirmar compra (' + fmtMO(tot) + ')'), ()=>incConfirm(team), over);
     return;
   }
   if(i.sub==='prayers'){
@@ -8086,7 +8092,7 @@ try{ updateTackleZonesButtons(); updateColorChoiceButtons(); setSwitch('colorsSw
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V59'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V60'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

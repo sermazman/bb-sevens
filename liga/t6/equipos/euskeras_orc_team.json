@@ -3,7 +3,7 @@
   "race": "Orcs",
   "color": "#f9e71a",
   "textColor": "#000000",
-  "color_secundary": "#ffffff",
+  "color_secundary": "#ff0000",
   "textColor_secundary": "#000000",
   "leagueStarted": false,
   "staff": {

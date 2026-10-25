@@ -242,6 +242,7 @@
         <button class="primary" onclick="exportTeamJSON()">💾 Descargar Equipo</button>
         <button onclick="exportTeamPDF()">🖨 Descargar PDF</button>
       </div>
+      <div class="small-note" id="extraDataNote" style="margin-top:8px; color:var(--gold); display:none;"></div>
       <div class="small-note" style="margin-top:8px;">El archivo de equipo generado aquí es 100% compatible con el botón "Cargar Equipo" del tablero principal (mismo formato: teamName / race / players[]).</div>
     </div>
 
@@ -426,12 +427,16 @@
 
 <script>
 function emptyStaff(){ return { fans: 0, assistants: 0, cheerleaders: 0, apothecary: 0 }; }
-let team = { teamName: 'Nuevo Equipo', race: '', color: '#c0392b', textColor: 'auto', colorSecondary: '#ffffff', textColorSecondary: '#000000', rerolls: 0, staff: emptyStaff(), leagueStarted: false, players: [] };
+let team = { teamName: 'Nuevo Equipo', race: '', color: '#c0392b', textColor: 'auto', colorSecondary: '#ffffff', textColorSecondary: '#000000', rerolls: 0, staff: emptyStaff(), leagueStarted: false, extra: {}, extraStaff: {}, players: [] };
 let uid = 1;
 
 // Razas que pueden nombrar Capitán (nombres tal cual aparecen en positions.json). "Black Orc" NO entra.
 const CAPTAIN_RACES = ['orcs', 'human'];
 const CAPTAIN_SKILL = 'CAP: PROFESIONAL';
+
+// Claves del JSON que gestiona el creador; el resto (league, etc.) se conserva sin tocar.
+const MANAGED_TOP_KEYS = ['teamName','race','color','textColor','color_secundary','textColor_secundary','leagueStarted','staff','players','formation'];
+const PLAYER_KNOWN_KEYS = ['num','name','position','ma','st','ag','pa','av','skills'];
 let disablePosLimit = false; // solo de sesión: no se guarda en el JSON del equipo
 let disableBudgetLimit = false; // solo de sesión: no se guarda en el JSON del equipo
 const TEAM_BUDGET_CAP = 600000;
@@ -599,7 +604,7 @@ async function loadSkillCatalog(){
 function buildEmptySlots(){
   const slots = [];
   for(let i = 1; i <= 11; i++){
-    slots.push({ _uid: uid++, num: i, name: '', position: '', ma: '', st: '', ag: '', pa: '', av: '', skills: [], veteran: false, captain: false, formation: null });
+    slots.push({ _uid: uid++, num: i, name: '', position: '', ma: '', st: '', ag: '', pa: '', av: '', skills: [], veteran: false, captain: false, extra: {}, formation: null });
   }
   return slots;
 }
@@ -615,7 +620,7 @@ function stripTrailingClave(position, skillsArr){
 function newTeam(){
   const hasData = team.players && team.players.some(p => p.position || p.name);
   if(hasData && !confirm('Esto borra la plantilla actual sin guardar. ¿Continuar?')) return;
-  team = { teamName: 'Nuevo Equipo', race: '', color: '#c0392b', textColor: 'auto', colorSecondary: '#ffffff', textColorSecondary: '#000000', rerolls: 0, staff: emptyStaff(), leagueStarted: false, players: buildEmptySlots() };
+  team = { teamName: 'Nuevo Equipo', race: '', color: '#c0392b', textColor: 'auto', colorSecondary: '#ffffff', textColorSecondary: '#000000', rerolls: 0, staff: emptyStaff(), leagueStarted: false, extra: {}, extraStaff: {}, players: buildEmptySlots() };
   document.getElementById('teamNameInput').value = team.teamName;
   populateRaceSelect(Object.keys(POSITIONS_BY_RACE).length ? Object.keys(POSITIONS_BY_RACE).sort() : FALLBACK_RACES);
   syncColorUI();
@@ -639,6 +644,15 @@ function loadTeamData(data){
   });
   team.leagueStarted = !!data.leagueStarted;
 
+  // Todo lo que el creador no gestiona (p. ej. el bloque "league" del Gestor) se conserva tal cual al descargar.
+  const clone = v => JSON.parse(JSON.stringify(v));
+  team.extra = {};
+  Object.keys(data).forEach(k => { if(!MANAGED_TOP_KEYS.includes(k)) team.extra[k] = clone(data[k]); });
+  team.extraStaff = {};
+  if(data.staff && typeof data.staff === 'object'){
+    Object.keys(data.staff).forEach(k => { if(k !== 'rerolls' && !STAFF_ITEMS[k]) team.extraStaff[k] = clone(data.staff[k]); });
+  }
+
   const slots = buildEmptySlots();
   const used = new Set();
   (data.players || []).forEach(pd => {
@@ -661,6 +675,7 @@ function loadTeamData(data){
       skills: stripTrailingClave(pd.position || '', rawSkills),
       veteran: false,
       captain: false,
+      extra: (() => { const x = {}; Object.keys(pd).forEach(k => { if(!PLAYER_KNOWN_KEYS.includes(k)) x[k] = clone(pd[k]); }); return x; })(),
       formation: null
     };
   });
@@ -884,6 +899,7 @@ function onPositionChange(_uid, value){
   if(!value){
     clearVeteranState(p);
     clearCaptainState(p);
+    p.extra = {};
     p.position = ''; p.ma = ''; p.st = ''; p.ag = ''; p.pa = ''; p.av = ''; p.skills = []; p.formation = null;
     renderPlayers();
     return;
@@ -963,7 +979,7 @@ function clearSlot(_uid){
   const p = findPlayer(_uid);
   if(!p) return;
   if(!confirm('¿Vaciar este hueco de jugador?')) return;
-  p.veteran = false; p.captain = false;
+  p.veteran = false; p.captain = false; p.extra = {};
   p.name = ''; p.position = ''; p.ma = ''; p.st = ''; p.ag = ''; p.pa = ''; p.av = ''; p.skills = []; p.formation = null;
   renderPlayers();
 }
@@ -1114,6 +1130,14 @@ function renderStaffPanel(){
   updateTreasuryDisplay(tv);
 }
 
+function updateExtraDataNote(){
+  const el = document.getElementById('extraDataNote');
+  if(!el) return;
+  const keys = Object.keys(team.extra || {});
+  el.style.display = keys.length ? 'block' : 'none';
+  el.textContent = keys.length ? '🔗 Este equipo trae datos del Gestor (' + keys.join(', ') + '). Se conservan tal cual al descargar.' : '';
+}
+
 function updateTreasuryDisplay(tv){
   const trEl = document.getElementById('treasuryText');
   if(!trEl) return;
@@ -1204,6 +1228,7 @@ function renderPlayers(){
     tvEl.textContent = tv.total.toLocaleString('es-ES') + ' po' + (tv.missing ? ' (+' + tv.missing + ' sin precio)' : '');
   }
   updateTreasuryDisplay(tv);
+  updateExtraDataNote();
   renderFormation();
   scheduleJsonRefresh();
 }
@@ -1397,7 +1422,7 @@ function buildExportData(){
     staffOut[k] = { clave: it.clave, count: c, pricePerUnit: it.price, total: c * it.price };
     if(it.freeBase) staffOut[k].free = it.freeBase;
   });
-  return {
+  const out = {
     teamName: team.teamName,
     race: team.race,
     color: team.color || '#c0392b',
@@ -1405,21 +1430,23 @@ function buildExportData(){
     color_secundary: team.colorSecondary || '#ffffff',
     textColor_secundary: team.textColorSecondary || '#000000',
     leagueStarted: !!team.leagueStarted,
-    staff: staffOut,
-    players: filled.map(p => ({
+    staff: Object.assign({}, staffOut, team.extraStaff),
+    players: filled.map(p => Object.assign({
       num: isNaN(parseInt(p.num)) ? p.num : parseInt(p.num),
       name: p.name,
       position: p.position,
       ma: isNaN(parseFloat(p.ma)) ? p.ma : parseFloat(p.ma),
       st: p.st, ag: p.ag, pa: p.pa, av: p.av,
       skills: skillsWithClave(p)
-    })),
+    }, p.extra)),
     formation: filled.filter(p => p.formation).map(p => ({
       num: isNaN(parseInt(p.num)) ? p.num : parseInt(p.num),
       col: p.formation.col,
       row: p.formation.row
     }))
   };
+  // Datos que el creador no gestiona (p. ej. "league" del Gestor): se devuelven intactos.
+  return Object.assign(out, team.extra);
 }
 
 function scheduleJsonRefresh(){ /* sin vista previa por ahora; se mantiene por si se reactiva más adelante */ }
@@ -1590,6 +1617,6 @@ loadSkillCatalog();
 loadPositionsCatalog();
 loadStaffCatalog();
 </script>
-<div class="small-note" style="text-align:center; padding:14px 0 6px 0; opacity:0.55; font-family:'JetBrains Mono', monospace;">Build rosters.html: 19102026-1340</div>
+<div class="small-note" style="text-align:center; padding:14px 0 6px 0; opacity:0.55; font-family:'JetBrains Mono', monospace;">Build rosters.html: 25102026-1353</div>
 </body>
 </html>

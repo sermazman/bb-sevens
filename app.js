@@ -1386,6 +1386,7 @@ function renderRosters(){
   });
   renderReserveZone();
   renderStaffPanels();
+  try{ renderAdminInc(); }catch(e){ console.error(e); }
 }
 
 function renderReserveZone(){
@@ -2092,6 +2093,80 @@ function incPrayerPick(team, idx){
   pr.done = true;
   renderRosters();
   incCommit();
+}
+// ===== Panel admin incentivos (pruebas): añadir/quitar Plegarias y Medidas desesperadas a mano =====
+const PRAYER_FLAG_KEY = { 1:'trapdoor', 6:'topos', 7:'escrutinio' };
+function admCount(kind, team, n){ const i = incSt(); return i[kind==='p' ? 'prayers' : 'desp'][team].filter(x=>x.n===n).length; }
+function admAdd(kind, team, n){
+  const i = incSt();
+  if(kind==='d'){
+    i.desp[team].push({ n:n, adm:true });
+    if(n===8){ teamInc[team] = Object.assign({}, teamInc[team] || {}); teamInc[team].wizard = (teamInc[team].wizard || 0) + 1; renderStaffPanels(); }
+    log('🧪 ADMIN: ' + teamName(team) + ' obtiene Medida desesperada ' + n + ' — ' + DESPERATE[n]);
+  } else {
+    const def = PRAYERS[n]; const pr = { n:n, done:true, adm:true };
+    if(def.mode==='flag'){ i.flags[team][PRAYER_FLAG_KEY[n]] = true; }
+    else {
+      const pool = incPlayingPlayers(team);
+      const p = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
+      if(!p){ log('🧪 ADMIN: ' + teamName(team) + ' no tiene jugadores disponibles para la Plegaria ' + n + '.'); return; }
+      pr.target = p.id;
+      if(n===3){
+        const m = String(p.av).match(/\d+/); const v = m ? parseInt(m[0],10) : NaN;
+        if(isNaN(v)){ log('🧪 ADMIN: ' + p.name + ' no tiene AR numérica.'); return; }
+        pr.avFrom = p.av; p.av = Math.min(11, v+1) + '+';
+      } else {
+        let sk = def.skill;
+        if(n===8){ sk = (window.prompt('Habilidad Primaria para ' + p.name + ':', '') || '').trim(); if(!sk) return; }
+        pr.skill = sk; p.skills = [sk].concat(p.skills || []); p.prayerSkills = (p.prayerSkills || []).concat([sk]);
+      }
+      const tp = players.find(x=>x.id===pr.target);
+      log('🧪 ADMIN: Plegaria ' + n + ' (' + def.name + ') de ' + teamName(team) + ' → ' + tp.name + (pr.skill ? ' obtiene ' + pr.skill : n===3 ? ' AR ' + pr.avFrom + ' → ' + tp.av : '') + '.');
+    }
+    if(def.mode==='flag') log('🧪 ADMIN: Plegaria ' + n + ' (' + def.name + ') activada para ' + teamName(team) + '.');
+    i.prayers[team].push(pr);
+  }
+  renderRosters(); broadcastState();
+}
+function admRemove(kind, team, n){
+  const i = incSt(); const arr = i[kind==='p' ? 'prayers' : 'desp'][team];
+  let k = -1; for(let j=arr.length-1;j>=0;j--){ if(arr[j].n===n){ k = j; break; } }
+  if(k<0) return;
+  const pr = arr.splice(k,1)[0];
+  if(kind==='d'){
+    if(n===8 && teamInc[team] && teamInc[team].wizard>0){ teamInc[team] = Object.assign({}, teamInc[team]); teamInc[team].wizard--; renderStaffPanels(); }
+  } else {
+    const def = PRAYERS[n];
+    if(def.mode==='flag'){ if(!arr.some(x=>x.n===n)) i.flags[team][PRAYER_FLAG_KEY[n]] = false; }
+    else {
+      const p = players.find(x=>x.id===pr.target);
+      if(p){
+        if(n===3 && pr.avFrom!==undefined) p.av = pr.avFrom;
+        if(pr.skill){
+          let a = (p.skills || []).indexOf(pr.skill); if(a>=0) p.skills.splice(a,1);
+          a = (p.prayerSkills || []).indexOf(pr.skill); if(a>=0) p.prayerSkills.splice(a,1);
+        }
+      }
+    }
+  }
+  log('🧪 ADMIN: quitada ' + (kind==='p' ? 'Plegaria ' : 'Medida desesperada ') + n + ' de ' + teamName(team) + '.');
+  renderRosters(); broadcastState();
+}
+function renderAdminInc(){
+  const el = document.getElementById('adminIncBody'); if(!el) return;
+  let h = '<div class="inc-cols">';
+  ['A','B'].forEach(t=>{
+    const row = (kind, n, name)=>{
+      const c = admCount(kind, t, n);
+      return '<div class="inc-row"><span class="inc-name">' + n + '. ' + name + '</span><span class="inc-qty"><button onclick="admRemove(\'' + kind + '\',\'' + t + '\',' + n + ')" ' + (c>0 ? '' : 'disabled') + '>−</button><b class="mono">' + c + '</b><button onclick="admAdd(\'' + kind + '\',\'' + t + '\',' + n + ')">+</button></span></div>';
+    };
+    h += '<div class="inc-team" style="border-color:' + tokenColorFor({team:t}) + '"><h3>' + teamName(t) + '</h3><label>Plegarias a Nuffle</label><div class="inc-list">';
+    for(let n=1;n<=8;n++) h += row('p', n, PRAYERS[n].name);
+    h += '</div><label>Medidas desesperadas</label><div class="inc-list">';
+    for(let n=1;n<=8;n++) h += row('d', n, DESPERATE[n].split(' — ')[0]);
+    h += '</div></div>';
+  });
+  el.innerHTML = h + '</div>';
 }
 function prayerFlag(team, key){ return !!(preMatch && preMatch.inc && preMatch.inc.flags && preMatch.inc.flags[team] && preMatch.inc.flags[team][key]); }
 function gfiTargetFor(p){
@@ -8092,7 +8167,7 @@ try{ updateTackleZonesButtons(); updateColorChoiceButtons(); setSwitch('colorsSw
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V60'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V61'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

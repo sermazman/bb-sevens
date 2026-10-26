@@ -2527,6 +2527,7 @@ function cellClass(row,col){
   if(isEndzoneA) cls.push('endzone-a');
   else if(isEndzoneB) cls.push('endzone-b');
   else if(isWide) cls.push('wide');
+  if(!isEndzoneA && !isEndzoneB){ if(row===1) cls.push('band-edge-b'); else if(row===9) cls.push('band-edge-t'); }  // línea que limita las bandas (2 casillas)
   else cls.push(((row+col)%2===0)?'alt':'');
   if(col===LOS_A || col===LOS_B) cls.push('los');
   return cls.filter(Boolean).join(' ');
@@ -8202,7 +8203,7 @@ try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesBut
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V64'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V65'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

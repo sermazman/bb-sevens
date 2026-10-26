@@ -656,7 +656,7 @@ button.full{width:100%; margin-top:6px;}
 .conn-dot.on{background:var(--good);}
 
 /* --- Versión del archivo (para el badge de verificación en el pie) --- */
-:root{ --css-version: "S_V57"; }
+:root{ --css-version: "S_V58"; }
 
 /* ---- Iconos dorados (se tiñen con el color del marcador mediante máscara) ---- */
 .gold-icon{display:inline-block; width:18px; height:18px; vertical-align:middle; background:var(--gold);
@@ -851,24 +851,19 @@ button.full{width:100%; margin-top:6px;}
 .pitch-wrap.view3d .loose-ball, .pitch-wrap.view3d .ball-carrier-ball{ transform:rotateX(calc(var(--tilt) * -1)); transform-origin:50% 100%; }
 
 /* ---- Orientación del tablero: --rot = giro del plano; todo lo de dentro se contra-gira para seguir legible ---- */
-.pitch-wrap.ori-h180{ --rot:180deg; }
 .pitch-wrap.ori-a{ --rot:-90deg; }
 .pitch-wrap.ori-b{ --rot:90deg; }
 .pitch-wrap.ori-a, .pitch-wrap.ori-b{ width:480px; height:790px; padding:0; overflow:visible; }
 .pitch-wrap.ori-a .pitch, .pitch-wrap.ori-b .pitch{ position:absolute; left:50%; top:50%; margin:0; }
 /* 2D */
-.pitch-wrap.ori-h180:not(.view3d) .pitch{ transform:rotate(180deg); }
 .pitch-wrap.ori-a:not(.view3d) .pitch, .pitch-wrap.ori-b:not(.view3d) .pitch{ transform:translate(-50%,-50%) rotate(var(--rot)); }
-.pitch-wrap:is(.ori-h180,.ori-a,.ori-b):not(.view3d) .cell > *,
-.pitch-wrap:is(.ori-h180,.ori-a,.ori-b) .pitch > :not(.cell):not(.endzone-label){ transform:rotate(calc(var(--rot) * -1)); }
+.pitch-wrap:is(.ori-a,.ori-b):not(.view3d) .cell > *,
+.pitch-wrap:is(.ori-a,.ori-b) .pitch > :not(.cell):not(.endzone-label){ transform:rotate(calc(var(--rot) * -1)); }
 /* nombres de zona de touchdown */
-.pitch-wrap.ori-h180 .endzone-label{ transform:rotate(180deg); }
-.pitch-wrap.ori-h180 .endzone-label-flip{ transform:none; }
 .pitch-wrap.ori-a .endzone-label, .pitch-wrap.ori-a .endzone-label-flip{ transform:none; }
 .pitch-wrap.ori-b .endzone-label, .pitch-wrap.ori-b .endzone-label-flip{ transform:rotate(180deg); }
 /* 3D */
-.pitch-wrap.view3d.ori-h180 .pitch{ transform:rotateX(var(--tilt)) translateY(-192px) rotateZ(180deg) translateY(192px); }
-.pitch-wrap.view3d.ori-a, .pitch-wrap.view3d.ori-b{ width:660px; height:780px; perspective-origin:50% 40%; }
-.pitch-wrap.view3d.ori-a .pitch, .pitch-wrap.view3d.ori-b .pitch{ transform-origin:50% 50%; transform:translate(-50%,-50%) rotateX(var(--tilt)) rotateZ(var(--rot)); }
-.pitch-wrap.view3d:is(.ori-h180,.ori-a,.ori-b) .cell > :not(.token):not(.loose-ball){ transform:rotate(calc(var(--rot) * -1)); }
-.pitch-wrap.view3d:is(.ori-h180,.ori-a,.ori-b) .token, .pitch-wrap.view3d:is(.ori-h180,.ori-a,.ori-b) .loose-ball{ transform:rotateZ(calc(var(--rot) * -1)) rotateX(calc(var(--tilt) * -1)); }
+.pitch-wrap.view3d.ori-a, .pitch-wrap.view3d.ori-b{ width:660px; height:625px; perspective-origin:50% 40%; }
+.pitch-wrap.view3d.ori-a .pitch, .pitch-wrap.view3d.ori-b .pitch{ top:calc(50% - 75px); transform-origin:50% 50%; transform:translate(-50%,-50%) rotateX(var(--tilt)) rotateZ(var(--rot)); }
+.pitch-wrap.view3d:is(.ori-a,.ori-b) .cell > :not(.token):not(.loose-ball){ transform:rotate(calc(var(--rot) * -1)); }
+.pitch-wrap.view3d:is(.ori-a,.ori-b) .token, .pitch-wrap.view3d:is(.ori-a,.ori-b) .loose-ball{ transform:rotateZ(calc(var(--rot) * -1)) rotateX(calc(var(--tilt) * -1)); }

@@ -656,7 +656,7 @@ button.full{width:100%; margin-top:6px;}
 .conn-dot.on{background:var(--good);}
 
 /* --- Versión del archivo (para el badge de verificación en el pie) --- */
-:root{ --css-version: "S_V58"; }
+:root{ --css-version: "S_V59"; }
 
 /* ---- Iconos dorados (se tiñen con el color del marcador mediante máscara) ---- */
 .gold-icon{display:inline-block; width:18px; height:18px; vertical-align:middle; background:var(--gold);
@@ -837,7 +837,7 @@ button.full{width:100%; margin-top:6px;}
   background:
     repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 68px, rgba(0,0,0,.05) 68px 136px),
     radial-gradient(ellipse at 50% 50%, #3d6e36 0%, #2b5326 80%); }
-.pitch-wrap.view3d .cell{ background:transparent; box-shadow:inset 0 0 0 .5px rgba(255,255,255,.10); transform-style:preserve-3d; }
+.pitch-wrap.view3d .cell{ background:transparent; box-shadow:inset 0 0 0 1px rgba(255,255,255,.20), inset 0 0 0 2px rgba(0,0,0,.10); transform-style:preserve-3d; }
 .pitch-wrap.view3d .cell.alt, .pitch-wrap.view3d .cell.wide{ background:transparent; }
 .pitch-wrap.view3d .cell.endzone-a{ background:repeating-linear-gradient(135deg, rgba(122,45,45,.75), rgba(122,45,45,.75) 6px, rgba(107,39,39,.75) 6px, rgba(107,39,39,.75) 12px); }
 .pitch-wrap.view3d .cell.endzone-b{ background:repeating-linear-gradient(135deg, rgba(45,77,122,.75), rgba(45,77,122,.75) 6px, rgba(38,80,126,.75) 6px, rgba(38,80,126,.75) 12px); }
@@ -867,3 +867,13 @@ button.full{width:100%; margin-top:6px;}
 .pitch-wrap.view3d.ori-a .pitch, .pitch-wrap.view3d.ori-b .pitch{ top:calc(50% - 75px); transform-origin:50% 50%; transform:translate(-50%,-50%) rotateX(var(--tilt)) rotateZ(var(--rot)); }
 .pitch-wrap.view3d:is(.ori-a,.ori-b) .cell > :not(.token):not(.loose-ball){ transform:rotate(calc(var(--rot) * -1)); }
 .pitch-wrap.view3d:is(.ori-a,.ori-b) .token, .pitch-wrap.view3d:is(.ori-a,.ori-b) .loose-ball{ transform:rotateZ(calc(var(--rot) * -1)) rotateX(calc(var(--tilt) * -1)); }
+
+/* Campo con imagen (clima): sin capa que apague el terreno; solo se ven las líneas de casilla */
+.pitch-wrap.view3d .pitch.custom-bg .cell:not(.endzone-a):not(.endzone-b),
+.pitch-wrap.view3d .pitch.custom-bg .cell.alt:not(.endzone-a):not(.endzone-b),
+.pitch-wrap.view3d .pitch.custom-bg .cell.wide:not(.endzone-a):not(.endzone-b){ background:transparent; }
+.pitch-wrap.view3d .pitch.custom-bg .cell.endzone-a{ background:repeating-linear-gradient(135deg, rgba(122,45,45,.30), rgba(122,45,45,.30) 6px, rgba(107,39,39,.30) 6px, rgba(107,39,39,.30) 12px); }
+.pitch-wrap.view3d .pitch.custom-bg .cell.endzone-b{ background:repeating-linear-gradient(135deg, rgba(45,77,122,.30), rgba(45,77,122,.30) 6px, rgba(38,80,126,.30) 6px, rgba(38,80,126,.30) 12px); }
+/* Vista 3D horizontal: recorta el hueco que deja la inclinación sobre el campo */
+.pitch-wrap.view3d:not(.ori-a):not(.ori-b){ padding-top:34px; }
+.pitch-wrap.view3d:not(.ori-a):not(.ori-b) .pitch{ margin-top:-85px; }

@@ -254,7 +254,7 @@ function applyBoardView(){
 function setView3d(v){ view3d = !!v; try{ localStorage.setItem('bb7_view3d', view3d ? '1' : '0'); }catch(e){} applyBoardView(); }
 function setViewOrient(v){ viewOrient = v; try{ localStorage.setItem('bb7_viewOrient', v); }catch(e){} applyBoardView(); }
 // ---- Campo según el clima (carpeta field/) ----
-const WEATHER_FIELDS = { calor:'calor_asfixiante_campo.png', soleado:'soleado_campo.png', ventisca:'ventisca_campo.png', lluvia:'lluvioso_campo.png', perfecto:'clima_perfect_campo.png' };
+const WEATHER_FIELDS = { calor:'calor_asfixiante_campo.png', soleado:'soleado_campo.png', ventisca:'ventisca_campo.png', lluvia:'lluvioso_campo.png', perfecto:'clima_perfecto_campo.png' };
 let weatherFieldAuto = true;
 try{ weatherFieldAuto = localStorage.getItem('bb7_weatherField') !== '0'; }catch(e){}
 function setWeatherField(v){
@@ -266,9 +266,15 @@ function setWeatherField(v){
 function applyWeatherField(kind){
   if(!weatherFieldAuto || !WEATHER_FIELDS[kind]) return;
   const url = 'field/' + WEATHER_FIELDS[kind];
-  const sel = document.getElementById('pitchBgSelect'); if(sel) sel.value = [...sel.options].some(o=>o.value===url) ? url : '';
-  setPitchBackground(url, true);
-  broadcastState();
+  // Se comprueba que la imagen carga antes de aplicarla (si no, el campo quedaría oscuro/vacío).
+  const img = new Image();
+  img.onload = ()=>{
+    const sel = document.getElementById('pitchBgSelect'); if(sel) sel.value = [...sel.options].some(o=>o.value===url) ? url : '';
+    setPitchBackground(url, true);
+    broadcastState();
+  };
+  img.onerror = ()=>{ log('🖼️ No se encontró la imagen de campo "' + url + '" (revisa el nombre del archivo en la carpeta field). Se mantiene el campo actual.'); };
+  img.src = url;
 }
 // Nº de rivales en pie (sin Canijo, igual que en las esquivas) que marcan cada casilla respecto al jugador seleccionado.
 function tackleZoneCountMap(sel){
@@ -8196,7 +8202,7 @@ try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesBut
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V63'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V64'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

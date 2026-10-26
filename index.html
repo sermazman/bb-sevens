@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-w-version="W_V50">
+<html lang="es" data-w-version="W_V52">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -61,7 +61,21 @@
       <div class="sw-row"><span class="sw-label">Mostrar zonas</span>
         <button class="sw" id="tzSw" data-on="SÍ" data-off="NO" onclick="setShowTackleZones(!showTackleZones)"><span class="sw-txt">NO</span><span class="sw-knob"></span></button></div>
 
+      <h3 style="margin-top:14px;">Vista del tablero</h3>
+      <div class="small-note">Solo lo ves tú; cada jugador elige su vista en su navegador.</div>
+      <div class="sw-row"><span class="sw-label">Vista 3D</span>
+        <button class="sw" id="view3dSw" data-on="SÍ" data-off="NO" onclick="setView3d(!view3d)"><span class="sw-txt">NO</span><span class="sw-knob"></span></button></div>
+      <label>Orientación</label>
+      <select id="viewOrientSel" onchange="setViewOrient(this.value)">
+        <option value="h">Horizontal (clásica)</option>
+        <option value="h180">Horizontal girada</option>
+        <option value="a">Zona de touchdown del equipo A abajo (rojo cerca)</option>
+        <option value="b">Zona de touchdown del equipo B abajo (azul cerca)</option>
+      </select>
+
       <h3 style="margin-top:14px;">Fondo del campo</h3>
+      <div class="sw-row"><span class="sw-label">Campo según el clima</span>
+        <button class="sw on" id="wfSw" data-on="SÍ" data-off="NO" onclick="setWeatherField(!weatherFieldAuto)"><span class="sw-txt">SÍ</span><span class="sw-knob"></span></button></div>
       <label>Campo oficial</label>
       <select id="pitchBgSelect" onchange="selectPitchBackground(this.value)">
         <option value="">Clásico (actual)</option>

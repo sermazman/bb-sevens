@@ -241,6 +241,35 @@ function setShowTackleZones(v){
   renderPitch();
 }
 function updateTackleZonesButtons(){ setSwitch('tzSw', showTackleZones); }
+// ---- Vista del tablero (local por jugador): 3D opcional + orientación ----
+let view3d = false, viewOrient = 'h';
+try{ view3d = localStorage.getItem('bb7_view3d') === '1'; const o = localStorage.getItem('bb7_viewOrient'); if(['h','h180','a','b'].includes(o)) viewOrient = o; }catch(e){}
+function applyBoardView(){
+  const w = document.getElementById('pitchWrap'); if(!w) return;
+  w.classList.toggle('view3d', view3d);
+  ['h180','a','b'].forEach(k=>w.classList.toggle('ori-' + k, viewOrient===k));
+  setSwitch('view3dSw', view3d);
+  const sel = document.getElementById('viewOrientSel'); if(sel) sel.value = viewOrient;
+}
+function setView3d(v){ view3d = !!v; try{ localStorage.setItem('bb7_view3d', view3d ? '1' : '0'); }catch(e){} applyBoardView(); }
+function setViewOrient(v){ viewOrient = v; try{ localStorage.setItem('bb7_viewOrient', v); }catch(e){} applyBoardView(); }
+// ---- Campo según el clima (carpeta field/) ----
+const WEATHER_FIELDS = { calor:'calor_asfixiante_campo.png', soleado:'soleado_campo.png', ventisca:'ventisca_campo.png', lluvia:'lluvioso_campo.png', perfecto:'clima_perfect_campo.png' };
+let weatherFieldAuto = true;
+try{ weatherFieldAuto = localStorage.getItem('bb7_weatherField') !== '0'; }catch(e){}
+function setWeatherField(v){
+  weatherFieldAuto = !!v;
+  try{ localStorage.setItem('bb7_weatherField', weatherFieldAuto ? '1' : '0'); }catch(e){}
+  setSwitch('wfSw', weatherFieldAuto);
+  if(weatherFieldAuto) applyWeatherField(weatherKind());
+}
+function applyWeatherField(kind){
+  if(!weatherFieldAuto || !WEATHER_FIELDS[kind]) return;
+  const url = 'field/' + WEATHER_FIELDS[kind];
+  const sel = document.getElementById('pitchBgSelect'); if(sel) sel.value = [...sel.options].some(o=>o.value===url) ? url : '';
+  setPitchBackground(url, true);
+  broadcastState();
+}
 // Nº de rivales en pie (sin Canijo, igual que en las esquivas) que marcan cada casilla respecto al jugador seleccionado.
 function tackleZoneCountMap(sel){
   // Devuelve { 'r_c': { flat:n marcadores normales, tail:n marcadores con Cola prensil } }.
@@ -1743,7 +1772,7 @@ function preMatchNext(){
   if(preMatch.step==='fans'){
     const a = rollDieN(6), b = rollDieN(6);
     preMatch.wDie.a = a; preMatch.wDie.b = b;
-    preMatch.weather = weatherKindFromSum(a+b);
+    preMatch.weather = weatherKindFromSum(a+b); applyWeatherField(preMatch.weather);
     preMatch.step = 'weather';
     log('🌦️ Clima: ' + a + ' + ' + b + ' = ' + (a+b) + ' → ' + WEATHER_TABLE[preMatch.weather].name + '. ' + WEATHER_TABLE[preMatch.weather].desc);
   } else if(preMatch.step==='weather'){
@@ -6371,7 +6400,7 @@ function acceptKickoffEvent(){
     case 8: {
       const ev = kickoffEvt;
       const kind = ev.wk || weatherKindFromSum(rollDieN(6)+rollDieN(6));
-      preMatch.weather = kind;
+      preMatch.weather = kind; applyWeatherField(kind);
       log('🌦️ CLIMA CAMBIANTE: nueva tirada de clima ' + ev.wa + ' + ' + ev.wb + ' = ' + (ev.wa+ev.wb) + ' → ' + WEATHER_TABLE[kind].name + '. ' + WEATHER_TABLE[kind].desc);
       if(typeof renderPreMatchBadges==='function') renderPreMatchBadges();
       renderScoreboard();
@@ -8157,7 +8186,7 @@ function setupModalEnhancements(){
 document.addEventListener('DOMContentLoaded', setupModalEnhancements);
 if(document.readyState==='complete' || document.readyState==='interactive'){ setupModalEnhancements(); }
 
-try{ updateTackleZonesButtons(); updateColorChoiceButtons(); setSwitch('colorsSw', customColorsEnabled); }catch(e){}
+try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesButtons(); updateColorChoiceButtons(); setSwitch('colorsSw', customColorsEnabled); }catch(e){}
 // Dados de 6 caras: los cuadros de dado muestran el icono dadoN.png (el texto se conserva, solo se oculta por CSS vía data-d6)
 (function(){
   const ids = ['kickoffDistDie','dodgeDie','gfiDie','animosityDie','armorDie1','armorDie2','regenDie','injuryDie1','injuryDie2','koDie','traitCheckDie','catchDie','jumpUpDie','interceptDie','passDie','secureBallDie','keDie1','keDie2'];
@@ -8167,7 +8196,7 @@ try{ updateTackleZonesButtons(); updateColorChoiceButtons(); setSwitch('colorsSw
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V61'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V62'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

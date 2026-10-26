@@ -243,11 +243,11 @@ function setShowTackleZones(v){
 function updateTackleZonesButtons(){ setSwitch('tzSw', showTackleZones); }
 // ---- Vista del tablero (local por jugador): 3D opcional + orientación ----
 let view3d = false, viewOrient = 'h';
-try{ view3d = localStorage.getItem('bb7_view3d') === '1'; const o = localStorage.getItem('bb7_viewOrient'); if(['h','h180','a','b'].includes(o)) viewOrient = o; }catch(e){}
+try{ view3d = localStorage.getItem('bb7_view3d') === '1'; const o = localStorage.getItem('bb7_viewOrient'); if(['h','a','b'].includes(o)) viewOrient = o; }catch(e){}
 function applyBoardView(){
   const w = document.getElementById('pitchWrap'); if(!w) return;
   w.classList.toggle('view3d', view3d);
-  ['h180','a','b'].forEach(k=>w.classList.toggle('ori-' + k, viewOrient===k));
+  ['a','b'].forEach(k=>w.classList.toggle('ori-' + k, viewOrient===k));
   setSwitch('view3dSw', view3d);
   const sel = document.getElementById('viewOrientSel'); if(sel) sel.value = viewOrient;
 }
@@ -8196,7 +8196,7 @@ try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesBut
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V62'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V63'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

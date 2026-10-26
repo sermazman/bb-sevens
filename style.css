@@ -656,7 +656,7 @@ button.full{width:100%; margin-top:6px;}
 .conn-dot.on{background:var(--good);}
 
 /* --- Versión del archivo (para el badge de verificación en el pie) --- */
-:root{ --css-version: "S_V59"; }
+:root{ --css-version: "S_V60"; }
 
 /* ---- Iconos dorados (se tiñen con el color del marcador mediante máscara) ---- */
 .gold-icon{display:inline-block; width:18px; height:18px; vertical-align:middle; background:var(--gold);
@@ -828,6 +828,7 @@ button.full{width:100%; margin-top:6px;}
 
 /* ===== S_V56 — VISTA 3D + GIRAR TABLERO (local por jugador) ===== */
 :root{ --tilt:42deg; --persp:1000px; }
+.pitch-wrap{ --rot:0deg; }
 .pitch-wrap.view3d{ perspective:var(--persp); perspective-origin:50% 0%; padding:48px 42px 20px; overflow:visible;
   background:radial-gradient(ellipse at 50% 30%, #2c2a24, #0e0d0b 75%); }
 .pitch-wrap.view3d .pitch{ transform:rotateX(var(--tilt)); transform-origin:50% 100%; transform-style:preserve-3d;
@@ -877,3 +878,11 @@ button.full{width:100%; margin-top:6px;}
 /* Vista 3D horizontal: recorta el hueco que deja la inclinación sobre el campo */
 .pitch-wrap.view3d:not(.ori-a):not(.ori-b){ padding-top:34px; }
 .pitch-wrap.view3d:not(.ori-a):not(.ori-b) .pitch{ margin-top:-85px; }
+
+/* Líneas de las bandas (2 casillas a cada lado), en todas las vistas */
+.cell.band-edge-b{ border-bottom:2px solid rgba(255,255,255,.75); }
+.cell.band-edge-t{ border-top:2px solid rgba(255,255,255,.75); }
+/* 3D: la ficha y el balón se apoyan en el CENTRO de la casilla (así no se descentran al girar el tablero) */
+.pitch-wrap.view3d .token{ bottom:50%; }
+.pitch-wrap.view3d .cell:has(.token)::before{ bottom:auto; top:50%; margin:-7px 0 0 -15px; transform:rotate(calc(var(--rot) * -1)); }
+.pitch-wrap.view3d .loose-ball, .pitch-wrap.view3d .ball-carrier-ball{ transform-origin:50% 50%; }

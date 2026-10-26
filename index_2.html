@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="es" data-w-version="W_V50">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sevens Pitch — Tablero Digital</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style_2.css">
+</head>
+<body>
+
+<div class="wrap">
+<header class="top">
+  <div>
+    <h1>Sevens Pitch</h1>
+    <div class="sub">Tablero digital · Blood Bowl Sevens</div>
+  </div>
+
+  <div class="game-menu-wrap">
+    <button class="menu-toggle" onclick="toggleGameMenu()">
+      <span class="conn-dot" id="connDot"></span>
+      ⚙️ Menú ▾
+    </button>
+    <div class="game-menu-dropdown" id="gameMenuDropdown">
+      <h3>Conexión remota</h3>
+      <div class="small-note" id="connStatus">Sin conectar. Jugad los dos en el mismo enlace.</div>
+      <div id="connControls" style="margin-top:6px;">
+        <button class="primary full" onclick="hostRoom()">Crear sala</button>
+        <div class="row" style="margin-top:6px;">
+          <input type="text" id="joinCodeInput" placeholder="CÓDIGO" maxlength="4">
+          <button onclick="joinRoom()">Unirse</button>
+        </div>
+      </div>
+      <div id="roomCodeBox" style="display:none; margin-top:6px;">
+        <span class="small-note">Código de sala:</span>
+        <span class="room-code-inline" id="roomCodeText">----</span>
+      </div>
+      <!-- Botón "Desatascar" oculto a propósito (la función unstickState sigue en app.js). Quitar display:none para recuperarlo. -->
+      <button class="danger full" style="margin-top:8px; display:none;" onclick="unstickState()">🆘 Desatascar (cerrar modales colgados)</button>
+
+      <h3 style="margin-top:14px;">Partida</h3>
+      <div class="small-note">Se guarda sola en este navegador tras cada acción. Si se cae la conexión, recargad la página y os ofrecerá recuperarla.</div>
+      <div class="row" style="margin-top:8px;">
+        <button onclick="downloadSaveFile()">⬇️ Descargar</button>
+        <button onclick="document.getElementById('loadSaveInput').click()">⬆️ Cargar</button>
+      </div>
+      <input type="file" id="loadSaveInput" accept="application/json" style="display:none" onchange="loadSaveFile(this)">
+
+      <h3 style="margin-top:14px;">Colores personalizados</h3>
+      <div class="small-note">El color de cada equipo se define al cargar su equipo. Si trae color secundario, aquí eliges cuál ves tú (solo en tu pantalla).</div>
+      <div class="sw-row"><span class="sw-label" id="ccALabel">LOCAL</span>
+        <button class="sw" id="ccASw" data-on="SECUNDARIO" data-off="PRINCIPAL" onclick="setColorChoice('A', colorChoice.A==='sec'?'main':'sec')"><span class="sw-txt">PRINCIPAL</span><span class="sw-knob"></span></button></div>
+      <div class="sw-row"><span class="sw-label" id="ccBLabel">VISITANTE</span>
+        <button class="sw" id="ccBSw" data-on="SECUNDARIO" data-off="PRINCIPAL" onclick="setColorChoice('B', colorChoice.B==='sec'?'main':'sec')"><span class="sw-txt">PRINCIPAL</span><span class="sw-knob"></span></button></div>
+      <div class="sw-row"><span class="sw-label">Colores de equipo</span>
+        <button class="sw on" id="colorsSw" data-on="SÍ" data-off="NO" onclick="setCustomColors(!customColorsEnabled)"><span class="sw-txt">SÍ</span><span class="sw-knob"></span></button></div>
+
+      <h3 style="margin-top:14px;">Zonas de defensa</h3>
+      <div class="small-note">Al seleccionar un jugador, tiñe de violeta suave las casillas vacías marcadas por rivales en pie (más intenso = más marcadores). Solo lo ves tú; cada jugador lo activa en su navegador.</div>
+      <div class="sw-row"><span class="sw-label">Mostrar zonas</span>
+        <button class="sw" id="tzSw" data-on="SÍ" data-off="NO" onclick="setShowTackleZones(!showTackleZones)"><span class="sw-txt">NO</span><span class="sw-knob"></span></button></div>
+
+      <h3 style="margin-top:14px;">Fondo del campo</h3>
+      <label>Campo oficial</label>
+      <select id="pitchBgSelect" onchange="selectPitchBackground(this.value)">
+        <option value="">Clásico (actual)</option>
+        <!-- El resto de campos homologados se cargan solos desde field/fields.json -->
+      </select>
+      <!-- Cargar imagen suelta por URL: oculto a propósito (la lógica sigue en app.js). Quitar display:none para recuperarlo. -->
+      <div id="pitchBgUrlBlock" style="display:none;">
+        <div class="small-note" style="margin-top:6px;">O probar una imagen suelta por URL (no se guarda como opción fija):</div>
+        <input type="text" id="pitchBgInput" placeholder="https://...">
+        <div class="row">
+          <button onclick="applyPitchBackground()">Aplicar URL</button>
+          <button onclick="clearPitchBackground()">Quitar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="header-right mono" id="statusLine">Fase de colocación</div>
+</header>
+</div>
+
+<div class="app app-v2">
+
+  <div class="side-bench-col" id="benchColA">
+    <div class="team-wide-panel a">
+      <input class="team-name-input" id="teamAName" type="text" value="Equipo Rojo" style="border-color:var(--team-a); width:100%;">
+      <h3>Plantilla en banquillo</h3>
+      <div class="roster-list" id="rosterA"></div>
+      <div class="bench-divider"></div>
+      <h3 id="bajasHeaderA">Bajas</h3>
+      <div id="casualtyListA" class="bajas-tags"><span class="small-note">Ninguna</span></div>
+      <div class="bench-divider"></div>
+      <div class="row">
+        <button onclick="openAddPlayer('A')">+ Añadir</button>
+        <button onclick="quickFill('A')">7 rápidos</button>
+      </div>
+      <div class="row" style="margin-top:6px;">
+        <button onclick="document.getElementById('fileImportA').click()">📁 Cargar Equipo</button>
+        <button onclick="exportTeam('A')">💾 Guardar Equipo</button>
+      </div>
+      <div class="row" style="margin-top:6px;">
+        <button class="danger" onclick="clearTeam('A')">🗑️ Borrar Equipo</button>
+        <button onclick="presetPositions('A')">📋 Posiciones predefinidas</button>
+      </div>
+      <input type="file" id="fileImportA" accept="application/json" style="display:none" onchange="importTeamFile('A', this)">
+    </div>
+  </div>
+
+  <div class="center-col">
+    <div class="scoreboard">
+      <div class="sb-team">
+        <div class="sb-team-inner">
+          <div class="sb-reroll" id="sbRerollA" style="display:flex;">
+            <div class="sb-rr-grid">
+              <span class="sb-reroll-label" id="sbRerollLabelA"><span class="gold-icon" style="--icon:url('icons/reroll.png')"></span></span>
+              <span class="sb-reroll-count mono" id="sbRerollCountA">0/0</span>
+              <span class="sb-fans hidden" id="sbFansA"><span class="sb-fans-icon" title="Fans"><span class="gold-icon" style="--icon:url('icons/fans.png')"></span></span><span class="sb-fans-val mono" id="sbFansValA">0</span></span>
+            </div>
+            <span class="sb-reroll-btns">
+              <button onclick="adjustReroll('A', -1)">-1</button>
+              <button onclick="adjustReroll('A', 1)">+1</button>
+            </span>
+          </div>
+          <div class="sb-veterano-badge" id="sbVeteranoA" style="display:none;" title="Equipo con Veterano(s)">
+            <img src="icons/veterano.png" alt="Veterano" onerror="this.outerHTML='<span class=&quot;fallback-star&quot;>⭐</span>'">
+          </div>
+          <div class="sb-bribe" id="sbBribeA" style="display:none;" onclick="useBribe('A')"><span class="gold-icon" style="--icon:url('icons/soborno.png')"></span></div>
+          <div class="sb-team-main">
+            <div class="label" id="sbNameA">Rojo</div>
+            <div class="sb-race mono" id="sbRaceA"></div>
+            <div class="score mono" id="scoreA">0</div>
+          </div>
+        </div>
+        <div class="sb-icons" id="sbIconsA"></div>
+      </div>
+      <div class="sb-mid">
+        <div class="half mono">MITAD <span id="halfNum">1</span></div>
+        <div class="turns mono"><span class="turn-dot" id="turnDotA"></span> <span id="turnA">0</span>/6 <span class="sb-weather" id="sbWeather" style="display:none;"><span class="gold-icon" id="sbWeatherIcon"></span></span> <span class="turn-dot" id="turnDotB"></span> <span id="turnB">0</span>/6</div>
+        <div class="active-flag mono" id="activeFlag">COLOCACIÓN</div>
+      </div>
+      <div class="sb-team">
+        <div class="sb-team-inner">
+          <div class="sb-team-main">
+            <div class="label" id="sbNameB">Azul</div>
+            <div class="sb-race mono" id="sbRaceB"></div>
+            <div class="score mono" id="scoreB">0</div>
+          </div>
+          <div class="sb-veterano-badge" id="sbVeteranoB" style="display:none;" title="Equipo con Veterano(s)">
+            <img src="icons/veterano.png" alt="Veterano" onerror="this.outerHTML='<span class=&quot;fallback-star&quot;>⭐</span>'">
+          </div>
+          <div class="sb-bribe" id="sbBribeB" style="display:none;" onclick="useBribe('B')"><span class="gold-icon" style="--icon:url('icons/soborno.png')"></span></div>
+          <div class="sb-reroll" id="sbRerollB" style="display:flex;">
+            <div class="sb-rr-grid">
+              <span class="sb-reroll-label" id="sbRerollLabelB"><span class="gold-icon" style="--icon:url('icons/reroll.png')"></span></span>
+              <span class="sb-reroll-count mono" id="sbRerollCountB">0/0</span>
+              <span class="sb-fans hidden" id="sbFansB"><span class="sb-fans-icon" title="Fans"><span class="gold-icon" style="--icon:url('icons/fans.png')"></span></span><span class="sb-fans-val mono" id="sbFansValB">0</span></span>
+            </div>
+            <span class="sb-reroll-btns">
+              <button onclick="adjustReroll('B', -1)">-1</button>
+              <button onclick="adjustReroll('B', 1)">+1</button>
+            </span>
+          </div>
+        </div>
+        <div class="sb-icons" id="sbIconsB"></div>
+      </div>
+    </div>
+
+    <button class="primary full" id="endTurnBtn" style="margin-bottom:10px;" onclick="endTurn()">Terminar turno →</button>
+
+    <div class="panel" id="kickPlacementPanel" style="display:none; border-color:#5aa469;">
+      <h2 style="color:#8fd19e;"><img class="ball-ico" src="icons/spiked_ball_1.png" alt="" onerror="this.outerHTML='🏈'"> Colocación del saque</h2>
+      <div class="small-note" id="kickPlacementText">Elegid la casilla (resaltada en verde).</div>
+    </div>
+
+    <div class="panel" id="kickoffPanel" style="display:none; border-color:#4a7a9c;">
+      <h2 style="color:#7db8e8;"><img class="ball-ico" src="icons/spiked_ball_1.png" alt="" onerror="this.outerHTML='🏈'"> Saque inicial</h2>
+      <div class="small-note" id="kickoffStepText">Tirad los dados y elegid la casilla.</div>
+      <div class="row" style="margin-top:8px;">
+        <button onclick="rollKickoffDirDie()">Tirar 1D8 (dirección)</button>
+        <div class="die-face" id="kickoffDirDie">–</div>
+      </div>
+      <div class="row" id="kickoffDistRow" style="margin-top:8px;">
+        <button onclick="rollKickoffDistanceDie()">Tirar 1D6 (distancia)</button>
+        <div class="die-face" id="kickoffDistDie">–</div>
+      </div>
+      <button class="full danger" style="margin-top:8px;" onclick="kickoffOutOfBounds()">🌀 Fuera del campo</button>
+    </div>
+
+    <div class="panel" id="kickoffEventPanel" style="display:none; border-color:#7db8e8;">
+      <h2 style="color:#7db8e8;" id="kickoffBoardTitle">🎲 Evento de patada inicial</h2>
+      <div class="small-note" id="kickoffBoardText"></div>
+      <button class="full primary" id="kickoffBoardBtn" style="margin-top:8px;" onclick="kickoffBoardContinue()">➡️ Continuar al rebote final</button>
+    </div>
+
+    <div class="panel" id="freeCatchPanel" style="display:none; border-color:var(--gold);">
+      <h2 style="color:var(--gold);"><img class="ball-ico" src="icons/spiked_ball_1.png" alt="" onerror="this.outerHTML='🏈'"> Recepción libre</h2>
+      <div class="small-note" id="freeCatchText">Click en vuestro jugador para asignarle el balón.</div>
+    </div>
+
+    <div class="panel" id="pushControlPanel" style="display:none; border-color:var(--bad);">
+      <h2 style="color:#ffb3a7;">🌀 Empuje en curso</h2>
+      <div class="small-note" id="pushControlText">Elegid una de las 3 casillas resaltadas en rojo. Si alguna cae fuera del campo, aparecerá pegada al borde con 🌀.</div>
+      <button class="full" id="pushFreeToggleBtn" onclick="toggleFreePushDuringPush()" style="margin-top:8px;">🔓 Activar todos los empujes</button>
+    </div>
+
+    <div class="panel" id="ballBouncePanel" style="display:none; border-color:#4a7a9c;">
+      <h2 style="color:#7db8e8;"><img class="ball-ico" src="icons/spiked_ball_1.png" alt="" onerror="this.outerHTML='🏈'"> Balón rebotado</h2>
+      <div class="small-note">Elegid la casilla numerada (1-8) según el resultado del D8: 1-2-3 arriba, 4-balón-5 en medio, 6-7-8 abajo. Si la dirección cae fuera del campo, aparecerá una casilla fantasma pegada al borde — el balón vuelve a botar desde ahí con una nueva tirada de dirección.</div>
+      <div class="row" style="margin-top:8px;">
+        <button onclick="rollBounceDirDie()">Tirar 1D8 (dirección)</button>
+        <div class="die-face" id="bounceDirDie">–</div>
+      </div>
+    </div>
+
+    <div style="text-align:right; margin:0 0 6px 0;"><button id="view3dBtn" onclick="toggleView3d()">🎥 Vista 3D: ON</button></div>
+    <div class="pitch-wrap view3d" id="pitchWrap">
+      <div class="pitch" id="pitch" oncontextmenu="return handlePitchRightClick(event)"></div>
+    </div>
+
+    <div class="panel setup" id="setupPanel">
+      <h2><img class="ball-ico" src="icons/spiked_ball_1.png" alt="" onerror="this.outerHTML='🏈'"> Fase de colocación</h2>
+      <div id="preMatchStartRow" style="display:none;">
+        <button class="full primary" id="preMatchStartBtn" onclick="preMatchBegin()">🎬 Empezar secuencia anterior a partido</button>
+        <div class="small-note" id="preMatchStartNote">Hinchas, clima, sustitutos, incentivos y sorteo de patada.</div>
+        <button class="pm-skip" id="preMatchSkipBtn" onclick="preMatchSkip()">Saltar secuencia (sin hinchas ni clima)</button>
+      </div>
+      <div class="row" id="setupKickRow" style="align-items:center; gap:10px;">
+        <label style="margin:0; white-space:nowrap;">Equipo que patea:</label>
+        <select id="kickSelect" onchange="onKickChange()">
+          <option value="A">Rojo</option>
+          <option value="B">Azul</option>
+        </select>
+        <button class="full primary" onclick="startDrive()" style="margin:0;">▶ Iniciar Entrada</button>
+      </div>
+      <div class="small-note" id="setupHint">Recibe: Azul</div>
+      <div class="small-note">Click en un jugador del banquillo (o en una ficha ya colocada, para reposicionarla) y luego en una casilla resaltada dentro de vuestra mitad.</div>
+    </div>
+
+    <div class="legend">
+      <span style="background:var(--turf-2)"></span>Campo central
+      <span style="background:var(--turf-wide)"></span>Zona lateral
+      <span style="background:var(--endzone-a)"></span>Zona anotación Rojo
+      <span style="background:var(--endzone-b)"></span>Zona anotación Azul
+      &nbsp;&nbsp;·&nbsp;&nbsp; Dorado = movimiento normal &nbsp;·&nbsp; Rojo = "a por ellos" (extra, con riesgo)
+    </div>
+
+    <div class="panel" id="selPlayerPanel">
+      <h2>Jugador seleccionado</h2>
+      <div class="sel-info-grid">
+        <div id="selInfoLeft" class="mono">Ninguno</div>
+        <div id="selInfoRight" class="mono"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Historial</h2>
+      <div class="hist" id="hist"></div>
+    </div>
+
+    <div class="tools-row">
+      <div class="panel">
+        <h2>Dado de bloqueo</h2>
+        <div class="row">
+          <button onclick="rollBlock(1)">1 dado</button>
+          <button onclick="rollBlock(2)">2 dados</button>
+          <button onclick="rollBlock(3)">3 dados</button>
+        </div>
+        <div class="block-face-list" id="blockResult"></div>
+        <div class="small-note">Elegid vosotros qué resultado aplicar según quién elige (atacante/defensor).</div>
+      </div>
+
+      <div class="panel">
+        <h2>Dados genéricos</h2>
+        <label>Etiqueta (opcional)</label>
+        <input type="text" id="d6label" placeholder="ej. Esquivar, Recoger, Armadura...">
+        <div class="row">
+          <button onclick="rollGeneric(6,1)">Tirar 1d6</button>
+          <button onclick="rollGeneric(6,2)">Tirar 2d6</button>
+          <button onclick="rollGeneric(8,1)">Tirar 1d8</button>
+        </div>
+        <div class="block-face-list" id="genericResult"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Acciones manuales</h2>
+        <div class="sel-btn-row">
+          <button onclick="assignBall()"><img class="ball-ico" src="icons/spiked_ball_1.png" alt="" onerror="this.outerHTML='🏈'"> Asignar balón</button>
+          <button onclick="startPlaceBallFree()">📍 Colocar balón suelto</button>
+          <button id="blockBtn" onclick="startBlockTargeting()" style="display:none;">⚔️ Placar</button>
+          <button id="blitzBtn" onclick="declareBlitz()" style="display:none;">⚡ Blitz</button>
+          <button class="danger" onclick="knockDown()">👊 Derribar (armadura)</button>
+          <button id="despistadoBtn" onclick="toggleDespistado()">😵‍💫 Marcar Despistado</button>
+          <button id="freePushBtn" onclick="toggleFreePush()">🔓 Activar todos los empujes</button>
+          <button id="jumpUpBtn" onclick="jumpUpBlitzCheck()" style="display:none;">🤸 Levantar de un salto y placar</button>
+          <button class="danger" onclick="sendToBench()">Sacar del campo</button>
+          <button class="danger" onclick="resetActivations()">⚠️ Reiniciar activaciones</button>
+        </div>
+        <div class="bench-divider"></div>
+        <div class="small-note" style="margin-bottom:6px;">Marcar estado: pulsa el botón y luego click en el jugador del campo.</div>
+        <div class="sel-btn-row">
+          <button id="manualStandBtn" onclick="startManualStatus('standing')">🧍 Levantar</button>
+          <button id="manualDownBtn" onclick="startManualStatus('tumbado')">🔻 Tumbar</button>
+          <button id="manualStunBtn" onclick="startManualStatus('aturdido')">🤕 Aturdir</button>
+          <button id="manualConfuseBtn" onclick="startManualStatus('despistado')">😵‍💫 Distraído</button>
+          <button class="danger" id="manualKoBtn" onclick="startManualStatus('ko')">😵 Inconsciente</button>
+          <button class="danger" id="manualHlBtn" onclick="startManualStatus('injured')">🚑 HL</button>
+          <button class="danger" id="manualHgBtn" onclick="startManualStatus('injuredGrave')">🚑 HG</button>
+          <button class="danger" id="manualDeadBtn" onclick="startManualStatus('dead')">☠️ Muerto</button>
+        </div>
+      </div>
+    </div>
+    <div class="panel" id="adminIncPanel">
+      <h2>Panel admin incentivos</h2>
+      <div class="small-note" style="margin-bottom:6px;">Pruebas: + añade la Plegaria / Medida desesperada al equipo (efecto inmediato, jugador al azar si procede); − la quita y revierte el efecto.</div>
+      <div id="adminIncBody"></div>
+    </div>
+    <div class="small-note" style="margin-top:10px;">Click (izquierdo o derecho) sobre vuestro jugador aún sin activar abre la Ruleta de acciones: Movimiento, Blitz, Placar, Asegurar Balón, Falta o Fin. Si el jugador tiene algún Rasgo (Estúpido, Realmente Estúpido, Ferocidad Animal, Ira Descontrolada, Echar Raíces), se resuelve automáticamente su chequeo justo al elegir la acción — tirada única, sin repetición. Al elegir "Movimiento" o "Blitz" aparecen las casillas amarillas para moveros paso a paso; al agotar el MA podéis seguir hasta 2 casillas más "a por ellos" (3 con "Esprintar"), 1D6 por casilla. Click derecho para terminar la activación en cualquier momento. Pasa el ratón sobre una ficha del campo para ver su MA restante. Al fallar una esquiva o "a por ellos": armadura (2D6) → si no rompe, TUMBADO; si rompe, tirada de heridas (2D6) y elegís Aturdido / Inconsciente / Herido leve / Herida grave / Muerto. Un empujón fuera del campo va directo a heridas, sin armadura (y si sale Aturdido, simplemente vuelve al banquillo).</div>
+  </div>
+
+  <div class="side-bench-col" id="benchColB">
+    <div class="team-wide-panel b">
+      <input class="team-name-input" id="teamBName" type="text" value="Equipo Azul" style="border-color:var(--team-b); width:100%;">
+      <h3>Plantilla en banquillo</h3>
+      <div class="roster-list" id="rosterB"></div>
+      <div class="bench-divider"></div>
+      <h3 id="bajasHeaderB">Bajas</h3>
+      <div id="casualtyListB" class="bajas-tags"><span class="small-note">Ninguna</span></div>
+      <div class="bench-divider"></div>
+      <div class="row">
+        <button onclick="openAddPlayer('B')">+ Añadir</button>
+        <button onclick="quickFill('B')">7 rápidos</button>
+      </div>
+      <div class="row" style="margin-top:6px;">
+        <button onclick="document.getElementById('fileImportB').click()">📁 Cargar Equipo</button>
+        <button onclick="exportTeam('B')">💾 Guardar Equipo</button>
+      </div>
+      <div class="row" style="margin-top:6px;">
+        <button class="danger" onclick="clearTeam('B')">🗑️ Borrar Equipo</button>
+        <button onclick="presetPositions('B')">📋 Posiciones predefinidas</button>
+      </div>
+      <input type="file" id="fileImportB" accept="application/json" style="display:none" onchange="importTeamFile('B', this)">
+    </div>
+  </div>
+
+</div>
+
+<div class="modal-back" id="tdModal">
+  <div class="modal">
+    <h2>¡TOUCHDOWN!</h2>
+    <p id="tdText">Equipo anota.</p>
+    <button class="primary" onclick="confirmTD()">Reiniciar para la próxima entrada</button>
+  </div>
+</div>
+
+<div class="modal-back" id="dodgeModal">
+  <div class="modal">
+    <h2>¡ESQUIVA!</h2>
+    <p id="dodgeText">Sale de una zona de marcaje.</p>
+    <div class="die-face" id="dodgeDie" style="margin:0 auto 10px auto;">–</div>
+    <div id="dodgeResultText" class="check-result"></div>
+    <button class="full" id="dodgeBreakTackleBtn" onclick="toggleBreakTackle()" style="display:none; margin-bottom:8px;">💪 Usar Abrirse paso</button>
+    <button class="primary full" id="dodgeRollBtn" onclick="rollDodgeDie()">Tirar D6</button>
+    <div class="row" id="dodgeActionRow" style="margin-top:12px; display:none;"></div>
+  </div>
+</div>
+
+<div class="modal-back" id="gfiModal">
+  <div class="modal">
+    <h2>¡A POR ELLOS!</h2>
+    <p id="gfiText">Casilla extra de movimiento.</p>
+    <div class="die-face" id="gfiDie" style="margin:0 auto 10px auto;">–</div>
+    <div id="gfiResultText" class="check-result"></div>
+    <button class="primary full" id="gfiRollBtn" onclick="rollGfiDie()">Tirar D6</button>
+    <div class="row" id="gfiActionRow" style="margin-top:12px; display:none;"></div>
+  </div>
+</div>
+
+<div class="modal-back" id="blitzStabModal">
+  <div class="modal">
+    <h2>PENETRACIÓN</h2>
+    <p id="blitzStabText">Este jugador tiene Apuñalar. ¿Placaje normal o Apuñalar (sustituye al Placaje)?</p>
+    <div class="row" style="justify-content:center; gap:10px; margin-top:10px;">
+      <button onclick="blitzStabChoosePlacaje()">⚔️ Placaje</button>
+      <button class="danger" onclick="blitzStabChooseApunalar()">🔪 Apuñalar</button>
+    </div>
+    <button class="full" style="margin-top:10px;" onclick="closeBlitzStabChoice()">Cancelar</button>
+  </div>
+</div>
+
+<div class="modal-back" id="animosityModal">
+  <div class="modal">
+    <h2>🙅 ANIMOSIDAD</h2>
+    <p id="animosityText">Tirada de Animosidad.</p>
+    <div class="die-face" id="animosityDie" style="margin:0 auto 6px auto;">–</div>
+    <div id="animosityResultText" class="check-result"></div>
+    <button class="primary full" id="animosityRollBtn" onclick="rollAnimosity()">Tirar D6</button>
+    <button class="full" id="animosityContinueBtn" onclick="continueAnimosity()" style="display:none; margin-top:10px;">Continuar</button>
+  </div>
+</div>
+
+<div class="modal-back" id="hailMaryModal">
+  <div class="modal">
+    <h2>🙏 PASE A LO LOCO</h2>
+    <p id="hailMaryText">¿Pase normal o Pase a lo loco?</p>
+    <div class="row" style="justify-content:center; gap:10px; margin-top:10px;">
+      <button onclick="hailMaryChooseNormal()">🎯 Pase normal</button>
+      <button class="danger" onclick="hailMaryChooseWild()">🙏 A lo loco</button>
+    </div>
+    <button class="full" style="margin-top:10px;" onclick="hailMaryCancel()">Cancelar</button>
+  </div>
+</div>
+
+<div class="modal-back" id="armorModal">
+  <div class="modal">
+    <h2>ARMADURA</h2>
+    <div id="garrasWarning" style="display:none; color:var(--bad); font-weight:800; text-align:center; margin-bottom:8px;">🩸 Jugador con GARRAS</div>
+    <p id="armorText">Tirada de armadura.</p>
+    <div class="row" style="justify-content:center; gap:10px;">
+      <div class="die-face" id="armorDie1">–</div>
+      <div class="die-face" id="armorDie2">–</div>
+    </div>
+    <div class="mono" id="armorSum" style="margin:10px 0; font-size:18px; color:var(--gold);">Suma: –</div>
+    <button class="primary full" id="armorRollBtn" onclick="rollArmor()">Tirar 2D6</button>
+
+    <div id="armorPassRow" style="display:none; margin-top:12px;">
+      <div class="small-note" style="margin-bottom:6px;">¿Armadura rota?</div>
+      <div class="row">
+        <button id="armorNoBtn" onclick="armorResult(false)">NO — sigue tumbado</button>
+        <button class="danger" onclick="armorResult(true)">SÍ — tirar heridas</button>
+      </div>
+    </div>
+
+    <div id="regenRow" style="display:none; margin-top:12px; border-top:1px solid var(--panel-line); padding-top:12px;">
+      <h3 style="margin-bottom:6px; color:var(--gold);">🔁 REGENERACIÓN</h3>
+      <p id="regenText" style="font-size:13px; color:#cfc3a8; margin:0 0 10px 0;">Antes de la Lesión, este jugador puede regenerarse. Con 1-3 sufre la Lesión con normalidad; con 4+ se regenera y va a Reservas.</p>
+      <div class="die-face" id="regenDie" style="margin:0 auto 10px auto;">–</div>
+      <div id="regenResultText" class="check-result"></div>
+      <button class="primary full" id="regenRollBtn" onclick="rollRegenDie()">Tirar D6 (Regeneración)</button>
+      <div id="regenHelperRow" style="display:none; margin-top:10px;"><div class="small-note" id="regenHelperText"></div><div class="row" id="regenHelperBtns" style="margin-top:6px;"></div></div>
+    </div>
+
+    <div id="injuryBlock" style="display:none; margin-top:14px; border-top:1px solid var(--panel-line); padding-top:12px;">
+      <h3 style="margin-bottom:6px; color:var(--gold);">TIRADA DE HERIDAS</h3>
+      <div id="cabezaDuraWarning" style="display:none; color:var(--bad); font-weight:800; text-align:center; margin-bottom:8px;">⚠️ Jugador con CABEZA DURA</div>
+      <div id="escurridizoWarning" style="display:none; color:var(--bad); font-weight:800; text-align:center; margin-bottom:8px;">⚠️ Jugador con ESCURRIDIZO</div>
+      <div class="row" style="justify-content:center; gap:10px;">
+        <div class="die-face" id="injuryDie1">–</div>
+        <div class="die-face" id="injuryDie2">–</div>
+      </div>
+      <div class="mono" id="injurySum" style="margin:8px 0; color:var(--gold);">Suma: –</div>
+      <button class="primary full" onclick="rollInjury()">Tirar 2D6 Heridas</button>
+      <div class="small-note" style="margin:8px 0 4px 0;">Elegid el resultado:</div>
+      <div class="row">
+        <button onclick="chooseInjury('aturdido')">Aturdido</button>
+        <button onclick="chooseInjury('ko')">Inconsciente</button>
+      </div>
+      <div class="row" style="margin-top:6px;">
+        <button class="danger" onclick="chooseInjury('injured')">Herido (leve)</button>
+        <button class="danger" onclick="chooseInjury('injuredGrave')">Herida grave</button>
+        <button class="danger" onclick="chooseInjury('dead')">Muerto</button>
+      </div>
+    </div>
+
+    <button class="full" style="margin-top:10px;" onclick="closeArmorModal()">Cerrar</button>
+  </div>
+</div>
+
+<div class="modal-back" id="koModal">
+  <div class="modal">
+    <h2>RECUPERACIÓN</h2>
+    <p id="koText">Comprobación de un jugador inconsciente.</p>
+    <div class="die-face" id="koDie" style="margin:0 auto 14px auto;">–</div>
+    <button class="primary full" onclick="rollKoDie()">Tirar D6</button>
+    <div class="row" style="margin-top:12px;">
+      <button onclick="resolveKo(true)">✅ Recupera</button>
+      <button class="danger" onclick="resolveKo(false)">❌ Sigue inconsciente</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="infoModal">
+  <div class="modal">
+    <h2 id="infoModalTitle">Aviso</h2>
+    <p id="infoModalText">Texto del aviso.</p>
+    <button class="primary full" onclick="closeInfoModal()">Aceptar</button>
+  </div>
+</div>
+
+<div class="modal-back" id="blockModal">
+  <div class="modal">
+    <h2>PLACAJE</h2>
+    <p id="blockText">Resolviendo un placaje.</p>
+    <div class="mono" id="blockStrengthInfo" style="color:var(--gold); font-size:12.5px; margin-bottom:8px;"></div>
+    <div class="row">
+      <button id="blockDiceBtn1" onclick="rollBlockDiceModal(1)">1 dado</button>
+      <button id="blockDiceBtn2" onclick="rollBlockDiceModal(2)">2 dados</button>
+      <button id="blockDiceBtn3" onclick="rollBlockDiceModal(3)">3 dados</button>
+    </div>
+    <div class="small-note" id="blockDiceHint" style="display:none; margin-top:8px;">Click en el dado con el resultado que queréis aplicar:</div>
+    <div class="block-face-list" id="blockDiceArea"></div>
+    <div class="pro-note" id="blockProNote" style="display:none;"></div>
+    <button class="full" id="blockProfesionalBtn" onclick="useProfesionalOnBlock()" style="display:none; margin-top:8px;">🎓 Usar Profesional (3+ para poder repetir un dado)</button>
+    <div class="small-note" id="blockLuchadorNote" style="display:none; margin-top:8px; color:var(--gold);"></div>
+    <button class="full" id="blockLuchadorBtn" onclick="useLuchador()" style="display:none; margin-top:6px;">💪 Usar Luchador (repite solo 1 dado de Ambos caen)</button>
+    <div id="blockOutcomeRow" class="disabled-block" style="margin-top:12px;">
+      <button class="full" id="blockFreePushBtn" onclick="toggleFreePushForActiveBlock()" style="margin-bottom:10px;">🔓 Activar todos los empujes (para este placaje)</button>
+      <div id="blockChooserBanner" class="chooser-banner">ELIGE: —</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="losWarningModal">
+  <div class="modal">
+    <h2>⚠️ LÍNEA INCOMPLETA</h2>
+    <p id="losWarningText">Faltan jugadores en la línea de scrimmage.</p>
+    <button class="primary" onclick="document.getElementById('losWarningModal').classList.remove('show')">Recolocar</button>
+  </div>
+</div>
+
+<div id="turnoverOverlay" onclick="hideTurnoverOverlay()">
+  <div id="turnoverOverlayText">CAMBIO DE TURNO</div>
+</div>
+
+<div id="halfTimeOverlay" onclick="hideHalfTimeOverlay()">
+  <div id="halfTimeOverlayText">SEGUNDA PARTE</div>
+</div>
+
+<div class="modal-back" id="traitCheckModal">
+  <div class="modal">
+    <h2 id="traitCheckTitle">CHEQUEO DE RASGO</h2>
+    <p id="traitCheckText">Chequeo de rasgo.</p>
+    <div class="die-face" id="traitCheckDie" style="margin:0 auto 6px auto;">–</div>
+    <div class="mono" id="traitCheckMathText" style="font-size:12px; color:#a99b7f; margin-bottom:8px;"></div>
+    <div id="traitCheckResultText" class="check-result"></div>
+    <button class="primary full" id="traitCheckRollBtn" onclick="rollTraitCheck()">Tirar D6</button>
+    <button class="full" id="traitCheckContinueBtn" onclick="closeTraitCheckModal()" style="display:none; margin-top:10px;">Continuar</button>
+  </div>
+</div>
+
+<div class="modal-back" id="matchEndModal">
+  <div class="modal">
+    <h2>🏁 FIN DEL PARTIDO</h2>
+    <p id="matchEndText">Resultado final.</p>
+    <button class="primary full" onclick="document.getElementById('matchEndModal').classList.remove('show')">Cerrar</button>
+  </div>
+</div>
+
+<div class="modal-back" id="resumeModal">
+  <div class="modal">
+    <h2>PARTIDA GUARDADA</h2>
+    <p>Hemos encontrado una partida guardada en este navegador. ¿Queréis recuperarla?</p>
+    <div class="row">
+      <button class="primary" onclick="resumeAutosave()">▶️ Reanudar</button>
+      <button class="danger" onclick="discardAutosave()">🗑️ Empezar de cero</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="forcejearModal">
+  <div class="modal">
+    <h2>🤼 FORCEJEAR</h2>
+    <p id="forcejearText">¿Usar Forcejear?</p>
+    <div class="row">
+      <button class="primary" onclick="resolveForcejearChoice(true)">Sí, usar Forcejear</button>
+      <button onclick="resolveForcejearChoice(false)">No</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="veteranoBlockModal">
+  <div class="modal">
+    <h2>⭐ VETERANO</h2>
+    <p id="veteranoBlockText">Este resultado derribaría al atacante por su propia acción de Placaje. ¿Usar VETERANO para repetir la tirada de dados de bloqueo (una vez por partido)?</p>
+    <div class="row">
+      <button class="danger" onclick="veteranoBlockChooseReroll()">⭐ Repetir tirada</button>
+      <button onclick="veteranoBlockChooseKeep()">Mantener resultado</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="followUpModal">
+  <div class="modal">
+    <h2>MOVIMIENTO DE IMPULSO</h2>
+    <p id="followUpText">¿El atacante avanza al hueco?</p>
+    <div class="row">
+      <button onclick="resolveFollowUp(true)">✅ Avanza</button>
+      <button onclick="resolveFollowUp(false)">❌ Se queda</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="catchModal">
+  <div class="modal">
+    <h2 id="catchTitle">RECOGER BALÓN</h2>
+    <p id="catchText">Intento de recogida.</p>
+    <div class="die-face" id="catchDie" style="margin:0 auto 10px auto;">–</div>
+    <div id="catchResultText" class="check-result"></div>
+    <button class="primary full" id="catchRollBtn" onclick="rollCatchDie()">Tirar D6</button>
+    <div class="row" id="catchActionRow" style="margin-top:12px; display:none;"></div>
+  </div>
+</div>
+
+<div class="modal-back" id="preMatchModal">
+  <div class="modal">
+    <h2 id="preMatchTitle">SECUENCIA PREVIA</h2>
+    <div id="preMatchBody"></div>
+    <div class="row" id="preMatchActions" style="margin-top:12px; justify-content:center;"></div>
+  </div>
+</div>
+
+<div class="modal-back" id="provocarModal">
+  <div class="modal">
+    <h2>😤 PROVOCAR</h2>
+    <p id="provocarText">¿Obligar al rival a seguir?</p>
+    <div class="row" style="justify-content:center; gap:8px;">
+      <button class="primary" onclick="provocarChoose(true)">Sí, obligarle a seguir</button>
+      <button onclick="provocarChoose(false)">No</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="heroicTackleModal">
+  <div class="modal">
+    <h2>⚔️ PLACAJE HEROICO</h2>
+    <p id="heroicTackleText"></p>
+    <div class="row" id="heroicTackleBtns" style="justify-content:center; gap:8px; flex-wrap:wrap;"></div>
+  </div>
+</div>
+
+<div class="modal-back" id="kickoffEventModal">
+  <div class="modal">
+    <h2>🎲 EVENTO DE PATADA INICIAL</h2>
+    <div class="row" style="justify-content:center; gap:10px; margin-top:8px;">
+      <div class="die-face" id="keDie1">–</div>
+      <div class="die-face" id="keDie2">–</div>
+    </div>
+    <div class="mono" id="keSum" style="margin:8px 0; color:var(--gold); text-align:center;"></div>
+    <h3 id="keName" style="text-align:center; color:var(--gold); margin:6px 0;"></h3>
+    <p id="keDesc" style="text-align:center;"></p>
+    <button class="full primary" id="keRollBtn" onclick="rollKickoffEvent2D6()">Tirar 2D6</button>
+    <button class="full primary" id="keOkBtn" style="display:none;" onclick="acceptKickoffEvent()">Aceptar</button>
+  </div>
+</div>
+
+<div class="modal-back" id="insigModal">
+  <div class="modal danger-red">
+    <h2>🚨 DEMASIADOS INSIGNIFICANTES</h2>
+    <p id="insigText"></p>
+    <p class="mismatch-warn">Cargad otro equipo, o si los dos jugadores aceptáis jugar así, seguid adelante (quedará registrado en el Historial).</p>
+    <div class="row" style="justify-content:center; gap:8px; margin-top:10px;">
+      <button class="danger" onclick="insignificanteCancel()">❌ Cancelar carga</button>
+      <button onclick="insignificanteProceed()">Ambos aceptamos, cargar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="leagueMismatchModal">
+  <div class="modal danger-red">
+    <h2 id="leagueMismatchTitle">🚨 EL ROSTER NO COINCIDE CON LA LIGA</h2>
+    <p id="leagueMismatchText"></p>
+    <ul id="leagueMismatchList" class="mismatch-list"></ul>
+    <p class="mismatch-warn">Si seguís adelante quedará registrado en el Historial. Decidid entre los dos jugadores.</p>
+    <div class="row" style="justify-content:center; gap:8px; margin-top:10px;">
+      <button class="danger" onclick="leagueMismatchCancel()">❌ Cancelar carga</button>
+      <button onclick="leagueMismatchProceed()">Seguir adelante (de acuerdo)</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="jumpUpModal">
+  <div class="modal">
+    <h2>EN PIE DE UN SALTO</h2>
+    <p id="jumpUpText">Chequeo de agilidad para levantarse y placar.</p>
+    <div class="die-face" id="jumpUpDie" style="margin:0 auto 14px auto;">–</div>
+    <button class="primary full" onclick="rollJumpUpDie()">Tirar D6</button>
+    <div class="row" style="margin-top:12px;">
+      <button onclick="resolveJumpUp(true)">✅ Supera</button>
+      <button class="danger" onclick="resolveJumpUp(false)">❌ Falla</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="interceptModal">
+  <div class="modal">
+    <h2>🖐️ INTERCEPTAR</h2>
+    <p id="interceptText">Chequeo de intercepción.</p>
+    <div class="die-face" id="interceptDie" style="margin:0 auto 10px auto;">–</div>
+    <div id="interceptResultText" class="check-result"></div>
+    <button class="primary full" id="interceptRollBtn" onclick="rollInterceptDie()">Tirar D6</button>
+  </div>
+</div>
+
+<div id="interceptChoicePanel" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:610; background:var(--panel); border:2px solid var(--gold); border-radius:8px; padding:12px 16px; text-align:center;">
+  <div class="small-note" style="margin-bottom:8px;">Rivales resaltados en azul pueden intentar interceptar (click en uno), o:</div>
+  <button onclick="declineInterception()">Sin intercepción, continuar</button>
+</div>
+
+<div id="heroicReceptionPanel" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:610; background:var(--panel); border:2px solid var(--gold); border-radius:8px; padding:12px 16px; text-align:center;">
+  <div class="small-note" style="margin-bottom:8px;">🌟 RECEPCIÓN HEROICA: el balón ha caído junto a un jugador resaltado en dorado — puede intentar atraparlo (click en él), o:</div>
+  <button onclick="declineHeroicReception()">Sin intento, continuar</button>
+</div>
+
+<div class="modal-back" id="passModal">
+  <div class="modal">
+    <h2>🎯 PASE</h2>
+    <p id="passText">Tirada de precisión.</p>
+    <div class="die-face" id="passDie" style="margin:0 auto 10px auto;">–</div>
+    <div id="passResultText" class="check-result"></div>
+    <button class="primary full" id="passRollBtn" onclick="rollPassDie()">Tirar D6</button>
+    <div class="row" id="passActionRow" style="margin-top:12px; display:none;"></div>
+  </div>
+</div>
+
+<div class="modal-back" id="secureBallModal">
+  <div class="modal">
+    <h2>🔒 ASEGURAR BALÓN</h2>
+    <p id="secureBallText">Chequeo para recuperar el balón suelto.</p>
+    <div class="die-face" id="secureBallDie" style="margin:0 auto 10px auto;">–</div>
+    <div id="secureBallResultText" class="check-result"></div>
+    <button class="primary full" id="secureBallRollBtn" onclick="rollSecureBallDie()">Tirar D6</button>
+    <div class="row" id="secureBallActionRow" style="margin-top:12px; display:none;"></div>
+  </div>
+</div>
+
+<footer class="app-footer">
+  Sevens Pitch <span id="versionBadge" class="version-badge">v?</span>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<script src="app_2.js?v=3d-1"></script>
+
+<script>function toggleView3d(){const w=document.getElementById("pitchWrap");const on=w.classList.toggle("view3d");document.getElementById("view3dBtn").textContent="🎥 Vista 3D: "+(on?"ON":"OFF");}</script>
+</body>
+</html>

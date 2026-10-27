@@ -38,7 +38,8 @@
       "av": "8+",
       "skills": [
         "Dejada",
-        "Elf - Linea"
+        "Elf - Linea",
+        "Patada"
       ]
     },
     {
@@ -205,7 +206,17 @@
         "progression": {
           "sppTotal": 0,
           "sppUnspent": 0,
-          "improvements": []
+          "improvements": [
+            {
+              "matchId": "T6-J01",
+              "order": 1,
+              "category": "primary",
+              "selection": "chosen",
+              "skill": "Patada",
+              "sppCost": 0,
+              "valueExtra": 10000
+            }
+          ]
         },
         "statistics": {
           "sprints": 0,
@@ -240,8 +251,14 @@
           "deaths": 0,
           "mvp": 0
         },
-        "injuries": [],
-        "status": "active"
+        "injuries": [
+          {
+            "type": "seriousInjury",
+            "matchId": "T6-J01",
+            "missNextGame": true
+          }
+        ],
+        "status": "missNextGame"
       },
       {
         "num": 4,
@@ -291,14 +308,14 @@
         "num": 6,
         "price": 100000,
         "progression": {
-          "sppTotal": 0,
-          "sppUnspent": 0,
+          "sppTotal": 3,
+          "sppUnspent": 3,
           "improvements": []
         },
         "statistics": {
           "sprints": 0,
           "passes": 0,
-          "touchdowns": 0,
+          "touchdowns": 1,
           "deflections": 0,
           "interceptions": 0,
           "lightInjuries": 0,
@@ -332,7 +349,100 @@
         "status": "active"
       }
     ],
-    "matches": [],
+    "matches": [
+      {
+        "id": "T6-J01",
+        "round": 1,
+        "homeAway": "home",
+        "opponent": {
+          "teamId": "cometuetanos",
+          "teamName": "COMETUETANOS",
+          "race": "Orcs"
+        },
+        "result": {
+          "teamScore": 1,
+          "opponentScore": 1,
+          "outcome": "draw"
+        },
+        "statistics": {
+          "lightInjuriesFor": 0,
+          "lightInjuriesAgainst": 0,
+          "seriousInjuriesFor": 0,
+          "seriousInjuriesAgainst": 1,
+          "deathsFor": 0,
+          "deathsAgainst": 0,
+          "sentOffFor": 0,
+          "sentOffAgainst": 0,
+          "skullsFor": 1,
+          "skullsAgainst": 2,
+          "onesFor": 2,
+          "onesAgainst": 0
+        },
+        "dedicatedFansGained": 0,
+        "treasurySpent": 0,
+        "earnings": 50000,
+        "leaguePoints": 0,
+        "playerEvents": [
+          {
+            "num": 2,
+            "name": "GOBENROTH GULLKILLER",
+            "sprints": 0,
+            "passes": 0,
+            "touchdowns": 0,
+            "deflections": 0,
+            "interceptions": 0,
+            "lightInjuries": 0,
+            "seriousInjuries": 0,
+            "deaths": 0,
+            "mvp": 0,
+            "injurySuffered": "none",
+            "sppEarned": 0,
+            "improvements": [
+              {
+                "order": 1,
+                "category": "primary",
+                "selection": "chosen",
+                "skill": "Patada",
+                "sppCost": 0,
+                "valueExtra": 10000
+              }
+            ]
+          },
+          {
+            "num": 3,
+            "name": "ELARION GOLDENHOOK",
+            "sprints": 0,
+            "passes": 0,
+            "touchdowns": 0,
+            "deflections": 0,
+            "interceptions": 0,
+            "lightInjuries": 0,
+            "seriousInjuries": 0,
+            "deaths": 0,
+            "mvp": 0,
+            "injurySuffered": "seriousInjury",
+            "sppEarned": 0
+          },
+          {
+            "num": 6,
+            "name": "CARLION SILVERSHADOW",
+            "sprints": 0,
+            "passes": 0,
+            "touchdowns": 1,
+            "deflections": 0,
+            "interceptions": 0,
+            "lightInjuries": 0,
+            "seriousInjuries": 0,
+            "deaths": 0,
+            "mvp": 0,
+            "injurySuffered": "none",
+            "sppEarned": 3
+          }
+        ],
+        "notes": "Ambos han tenido un Sobornos por patada inicial, en la segunda parte cambio el Clima a LLUVIOSO. Pendiente de tirada para ganacia de ODIO",
+        "registeredAt": "2026-10-27T16:50:50.739Z"
+      }
+    ],
     "retiredPlayers": [],
     "logo": "marienburg_ravens.png"
   }

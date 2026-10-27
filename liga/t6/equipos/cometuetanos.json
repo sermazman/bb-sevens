@@ -132,19 +132,6 @@
         "Veterano",
         "Linea - Orc"
       ]
-    },
-    {
-      "num": 7,
-      "name": "RAJATRIPAS",
-      "position": "Lineman",
-      "ma": 5,
-      "st": 3,
-      "ag": "3+",
-      "pa": "4+",
-      "av": "10+",
-      "skills": [
-        "Linea - Orc"
-      ]
     }
   ],
   "formation": [
@@ -176,11 +163,6 @@
     {
       "num": 6,
       "col": 6,
-      "row": 0
-    },
-    {
-      "num": 7,
-      "col": 4,
       "row": 0
     }
   ],
@@ -233,8 +215,8 @@
         "num": 2,
         "price": 95000,
         "progression": {
-          "sppTotal": 0,
-          "sppUnspent": 0,
+          "sppTotal": 2,
+          "sppUnspent": 2,
           "improvements": []
         },
         "statistics": {
@@ -244,7 +226,7 @@
           "deflections": 0,
           "interceptions": 0,
           "lightInjuries": 0,
-          "seriousInjuries": 0,
+          "seriousInjuries": 1,
           "deaths": 0,
           "mvp": 0
         },
@@ -277,14 +259,14 @@
         "num": 4,
         "price": 85000,
         "progression": {
-          "sppTotal": 0,
-          "sppUnspent": 0,
+          "sppTotal": 3,
+          "sppUnspent": 3,
           "improvements": []
         },
         "statistics": {
           "sprints": 0,
           "passes": 0,
-          "touchdowns": 0,
+          "touchdowns": 1,
           "deflections": 0,
           "interceptions": 0,
           "lightInjuries": 0,
@@ -338,14 +320,138 @@
         },
         "injuries": [],
         "status": "active"
-      },
+      }
+    ],
+    "matches": [
+      {
+        "id": "T6-J01",
+        "round": 1,
+        "homeAway": "away",
+        "opponent": {
+          "teamId": "marienburg_ravens",
+          "teamName": "MARIENBURG RAVENS",
+          "race": "Elven Union"
+        },
+        "result": {
+          "teamScore": 1,
+          "opponentScore": 1,
+          "outcome": "draw"
+        },
+        "statistics": {
+          "lightInjuriesFor": 0,
+          "lightInjuriesAgainst": 0,
+          "seriousInjuriesFor": 1,
+          "seriousInjuriesAgainst": 0,
+          "deathsFor": 0,
+          "deathsAgainst": 0,
+          "sentOffFor": 0,
+          "sentOffAgainst": 0,
+          "skullsFor": 2,
+          "skullsAgainst": 1,
+          "onesFor": 0,
+          "onesAgainst": 2
+        },
+        "dedicatedFansGained": 0,
+        "treasurySpent": 0,
+        "earnings": 50000,
+        "leaguePoints": 0,
+        "playerEvents": [
+          {
+            "num": 2,
+            "name": "ARRANCADIENTES",
+            "sprints": 0,
+            "passes": 0,
+            "touchdowns": 0,
+            "deflections": 0,
+            "interceptions": 0,
+            "lightInjuries": 0,
+            "seriousInjuries": 1,
+            "deaths": 0,
+            "mvp": 0,
+            "injurySuffered": "none",
+            "sppEarned": 2
+          },
+          {
+            "num": 4,
+            "name": "MACHACADOR",
+            "sprints": 0,
+            "passes": 0,
+            "touchdowns": 1,
+            "deflections": 0,
+            "interceptions": 0,
+            "lightInjuries": 0,
+            "seriousInjuries": 0,
+            "deaths": 0,
+            "mvp": 0,
+            "injurySuffered": "none",
+            "sppEarned": 3
+          },
+          {
+            "num": 7,
+            "name": "RAJATRIPAS",
+            "sprints": 0,
+            "passes": 0,
+            "touchdowns": 0,
+            "deflections": 0,
+            "interceptions": 0,
+            "lightInjuries": 0,
+            "seriousInjuries": 0,
+            "deaths": 0,
+            "mvp": 0,
+            "injurySuffered": "none",
+            "sppEarned": 0,
+            "improvements": [
+              {
+                "order": 1,
+                "category": "primary",
+                "selection": "chosen",
+                "skill": "Furia",
+                "sppCost": 0,
+                "valueExtra": 10000
+              }
+            ],
+            "draft": "drafted",
+            "draftValue": "2+"
+          }
+        ],
+        "notes": "Ambos han tenido un Sobornos por patada inicial, en la segunda parte cambio el Clima a LLUVIOSO. Pendiente de tirada para ganacia de ODIO",
+        "registeredAt": "2026-10-27T16:50:50.739Z"
+      }
+    ],
+    "retiredPlayers": [
       {
         "num": 7,
+        "name": "RAJATRIPAS",
+        "position": "Lineman",
+        "reason": "drafted",
+        "draftValue": "2+",
+        "retiredAtMatch": "T6-J01",
+        "attributes": {
+          "ma": 5,
+          "st": 3,
+          "ag": "3+",
+          "pa": "4+",
+          "av": "10+"
+        },
+        "skills": [
+          "Linea - Orc",
+          "Furia"
+        ],
         "price": 50000,
         "progression": {
           "sppTotal": 0,
           "sppUnspent": 0,
-          "improvements": []
+          "improvements": [
+            {
+              "matchId": "T6-J01",
+              "order": 1,
+              "category": "primary",
+              "selection": "chosen",
+              "skill": "Furia",
+              "sppCost": 0,
+              "valueExtra": 10000
+            }
+          ]
         },
         "statistics": {
           "sprints": 0,
@@ -358,12 +464,9 @@
           "deaths": 0,
           "mvp": 0
         },
-        "injuries": [],
-        "status": "active"
+        "injuries": []
       }
     ],
-    "matches": [],
-    "retiredPlayers": [],
     "logo": "cometuetanos.png"
   }
 }

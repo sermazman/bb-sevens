@@ -204,8 +204,8 @@
         "num": 2,
         "price": 65000,
         "progression": {
-          "sppTotal": 0,
-          "sppUnspent": 0,
+          "sppTotal": 4,
+          "sppUnspent": 4,
           "improvements": [
             {
               "matchId": "T6-J01",
@@ -227,7 +227,7 @@
           "lightInjuries": 0,
           "seriousInjuries": 0,
           "deaths": 0,
-          "mvp": 0
+          "mvp": 1
         },
         "injuries": [],
         "status": "active"
@@ -394,9 +394,9 @@
             "lightInjuries": 0,
             "seriousInjuries": 0,
             "deaths": 0,
-            "mvp": 0,
+            "mvp": 1,
             "injurySuffered": "none",
-            "sppEarned": 0,
+            "sppEarned": 4,
             "improvements": [
               {
                 "order": 1,

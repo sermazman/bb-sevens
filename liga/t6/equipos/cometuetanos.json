@@ -241,7 +241,7 @@
           "lightInjuries": 0,
           "seriousInjuries": 1,
           "deaths": 0,
-          "mvp": 0
+          "mvp": 1
         },
         "injuries": [],
         "status": "active"
@@ -402,7 +402,7 @@
             "lightInjuries": 0,
             "seriousInjuries": 1,
             "deaths": 0,
-            "mvp": 0,
+            "mvp": 1,
             "injurySuffered": "none",
             "sppEarned": 2
           },

@@ -148,6 +148,31 @@ td.l a{text-decoration:none}
 table.standings th,table.standings td{padding:8px 6px}
 table.standings tr.cut td{border-bottom:3px dashed var(--accent)}
 table.standings tr.in td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+
+/* crónica de partido */
+.rhead{font-family:var(--f-title);text-transform:uppercase;letter-spacing:.12em;color:var(--muted);text-align:center;margin:8px 0 12px}
+.scoreboard{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 16px;margin-bottom:16px}
+.mteam{text-align:center;border-top:5px solid var(--tc);padding-top:12px}
+.mteam .lgb{height:84px;width:auto;max-width:120px;object-fit:contain;display:block;margin:0 auto 6px}
+.mname{font-family:var(--f-title);font-size:26px;text-transform:uppercase;letter-spacing:.04em}
+.mname a{color:inherit;text-decoration:none}
+.bigscore{text-align:center;font-family:var(--f-title);font-size:64px;line-height:1;display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;justify-content:center;max-width:240px}
+.bigscore b{color:var(--muted);font-weight:400}
+.bigscore .verdict{flex-basis:100%;font-family:var(--f-body,inherit);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+.srow{display:grid;grid-template-columns:34px 1fr 150px 1fr 34px;gap:8px;align-items:center;padding:5px 0}
+.srow .sv{font-family:var(--f-mono);font-weight:600;text-align:center}
+.srow .sl{text-align:center;color:var(--muted);font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+.sbar{display:flex;height:9px;background:var(--panel2);border-radius:5px;overflow:hidden}
+.sbar.l{justify-content:flex-end}
+.sbar i{display:block;height:100%}
+.hl{list-style:none;display:grid;gap:6px}
+.chip{display:inline-block;padding:1px 8px;border-radius:99px;border:1px solid var(--line);font-size:12px;letter-spacing:.04em;white-space:nowrap}
+.chip.gold{background:#8a6d1a33;border-color:#c9a227;color:#e5c24a}.chip.good{border-color:#3a9a5b;color:#6fd08f}.chip.bad{border-color:var(--bad);color:var(--bad)}.chip.warn{border-color:var(--warn);color:var(--warn)}
+.msides{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+.mside{border-top:5px solid var(--tc)}.mside h3{margin:10px 0}.mside .lg{height:28px}
+td.wrap{white-space:normal;min-width:150px}
+@media (max-width:760px){.scoreboard{grid-template-columns:1fr}.msides{grid-template-columns:1fr}.bigscore{max-width:none}.srow{grid-template-columns:28px 1fr 96px 1fr 28px}}
+.report .card{margin-bottom:16px}td.wrap{vertical-align:middle}
 </style>
 </head>
 <body>
@@ -186,7 +211,7 @@ const inkOf=d=>d.textColor&&d.textColor!=='auto'?d.textColor:textInk(colorOf(d))
 let LOAD_TS=Date.now();
 let teams=[];          // {file, name, text, doc}
 let skipped=[];
-let ui={tab:'standings', team:null, teamTab:'roster'};
+let ui={tab:'standings', team:null, match:null, teamTab:'roster'};
 
 /* ---------- cálculos (los mismos que el gestor) ---------- */
 const impCost=(im,i)=>{const r=IMPROVEMENT_COSTS[im.order||i+1];if(!r)return 0;return im.category==='stat'?r.st:r[(im.category==='primary'?'p':'s')+(im.selection==='random'?'r':'c')]};
@@ -216,7 +241,7 @@ function economy(d){
   const rerolls=(d.staff&&d.staff.rerolls&&d.staff.rerolls.total)||0;
   const staffCost=(s.cheerleaders||0)*pr.cheerleader+(s.assistantCoaches||0)*pr.assistantCoach+(s.apothecary||0)*(pr.apothecary||0)+(s.bribes||0)*pr.bribe;
   const playersBase=l.players.reduce((a,p)=>a+(p.price||0),0),playersExtra=l.players.reduce((a,p)=>a+impValue(p),0);
-  const deadCost = l.retiredPlayers.filter(p=>p.reason==='dead'||p.reason==='drafted').reduce((a,p)=>a+(p.price||0)+impValue(p),0);
+  const deadCost = l.retiredPlayers.filter(p=>p.reason==='dead'||p.reason==='drafted').reduce((a,p)=>a+(p.price||0),0);
   const valuePaid=l.players.concat(l.retiredPlayers).reduce((a,p)=>a+((p.progression.draftPayments||[]).reduce((b,x)=>b+(x.paid||0),0)),0);
   const teamCost=staffCost+rerolls+playersBase+playersExtra;
   const teamValue=staffCost+rerolls+l.players.filter(p=>p.status!=='missNextGame').reduce((a,p)=>a+(p.price||0)+impValue(p),0);
@@ -288,6 +313,7 @@ async function downloadZip(){
 const MAIN_TABS=[['standings','Clasificación'],['teams','Equipos'],['matches','Partidos']];
 function render(){
   $('#mainTabs').innerHTML=MAIN_TABS.map(([id,l])=>`<button class="tab" role="tab" data-main="${id}" aria-selected="${ui.tab===id&&!ui.team}">${l}</button>`).join('');
+  if(ui.match)return renderMatchReport();
   if(ui.team&&teams.find(t=>t.file===ui.team))return renderTeam();
   ui.team=null;
   ({standings:renderStandings,teams:renderTeams,matches:renderMatches})[ui.tab]();
@@ -339,9 +365,75 @@ function renderMatches(){
   let last=null,html='';
   for(const o of ms){
     if(o.round!==last){html+=`${last!==null?'</div>':''}<h2 class="round">Jornada ${o.round||'—'}</h2><div class="cards">`;last=o.round}
-    html+=`<div class="card"><h3>${link(o.home)} <span class="res">${o.home.score} - ${o.away.score}</span> ${link(o.away)} <span class="race" style="font-size:13px">${esc(o.id)}</span></h3></div>`;
+    html+=`<div class="card"><h3>${link(o.home)} <span class="res">${o.home.score} - ${o.away.score}</span> ${link(o.away)} <span class="race" style="font-size:13px">${esc(o.id)}</span></h3>
+      <div class="row"><a class="btn small" href="#match=${encodeURIComponent(o.key)}">Ver crónica del partido</a></div></div>`;
   }
   $('#view').innerHTML=html+'</div>';
+}
+
+/* ---------- crónica de un partido (solo lectura) ---------- */
+function matchSides(key){
+  const o=allMatches().find(x=>x.key===key); if(!o) return null;
+  const mk=(side)=>{
+    const t=teams.find(q=>q.name===side.name), other=side===o.home?o.away:o.home;
+    const m=t&&t.doc.league.matches.find(x=>x.id===o.id&&x.opponent.teamName===other.name);
+    return {name:side.name,score:side.score,t,m,d:t&&t.doc};
+  };
+  const h=mk(o.home), a=mk(o.away);
+  /* si falta el archivo de un equipo, se reconstruye lo básico con los datos del otro */
+  if(!h.m&&a.m){ h.m={result:{teamScore:a.m.result.opponentScore,opponentScore:a.m.result.teamScore},statistics:{lightInjuriesFor:(a.m.statistics||{}).lightInjuriesAgainst,seriousInjuriesFor:(a.m.statistics||{}).seriousInjuriesAgainst,deathsFor:(a.m.statistics||{}).deathsAgainst,sentOffFor:(a.m.statistics||{}).sentOffAgainst,skullsFor:(a.m.statistics||{}).skullsAgainst,onesFor:(a.m.statistics||{}).onesAgainst},playerEvents:[],partial:true}; }
+  if(!a.m&&h.m){ a.m={result:{teamScore:h.m.result.opponentScore,opponentScore:h.m.result.teamScore},statistics:{lightInjuriesFor:(h.m.statistics||{}).lightInjuriesAgainst,seriousInjuriesFor:(h.m.statistics||{}).seriousInjuriesAgainst,deathsFor:(h.m.statistics||{}).deathsAgainst,sentOffFor:(h.m.statistics||{}).sentOffAgainst,skullsFor:(h.m.statistics||{}).skullsAgainst,onesFor:(h.m.statistics||{}).onesAgainst},playerEvents:[],partial:true}; }
+  return {o,h,a};
+}
+function evBadges(ev){
+  const b=[];
+  if(ev.mvp) b.push('<span class="chip gold">MVP</span>');
+  if(ev.injurySuffered==='dead') b.push('<span class="chip bad">Muerto</span>');
+  else if(ev.injurySuffered&&ev.injurySuffered!=='none') b.push(`<span class="chip warn">${INJURY_LABEL[ev.injurySuffered]||''}</span>`);
+  if(ev.hatred) b.push(`<span class="chip">Gana Odio (${esc(ev.hatred)})</span>`);
+  (ev.improvements||[]).forEach(im=>b.push(`<span class="chip good">Mejora: ${esc(impText(im))}</span>`));
+  if(ev.draft==='drafted') b.push(`<span class="chip bad">Drafteado</span>`);
+  if(ev.draft==='paidValue') b.push(`<span class="chip warn">Pagó ${fmt(ev.valuePaid)} (+${fmt(DRAFT_BONUS)} de valor)</span>`);
+  return b.join(' ');
+}
+function sideEventsHTML(s){
+  const d=s.d, col=d?colorOf(d):'#888';
+  const evs=(s.m&&s.m.playerEvents)||[];
+  const rows=evs.map(ev=>{
+    const acts=STAT_COLS.filter(([k])=>ev[k]).map(([k,t])=>`${t}×${ev[k]}`).join(' · ');
+    return`<tr><td class="num">${esc(ev.num)}</td><td class="l"><strong>${esc(ev.name||'')}</strong></td><td class="l">${acts||'—'}</td><td class="num">+${ev.sppEarned||0}</td><td class="l wrap">${evBadges(ev)}</td></tr>`;
+  }).join('');
+  return`<div class="mside" style="--tc:${col}"><h3>${s.t?logoImg(s.t,'lg'):''}${esc(s.name)}</h3>
+    ${rows?`<div class="tscroll"><table><thead><tr><th>#</th><th class="l">Jugador</th><th class="l">Acciones</th><th>SPP</th><th class="l">Sucesos</th></tr></thead><tbody>${rows}</tbody></table></div>`:'<p class="hint">Sin acciones de jugadores registradas.</p>'}
+    ${s.m&&!s.m.partial?`<p class="meta">Fans ${sgn(s.m.dedicatedFansGained||0)} · Ganancias ${fmt(s.m.earnings||0)} · Gastado en incentivos ${fmt(s.m.treasurySpent||0)}</p>`:''}</div>`;
+}
+function renderMatchReport(){
+  const r=matchSides(ui.match);
+  if(!r){ $('#view').innerHTML='<p><a href="#" data-back>← Volver a la liga</a></p><div class="empty">No se encuentra ese partido.</div>'; return; }
+  const {o,h,a}=r, st=x=>(x.m&&x.m.statistics)||{};
+  const hs=o.home.score, as=o.away.score, win=hs>as?'h':hs<as?'a':'d';
+  const colH=h.d?colorOf(h.d):'#b30000', colA=a.d?colorOf(a.d):'#555';
+  const side=(s,cls)=>`<div class="mteam ${cls}" style="--tc:${s.d?colorOf(s.d):'#888'}">${s.t?(logoImg(s.t,'lgb')||''):''}<div class="mname">${s.t?`<a href="#team=${encodeURIComponent(s.t.file)}">${esc(s.name)}</a>`:esc(s.name)}</div><div class="race">${esc((s.d&&s.d.race)||'')}</div>${s.d&&s.d.league.coach?`<div class="meta">${esc(s.d.league.coach)}</div>`:''}</div>`;
+  const stat=(lab,vh,va)=>{const tot=(vh||0)+(va||0)||1;return`<div class="srow"><span class="sv">${vh||0}</span><div class="sbar l"><i style="width:${(vh||0)/tot*100}%;background:${colH}"></i></div><span class="sl">${lab}</span><div class="sbar"><i style="width:${(va||0)/tot*100}%;background:${colA}"></i></div><span class="sv">${va||0}</span></div>`};
+  const S1=st(h),S2=st(a);
+  const events=[h,a].flatMap(s=>((s.m&&s.m.playerEvents)||[]).map(ev=>({s,ev})));
+  const hl=[];
+  events.filter(x=>x.ev.mvp).forEach(x=>hl.push(`<li><span class="chip gold">MVP</span> #${esc(x.ev.num)} ${esc(x.ev.name||'')} <span class="race">${esc(x.s.name)}</span></li>`));
+  events.filter(x=>x.ev.touchdowns).forEach(x=>hl.push(`<li><span class="chip good">TD ×${x.ev.touchdowns}</span> #${esc(x.ev.num)} ${esc(x.ev.name||'')} <span class="race">${esc(x.s.name)}</span></li>`));
+  events.filter(x=>x.ev.injurySuffered==='dead').forEach(x=>hl.push(`<li><span class="chip bad">Muerto</span> #${esc(x.ev.num)} ${esc(x.ev.name||'')} <span class="race">${esc(x.s.name)}</span></li>`));
+  events.filter(x=>(x.ev.improvements||[]).length).forEach(x=>hl.push(`<li><span class="chip good">Mejora</span> #${esc(x.ev.num)} ${esc(x.ev.name||'')}: ${esc(x.ev.improvements.map(impText).join(', '))} <span class="race">${esc(x.s.name)}</span></li>`));
+  events.filter(x=>x.ev.draft).forEach(x=>hl.push(`<li><span class="chip ${x.ev.draft==='drafted'?'bad':'warn'}">${x.ev.draft==='drafted'?'Drafteado':'Pagó el valor'}</span> #${esc(x.ev.num)} ${esc(x.ev.name||'')} <span class="race">${esc(x.s.name)}</span></li>`));
+  events.filter(x=>x.ev.hatred).forEach(x=>hl.push(`<li><span class="chip">Odio</span> #${esc(x.ev.num)} ${esc(x.ev.name||'')} gana Odio (${esc(x.ev.hatred)}) <span class="race">${esc(x.s.name)}</span></li>`));
+  const when=(h.m&&h.m.registeredAt)||(a.m&&a.m.registeredAt)||'';
+  $('#view').innerHTML=`<p><a href="#" data-back>← Volver a la liga</a></p>
+  <div class="report"><div class="rhead">Jornada ${o.round||'—'} · ${esc(o.id)}${when?' · '+esc(String(when).slice(0,10)):''}</div>
+  <div class="scoreboard">${side(h,'home')}<div class="bigscore ${win}"><span>${hs}</span><b>-</b><span>${as}</span><div class="verdict">${win==='d'?'Empate':'Gana '+esc(win==='h'?h.name:a.name)}</div></div>${side(a,'away')}</div>
+  <div class="card"><h3>Resumen del partido</h3>
+    ${stat('Touchdowns',hs,as)}${stat('Heridas leves',S1.lightInjuriesFor,S2.lightInjuriesFor)}${stat('Heridas graves',S1.seriousInjuriesFor,S2.seriousInjuriesFor)}${stat('Muertos causados',S1.deathsFor,S2.deathsFor)}${stat('Expulsados',S1.sentOffFor,S2.sentOffFor)}${stat('Calaveras',S1.skullsFor,S2.skullsFor)}${stat('Unos',S1.onesFor,S2.onesFor)}</div>
+  ${hl.length?`<div class="card"><h3>Lo más destacado</h3><ul class="hl">${hl.join('')}</ul></div>`:''}
+  <div class="msides">${sideEventsHTML(h)}${sideEventsHTML(a)}</div>
+  ${(h.m&&h.m.notes)||(a.m&&a.m.notes)?`<div class="card"><h3>Notas</h3><p>${esc((h.m&&h.m.notes)||(a.m&&a.m.notes))}</p></div>`:''}
+  ${(h.m&&h.m.partial)||(a.m&&a.m.partial)?'<p class="hint">Falta el archivo de uno de los equipos, así que su detalle por jugador no está disponible.</p>':''}</div>`;
 }
 
 const TEAM_TABS=[['roster','Roster'],['history','Historial'],['team','Equipo y economía'],['dead','Muertos y drafteados']];
@@ -379,7 +471,7 @@ function tHistory(d){
   const label={win:'Victoria',draw:'Empate',loss:'Derrota'};
   $('#tpanel').innerHTML='<div class="cards">'+[...ms].reverse().map(m=>{
     const evs=(m.playerEvents||[]).map(ev=>{const acts=STAT_COLS.filter(([k])=>ev[k]).map(([k,t])=>`${t}×${ev[k]}`).join(', ');
-      return`<li>#${esc(ev.num)} ${esc(ev.name||'')}${acts?': '+acts:''} · <strong>+${ev.sppEarned||0} SPP</strong>${ev.injurySuffered&&ev.injurySuffered!=='none'?` · <span class="warn">${INJURY_LABEL[ev.injurySuffered]||''}</span>`:''}${(ev.improvements||[]).map(im=>` · <span class="newsk">Mejora: ${esc(impText(im))}</span>`).join('')}${ev.draft==='drafted'?` · <span class="warn">Drafteado (${esc(ev.draftValue||'')})</span>`:''}${ev.draft==='paidValue'?` · <span class="warn">Pagó ${fmt(ev.valuePaid)} para no ser drafteado (+${fmt(DRAFT_BONUS)} de valor)</span>`:''}</li>`}).join('');
+      return`<li>#${esc(ev.num)} ${esc(ev.name||'')}${acts?': '+acts:''} · <strong>+${ev.sppEarned||0} SPP</strong>${ev.injurySuffered&&ev.injurySuffered!=='none'?` · <span class="warn">${INJURY_LABEL[ev.injurySuffered]||''}</span>`:''}${ev.hatred?` · <span class="newsk">Gana Odio (${esc(ev.hatred)})</span>`:''}${(ev.improvements||[]).map(im=>` · <span class="newsk">Mejora: ${esc(impText(im))}</span>`).join('')}${ev.draft==='drafted'?` · <span class="warn">Drafteado (${esc(ev.draftValue||'')})</span>`:''}${ev.draft==='paidValue'?` · <span class="warn">Pagó ${fmt(ev.valuePaid)} para no ser drafteado (+${fmt(DRAFT_BONUS)} de valor)</span>`:''}</li>`}).join('');
     const s=m.statistics||{};
     return`<div class="card"><h3>${esc(m.id)} · ${m.homeAway==='home'?'(local) ':m.homeAway==='away'?'(visitante) ':''}vs ${esc(m.opponent.teamName)} <span class="res ${m.result.outcome}">${m.result.teamScore} - ${m.result.opponentScore}</span><span class="pill ${m.result.outcome==='win'?'ok':m.result.outcome==='loss'?'out':''}">${label[m.result.outcome]||''}</span></h3>
     <div class="meta">${esc(m.opponent.race||'')} · Ganancias ${fmt(m.earnings)} · Fans ${sgn(m.dedicatedFansGained||0)} · HL ${s.lightInjuriesFor}-${s.lightInjuriesAgainst} · HG ${s.seriousInjuriesFor}-${s.seriousInjuriesAgainst} · RIP ${s.deathsFor}-${s.deathsAgainst} · Calaveras ${s.skullsFor||0}-${s.skullsAgainst||0} · Unos ${s.onesFor||0}-${s.onesAgainst||0}</div>
@@ -587,15 +679,15 @@ async function downloadSheet(d,e,base,logoUrl){
 }
 
 /* ---------- navegación ---------- */
-function fromHash(){const m=/team=([^&]+)/.exec(location.hash);ui.team=m?decodeURIComponent(m[1]):null;if(ui.team)ui.teamTab=ui.teamTab||'roster'}
-window.addEventListener('hashchange',()=>{fromHash();if(!ui.team)document.documentElement.style.removeProperty('--accent'),document.documentElement.style.removeProperty('--accent-ink');render()});
+function fromHash(){const m=/team=([^&]+)/.exec(location.hash),mm=/match=([^&]+)/.exec(location.hash);ui.team=m?decodeURIComponent(m[1]):null;ui.match=mm?decodeURIComponent(mm[1]):null;if(ui.match){ui.tab='matches';}if(ui.team)ui.teamTab=ui.teamTab||'roster'}
+window.addEventListener('hashchange',()=>{fromHash();if(!ui.team||ui.match)document.documentElement.style.removeProperty('--accent'),document.documentElement.style.removeProperty('--accent-ink');render()});
 document.addEventListener('click',async e=>{
   const b=e.target.closest('button,a');if(!b)return;
-  if(b.dataset.main){ui.tab=b.dataset.main;ui.team=null;document.documentElement.style.removeProperty('--accent');document.documentElement.style.removeProperty('--accent-ink');history.replaceState(null,'',location.pathname+location.search);render()}
+  if(b.dataset.main){ui.tab=b.dataset.main;ui.team=null;ui.match=null;document.documentElement.style.removeProperty('--accent');document.documentElement.style.removeProperty('--accent-ink');history.replaceState(null,'',location.pathname+location.search);render()}
   else if(b.dataset.tt){ui.teamTab=b.dataset.tt;render()}
   else if(b.dataset.dl){downloadTeam(b.dataset.dl)}
   else if(b.dataset.sheet){const t=teams.find(x=>x.file===b.dataset.sheet);if(t)downloadSheet(t.doc,economy(t.doc),t.file.replace(/\.json$/i,''),await fetchLogo(t))}
-  else if(b.hasAttribute('data-back')){e.preventDefault();history.replaceState(null,'',location.pathname+location.search);ui.team=null;document.documentElement.style.removeProperty('--accent');document.documentElement.style.removeProperty('--accent-ink');render()}
+  else if(b.hasAttribute('data-back')){e.preventDefault();history.replaceState(null,'',location.pathname+location.search);ui.team=null;ui.match=null;document.documentElement.style.removeProperty('--accent');document.documentElement.style.removeProperty('--accent-ink');render()}
 });
 $('#reloadBtn').onclick=loadAll;$('#zipBtn').onclick=downloadZip;
 loadAll();

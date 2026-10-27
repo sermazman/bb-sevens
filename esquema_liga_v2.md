@@ -119,3 +119,10 @@ Las habilidades se añaden además a `players[].skills` (nombre exacto de `roste
 - Orden: % victorias ((G + 0,5·E)/PJ) → ≠ → calaverunos → diferencia de TD → SPP ganados.
 - ≠ = calaverunos × 0,5 + Dif3 (victorias por ≥3 TD) + A«0» (partidos con 0 TD encajados) + 3H (partidos con ≥3 bajas causadas).
 - Calaverunos = skullsFor + onesFor de cada partido (solo los del propio equipo). Pasan los 4 primeros.
+
+## Odio (27-oct)
+- Un jugador con «herido grave» puede ganar `Odio (raza)`. La raza sale de la clave de los jugadores rivales a los que se les marcó una herida grave causada en ese partido. Se añade a sus habilidades (no es una mejora, no sube su valor ni cuenta para el draft) y se guarda `hatred` en el evento del partido y en la lesión.
+
+## Tesorería y valor (27-oct)
+- Muertos y drafteados restan de la tesorería solo lo que se pagó por el jugador (`price`). Las mejoras suben su valor, pero nunca salen de la tesorería. Ejemplo: jugador de 50.000 con una habilidad (valor 60.000) que es drafteado → la tesorería no cambia y el valor del equipo baja 60.000.
+- Visor: cada partido tiene una crónica de solo lectura (`#match=<id>|<pareja>`).

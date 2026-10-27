@@ -334,7 +334,7 @@ function economy(){
                   + (s.assistantCoaches||0)*pr.assistantCoach + (s.apothecary||0)*(pr.apothecary||0) + (s.bribes||0)*pr.bribe;
   const playersBase = l.players.reduce((a,p)=>a+(p.price||0),0);
   const playersExtra = l.players.reduce((a,p)=>a+impValue(p),0);
-  const deadCost = l.retiredPlayers.filter(p=>p.reason==='dead'||p.reason==='drafted').reduce((a,p)=>a+(p.price||0)+impValue(p),0);
+  const deadCost = l.retiredPlayers.filter(p=>p.reason==='dead'||p.reason==='drafted').reduce((a,p)=>a+(p.price||0),0);   /* solo lo pagado por el jugador: las mejoras suben el valor, no salen de la tesorería */
   const valuePaid = l.players.concat(l.retiredPlayers).reduce((a,p)=>a+((p.progression.draftPayments||[]).reduce((b,x)=>b+(x.paid||0),0)),0);
   const teamCost = staffCost + rerolls + playersBase + playersExtra;
   const teamValue = staffCost + rerolls + l.players.filter(p=>p.status!=='missNextGame').reduce((a,p)=>a+(p.price||0)+impValue(p),0);
@@ -543,7 +543,7 @@ function renderHistory(){
   $('#p-history').innerHTML='<div class="cards">'+[...ms].reverse().map(m=>{
     const evs=(m.playerEvents||[]).map(ev=>{
       const acts=STAT_COLS.filter(([k])=>ev[k]).map(([k,t])=>`${t}×${ev[k]}`).join(', ');
-      return `<li>#${ev.num} ${esc(ev.name||'')}${acts?': '+acts:''} · <strong>+${ev.sppEarned||0} SPP</strong>${ev.injurySuffered&&ev.injurySuffered!=='none'?` · <span class="warn">${INJURY_LABEL[ev.injurySuffered]}</span>`:''}${(ev.improvements||[]).map(im=>` · <span class="newsk">Mejora: ${esc(impText(im))}</span>`).join('')}${ev.draft==='drafted'?` · <span class="warn">Drafteado (${esc(ev.draftValue||'')})</span>`:''}${ev.draft==='paidValue'?` · <span class="warn">Pagó ${fmt(ev.valuePaid)} para no ser drafteado (+${fmt(DRAFT_BONUS)} de valor)</span>`:''}</li>`;
+      return `<li>#${ev.num} ${esc(ev.name||'')}${acts?': '+acts:''} · <strong>+${ev.sppEarned||0} SPP</strong>${ev.injurySuffered&&ev.injurySuffered!=='none'?` · <span class="warn">${INJURY_LABEL[ev.injurySuffered]}</span>`:''}${ev.hatred?` · <span class="newsk">Gana Odio (${esc(ev.hatred)})</span>`:''}${(ev.improvements||[]).map(im=>` · <span class="newsk">Mejora: ${esc(impText(im))}</span>`).join('')}${ev.draft==='drafted'?` · <span class="warn">Drafteado (${esc(ev.draftValue||'')})</span>`:''}${ev.draft==='paidValue'?` · <span class="warn">Pagó ${fmt(ev.valuePaid)} para no ser drafteado (+${fmt(DRAFT_BONUS)} de valor)</span>`:''}</li>`;
     }).join('');
     const s=m.statistics||{};
     return `<div class="card"><h3>${esc(m.id)} · ${m.homeAway==='home'?'(local) ':m.homeAway==='away'?'(visitante) ':''}vs ${esc(m.opponent.teamName)}
@@ -858,7 +858,8 @@ function sideHTML(side){
       <td class="num">${tp.num}</td>
       <td class="l">${esc(tp.name)}<br><span class="race">${esc(tp.position)}${out?' · baja (herido grave)':''}</span></td>
       ${STAT_COLS.map(([k,tt])=>`<td><input type="number" min="0" value="0" name="${side}_ev_${tp.num}_${k}" data-evk="${k}" ${out?'disabled':''} aria-label="${tt} de ${esc(tp.name)}"></td>`).join('')}
-      <td><select name="${side}_inj_${tp.num}" ${out?'disabled':''} aria-label="Lesión sufrida por ${esc(tp.name)}">${INJURY_OPTS.map(([v,tx])=>`<option value="${v}">${tx}</option>`).join('')}</select></td>
+      <td><select name="${side}_inj_${tp.num}" ${out?'disabled':''} aria-label="Lesión sufrida por ${esc(tp.name)}">${INJURY_OPTS.map(([v,tx])=>`<option value="${v}">${tx}</option>`).join('')}</select>
+        <div class="hatbox" data-hatbox="${side}_${tp.num}" hidden><select name="${side}_hat_${tp.num}" aria-label="Odio de ${esc(tp.name)}"><option value="">Sin Odio</option></select><br><span class="race" data-hatinfo="${side}_${tp.num}"></span></div></td>
       <td class="impcell l" data-impcell="${side}_${tp.num}"></td>
       <td class="num" data-sppcell="${side}_${tp.num}"></td>
       <td class="l"><select name="${side}_draft_${tp.num}" disabled aria-label="Draft de ${esc(tp.name)}"><option value="">—</option><option value="drafted">Drafteado</option><option value="paid">Pagar valor</option></select><br><span class="race" data-draftinfo="${side}_${tp.num}"></span></td></tr>`;
@@ -927,9 +928,39 @@ function renderImpCell(side,num){
     +`<button class="btn small" type="button" data-impadd="${side}_${num}" >+ Mejora</button>`;
 }
 
+/* clave de un jugador («Orc - Defensor»): está en sus habilidades o, si no, en el catálogo de posiciones */
+function raceKeyOf(doc,tp){
+  let k=(tp.skills||[]).find(s=>/\s-\s/.test(s));
+  if(!k){ const c=POS_CAT.find(x=>String(x.race||'').toLowerCase()===String(doc.race||'').toLowerCase()&&String(x.type||'').toLowerCase()===String(tp.position||'').toLowerCase()); k=c&&c.clave; }
+  if(!k) return '';
+  /* la clave es «Raza - Puesto» (o al revés, según el equipo): se queda con la primera parte que no sea un puesto */
+  const ROLES=['linea','lanzador','blitzer','defensor','grandullon','corredor','receptor','especial'];
+  const parts=String(k).split(/\s-\s/).map(x=>x.trim()).filter(Boolean);
+  return parts.find(x=>!ROLES.includes(normTxt(x)))||parts[0]||'';
+}
+/* Odio: el herido grave puede ganar «Odio (raza)» contra la clave de un rival al que se le ha marcado una herida grave causada */
+function refreshHatred(){
+  const f=$('#matchForm'); if(!f||!mv.home||!mv.away) return;
+  ['home','away'].forEach(side=>{
+    const t=mvTeam(side), o=mvTeam(side==='home'?'away':'home'); if(!t||!o) return;
+    const races=[]; o.doc.players.forEach(op=>{ if(readEv(side==='home'?'away':'home',op.num).seriousInjuries>0){ const r=raceKeyOf(o.doc,op); if(r&&!races.includes(r)) races.push(r); } });
+    t.doc.players.forEach(tp=>{
+      const inj=f.elements[`${side}_inj_${tp.num}`], sel=f.elements[`${side}_hat_${tp.num}`], box=document.querySelector(`[data-hatbox="${side}_${tp.num}"]`); if(!inj||!sel||!box) return;
+      const show=inj.value==='seriousInjury'&&!inj.disabled; box.hidden=!show;
+      const info=document.querySelector(`[data-hatinfo="${side}_${tp.num}"]`);
+      if(!show){ sel.value=''; return; }
+      const have=new Set((tp.skills||[]).map(normTxt)), cur=sel.value;
+      const opts=races.filter(r=>!have.has(normTxt(`Odio (${r})`)));
+      sel.innerHTML='<option value="">Sin Odio</option>'+opts.map(r=>`<option value="${esc(r)}">Odio (${esc(r)})</option>`).join('');
+      sel.value=opts.includes(cur)?cur:'';
+      info.textContent=races.length?(opts.length?'¿Gana Odio?':'Ya tiene ese Odio'):'Marca antes la herida grave del rival (HG)';
+    });
+  });
+}
 /* actualiza SPP en vivo, sumas automáticas y comprobación de TD de un equipo */
 function updateSide(side){
   const f=$('#matchForm'), t=mvTeam(side); if(!f||!t) return;
+  setTimeout(refreshHatred,0);
   const sums={hl:0,hg:0,rip:0}; let td=0;
   t.doc.players.forEach(tp=>{
     const ev=readEv(side,tp.num); td+=ev.touchdowns; sums.hl+=ev.lightInjuries; sums.hg+=ev.seriousInjuries; sums.rip+=ev.deaths;
@@ -1017,6 +1048,7 @@ function collectSide(side){
     const lp=l.players.find(p=>p.num===tp.num), out=lp.status==='missNextGame';
     const ev=Object.assign({num:tp.num,name:tp.name},readEv(side,tp.num));
     ev.injurySuffered=out?'none':String(f.elements[`${side}_inj_${tp.num}`].value||'none');
+    { const hs=f.elements[`${side}_hat_${tp.num}`]; if(hs&&hs.value&&ev.injurySuffered==='seriousInjury') ev.hatred=hs.value; }
     ev.sppEarned=sppFromStats(ev); td+=ev.touchdowns; mvp+=ev.mvp;
     const drafts=mv.imp[side][tp.num]||[]; let cost=0;
     const imps=drafts.map((dr,i)=>{ const x=impDerive(lp,i,dr); cost+=x.sppCost;
@@ -1055,7 +1087,8 @@ function applyMatchSide(doc,S,O,meta){
     STAT_COLS.forEach(([k])=>p.statistics[k]=(p.statistics[k]||0)+ev[k]);
     p.progression.sppTotal+=ev.sppEarned;
     if(ev.injurySuffered==='lightInjury') p.injuries.push({type:'lightInjury',matchId:meta.id,missNextGame:false});
-    if(ev.injurySuffered==='seriousInjury'){ p.injuries.push({type:'seriousInjury',matchId:meta.id,missNextGame:true}); p.status='missNextGame'; }
+    if(ev.injurySuffered==='seriousInjury'){ p.injuries.push(Object.assign({type:'seriousInjury',matchId:meta.id,missNextGame:true},ev.hatred?{hatred:ev.hatred}:{})); p.status='missNextGame';
+      if(ev.hatred){ const tp0=tpOf(ev.num), sk=`Odio (${ev.hatred})`; tp0.skills=tp0.skills||[]; if(!tp0.skills.some(s=>normTxt(s)===normTxt(sk))) tp0.skills.push(sk); } }
     (ev.improvements||[]).forEach(im=>{
       p.progression.improvements.push(Object.assign({matchId:meta.id},im));
       const tp=tpOf(ev.num);

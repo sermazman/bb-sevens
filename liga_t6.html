@@ -173,6 +173,21 @@ table.standings tr.in td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
 td.wrap{white-space:normal;min-width:150px}
 @media (max-width:760px){.scoreboard{grid-template-columns:1fr}.msides{grid-template-columns:1fr}.bigscore{max-width:none}.srow{grid-template-columns:28px 1fr 96px 1fr 28px}}
 .report .card{margin-bottom:16px}td.wrap{vertical-align:middle}
+
+.mcard{display:grid;grid-template-columns:auto auto auto auto auto;justify-content:center;gap:22px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 20px;color:var(--text);text-decoration:none;margin-bottom:10px;transition:border-color .15s,transform .15s}
+.mcard:hover,.mcard:focus-visible{border-color:var(--accent);transform:translateY(-1px)}
+.mlogo{width:88px;height:72px;display:flex;align-items:center;justify-content:center}
+.mlogo .lgm{max-height:72px;max-width:88px;width:auto;height:auto;object-fit:contain}
+.mdot{width:44px;height:44px;border-radius:50%;display:block}
+.minfo{min-width:0;max-width:260px}.minfo.r{text-align:right}
+.mn{font-family:var(--f-title);font-size:24px;text-transform:uppercase;letter-spacing:.04em;line-height:1.1;overflow-wrap:anywhere}
+.mscore{text-align:center;min-width:150px}
+.mscore .sc{font-family:var(--f-title);font-size:54px;line-height:1;display:flex;gap:12px;justify-content:center;align-items:baseline}
+.mscore .sc b{color:var(--muted);font-weight:400}
+.mcta{margin-top:6px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-link,var(--muted));border-bottom:1px solid var(--line);display:inline-block}
+.mcard:hover .mcta{color:var(--text);border-color:var(--accent)}
+.mid{font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:.1em}
+@media (max-width:700px){.mcard{grid-template-columns:56px 1fr 56px;justify-content:stretch;gap:8px 10px;padding:12px}.mcard .mscore{grid-column:1/-1;grid-row:2;min-width:0}.mcard>.mlogo:first-child{grid-row:1;grid-column:1}.mcard>.minfo.r{grid-column:2;grid-row:1;text-align:left}.mcard>.minfo:not(.r){grid-column:2;grid-row:3;text-align:left}.mcard>.mlogo:last-child{grid-column:1;grid-row:3}.mlogo{width:56px;height:48px}.mlogo .lgm{max-height:48px;max-width:56px}.mn{font-size:18px}}
 </style>
 </head>
 <body>
@@ -361,12 +376,17 @@ function allMatches(){
 function renderMatches(){
   const ms=allMatches();
   if(!ms.length){$('#view').innerHTML='<div class="empty">Todavía no se ha jugado ningún partido.</div>';return}
-  const link=(x)=>{const t=teams.find(q=>q.name===x.name);return t?`<a href="#team=${encodeURIComponent(t.file)}">${esc(x.name)}</a>`:esc(x.name)};
+  const logo=name=>{const t=teams.find(q=>q.name===name);return`<div class="mlogo">${(t&&logoImg(t,'lgm'))||`<span class="mdot" style="background:${t?colorOf(t.doc):'#888'}"></span>`}</div>`};
+  const info=(name,cls)=>{const t=teams.find(q=>q.name===name),d=t&&t.doc;
+    return`<div class="minfo ${cls}"><div class="mn">${esc(name)}</div><div class="race">${esc((d&&d.race)||'')}</div>${d&&d.league.coach?`<div class="meta">${esc(d.league.coach)}</div>`:''}</div>`};
   let last=null,html='';
   for(const o of ms){
     if(o.round!==last){html+=`${last!==null?'</div>':''}<h2 class="round">Jornada ${o.round||'—'}</h2><div class="cards">`;last=o.round}
-    html+=`<div class="card"><h3>${link(o.home)} <span class="res">${o.home.score} - ${o.away.score}</span> ${link(o.away)} <span class="race" style="font-size:13px">${esc(o.id)}</span></h3>
-      <div class="row"><a class="btn small" href="#match=${encodeURIComponent(o.key)}">Ver crónica del partido</a></div></div>`;
+    html+=`<a class="mcard" href="#match=${encodeURIComponent(o.key)}" aria-label="Ver estadísticas: ${esc(o.home.name)} ${o.home.score} - ${o.away.score} ${esc(o.away.name)}">
+      ${logo(o.home.name)}${info(o.home.name,'r')}
+      <div class="mscore"><div class="sc"><span>${o.home.score}</span><b>-</b><span>${o.away.score}</span></div><div class="mcta">Ver estadísticas del partido</div><div class="mid">${esc(o.id)}</div></div>
+      ${info(o.away.name,'')}${logo(o.away.name)}
+    </a>`;
   }
   $('#view').innerHTML=html+'</div>';
 }

@@ -228,8 +228,8 @@
         "num": 2,
         "price": 95000,
         "progression": {
-          "sppTotal": 2,
-          "sppUnspent": 2,
+          "sppTotal": 6,
+          "sppUnspent": 6,
           "improvements": []
         },
         "statistics": {
@@ -404,7 +404,7 @@
             "deaths": 0,
             "mvp": 1,
             "injurySuffered": "none",
-            "sppEarned": 2
+            "sppEarned": 6
           },
           {
             "num": 4,

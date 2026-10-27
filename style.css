@@ -656,7 +656,7 @@ button.full{width:100%; margin-top:6px;}
 .conn-dot.on{background:var(--good);}
 
 /* --- Versión del archivo (para el badge de verificación en el pie) --- */
-:root{ --css-version: "S_V61"; }
+:root{ --css-version: "S_V62"; }
 
 /* ---- Iconos dorados (se tiñen con el color del marcador mediante máscara) ---- */
 .gold-icon{display:inline-block; width:18px; height:18px; vertical-align:middle; background:var(--gold);
@@ -890,6 +890,11 @@ button.full{width:100%; margin-top:6px;}
 /* Equipos definidos + marcas de plegarias */
 .roster-select{width:100%;}
 .av-boost{color:#5fdc6f; font-weight:800;}
-.token .prayer-dagger{position:absolute; bottom:-6px; right:-6px; width:15px; height:15px; pointer-events:none; z-index:2; filter:drop-shadow(0 0 1px #000);}
-.token .prayer-dagger .gold-icon{width:15px; height:15px; background:var(--gold);}
+.token .prayer-dagger{position:absolute; bottom:-9px; right:-9px; width:24px; height:24px; pointer-events:none; z-index:3; filter:drop-shadow(1px 0 0 #000) drop-shadow(-1px 0 0 #000) drop-shadow(0 1px 0 #000) drop-shadow(0 -1px 0 #000);}
+.token .prayer-dagger .gold-icon{width:24px; height:24px; background:#ffd24a;}
 .token .prayer-knuckles{position:absolute; bottom:-3px; right:-3px; width:8px; height:8px; border-radius:50%; background:#9a9a9a; border:1.5px solid #000; pointer-events:none; z-index:2;}
+
+/* Marcas de plegarias en la ficha del banquillo */
+.ri-dagger{display:inline-flex; margin-left:4px; vertical-align:middle;}
+.ri-dagger .gold-icon{width:18px; height:18px; background:#ffd24a;}
+.ri-knuckles{display:inline-block; width:9px; height:9px; margin-left:5px; border-radius:50%; background:#9a9a9a; border:1.5px solid #000; vertical-align:middle;}

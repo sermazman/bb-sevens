@@ -79,6 +79,9 @@ function renderResourceIcons(){
     if(prayerFlag(t==='A'?'B':'A','escrutinio')){
       html += '<span class="sb-ico alert" title="Escrutinio arbitral: si rompe la armadura en una Falta, este equipo es Expulsado automáticamente"><span class="gold-icon" style="--icon:url(\'icons/silbato.png\')"></span></span>';
     }
+    if(prayerFlag(t==='A'?'B':'A','topos')){
+      html += '<span class="sb-ico alert" title="Topos bajo el campo: este equipo aplica −1 a sus intentos de forzar la marcha (a por ellos)"><span class="gold-icon" style="--icon:url(\'icons/topos.png\')"></span></span>';
+    }
     box.innerHTML = html;
   });
   // Reroll: el icono sustituye a la etiqueta "RR" (amarillo con rerolls, gris sin ninguna)
@@ -1036,18 +1039,49 @@ function importTeamFile(team, inputEl){
     let data;
     try{ data = JSON.parse(e.target.result); }
     catch(err){ alert('El archivo no es un JSON válido.'); return; }
-    if(!data.players || !Array.isArray(data.players)){ alert('El JSON debe tener un array "players".'); return; }
-    // Equipos sin sección de liga (amistosos, rosters.html): se cargan sin comprobar nada.
-    if(!data.league || typeof data.league!=='object'){ applyImportedTeamGuarded(team, data, 'none'); return; }
-    updateStatus('Verificando el roster con la liga…');
-    verifyTeamAgainstLeague(data).then(res=>{
-      if(res.status==='ok') applyImportedTeamGuarded(team, data, 'ok', res);
-      else if(res.status==='error') applyImportedTeamGuarded(team, data, 'unverified', res);
-      else showLeagueMismatchModal(team, data, res);
-    });
+    const sel = document.getElementById('rosterSel' + team); if(sel) sel.value = '';
+    importTeamData(team, data);
   };
   reader.readAsText(file);
   inputEl.value = '';
+}
+function importTeamData(team, data){
+  if(!data || !data.players || !Array.isArray(data.players)){ alert('El JSON debe tener un array "players".'); return; }
+  // Equipos sin sección de liga (amistosos, rosters.html): se cargan sin comprobar nada.
+  if(!data.league || typeof data.league!=='object'){ applyImportedTeamGuarded(team, data, 'none'); return; }
+  updateStatus('Verificando el roster con la liga…');
+  verifyTeamAgainstLeague(data).then(res=>{
+    if(res.status==='ok') applyImportedTeamGuarded(team, data, 'ok', res);
+    else if(res.status==='error') applyImportedTeamGuarded(team, data, 'unverified', res);
+    else showLeagueMismatchModal(team, data, res);
+  });
+}
+// ---- Equipos definidos (rosters/index.json) ----
+function loadRosterIndex(){
+  fetch('rosters/index.json').then(res=>{ if(!res.ok) throw new Error('HTTP ' + res.status); return res.json(); }).then(raw=>{
+    let list = Array.isArray(raw) ? raw : (raw && (raw.rosters || raw.teams || raw.files)) || [];
+    if(!Array.isArray(list)) list = [];
+    const items = [];
+    list.forEach(e=>{
+      let value = typeof e==='string' ? e : (e && (e.value || e.path || e.file || e.url));
+      if(!value) return;
+      if(!/^(https?:|\/|rosters\/)/.test(value)) value = 'rosters/' + value;
+      const base = value.split('/').pop().replace(/\.json$/i,'').replace(/[_-]+/g,' ');
+      const label = (e && typeof e==='object' && (e.label || e.name || e.team)) || base;
+      items.push({ value, label });
+    });
+    ['A','B'].forEach(t=>{
+      const sel = document.getElementById('rosterSel' + t); if(!sel) return;
+      items.forEach(it=>{ const o = document.createElement('option'); o.value = it.value; o.textContent = it.label; sel.appendChild(o); });
+    });
+  }).catch(err=>{ console.warn('[BB7] rosters/index.json no disponible:', err.message); });
+}
+function selectRoster(team, path){
+  if(!path) return;
+  fetch(path).then(res=>{ if(!res.ok) throw new Error('HTTP ' + res.status); return res.json(); }).then(data=>importTeamData(team, data)).catch(err=>{
+    alert('No se pudo cargar el equipo "' + path + '": ' + err.message);
+    const sel = document.getElementById('rosterSel' + team); if(sel) sel.value = '';
+  });
 }
 
 // INSIGNIFICANTE: en la hoja de equipo no puede haber más jugadores con el rasgo que sin él.
@@ -1280,6 +1314,7 @@ function leagueMismatchProceed(){
 }
 
 function clearTeam(team){
+  { const rs = document.getElementById('rosterSel' + team); if(rs) rs.value = ''; }
   const count = players.filter(p=>p.team===team).length;
   if(count===0 && !teamCustomColor[team] && !teamStaff[team] && teamRace[team]==='' ){ alert('Ese equipo ya está vacío.'); return; }
   const oldName = teamName(team);
@@ -1409,7 +1444,7 @@ function renderRosters(){
           ${vetTag}${condTag}${heatTag}
           <button class="rm-btn" title="Eliminar" onclick="removePlayer(${p.id}, event)">✕</button>
         </div>
-        <div class="ri-row2 mono">MA ${p.ma ?? '-'} · ST ${p.st ?? '-'} · AG ${p.ag ?? '-'} · PA ${p.pa ?? '-'} · AV ${p.av ?? '-'}</div>
+        <div class="ri-row2 mono">MA ${p.ma ?? '-'} · ST ${p.st ?? '-'} · AG ${p.ag ?? '-'} · PA ${p.pa ?? '-'} · AV ${p.avBoost ? '<span class="av-boost" title="+1 AR por Músculos de hierro">' + p.av + '</span>' : (p.av ?? '-')}</div>
         <div class="ri-row3">${skillsText}</div>`;
       div.onclick = (e)=>{
         if(e.target.classList.contains('rm-btn')) return;
@@ -1845,7 +1880,7 @@ const INC_ITEMS = [
   { key:'cheerleaders', name:'Animadoras temporales',            max:2, cost:15000,  icon:'animadora.png' },
   { key:'assistants',   name:'Ayudantes a tiempo parcial',       max:2, cost:15000,  icon:'ayudante_entrenador.png' },
   { key:'keg',          name:'Barriles de cerveza Estrella Blitzer', max:2, cost:50000, icon:'barril.png' },
-  { key:'prayers',      name:'Plegarias a Nuffle',               max:2, cost:5000 },
+  { key:'prayers',      name:'Plegarias a Nuffle',               max:2, cost:5000, icon:'nuffle.png' },
   { key:'rerolls',      name:'Entrenamientos adicionales',       max:6, cost:125000, icon:'reroll.png' },
   { key:'bribes',       name:'Sobornos',                         max:2, cost:100000, discount:{ rule:'corrupt', cost:50000 }, icon:'soborno.png' },
   { key:'apothecary',   name:'Apotecario errante',               max:1, cost:100000, need:'apoth',   needTxt:'solo equipos que puedan contratar Apotecario', icon:'apotecario.png' },
@@ -2111,7 +2146,7 @@ function incPrayerPick(team, idx){
       if(isNaN(n)){ return; }
       const nn = Math.min(11, n+1);
       log('🙏 MÚSCULOS DE HIERRO: ' + p.name + ' (' + teamName(team) + ') AR ' + p.av + ' → ' + nn + '+ hasta el final del partido.');
-      p.av = nn + '+';
+      p.avBoost = (p.avBoost || 0) + 1; p.av = nn + '+';
     } else {
       p.skills = [def.skill].concat(p.skills || []); p.prayerSkills = (p.prayerSkills || []).concat([def.skill]);
       log('🙏 NUDILLERAS: ' + p.name + ' (' + teamName(team) + ') obtiene ' + def.skill + ' hasta el final del partido.');
@@ -2122,7 +2157,7 @@ function incPrayerPick(team, idx){
     const inp = document.getElementById('incTxt_' + team + '_' + idx);
     const txt = inp ? inp.value.trim() : '';
     if(!p || !txt) return;
-    p.skills = (p.skills || []).concat([txt]);
+    p.skills = [txt].concat(p.skills || []); p.prayerSkills = (p.prayerSkills || []).concat([txt]);
     log('🙏 ENTRENAMIENTO INTENSIVO: ' + p.name + ' (' + teamName(team) + ') obtiene la habilidad ' + txt + ' hasta el final del partido.');
   }
   pr.done = true;
@@ -2149,7 +2184,7 @@ function admAdd(kind, team, n){
       if(n===3){
         const m = String(p.av).match(/\d+/); const v = m ? parseInt(m[0],10) : NaN;
         if(isNaN(v)){ log('🧪 ADMIN: ' + p.name + ' no tiene AR numérica.'); return; }
-        pr.avFrom = p.av; p.av = Math.min(11, v+1) + '+';
+        pr.avFrom = p.av; p.avBoost = (p.avBoost || 0) + 1; p.av = Math.min(11, v+1) + '+';
       } else {
         let sk = def.skill;
         if(n===8){ sk = (window.prompt('Habilidad Primaria para ' + p.name + ':', '') || '').trim(); if(!sk) return; }
@@ -2176,7 +2211,7 @@ function admRemove(kind, team, n){
     else {
       const p = players.find(x=>x.id===pr.target);
       if(p){
-        if(n===3 && pr.avFrom!==undefined) p.av = pr.avFrom;
+        if(n===3 && pr.avFrom!==undefined){ p.av = pr.avFrom; p.avBoost = Math.max(0, (p.avBoost || 0) - 1); }
         if(pr.skill){
           let a = (p.skills || []).indexOf(pr.skill); if(a>=0) p.skills.splice(a,1);
           a = (p.prayerSkills || []).indexOf(pr.skill); if(a>=0) p.prayerSkills.splice(a,1);
@@ -2715,6 +2750,15 @@ function renderPitch(){
           cb.textContent = 'C';
           cb.title = 'Capitán (CAP: Profesional)';
           t.appendChild(cb);
+        }
+        { const pk = occ.prayerSkills || [];
+          if(pk.some(x=>/apu[ñn]alar|stab/i.test(String(x)))){
+            const dg = document.createElement('div'); dg.className = 'prayer-dagger'; dg.title = 'Puñal: Apuñalar hasta el final del partido';
+            dg.innerHTML = '<span class="gold-icon" style="--icon:url(\'icons/daga.png\')"></span>'; t.appendChild(dg);
+          }
+          if(pk.some(x=>/golpe mort|mighty|nudiller/i.test(String(x)))){
+            const kn = document.createElement('div'); kn.className = 'prayer-knuckles'; kn.title = 'Nudilleras: Golpe mortífero hasta el final del partido'; t.appendChild(kn);
+          }
         }
         if(playerHasSkill(occ, 'veterano', 'veteran')){
           const star = document.createElement('div');
@@ -8193,6 +8237,7 @@ function setupModalEnhancements(){
 document.addEventListener('DOMContentLoaded', setupModalEnhancements);
 if(document.readyState==='complete' || document.readyState==='interactive'){ setupModalEnhancements(); }
 
+try{ loadRosterIndex(); }catch(e){}
 try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesButtons(); updateColorChoiceButtons(); setSwitch('colorsSw', customColorsEnabled); }catch(e){}
 // Dados de 6 caras: los cuadros de dado muestran el icono dadoN.png (el texto se conserva, solo se oculta por CSS vía data-d6)
 (function(){
@@ -8203,7 +8248,7 @@ try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesBut
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V65'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V66'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-w-version="W_V53">
+<html lang="es" data-w-version="W_V54">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -107,17 +107,15 @@
       <h3 id="bajasHeaderA">Bajas</h3>
       <div id="casualtyListA" class="bajas-tags"><span class="small-note">Ninguna</span></div>
       <div class="bench-divider"></div>
-      <div class="row">
-        <button onclick="openAddPlayer('A')">+ Añadir</button>
-        <button onclick="quickFill('A')">7 rápidos</button>
-      </div>
+      <select id="rosterSelA" class="roster-select" onchange="selectRoster('A', this.value)" title="Equipos definidos en rosters/index.json">
+        <option value="">— Elegir equipo definido —</option>
+      </select>
       <div class="row" style="margin-top:6px;">
         <button onclick="document.getElementById('fileImportA').click()">📁 Cargar Equipo</button>
-        <button onclick="exportTeam('A')">💾 Guardar Equipo</button>
+        <button onclick="presetPositions('A')">📋 Posiciones predefinidas</button>
       </div>
       <div class="row" style="margin-top:6px;">
         <button class="danger" onclick="clearTeam('A')">🗑️ Borrar Equipo</button>
-        <button onclick="presetPositions('A')">📋 Posiciones predefinidas</button>
       </div>
       <input type="file" id="fileImportA" accept="application/json" style="display:none" onchange="importTeamFile('A', this)">
     </div>
@@ -342,17 +340,15 @@
       <h3 id="bajasHeaderB">Bajas</h3>
       <div id="casualtyListB" class="bajas-tags"><span class="small-note">Ninguna</span></div>
       <div class="bench-divider"></div>
-      <div class="row">
-        <button onclick="openAddPlayer('B')">+ Añadir</button>
-        <button onclick="quickFill('B')">7 rápidos</button>
-      </div>
+      <select id="rosterSelB" class="roster-select" onchange="selectRoster('B', this.value)" title="Equipos definidos en rosters/index.json">
+        <option value="">— Elegir equipo definido —</option>
+      </select>
       <div class="row" style="margin-top:6px;">
         <button onclick="document.getElementById('fileImportB').click()">📁 Cargar Equipo</button>
-        <button onclick="exportTeam('B')">💾 Guardar Equipo</button>
+        <button onclick="presetPositions('B')">📋 Posiciones predefinidas</button>
       </div>
       <div class="row" style="margin-top:6px;">
         <button class="danger" onclick="clearTeam('B')">🗑️ Borrar Equipo</button>
-        <button onclick="presetPositions('B')">📋 Posiciones predefinidas</button>
       </div>
       <input type="file" id="fileImportB" accept="application/json" style="display:none" onchange="importTeamFile('B', this)">
     </div>

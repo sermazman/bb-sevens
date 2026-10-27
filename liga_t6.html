@@ -550,6 +550,7 @@ function sheetSplitSkills(p){
 function loadImgDims(dataUrl){
   return new Promise(ok=>{ const im=new Image(); im.onload=()=>ok({dataUrl,w:im.naturalWidth,h:im.naturalHeight}); im.onerror=()=>ok(null); im.src=dataUrl; });
 }
+const sheetNorm=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9()]/g,'');
 function loadIconData(url){
   return new Promise(ok=>{ const im=new Image(); im.onload=()=>{ try{ const c=document.createElement('canvas'); c.width=im.naturalWidth; c.height=im.naturalHeight; c.getContext('2d').drawImage(im,0,0); ok(c.toDataURL('image/png')); }catch(err){ ok(null); } }; im.onerror=()=>ok(null); im.src=url; });
 }
@@ -567,8 +568,24 @@ async function makeSheetPdf(d,e,logo){
   pdf.setLineWidth(.2); pdf.setDrawColor(110,110,110);
 
   function cell(x,y,w,h,o={}){
-    const {fill,text='',size=7,bold=false,align='center',color=BK,max=0}=o;
+    const {fill,text='',size=7,bold=false,align='center',color=BK,max=0,segs=null}=o;
     if(fill){ pdf.setFillColor(...fill); pdf.rect(x,y,w,h,'FD'); } else pdf.rect(x,y,w,h,'S');
+    if(segs&&segs.length){   /* texto con partes en rojo (habilidades ganadas en la liga) */
+      const words=[]; segs.forEach((sg,si)=>{ words.push({t:sg.t+(si<segs.length-1?',':''),red:sg.red}); });
+      let sz=size, lines;
+      for(;;){
+        lines=[[]]; let cur=0; pdf.setFontSize(sz);
+        words.forEach(wd=>{ pdf.setFont('helvetica',wd.red?'bold':'normal'); const ww=pdf.getTextWidth(wd.t+' ');
+          if(cur+ww>w-1.6 && lines[lines.length-1].length){ lines.push([]); cur=0; } lines[lines.length-1].push(wd); cur+=ww; });
+        const lh=sz*0.3528*1.15;
+        if(lines.length*lh<=h-0.6 || sz<=4.5) break;
+        sz-=0.5;
+      }
+      const lh=sz*0.3528*1.15;
+      lines.forEach((ln,li)=>{ let xx=x+0.9; const yy=y+h/2+(li-(lines.length-1)/2)*lh;
+        ln.forEach(wd=>{ pdf.setFont('helvetica',wd.red?'bold':'normal'); pdf.setFontSize(sz); pdf.setTextColor(...(wd.red?[200,0,0]:BK)); pdf.text(wd.t,xx,yy,{baseline:'middle'}); xx+=pdf.getTextWidth(wd.t+' '); }); });
+      pdf.setTextColor(...BK); return;
+    }
     if(text===''||text===null||text===undefined) return;
     pdf.setFont('helvetica',bold?'bold':'normal'); pdf.setTextColor(...color);
     let sz=size, lines;
@@ -620,13 +637,19 @@ async function makeSheetPdf(d,e,logo){
     const skillsUp=imps.filter(i=>i.skill).length;
     const price=((lp&&lp.price)||0)+imps.concat(prog.draftPayments||[]).reduce((a,i)=>a+(i.valueExtra||0),0);
     const out=lp&&lp.status==='missNextGame';
-    const vals=[String(p.num),null,p.position,p.ma,p.st,p.ag,p.pa,p.av,rest.join(', '),key,out?'SÍ':'','','','','','','','','',
-      '',String(prog.sppTotal||0),fmt(price),skillsUp?`${skillsUp+1}+`:''];
+    /* habilidades ganadas en la liga (mejoras y Odio): se marcan en rojo */
+    const gained=new Set(imps.filter(i=>i.skill).map(i=>sheetNorm(i.skill)));
+    ((lp&&lp.injuries)||[]).forEach(inj=>{ if(inj.hatred) gained.add(sheetNorm(`Odio (${inj.hatred})`)); });
+    const segs=rest.map(t=>({t,red:gained.has(sheetNorm(t))}));
+    const stc=(lp&&lp.statistics)||{}, sv=k=>stc[k]?String(stc[k]):'';   /* estadísticas acumuladas de la liga */
+    const vals=[String(p.num),null,p.position,p.ma,p.st,p.ag,p.pa,p.av,rest.join(', '),key,out?'SÍ':'',sv('sprints'),sv('passes'),sv('touchdowns'),sv('deflections'),sv('interceptions'),sv('lightInjuries'),sv('seriousInjuries'),sv('deaths'),sv('mvp'),
+      String(prog.sppTotal||0),fmt(price),skillsUp?`${skillsUp+1}+`:''];
     cols.forEach((c,i)=>{
       const o={text:vals[i]??'',size:7}; if(out&&i>0) o.fill=ORG;
       if(i===0){ o.fill=DK; o.color=WH; o.bold=true; }
       if(i===1){ o.text=p.name; o.align='left'; o.bold=true; o.size=7.5; }
       if(i===2||i===8||i===9){ o.align='left'; o.size=6.5; }
+      if(i===8&&segs.some(s=>s.red)) o.segs=segs;
       if(i===9){ o.bold=true; }
       if(i===20){ o.bold=true; o.size=8; }
       if(i===21){ o.align='center'; o.size=7; }
@@ -687,8 +710,9 @@ async function makeSheetPdf(d,e,logo){
   /* leyenda */
   pdf.setTextColor(...BK); pdf.setFont('helvetica','normal'); pdf.setFontSize(5.7);
   const ly=y+9*RH+4.5;
+  pdf.setTextColor(200,0,0); pdf.setFont('helvetica','bold'); pdf.text('ROJO = habilidad ganada en la liga (mejora u Odio).',M,ly+7.2); pdf.setTextColor(...BK); pdf.setFont('helvetica','normal');
   pdf.text('LPP/RT= SÍ: el jugador se pierde el próximo partido (fila naranja)   ESP=(1)   CP=PASE COMPLETADO (1)   TD=TOUCHDOWN (3)   DES=PASE DESVIADO (1)   INT=INTERCEPCIÓN (2)   HL=HERIDA LEVE (2)   HG=HERIDA GRAVE (2)   RIP=MUERTOS (2)   MVP=MEJOR DEL PARTIDO (4)',M,ly);
-  pdf.text('DRAFT: aparece «2+» si el jugador ha subido 1 habilidad, «3+» si ha subido 2, y así sucesivamente (las habilidades de base no cuentan). Los eventos del partido se anotan en las columnas ESP a MVP y se pasan después al gestor.',M,ly+3.6);
+  pdf.text('DRAFT: aparece «2+» si el jugador ha subido 1 habilidad, «3+» si ha subido 2, y así sucesivamente (las habilidades de base no cuentan). Las columnas ESP a MVP muestran lo acumulado en la liga hasta ahora; anota a mano los eventos del partido y pásalos después al gestor.',M,ly+3.6);
   return pdf;
 }
 async function downloadSheet(d,e,base,logoUrl){

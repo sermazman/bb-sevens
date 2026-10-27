@@ -126,3 +126,6 @@ Las habilidades se añaden además a `players[].skills` (nombre exacto de `roste
 ## Tesorería y valor (27-oct)
 - Muertos y drafteados restan de la tesorería solo lo que se pagó por el jugador (`price`). Las mejoras suben su valor, pero nunca salen de la tesorería. Ejemplo: jugador de 50.000 con una habilidad (valor 60.000) que es drafteado → la tesorería no cambia y el valor del equipo baja 60.000.
 - Visor: cada partido tiene una crónica de solo lectura (`#match=<id>|<pareja>`).
+
+## Hoja PDF (28-oct)
+- Las columnas ESP…MVP muestran las estadísticas acumuladas de la liga (vacías si son 0). Las habilidades ganadas en la liga (mejoras y Odio) salen en rojo y negrita.

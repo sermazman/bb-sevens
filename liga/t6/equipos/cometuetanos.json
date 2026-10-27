@@ -132,6 +132,19 @@
         "Veterano",
         "Linea - Orc"
       ]
+    },
+    {
+      "num": 7,
+      "name": "RAJATRIPAS II",
+      "position": "Lineman",
+      "ma": 5,
+      "st": 3,
+      "ag": "3+",
+      "pa": "4+",
+      "av": "10+",
+      "skills": [
+        "Linea - Orc"
+      ]
     }
   ],
   "formation": [
@@ -301,6 +314,28 @@
       },
       {
         "num": 6,
+        "price": 50000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [],
+        "status": "active"
+      },
+      {
+        "num": 7,
         "price": 50000,
         "progression": {
           "sppTotal": 0,

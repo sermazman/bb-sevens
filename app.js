@@ -1433,6 +1433,9 @@ function renderRosters(){
       const heatTag = p.indigestOut ? `<span class="ri-weather" title="Indigestión: encerrado en la letrina el resto de la entrada">🤢 LETRINA</span>` : p.heatRest ? `<span class="ri-weather" title="Descansa por Calor Asfixiante: no se puede colocar esta entrada"><span class="gold-icon" style="--icon:url('icons/calor_asfixiante.png')"></span>DESCANSA</span>` : '';
       const prayLeft = (p.prayerSkills || []).slice();
       const skillsText = (p.skills && p.skills.length) ? p.skills.map(sk=>{ const k = prayLeft.indexOf(sk); if(k>=0){ prayLeft.splice(k,1); return '<u title="Ganada por Plegaria a Nuffle">' + sk + '</u>'; } return sk; }).join(', ') : 'Sin habilidades';
+      const pkS = p.prayerSkills || [];
+      const prayTag = (pkS.some(x=>/apu[ñn]alar|stab/i.test(String(x))) ? '<span class="ri-dagger" title="Puñal: Apuñalar hasta el final del partido"><span class="gold-icon" style="--icon:url(\'icons/daga.png\')"></span></span>' : '') +
+                      (pkS.some(x=>/golpe mort|mighty|nudiller/i.test(String(x))) ? '<span class="ri-knuckles" title="Nudilleras: Golpe mortífero hasta el final del partido"></span>' : '');
       const vetTag = playerHasSkill(p, 'veterano', 'veteran') ? `<span class="ri-vet${p.veteranoUsedThisMatch ? ' used' : ''}" title="Veterano${p.veteranoUsedThisMatch ? ' (ya usado)' : ''}"><img src="icons/veterano.png" alt="Veterano" onerror="this.outerHTML='<span>⭐</span>'"></span>` : '';
       const posBorder = positionBorderColor(p);
       const numBorderStyle = posBorder ? ('border-color:'+posBorder+';') : '';
@@ -1441,7 +1444,7 @@ function renderRosters(){
           <span class="num" style="background:${tokenColorFor(p)}; color:${textColorFor(p)}; ${numBorderStyle}">${p.num}</span>
           <span class="pname">${p.name}</span>${isCaptain(p) ? '<span class="cap-mini" title="Capitán">C</span>' : ''}
           <span class="pos">${posText}</span>
-          ${vetTag}${condTag}${heatTag}
+          ${vetTag}${prayTag}${condTag}${heatTag}
           <button class="rm-btn" title="Eliminar" onclick="removePlayer(${p.id}, event)">✕</button>
         </div>
         <div class="ri-row2 mono">MA ${p.ma ?? '-'} · ST ${p.st ?? '-'} · AG ${p.ag ?? '-'} · PA ${p.pa ?? '-'} · AV ${p.avBoost ? '<span class="av-boost" title="+1 AR por Músculos de hierro">' + p.av + '</span>' : (p.av ?? '-')}</div>
@@ -8248,7 +8251,7 @@ try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesBut
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V66'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V67'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

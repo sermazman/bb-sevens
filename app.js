@@ -6128,13 +6128,13 @@ function placeKickBall(r,c){
 const KICKOFF_EVENTS = {
   2:{ name:'ÁRBITRO INTIMIDADO', desc:'Cada equipo recibe un Incentivo de Soborno gratuito. Este incentivo debe usarse antes del final del partido.' },
   3:{ name:'TIEMPO MUERTO', desc:'' },
-  4:{ name:'DEFENSA ATENTA', desc:'El Entrenador del equipo pateador elige hasta 1D3+3 jugadores Desmarcados de su equipo. Dichos jugadores pueden moverse inmediatamente una casilla en cualquier dirección, incluso entrando en tierra de nadie.' },
+  4:{ name:'DEFENSA ATENTA', desc:'El Entrenador del equipo pateador elige hasta 1D3+1 jugadores Desmarcados de su equipo. Dichos jugadores pueden moverse inmediatamente una casilla en cualquier dirección, incluso entrando en tierra de nadie.' },
   5:{ name:'PATADA ALTA', desc:'Un jugador Desmarcado del equipo receptor puede ser colocado inmediatamente en la casilla en la que va a caer el balón.' },
   6:{ name:'LOS HINCHAS ANIMAN', desc:'Cada Entrenador tira 1D6 y le suma el número de Animadoras de su Hoja de plantilla. La primera acción de Placaje realizada en el siguiente turno del Entrenador que haya sacado un total más alto en esta tirada recibe un apoyo ofensivo adicional. Si la tirada ha sido un empate, ambos Entrenadores reciben este beneficio durante su siguiente turno.' },
   7:{ name:'ENTRENADOR BRILLANTE', desc:'Ambos Entrenadores tiran 1D6 y suman el número de Ayudantes del Entrenador. El Entrenador que saque el resultado más alto (o ambos Entrenadores, si empatan la tirada) obtiene una Segunda oportunidad gratuita para esa entrada.' },
   8:{ name:'CLIMA CAMBIANTE', desc:'' },
-  9:{ name:'ANTICIPACIÓN', desc:'El Entrenador del equipo receptor elige hasta 1D3+3 jugadores Desmarcados de su equipo. Dichos jugadores pueden moverse inmediatamente una casilla en cualquier dirección, incluso entrando en tierra de nadie.' },
-  10:{ name:'¡A LA CARGA!', desc:'El Entrenador del equipo pateador elige hasta 1D3+3 jugadores Desmarcados de su equipo. Dichos jugadores se pueden activar uno tras otro, como si fuera el turno de su equipo, y realizar una acción de Movimiento gratuita. Uno de ellos puede realizar en su lugar una acción de Penetración gratuita, otro puede realizar en su lugar una acción de Lanzar compañero gratuita, y otro puede realizar en su lugar una acción de Patear compañero gratuita. Si uno de los jugadores elegidos se Cae o es Derribado durante su activación, ya no se pueden activar más jugadores y la Carga termina.' },
+  9:{ name:'ANTICIPACIÓN', desc:'El Entrenador del equipo receptor elige hasta 1D3+1 jugadores Desmarcados de su equipo. Dichos jugadores pueden moverse inmediatamente una casilla en cualquier dirección, incluso entrando en tierra de nadie.' },
+  10:{ name:'¡A LA CARGA!', desc:'El Entrenador del equipo pateador elige hasta 1D3+1 jugadores Desmarcados de su equipo. Dichos jugadores se pueden activar uno tras otro, como si fuera el turno de su equipo, y realizar una acción de Movimiento gratuita. Uno de ellos puede realizar en su lugar una acción de Penetración gratuita, otro puede realizar en su lugar una acción de Lanzar compañero gratuita, y otro puede realizar en su lugar una acción de Patear compañero gratuita. Si uno de los jugadores elegidos se Cae o es Derribado durante su activación, ya no se pueden activar más jugadores y la Carga termina.' },
   11:{ name:'INDIGESTIÓN', desc:'El Entrenador con el total más bajo, o ambos en caso de empate, determina al azar a uno de sus jugadores sobre el campo. El aperitivo que ha tomado el jugador antes de la entrada no le ha sentado bien, por lo que, mientras dure esa entrada, dicho jugador reduce en 1 su MV y su AR. Con un 1, el aperitivo le ha provocado una evacuación forzosa; coloca al jugador en la zona de Reserva de su equipo, ¡para reflejar que se pasa el resto de la entrada encerrado en la letrina!' },
   12:{ name:'INVASIÓN DE CAMPO', desc:'El Entrenador que saque un total más bajo, o ambos Entrenadores en caso de empate, selecciona al azar un jugador de su equipo que esté sobre el campo. Dichos jugadores son colocados Tumbados boca arriba y quedan Aturdidos.' }
 };
@@ -6390,7 +6390,7 @@ function acceptKickoffEvent(){
     }
     case 4: {
       const d3 = Math.floor(Math.random()*3)+1;
-      const n = d3 + 3;
+      const n = d3 + 1;
       log('🛡️ DEFENSA ATENTA: ' + teamName(kicking) + ' tira 1D3 = ' + d3 + ' → puede mover hasta ' + n + ' jugadores Desmarcados una casilla.');
       if(!players.some(p=>kickoffBoardEligible(p, kicking))){
         log('🛡️ No hay ningún jugador Desmarcado de ' + teamName(kicking) + ' que pueda moverse.');
@@ -6483,7 +6483,7 @@ function acceptKickoffEvent(){
       return;
     }
     case 9: {
-      const d3 = rollDieN(3), n = d3 + 3;
+      const d3 = rollDieN(3), n = d3 + 1;
       log('🛡️ ANTICIPACIÓN: ' + teamName(receiving) + ' tira 1D3 = ' + d3 + ' → puede mover hasta ' + n + ' jugadores Desmarcados una casilla.');
       if(!players.some(p=>kickoffBoardEligible(p, receiving))){
         log('🛡️ No hay ningún jugador Desmarcado de ' + teamName(receiving) + ' que pueda moverse.');
@@ -6495,7 +6495,7 @@ function acceptKickoffEvent(){
       return;
     }
     case 10: {
-      const d3 = rollDieN(3), n = d3 + 3;
+      const d3 = rollDieN(3), n = d3 + 1;
       log('⚡ ¡A LA CARGA!: ' + teamName(kicking) + ' tira 1D3 = ' + d3 + ' → hasta ' + n + ' jugadores Desmarcados pueden activarse (Movimiento gratuito; uno puede hacer Penetración).');
       if(!players.some(p=>kickoffBoardEligible(p, kicking))){
         log('⚡ No hay ningún jugador Desmarcado de ' + teamName(kicking) + ' que pueda activarse.');
@@ -8251,7 +8251,7 @@ try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesBut
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V67'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V68'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

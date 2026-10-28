@@ -199,6 +199,27 @@ table.standings th.c-pct,table.standings th.c-tie,table.standings th.c-ext{backg
 .calavbox{max-width:560px;margin:34px auto 10px}
 .calavbox .round{text-align:center}
 table.calavtable tr.top td{background:#8a6d1a22}
+
+.pobox{max-width:900px;margin:34px auto 0}
+.pobox .round{text-align:center}.pobox .round small{font-size:14px;color:var(--muted);letter-spacing:.08em}
+.pogrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pomatch{text-align:center}
+.povs{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:8px}
+.poteam{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:120px}
+.poteam a{color:inherit;text-decoration:none}.poteam .lg{height:44px;max-width:70px}
+.vs{font-family:var(--f-title);color:var(--muted);letter-spacing:.1em}
+.benef{margin-top:12px}.benef h3{font-size:15px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
+.benef ul{list-style:none;display:grid;gap:6px}.benef li{display:flex;gap:12px;align-items:baseline}
+.benef .pos{font-family:var(--f-title);min-width:34px;color:var(--warn)}
+@media (max-width:700px){.pogrid{grid-template-columns:1fr}}
+
+table.standings td.tcell{padding:4px 8px}
+.tlink{display:flex;align-items:center;gap:12px;color:inherit;text-decoration:none}
+.tlogo{width:56px;height:52px;flex:none;display:flex;align-items:center;justify-content:center}
+.tlogo .lgs{max-width:56px;max-height:52px;width:auto;height:auto;object-fit:contain;margin:0}
+.ttext{display:flex;flex-direction:column;min-width:0}
+.tname{font-family:var(--f-title);font-size:21px;letter-spacing:.03em;text-transform:uppercase;line-height:1.1;white-space:nowrap}
+.trace{font-size:11px;font-weight:300;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:2px}
 </style>
 </head>
 <body>
@@ -246,8 +267,8 @@ const impValue=p=>(p.progression.improvements||[]).concat(p.progression.draftPay
 const skillCount=p=>(p.progression.improvements||[]).filter(i=>i.skill).length;
 const DRAFT_BONUS=15000;
 const fansTotal=l=>(l.matches||[]).reduce((f,m)=>Math.min(5,Math.max(1,f+(m.dedicatedFansGained||0))),1);
-function totals(d){
-  const m=d.league.matches,sum=f=>m.reduce((t,x)=>t+(f(x)||0),0),st=x=>x.statistics||{};
+function totals(d,reg){
+  const m=reg?d.league.matches.filter(x=>!(x.round>ROUND_MAX)):d.league.matches,sum=f=>m.reduce((t,x)=>t+(f(x)||0),0),st=x=>x.statistics||{};
   const r={played:m.length,won:m.filter(x=>x.result.outcome==='win').length,drawn:m.filter(x=>x.result.outcome==='draw').length,lost:m.filter(x=>x.result.outcome==='loss').length};
   r.tdFor=sum(x=>x.result.teamScore);r.tdAgainst=sum(x=>x.result.opponentScore);
   for(const k of['lightInjuries','seriousInjuries','deaths','sentOff','skulls','ones']){r[k+'For']=sum(x=>st(x)[k+'For']);r[k+'Against']=sum(x=>st(x)[k+'Against'])}
@@ -336,6 +357,8 @@ async function downloadZip(){
 }
 
 /* ---------- vistas ---------- */
+const ROUND_MAX=10;
+const roundLabel=n=>n>=1&&n<=ROUND_MAX?`Jornada ${n}`:n===ROUND_MAX+1?'PlayOff - Semifinal':n===ROUND_MAX+2?'PlayOff - Final':'—';
 const MAIN_TABS=[['standings','Clasificación'],['teams','Equipos'],['matches','Partidos']];
 function render(){
   $('#mainTabs').innerHTML=MAIN_TABS.map(([id,l])=>`<button class="tab" role="tab" data-main="${id}" aria-selected="${ui.tab===id&&!ui.team}">${l}</button>`).join('');
@@ -369,7 +392,7 @@ const STD_COLS=[
   ['h3','3H','Partidos en que causas 3 o más bajas',r=>r.x.h3,'c-ext']
 ];
 function standingRows(){
-  const rows=teams.map(t=>{const x=totals(t.doc);return{t,x,tdd:x.tdFor-x.tdAgainst}})
+  const rows=teams.map(t=>{const x=totals(t.doc,true);return{t,x,tdd:x.tdFor-x.tdAgainst}})
     .sort((a,b)=>b.x.pct-a.x.pct||b.x.tie-a.x.tie||b.x.calav-a.x.calav||b.tdd-a.tdd||b.x.spp-a.x.spp||a.t.name.localeCompare(b.t.name,'es'));
   rows.forEach((r,i)=>r.pos=i+1);   /* posición oficial, no cambia al reordenar la vista */
   return rows;
@@ -389,11 +412,23 @@ function renderStandings(){
   const cell=(c,r)=>{const val=c[3](r);const txt=c[0]==='pct'?nflTxt(val):c[0]==='tie'?numTxt(val):c[0]==='tdd'?sgn(val):val;return`<td class="num ${c[4]}">${c[4]==='c-pct'||c[4]==='c-tie'?`<strong>${txt}</strong>`:txt}</td>`};
   const ord=!sk;
   $('#view').innerHTML=`<div class="tscroll"><table class="standings"><thead><tr><th>Pos</th><th class="l"><button type="button" class="sortbtn l" data-sort="name">Equipo${mark('name')}</button></th>${STD_COLS.map(th).join('')}</tr></thead><tbody>
-  ${rows.map((r,i)=>`<tr class="${ord&&r.pos===QUALIFY&&rows.length>QUALIFY?'cut':''}${r.pos<=QUALIFY?' in':''}"><td class="num">${r.pos}</td><td class="l"><a href="#team=${encodeURIComponent(r.t.file)}">${logoImg(r.t,'lg')||badge(r.t)}<strong>${esc(r.t.name)}</strong></a><br><span class="race">${esc(r.t.doc.race||'')}</span></td>${STD_COLS.map(c=>cell(c,r)).join('')}</tr>`).join('')}
+  ${rows.map((r,i)=>`<tr class="${ord&&r.pos===QUALIFY&&rows.length>QUALIFY?'cut':''}${r.pos<=QUALIFY?' in':''}"><td class="num">${r.pos}</td><td class="l tcell"><a href="#team=${encodeURIComponent(r.t.file)}" class="tlink"><span class="tlogo">${logoImg(r.t,'lgs')||badge(r.t)}</span><span class="ttext"><strong class="tname">${esc(r.t.name)}</strong><span class="trace">${esc(r.t.doc.race||'')}</span></span></a></td>${STD_COLS.map(c=>cell(c,r)).join('')}</tr>`).join('')}
   </tbody></table></div>
   ${sk?`<p class="hint"><button type="button" class="btn small" data-sort="">Volver al orden oficial</button> Estás viendo la tabla ordenada por otra columna; «Pos» sigue siendo la clasificación oficial.</p>`:''}
-  <p class="hint">La clasificación se ordena por <strong class="c-pct">%</strong> de victorias, calculado como (V + E × 0,5) / PJ, al estilo NFL. Si hay empate, por orden: <strong class="c-tie">≠</strong> (puntos de desempate), calaverunos, diferencia de TD y puntos de estrellato. <strong class="c-tie">≠</strong> = calaverunos × 0,5 + <span class="c-ext">Dif3</span> (victoria por 3 TD o más) + <span class="c-ext">A«0»</span> (rival a 0 TD) + <span class="c-ext">3H</span> (3 o más bajas causadas), sumado partido a partido. Pasan a la fase final los ${QUALIFY} primeros. Puedes ordenar por cualquier columna pulsando su cabecera.</p>
+  <p class="hint">La clasificación se ordena por <strong class="c-pct">%</strong> de victorias, calculado como (V + E × 0,5) / PJ, al estilo NFL. Si hay empate, por orden: <strong class="c-tie">≠</strong> (puntos de desempate), calaverunos, diferencia de TD y puntos de estrellato. <strong class="c-tie">≠</strong> = calaverunos × 0,5 + <span class="c-ext">Dif3</span> (victoria por 3 TD o más) + <span class="c-ext">A«0»</span> (rival a 0 TD) + <span class="c-ext">3H</span> (3 o más bajas causadas), sumado partido a partido. Pasan a la fase final los ${QUALIFY} primeros. Los partidos de PlayOff no cuentan para esta tabla. Puedes ordenar por cualquier columna pulsando su cabecera.</p>
+  ${playoffsHTML(official)}
   ${calavTableHTML()}`;
+}
+/* PlayOffs: cruces si la liga terminara ahora y beneficios por posición */
+function playoffsHTML(official){
+  const slot=r=>r?`<div class="poteam">${logoImg(r.t,'lg')||badge(r.t)}<a href="#team=${encodeURIComponent(r.t.file)}"><strong>${esc(r.t.name)}</strong></a><span class="race">${r.pos}º · ${esc(r.t.doc.race||'')}</span></div>`:'<div class="poteam"><span class="race">Por decidir</span></div>';
+  const tie=(a,b,n)=>`<div class="card pomatch"><div class="race">Semifinal ${n}</div><div class="povs">${slot(official[a])}<span class="vs">VS</span>${slot(official[b])}</div></div>`;
+  const BEN=[['1º','2 Fan Factor / 3 Animadoras / 2 Ayudantes de entrenador','60.000'],['2º','1 Fan Factor / 2 Animadoras / 1 Ayudante de entrenador','40.000'],['3º','1 Animadora / 1 Ayudante de entrenador','20.000'],['4º','1 Animadora','10.000']];
+  return`<section class="pobox"><h2 class="round">PlayOffs <small>(si la liga terminara ahora)</small></h2>
+  <div class="pogrid">${tie(0,3,1)}${tie(1,2,2)}</div>
+  <div class="card benef"><h3>Beneficios para PlayOffs según la posición final de la fase regular</h3>
+   <ul>${BEN.map(b=>`<li><span class="pos">${b[0]}</span><span>${b[1]} <strong>+ ${b[2]} mo</strong> para incentivos en los PlayOffs</span></li>`).join('')}</ul>
+   <p class="hint">En PlayOffs, si se llega empatado al finalizar el turno 6 de la segunda parte, el partido se sigue jugando hasta que uno de los dos equipos anote, sin que se detenga la entrada.</p></div></section>`;
 }
 /* clasificación aparte del trofeo de los Calaverunos */
 function calavTableHTML(){
@@ -436,7 +471,7 @@ function renderMatches(){
     return`<div class="minfo ${cls}"><div class="mn">${esc(name)}</div><div class="race">${esc((d&&d.race)||'')}</div>${d&&d.league.coach?`<div class="meta">${esc(d.league.coach)}</div>`:''}</div>`};
   let last=null,html='';
   for(const o of ms){
-    if(o.round!==last){html+=`${last!==null?'</div>':''}<h2 class="round">Jornada ${o.round||'—'}</h2><div class="cards">`;last=o.round}
+    if(o.round!==last){html+=`${last!==null?'</div>':''}<h2 class="round">${roundLabel(o.round)}</h2><div class="cards">`;last=o.round}
     html+=`<a class="mcard" href="#match=${encodeURIComponent(o.key)}" aria-label="Ver estadísticas: ${esc(o.home.name)} ${o.home.score} - ${o.away.score} ${esc(o.away.name)}">
       ${logo(o.home.name)}${info(o.home.name,'r')}
       <div class="mscore"><div class="sc"><span>${o.home.score}</span><b>-</b><span>${o.away.score}</span></div><div class="mcta">Ver estadísticas del partido</div><div class="mid">${esc(o.id)}</div></div>
@@ -501,7 +536,7 @@ function renderMatchReport(){
   events.filter(x=>x.ev.hatred).forEach(x=>hl.push(`<li><span class="chip">Odio</span> #${esc(x.ev.num)} ${esc(x.ev.name||'')} gana Odio (${esc(x.ev.hatred)}) <span class="race">${esc(x.s.name)}</span></li>`));
   const when=(h.m&&h.m.registeredAt)||(a.m&&a.m.registeredAt)||'';
   $('#view').innerHTML=`<p><a href="#" data-back>← Volver a la liga</a></p>
-  <div class="report"><div class="rhead">Jornada ${o.round||'—'} · ${esc(o.id)}${when?' · '+esc(String(when).slice(0,10)):''}</div>
+  <div class="report"><div class="rhead">${roundLabel(o.round)} · ${esc(o.id)}${when?' · '+esc(String(when).slice(0,10)):''}</div>
   <div class="scoreboard">${side(h,'home')}<div class="bigscore ${win}"><span>${hs}</span><b>-</b><span>${as}</span><div class="verdict">${win==='d'?'Empate':'Gana '+esc(win==='h'?h.name:a.name)}</div></div>${side(a,'away')}</div>
   <div class="card"><h3>Resumen del partido</h3>
     ${stat('Touchdowns',hs,as)}${stat('Heridas leves',S1.lightInjuriesFor,S2.lightInjuriesFor)}${stat('Heridas graves',S1.seriousInjuriesFor,S2.seriousInjuriesFor)}${stat('Muertos causados',S1.deathsFor,S2.deathsFor)}${stat('Expulsados',S1.sentOffFor,S2.sentOffFor)}${stat('Calaveras',S1.skullsFor,S2.skullsFor)}${stat('Unos',S1.onesFor,S2.onesFor)}</div>

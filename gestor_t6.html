@@ -813,7 +813,7 @@ async function openMatchView(){
     const saved=await ghSave(state.reason,true);
     if(!saved){ toast('Antes de registrar un partido hay que guardar los cambios del equipo abierto.'); return; }
   }
-  state.view='match'; mv.last=null; mv.imp={home:{},away:{}}; mv.touched={}; mv.home=''; mv.away='';
+  state.view='match'; mv.last=null; mv.imp={home:{},away:{}}; mv.touched={}; mv.home=''; mv.away=''; mv.season=null;
   app.innerHTML='<div class="empty">Cargando los equipos de GitHub…</div>';
   try{ await mvLoadTeams(); }
   catch(e){ app.innerHTML=`<div class="banner bad">No se pudieron leer los equipos: ${esc(e.message)}</div><button class="btn" id="mvBack" type="button">← Volver</button>`; return; }
@@ -827,8 +827,14 @@ function backToTeam(){
   if(state.data.league) renderAll(); else renderEnroll();
 }
 
+/* jornadas 1–10 y fase final: 11 = PlayOff - Semifinal, 12 = PlayOff - Final */
+const ROUND_MAX=10;
+const roundLabel=n=>n>=1&&n<=ROUND_MAX?`Jornada ${n}`:n===ROUND_MAX+1?'PlayOff - Semifinal':n===ROUND_MAX+2?'PlayOff - Final':`Ronda ${n}`;
+const roundId=(season,n)=>n<=ROUND_MAX?`T${season}-J${pad2(n)}`:n===ROUND_MAX+1?`T${season}-SF`:`T${season}-F`;
+function mvSeasons(){ return [...new Set(mv.teams.map(x=>x.doc.league.season))].sort((a,b)=>b-a); }
+function mvSeasonTeams(){ if(mv.season==null) mv.season=mvSeasons()[0]; return mv.teams.filter(x=>x.doc.league.season===mv.season); }
 function renderMatchView(){
-  const t=mv.teams, opts=sel=>'<option value="">— elige equipo —</option>'+t.map(x=>`<option value="${esc(x.file)}" ${x.file===sel?'selected':''}>${esc(x.name)}</option>`).join('');
+  const t=mvSeasonTeams(), opts=sel=>'<option value="">— elige equipo —</option>'+t.map(x=>`<option value="${esc(x.file)}" ${x.file===sel?'selected':''}>${esc(x.name)}</option>`).join('');
   const skipped=mv.skipped.length?`<div class="banner">No se han podido usar: ${mv.skipped.map(s=>`<code>${esc(s.file)}</code> (${esc(s.error)})`).join(', ')}.</div>`:'';
   app.innerHTML=`
     <div class="teamhead"><span class="mvtitle">Registrar partido</span><button class="btn" id="mvBack" type="button">← Volver</button></div>
@@ -837,7 +843,8 @@ function renderMatchView(){
     <form id="matchForm" autocomplete="off" novalidate>
       <fieldset><legend>Partido</legend>
         <div class="grid">
-          <label class="f">Jornada<input type="number" min="1" name="round" id="mvRound" value="1"></label>
+          <label class="f">Temporada<select id="mvSeason">${mvSeasons().map(s=>`<option value="${s}" ${s===mv.season?'selected':''}>Temporada ${s}</option>`).join('')}</select></label>
+          <label class="f">Jornada<select name="round" id="mvRound">${Array.from({length:ROUND_MAX+2},(_,i)=>i+1).map(n=>`<option value="${n}">${roundLabel(n)}</option>`).join('')}</select></label>
           <label class="f">Equipo local<select id="mvHome">${opts(mv.home)}</select></label>
           <label class="f">Equipo visitante<select id="mvAway">${opts(mv.away)}</select></label>
         </div>
@@ -897,7 +904,7 @@ function renderSides(){
   $('#mvErrors').innerHTML='';
   if(!H||!A){ box.innerHTML='<p class="hint">Elige el equipo local y el visitante.</p>'; row.hidden=true; return; }
   if(H===A){ box.innerHTML='<p class="hint warn">El equipo local y el visitante no pueden ser el mismo.</p>'; row.hidden=true; return; }
-  if(!mv.touched.round) $('#mvRound').value=Math.max(H.doc.league.matches.length,A.doc.league.matches.length)+1;
+  if(!mv.touched.round){ const n=Math.max(H.doc.league.matches.length,A.doc.league.matches.length)+1; $('#mvRound').value=String(Math.min(n,ROUND_MAX+2)); }
   box.innerHTML=sideHTML('home')+sideHTML('away')+'<fieldset><legend>Notas</legend><textarea name="notes" aria-label="Notas del partido"></textarea></fieldset>';
   ['home','away'].forEach(s=>{ mvTeam(s).doc.players.forEach(tp=>renderImpCell(s,tp.num)); updateSide(s); });
   row.hidden=false;
@@ -1144,11 +1151,12 @@ async function mvSubmit(){
   const round=int($('#mvRound').value), problems=[];
   if(!H||!A||H===A) problems.push('Elige dos equipos distintos.');
   if(!round) problems.push('Indica la jornada.');
+  if(H&&H.doc.league.season!==mv.season) problems.push('Los equipos no son de la temporada elegida.');
   if(problems.length) return fail(problems);
   const season=H.doc.league.season;
   if(A.doc.league.season!==season) problems.push(`Los equipos son de temporadas distintas (${season} y ${A.doc.league.season}).`);
-  const id=`T${season}-J${pad2(round)}`;
-  [H,A].forEach(t=>{ if(t.doc.league.matches.some(m=>m.id===id)) problems.push(`${t.name} ya tiene registrado el partido ${id}. Cambia la jornada.`); });
+  const id=roundId(season,round);
+  [H,A].forEach(t=>{ if(t.doc.league.matches.some(m=>m.id===id)) problems.push(`${t.name} ya tiene registrado el partido ${id}. Cambia la jornada o la fase.`); });
   const sh=collectSide('home'), sa=collectSide('away');
   sh.problems.forEach(x=>problems.push(`${H.name}: ${x}`)); sa.problems.forEach(x=>problems.push(`${A.name}: ${x}`));
   if(problems.length) return fail(problems);
@@ -1235,6 +1243,7 @@ function mvInput(e){
 }
 function mvChange(e){
   const t=e.target;
+  if(t.id==='mvSeason'){ mv.season=int($('#mvSeason').value); mv.home=''; mv.away=''; mv.touched={}; renderMatchView(); return true; }
   if(t.id==='mvHome'||t.id==='mvAway'){ mv.home=$('#mvHome').value; mv.away=$('#mvAway').value; renderSides(); return true; }
   return false;
 }

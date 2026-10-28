@@ -129,3 +129,6 @@ Las habilidades se añaden además a `players[].skills` (nombre exacto de `roste
 
 ## Hoja PDF (28-oct)
 - Las columnas ESP…MVP muestran las estadísticas acumuladas de la liga (vacías si son 0). Las habilidades ganadas en la liga (mejoras y Odio) salen en rojo y negrita.
+
+## PlayOffs (28-oct)
+- Jornadas 1–10 (`T6-J01`…) y fase final: semifinal (`round` 11, `T6-SF`) y final (`round` 12, `T6-F`). Los partidos con `round` > 10 no cuentan en la clasificación de la fase regular.

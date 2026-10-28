@@ -188,6 +188,17 @@ td.wrap{white-space:normal;min-width:150px}
 .mcard:hover .mcta{color:var(--text);border-color:var(--accent)}
 .mid{font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:.1em}
 @media (max-width:700px){.mcard{grid-template-columns:56px 1fr 56px;justify-content:stretch;gap:8px 10px;padding:12px}.mcard .mscore{grid-column:1/-1;grid-row:2;min-width:0}.mcard>.mlogo:first-child{grid-row:1;grid-column:1}.mcard>.minfo.r{grid-column:2;grid-row:1;text-align:left}.mcard>.minfo:not(.r){grid-column:2;grid-row:3;text-align:left}.mcard>.mlogo:last-child{grid-column:1;grid-row:3}.mlogo{width:56px;height:48px}.mlogo .lgm{max-height:48px;max-width:56px}.mn{font-size:18px}}
+
+table.standings .c-pct{color:#ff5a52}
+table.standings .c-tie{color:#ff9f43}
+table.standings .c-ext{color:#f1e4b0}
+.c-pct{color:#ff5a52}.c-tie{color:#ff9f43}.c-ext{color:#f1e4b0}
+table.standings th.c-pct,table.standings th.c-tie,table.standings th.c-ext{background:var(--panel2)}
+.sortbtn{background:none;border:0;color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit;cursor:pointer;padding:0}
+.sortbtn:hover{text-decoration:underline}.sortbtn.l{text-align:left}
+.calavbox{max-width:560px;margin:34px auto 10px}
+.calavbox .round{text-align:center}
+table.calavtable tr.top td{background:#8a6d1a22}
 </style>
 </head>
 <body>
@@ -226,7 +237,7 @@ const inkOf=d=>d.textColor&&d.textColor!=='auto'?d.textColor:textInk(colorOf(d))
 let LOAD_TS=Date.now();
 let teams=[];          // {file, name, text, doc}
 let skipped=[];
-let ui={tab:'standings', team:null, match:null, teamTab:'roster'};
+let ui={tab:'standings', team:null, match:null, teamTab:'roster', sort:null};
 
 /* ---------- cálculos (los mismos que el gestor) ---------- */
 const impCost=(im,i)=>{const r=IMPROVEMENT_COSTS[im.order||i+1];if(!r)return 0;return im.category==='stat'?r.st:r[(im.category==='primary'?'p':'s')+(im.selection==='random'?'r':'c')]};
@@ -335,19 +346,63 @@ function render(){
 }
 function badge(t){const d=t.doc;return`<span class="dot" style="background:${colorOf(d)}"></span>`}
 const pctTxt=p=>(p*100).toFixed(1).replace('.',',')+' %';
+const nflTxt=p=>p>=1?'1.00':p.toFixed(2).replace(/^0/,'');   /* estilo NFL: .50, .75, 1.00 */
 const numTxt=n=>String(n).replace('.',',');
 const QUALIFY=4;
-function renderStandings(){
-  if(!teams.length){$('#view').innerHTML='<div class="empty">Todavía no hay equipos inscritos.</div>';return}
+/* columnas de la clasificación: [clave, cabecera, ayuda, valor, clase de color] */
+const STD_COLS=[
+  ['won','V','Partidos ganados',r=>r.x.won,''],
+  ['lost','D','Partidos perdidos',r=>r.x.lost,''],
+  ['drawn','E','Partidos empatados',r=>r.x.drawn,''],
+  ['pct','%','Porcentaje de victorias = (V + E × 0,5) / PJ. Es lo primero que decide la clasificación',r=>r.x.pct,'c-pct'],
+  ['played','PJ','Partidos jugados',r=>r.x.played,''],
+  ['tie','≠','Primer desempate: calaverunos × 0,5 + Dif3 + A«0» + 3H',r=>r.x.tie,'c-tie'],
+  ['tdFor','TD+','Touchdowns a favor',r=>r.x.tdFor,''],
+  ['tdAgainst','TD−','Touchdowns en contra',r=>r.x.tdAgainst,''],
+  ['tdd','Dif','Diferencia de TD',r=>r.tdd,''],
+  ['calav','Calav.','Calaverunos: calaveras y unos naturales sacados',r=>r.x.calav,''],
+  ['spp','PtsE','Puntos de estrellato (SPP ganados por los jugadores)',r=>r.x.spp,''],
+  ['cas','HER','Heridas causadas (leves + graves + muertes)',r=>r.x.casFor,''],
+  ['deaths','†','Muertes causadas',r=>r.x.deathsFor,''],
+  ['dif3','Dif3','Victorias por 3 TD o más de diferencia',r=>r.x.dif3,'c-ext'],
+  ['a0','A«0»','Partidos en que dejas al rival a 0',r=>r.x.a0,'c-ext'],
+  ['h3','3H','Partidos en que causas 3 o más bajas',r=>r.x.h3,'c-ext']
+];
+function standingRows(){
   const rows=teams.map(t=>{const x=totals(t.doc);return{t,x,tdd:x.tdFor-x.tdAgainst}})
     .sort((a,b)=>b.x.pct-a.x.pct||b.x.tie-a.x.tie||b.x.calav-a.x.calav||b.tdd-a.tdd||b.x.spp-a.x.spp||a.t.name.localeCompare(b.t.name,'es'));
-  const H=(t,tip)=>`<th title="${tip}">${t}</th>`;
-  $('#view').innerHTML=`<div class="tscroll"><table class="standings"><thead><tr><th>Pos</th><th class="l">Equipo</th>${H('% Vict.','Porcentaje de victorias: ganado 1, empatado 0,5, perdido 0')}${H('≠','Puntos de desempate: calaverunos × 0,5 + Dif3 + A«0» + 3H')}${H('PJ','Partidos jugados')}${H('PG','Ganados')}${H('PE','Empatados')}${H('PP','Perdidos')}${H('TD+','Touchdowns a favor')}${H('TD−','Touchdowns en contra')}${H('Dif','Diferencia de TD')}${H('Calav.','Calaverunos: calaveras y unos naturales sacados')}${H('PtsE','Puntos de estrellato (SPP ganados por los jugadores)')}${H('HER','Heridas causadas (leves + graves + muertes)')}${H('†','Muertes causadas')}${H('Dif3','Victorias por 3 TD o más de diferencia')}${H('A«0»','Partidos en que dejas al rival a 0')}${H('3H','Partidos en que causas 3 o más bajas')}</tr></thead><tbody>
-  ${rows.map((r,i)=>`<tr class="${i+1===QUALIFY&&rows.length>QUALIFY?'cut':''}${i<QUALIFY?' in':''}"><td class="num">${i+1}</td><td class="l"><a href="#team=${encodeURIComponent(r.t.file)}">${logoImg(r.t,'lg')||badge(r.t)}<strong>${esc(r.t.name)}</strong></a><br><span class="race">${esc(r.t.doc.race||'')}</span></td>
-   <td class="num"><strong>${pctTxt(r.x.pct)}</strong></td><td class="num"><strong>${numTxt(r.x.tie)}</strong></td><td class="num">${r.x.played}</td><td class="num">${r.x.won}</td><td class="num">${r.x.drawn}</td><td class="num">${r.x.lost}</td>
-   <td class="num">${r.x.tdFor}</td><td class="num">${r.x.tdAgainst}</td><td class="num">${sgn(r.tdd)}</td><td class="num">${r.x.calav}</td><td class="num">${r.x.spp}</td><td class="num">${r.x.casFor}</td><td class="num">${r.x.deathsFor}</td><td class="num">${r.x.dif3}</td><td class="num">${r.x.a0}</td><td class="num">${r.x.h3}</td></tr>`).join('')}
+  rows.forEach((r,i)=>r.pos=i+1);   /* posición oficial, no cambia al reordenar la vista */
+  return rows;
+}
+function renderStandings(){
+  if(!teams.length){$('#view').innerHTML='<div class="empty">Todavía no hay equipos inscritos.</div>';return}
+  const official=standingRows();
+  let rows=official.slice();
+  const sk=ui.sort&&ui.sort.key;
+  if(sk){
+    const dir=ui.sort.dir==='asc'?1:-1;
+    if(sk==='name') rows.sort((a,b)=>dir*a.t.name.localeCompare(b.t.name,'es')||a.pos-b.pos);
+    else{ const col=STD_COLS.find(c=>c[0]===sk); rows.sort((a,b)=>dir*(col[3](a)-col[3](b))||a.pos-b.pos); }
+  }
+  const mark=k=>sk===k?(ui.sort.dir==='asc'?' ▲':' ▼'):'';
+  const th=c=>`<th class="${c[4]}" title="${c[2]}"><button type="button" class="sortbtn" data-sort="${c[0]}">${c[1]}${mark(c[0])}</button></th>`;
+  const cell=(c,r)=>{const val=c[3](r);const txt=c[0]==='pct'?nflTxt(val):c[0]==='tie'?numTxt(val):c[0]==='tdd'?sgn(val):val;return`<td class="num ${c[4]}">${c[4]==='c-pct'||c[4]==='c-tie'?`<strong>${txt}</strong>`:txt}</td>`};
+  const ord=!sk;
+  $('#view').innerHTML=`<div class="tscroll"><table class="standings"><thead><tr><th>Pos</th><th class="l"><button type="button" class="sortbtn l" data-sort="name">Equipo${mark('name')}</button></th>${STD_COLS.map(th).join('')}</tr></thead><tbody>
+  ${rows.map((r,i)=>`<tr class="${ord&&r.pos===QUALIFY&&rows.length>QUALIFY?'cut':''}${r.pos<=QUALIFY?' in':''}"><td class="num">${r.pos}</td><td class="l"><a href="#team=${encodeURIComponent(r.t.file)}">${logoImg(r.t,'lg')||badge(r.t)}<strong>${esc(r.t.name)}</strong></a><br><span class="race">${esc(r.t.doc.race||'')}</span></td>${STD_COLS.map(c=>cell(c,r)).join('')}</tr>`).join('')}
   </tbody></table></div>
-  <p class="hint">Se ordena por % de victorias (ganado 1, empatado 0,5, perdido 0). Si hay empate, por orden: puntos de desempate (≠), calaverunos, diferencia de TD y puntos de estrellato. <strong>≠</strong> = calaverunos × 0,5 + Dif3 (victoria por 3 TD o más) + A«0» (rival a 0 TD) + 3H (3 o más bajas causadas), sumado partido a partido. Calaverunos = calaveras y unos naturales sacados por el equipo. Pasan a la fase final los ${QUALIFY} primeros.</p>`;
+  ${sk?`<p class="hint"><button type="button" class="btn small" data-sort="">Volver al orden oficial</button> Estás viendo la tabla ordenada por otra columna; «Pos» sigue siendo la clasificación oficial.</p>`:''}
+  <p class="hint">La clasificación se ordena por <strong class="c-pct">%</strong> de victorias, calculado como (V + E × 0,5) / PJ, al estilo NFL. Si hay empate, por orden: <strong class="c-tie">≠</strong> (puntos de desempate), calaverunos, diferencia de TD y puntos de estrellato. <strong class="c-tie">≠</strong> = calaverunos × 0,5 + <span class="c-ext">Dif3</span> (victoria por 3 TD o más) + <span class="c-ext">A«0»</span> (rival a 0 TD) + <span class="c-ext">3H</span> (3 o más bajas causadas), sumado partido a partido. Pasan a la fase final los ${QUALIFY} primeros. Puedes ordenar por cualquier columna pulsando su cabecera.</p>
+  ${calavTableHTML()}`;
+}
+/* clasificación aparte del trofeo de los Calaverunos */
+function calavTableHTML(){
+  const rows=teams.map(t=>{const x=totals(t.doc);return{t,x,total:x.skullsFor+x.onesFor}})
+    .sort((a,b)=>b.total-a.total||b.x.skullsFor-a.x.skullsFor||a.t.name.localeCompare(b.t.name,'es'));
+  return`<section class="calavbox"><h2 class="round">Trofeo Calaverunos</h2>
+  <div class="tscroll"><table class="calavtable"><thead><tr><th>Pos</th><th class="l">Equipo</th><th title="Calaveras naturales sacadas">Calaveras</th><th title="Unos naturales sacados">Unos</th><th title="Calaveras + unos">Total</th></tr></thead><tbody>
+  ${rows.map((r,i)=>`<tr class="${i===0&&r.total>0?'top':''}"><td class="num">${i+1}</td><td class="l"><a href="#team=${encodeURIComponent(r.t.file)}">${logoImg(r.t,'lg')||badge(r.t)}<strong>${esc(r.t.name)}</strong></a></td><td class="num">${r.x.skullsFor}</td><td class="num">${r.x.onesFor}</td><td class="num"><strong>${r.total}</strong></td></tr>`).join('')}
+  </tbody></table></div><p class="hint" style="text-align:center">Calaveras y unos naturales que hacen perder el turno. Gana el trofeo quien más acumule.</p></section>`;
 }
 function renderTeams(){
   if(!teams.length){$('#view').innerHTML='<div class="empty">Todavía no hay equipos inscritos.</div>';return}
@@ -728,6 +783,7 @@ window.addEventListener('hashchange',()=>{fromHash();if(!ui.team||ui.match)docum
 document.addEventListener('click',async e=>{
   const b=e.target.closest('button,a');if(!b)return;
   if(b.dataset.main){ui.tab=b.dataset.main;ui.team=null;ui.match=null;document.documentElement.style.removeProperty('--accent');document.documentElement.style.removeProperty('--accent-ink');history.replaceState(null,'',location.pathname+location.search);render()}
+  else if(b.dataset.sort!==undefined){const k=b.dataset.sort;if(!k)ui.sort=null;else if(ui.sort&&ui.sort.key===k)ui.sort={key:k,dir:ui.sort.dir==='desc'?'asc':'desc'};else ui.sort={key:k,dir:k==='name'?'asc':'desc'};render()}
   else if(b.dataset.tt){ui.teamTab=b.dataset.tt;render()}
   else if(b.dataset.dl){downloadTeam(b.dataset.dl)}
   else if(b.dataset.sheet){const t=teams.find(x=>x.file===b.dataset.sheet);if(t)downloadSheet(t.doc,economy(t.doc),t.file.replace(/\.json$/i,''),await fetchLogo(t))}

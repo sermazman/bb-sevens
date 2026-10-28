@@ -54,6 +54,7 @@
       "skills": [
         "Pasar",
         "Pase a lo loco",
+        "Odio (Orc)",
         "Elf - Lanzador"
       ]
     },
@@ -421,7 +422,17 @@
             "deaths": 0,
             "mvp": 0,
             "injurySuffered": "seriousInjury",
-            "sppEarned": 0
+            "sppEarned": 0,
+            "improvements": [
+              {
+                "order": 1,
+                "category": "primary",
+                "selection": "chosen",
+                "skill": "Odio (Orc)",
+                "sppCost": 0,
+                "valueExtra": 0
+              }
+            ]
           },
           {
             "num": 6,

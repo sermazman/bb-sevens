@@ -220,6 +220,17 @@ table.standings td.tcell{padding:4px 8px}
 .ttext{display:flex;flex-direction:column;min-width:0}
 .tname{font-family:var(--f-title);font-size:21px;letter-spacing:.03em;text-transform:uppercase;line-height:1.1;white-space:nowrap}
 .trace{font-size:11px;font-weight:300;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+
+.hofintro{margin-top:6px}.hofintro .round{text-align:center}
+.hofbox{margin-top:22px}.hofbox .round{font-size:20px}
+.hofgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:6px 22px}
+.hofbox:has(.hoftable) .tscroll{max-height:560px;overflow-y:auto}
+table.hoftable td,table.hoftable th{padding:7px 10px}
+.hofname{color:inherit;text-decoration:none}.hofname:hover strong{text-decoration:underline}
+.hofstate{font-weight:300;font-style:italic;font-size:13px;color:var(--muted)}
+.hofkey{color:var(--muted);font-size:13px}.hofcat{color:var(--muted)}
+.tchip{display:inline-block;padding:2px 10px;border-radius:5px;font-size:13px;font-weight:600;letter-spacing:.03em;white-space:nowrap}
+@media (max-width:520px){.hofgrid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -359,13 +370,13 @@ async function downloadZip(){
 /* ---------- vistas ---------- */
 const ROUND_MAX=10;
 const roundLabel=n=>n>=1&&n<=ROUND_MAX?`Jornada ${n}`:n===ROUND_MAX+1?'PlayOff - Semifinal':n===ROUND_MAX+2?'PlayOff - Final':'—';
-const MAIN_TABS=[['standings','Clasificación'],['teams','Equipos'],['matches','Partidos']];
+const MAIN_TABS=[['standings','Clasificación'],['teams','Equipos'],['matches','Partidos'],['hof','Hall of Fame']];
 function render(){
   $('#mainTabs').innerHTML=MAIN_TABS.map(([id,l])=>`<button class="tab" role="tab" data-main="${id}" aria-selected="${ui.tab===id&&!ui.team}">${l}</button>`).join('');
   if(ui.match)return renderMatchReport();
   if(ui.team&&teams.find(t=>t.file===ui.team))return renderTeam();
   ui.team=null;
-  ({standings:renderStandings,teams:renderTeams,matches:renderMatches})[ui.tab]();
+  ({standings:renderStandings,teams:renderTeams,matches:renderMatches,hof:renderHof})[ui.tab]();
 }
 function badge(t){const d=t.doc;return`<span class="dot" style="background:${colorOf(d)}"></span>`}
 const pctTxt=p=>(p*100).toFixed(1).replace('.',',')+' %';
@@ -418,6 +429,37 @@ function renderStandings(){
   <p class="hint">La clasificación se ordena por <strong class="c-pct">%</strong> de victorias, calculado como (V + E × 0,5) / PJ, al estilo NFL. Si hay empate, por orden: <strong class="c-tie">≠</strong> (puntos de desempate), calaverunos, diferencia de TD y puntos de estrellato. <strong class="c-tie">≠</strong> = calaverunos × 0,5 + <span class="c-ext">Dif3</span> (victoria por 3 TD o más) + <span class="c-ext">A«0»</span> (rival a 0 TD) + <span class="c-ext">3H</span> (3 o más bajas causadas), sumado partido a partido. Pasan a la fase final los ${QUALIFY} primeros. Los partidos de PlayOff no cuentan para esta tabla. Puedes ordenar por cualquier columna pulsando su cabecera.</p>
   ${playoffsHTML(official)}
   ${calavTableHTML()}`;
+}
+/* ---------- Hall of Fame ---------- */
+const HOF_TABLES=[
+  ['mvp','MVP del partido','mvp'],['touchdowns','Anotaciones','touchdowns'],['passes','Pases completados','passes'],
+  ['lightInjuries','Heridos leves','lightInjuries'],['seriousInjuries','Heridos graves','seriousInjuries'],['deaths','Muertos','deaths']
+];
+function hofPlayers(){
+  const out=[];
+  for(const t of teams){
+    const l=t.doc.league, col=colorOf(t.doc), ink=inkOf(t.doc);
+    const keyOf=(sk,pos)=>{const k=(sk||[]).find(s=>/\s-\s/.test(s));return k||pos||''};
+    l.players.forEach(lp=>{const tp=t.doc.players.find(p=>p.num===lp.num); if(!tp) return;
+      out.push({name:tp.name,key:keyOf(tp.skills,tp.position),team:t,col,ink,state:'',st:lp.statistics||{},spp:(lp.progression||{}).sppTotal||0});});
+    (l.retiredPlayers||[]).forEach(p=>out.push({name:p.name,key:keyOf(p.skills,p.position),team:t,col,ink,state:p.reason==='drafted'?'Drafteado':p.reason==='dead'?'Muerto':'',st:p.statistics||{},spp:(p.progression||{}).sppTotal||0}));
+  }
+  return out;
+}
+function hofTable(title,rows,valKey,withExtra){
+  /* posiciones con empates: 1, 1, 3… */
+  let last=null,pos=0;
+  const body=rows.map((r,i)=>{ if(r.v!==last){pos=i+1;last=r.v}
+    return`<tr><td class="num">${pos}</td><td class="l"><a href="#team=${encodeURIComponent(r.p.team.file)}" class="hofname"><strong>${esc(r.p.name)}</strong>${r.p.state?` <span class="hofstate">(${r.p.state})</span>`:''}</a></td>${withExtra?`<td class="l hofkey">${esc(r.p.key)}</td>`:''}<td class="l"><span class="tchip" style="background:${r.p.col};color:${r.p.ink}">${esc(r.p.team.name)}</span></td>${withExtra?`<td class="hofcat" title="Categoría (pendiente de definir)">—</td>`:''}<td class="num"><strong>${r.v}</strong></td></tr>`; }).join('');
+  return`<section class="hofbox"><h2 class="round">${title}</h2>${rows.length?`<div class="tscroll"><table class="hoftable"><thead><tr><th>Pos</th><th class="l">Nombre</th>${withExtra?'<th class="l">Posición</th>':''}<th class="l">Equipo</th>${withExtra?'<th>Categoría</th>':''}<th>${withExtra?'PE total':'Total'}</th></tr></thead><tbody>${body}</tbody></table></div>`:'<p class="hint">Todavía no hay nadie en esta tabla.</p>'}</section>`;
+}
+function renderHof(){
+  if(!teams.length){$('#view').innerHTML='<div class="empty">Todavía no hay equipos inscritos.</div>';return}
+  const all=hofPlayers();
+  const rank=(getv)=>all.map(p=>({p,v:getv(p)})).filter(r=>r.v>0).sort((a,b)=>b.v-a.v||a.p.name.localeCompare(b.p.name,'es'));
+  $('#view').innerHTML=`<div class="hofintro"><h2 class="round">Hall of Fame</h2><p class="hint" style="text-align:center">Los mejores jugadores de la liga. Incluye a los jugadores muertos o drafteados, que se marcan junto al nombre.</p></div>
+  ${hofTable('Puntos de estrellato',rank(p=>p.spp),'spp',true)}
+  <div class="hofgrid">${HOF_TABLES.map(([id,title,k])=>hofTable(title,rank(p=>p.st[k]||0),k,false)).join('')}</div>`;
 }
 /* PlayOffs: cruces si la liga terminara ahora y beneficios por posición */
 function playoffsHTML(official){

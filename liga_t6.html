@@ -236,6 +236,12 @@ td.acc{white-space:nowrap;text-align:center}
 td.acc .ap{color:var(--good);font-family:var(--f-mono);font-weight:600}
 td.acc .asep{color:var(--muted)}
 td.acc .as{color:var(--muted);font-family:var(--f-mono)}
+
+.hlcols{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.hlcol{border-top:4px solid var(--tc);padding-top:8px}
+.hlcol h4{font-family:var(--f-title);text-transform:uppercase;letter-spacing:.05em;font-size:17px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.hlcol h4 .lg{height:26px;margin:0}
+@media (max-width:700px){.hlcols{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -574,21 +580,25 @@ function renderMatchReport(){
   const side=(s,cls)=>`<div class="mteam ${cls}" style="--tc:${s.d?colorOf(s.d):'#888'}">${s.t?(logoImg(s.t,'lgb')||''):''}<div class="mname">${s.t?`<a href="#team=${encodeURIComponent(s.t.file)}">${esc(s.name)}</a>`:esc(s.name)}</div><div class="race">${esc((s.d&&s.d.race)||'')}</div>${s.d&&s.d.league.coach?`<div class="meta">${esc(s.d.league.coach)}</div>`:''}</div>`;
   const stat=(lab,vh,va)=>{const tot=(vh||0)+(va||0)||1;return`<div class="srow"><span class="sv">${vh||0}</span><div class="sbar l"><i style="width:${(vh||0)/tot*100}%;background:${colH}"></i></div><span class="sl">${lab}</span><div class="sbar"><i style="width:${(va||0)/tot*100}%;background:${colA}"></i></div><span class="sv">${va||0}</span></div>`};
   const S1=st(h),S2=st(a);
-  const events=[h,a].flatMap(s=>((s.m&&s.m.playerEvents)||[]).map(ev=>({s,ev})));
-  const hl=[];
-  events.filter(x=>x.ev.mvp).forEach(x=>hl.push(`<li><span class="chip gold">MVP</span> #${esc(x.ev.num)} ${esc(x.ev.name||'')} <span class="race">${esc(x.s.name)}</span></li>`));
-  events.filter(x=>x.ev.touchdowns).forEach(x=>hl.push(`<li><span class="chip good">TD ×${x.ev.touchdowns}</span> #${esc(x.ev.num)} ${esc(x.ev.name||'')} <span class="race">${esc(x.s.name)}</span></li>`));
-  events.filter(x=>x.ev.injurySuffered==='dead').forEach(x=>hl.push(`<li><span class="chip bad">Muerto</span> #${esc(x.ev.num)} ${esc(x.ev.name||'')} <span class="race">${esc(x.s.name)}</span></li>`));
-  events.filter(x=>(x.ev.improvements||[]).length).forEach(x=>hl.push(`<li><span class="chip good">Mejora</span> #${esc(x.ev.num)} ${esc(x.ev.name||'')}: ${esc(x.ev.improvements.map(impText).join(', '))} <span class="race">${esc(x.s.name)}</span></li>`));
-  events.filter(x=>x.ev.draft).forEach(x=>hl.push(`<li><span class="chip ${x.ev.draft==='drafted'?'bad':'warn'}">${x.ev.draft==='drafted'?'Drafteado':'Pagó el valor'}</span> #${esc(x.ev.num)} ${esc(x.ev.name||'')} <span class="race">${esc(x.s.name)}</span></li>`));
-  events.filter(x=>x.ev.hatred).forEach(x=>hl.push(`<li><span class="chip">Odio</span> #${esc(x.ev.num)} ${esc(x.ev.name||'')} gana Odio (${esc(x.ev.hatred)}) <span class="race">${esc(x.s.name)}</span></li>`));
+  const hlOf=s=>{
+    const evs=(s.m&&s.m.playerEvents)||[], who=ev=>`#${esc(ev.num)} ${esc(ev.name||'')}`, out=[];
+    evs.filter(ev=>ev.mvp).forEach(ev=>out.push(`<li><span class="chip gold">MVP</span> ${who(ev)}</li>`));
+    evs.filter(ev=>ev.touchdowns).forEach(ev=>out.push(`<li><span class="chip good">TD ×${ev.touchdowns}</span> ${who(ev)}</li>`));
+    evs.filter(ev=>ev.injurySuffered==='dead').forEach(ev=>out.push(`<li><span class="chip bad">Muerto</span> ${who(ev)}</li>`));
+    evs.filter(ev=>(ev.improvements||[]).length).forEach(ev=>out.push(`<li><span class="chip good">Mejora</span> ${who(ev)}: ${esc(ev.improvements.map(impText).join(', '))}</li>`));
+    evs.filter(ev=>ev.draft).forEach(ev=>out.push(`<li><span class="chip ${ev.draft==='drafted'?'bad':'warn'}">${ev.draft==='drafted'?'Drafteado':'Pagó el valor'}</span> ${who(ev)}</li>`));
+    evs.filter(ev=>ev.hatred).forEach(ev=>out.push(`<li><span class="chip">Odio</span> ${who(ev)} gana Odio (${esc(ev.hatred)})</li>`));
+    return out;
+  };
+  const hlH=hlOf(h), hlA=hlOf(a);
+  const hlCol=(s,list)=>`<div class="hlcol" style="--tc:${s.d?colorOf(s.d):'#888'}"><h4>${s.t?logoImg(s.t,'lg'):''}${esc(s.name)}</h4>${list.length?`<ul class="hl">${list.join('')}</ul>`:'<p class="hint">Sin sucesos destacados.</p>'}</div>`;
   const when=(h.m&&h.m.registeredAt)||(a.m&&a.m.registeredAt)||'';
   $('#view').innerHTML=`<p><a href="#" data-back>← Volver a la liga</a></p>
   <div class="report"><div class="rhead">${roundLabel(o.round)} · ${esc(o.id)}${when?' · '+esc(String(when).slice(0,10)):''}</div>
   <div class="scoreboard">${side(h,'home')}<div class="bigscore ${win}"><span>${hs}</span><b>-</b><span>${as}</span><div class="verdict">${win==='d'?'Empate':'Gana '+esc(win==='h'?h.name:a.name)}</div></div>${side(a,'away')}</div>
   <div class="card"><h3>Resumen del partido</h3>
     ${stat('Touchdowns',hs,as)}${stat('Heridas leves',S1.lightInjuriesFor,S2.lightInjuriesFor)}${stat('Heridas graves',S1.seriousInjuriesFor,S2.seriousInjuriesFor)}${stat('Muertos causados',S1.deathsFor,S2.deathsFor)}${stat('Expulsados',S1.sentOffFor,S2.sentOffFor)}${stat('Calaveras',S1.skullsFor,S2.skullsFor)}${stat('Unos',S1.onesFor,S2.onesFor)}</div>
-  ${hl.length?`<div class="card"><h3>Lo más destacado</h3><ul class="hl">${hl.join('')}</ul></div>`:''}
+  ${hlH.length||hlA.length?`<div class="card"><h3>Lo más destacado</h3><div class="hlcols">${hlCol(h,hlH)}${hlCol(a,hlA)}</div></div>`:''}
   <div class="msides">${sideEventsHTML(h)}${sideEventsHTML(a)}</div>
   ${(h.m&&h.m.notes)||(a.m&&a.m.notes)?`<div class="card"><h3>Notas</h3><p>${esc((h.m&&h.m.notes)||(a.m&&a.m.notes))}</p></div>`:''}
   ${(h.m&&h.m.partial)||(a.m&&a.m.partial)?'<p class="hint">Falta el archivo de uno de los equipos, así que su detalle por jugador no está disponible.</p>':''}</div>`;

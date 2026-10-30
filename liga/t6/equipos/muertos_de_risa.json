@@ -3,11 +3,39 @@
   "race": "Tomb King",
   "color": "#f5c929",
   "textColor": "#9900ff",
+  "color_secundary": "#663c00",
+  "textColor_secundary": "#09dee1",
+  "leagueStarted": false,
   "staff": {
     "rerolls": {
       "clave": "reroll",
       "count": 0,
       "pricePerUnit": 100000,
+      "total": 0
+    },
+    "fans": {
+      "clave": "fans",
+      "count": 0,
+      "pricePerUnit": 20000,
+      "total": 0,
+      "free": 1
+    },
+    "assistants": {
+      "clave": "assistants",
+      "count": 0,
+      "pricePerUnit": 20000,
+      "total": 0
+    },
+    "cheerleaders": {
+      "clave": "cheerleaders",
+      "count": 0,
+      "pricePerUnit": 20000,
+      "total": 0
+    },
+    "apothecary": {
+      "clave": "apothecary",
+      "count": 0,
+      "pricePerUnit": 80000,
       "total": 0
     }
   },
@@ -123,7 +151,43 @@
       ]
     }
   ],
-  "formation": [],
+  "formation": [
+    {
+      "num": 1,
+      "col": 3,
+      "row": 0
+    },
+    {
+      "num": 2,
+      "col": 7,
+      "row": 0
+    },
+    {
+      "num": 3,
+      "col": 2,
+      "row": 0
+    },
+    {
+      "num": 4,
+      "col": 5,
+      "row": 0
+    },
+    {
+      "num": 5,
+      "col": 8,
+      "row": 0
+    },
+    {
+      "num": 6,
+      "col": 1,
+      "row": 0
+    },
+    {
+      "num": 7,
+      "col": 9,
+      "row": 0
+    }
+  ],
   "league": {
     "schemaVersion": 2,
     "season": 6,

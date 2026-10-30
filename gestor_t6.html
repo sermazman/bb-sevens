@@ -143,6 +143,11 @@ td.impcell{min-width:210px;white-space:normal}
 #impDlg[open]{max-width:640px}
 [hidden]{display:none!important}
 @media (max-width:600px){.brand{font-size:22px}.badge-team{font-size:24px}.mvtitle{font-size:24px}}
+
+td.acc{white-space:nowrap;text-align:center}
+td.acc .ap{color:var(--good);font-family:var(--f-mono);font-weight:600}
+td.acc .asep{color:var(--muted)}
+td.acc .as{color:var(--muted);font-family:var(--f-mono)}
 </style>
 </head>
 <body>
@@ -527,12 +532,14 @@ function renderRoster(){
         <option value="active" ${!out?'selected':''}>Disponible</option>
         <option value="missNextGame" ${out?'selected':''}>Baja próximo partido</option></select></td>
       <td class="draftcell">${nImp?`${nImp+1}+`:''}</td>
+      ${accHTML(state.data.race,tp.position)}
     </tr>`;}).join('');
   $('#p-roster').innerHTML=`
     <div class="tscroll"><table>
       <thead><tr><th>#</th><th class="l">Jugador</th><th>MO</th><th>FU</th><th>AG</th><th>PA</th><th>AR</th><th class="l">Habilidades</th>
-      ${STAT_COLS.map(([,t])=>`<th>${t}</th>`).join('')}<th>SPP</th><th>Precio</th><th>Estado</th><th>Draft</th></tr></thead>
+      ${STAT_COLS.map(([,t])=>`<th>${t}</th>`).join('')}<th>SPP</th><th>Precio</th><th>Estado</th><th>Draft</th><th title="Categorías de habilidad que puede ganar">Prim. / Sec.</th></tr></thead>
       <tbody>${rows}</tbody></table></div>
+    <p class="hint">${ACC_LEGEND}</p>
     <p class="hint">Precio y estado se pueden corregir a mano. Las estadísticas, los SPP (solo orientativos) y las lesiones se actualizan solos al registrar un partido.</p>`;
 }
 
@@ -1360,6 +1367,16 @@ function sheetSplitSkills(p){
 function loadImgDims(dataUrl){
   return new Promise(ok=>{ const im=new Image(); im.onload=()=>ok({dataUrl,w:im.naturalWidth,h:im.naturalHeight}); im.onerror=()=>ok(null); im.src=dataUrl; });
 }
+/* categorías de habilidad que puede ganar un jugador: primarias y secundarias (letras G A F P M T) */
+function skillAccess(race,pos){
+  const rk=Object.keys(SKILL_ACCESS).find(k=>k.toLowerCase()===String(race||'').trim().toLowerCase()); if(!rk) return null;
+  const r=SKILL_ACCESS[rk], pk=Object.keys(r).find(k=>k.toLowerCase()===String(pos||'').trim().toLowerCase()); if(!pk) return null;
+  const L=['G','A','F','P','M','T']; let prim='',sec='';
+  r[pk].split('').forEach((c,i)=>{ if(c==='P') prim+=L[i]; else if(c==='S') sec+=L[i]; });
+  return {prim,sec};
+}
+const accHTML=(race,pos)=>{const a=skillAccess(race,pos); return a?`<td class="acc"><span class="ap">${a.prim.split('').join(' ')||'-'}</span> <span class="asep">/</span> <span class="as">${a.sec.split('').join(' ')||'-'}</span></td>`:'<td class="acc">-</td>'};
+const ACC_LEGEND='Prim. / Sec.: categorías de habilidad que puede ganar el jugador (primarias en verde / secundarias en gris). G General · A Agilidad · F Fuerza · P Pase · M Mutación · T Triquiñuelas.';
 const sheetNorm=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9()]/g,'');
 function loadIconData(url){
   return new Promise(ok=>{ const im=new Image(); im.onload=()=>{ try{ const c=document.createElement('canvas'); c.width=im.naturalWidth; c.height=im.naturalHeight; c.getContext('2d').drawImage(im,0,0); ok(c.toDataURL('image/png')); }catch(err){ ok(null); } }; im.onerror=()=>ok(null); im.src=url; });
@@ -1428,11 +1445,11 @@ async function makeSheetPdf(d,e,logo){
   y+=BARH+2;
 
   /* tabla de jugadores */
-  const cols=[['#',6],['NOMBRE JUGADOR',32],['TIPO',22],['MO',6.5],['FU',6.5],['AG',6.5],['PA',6.5],['AR',6.5],
-    ['HABILIDADES',62],['CLAVE JUGADOR',24],['LPP /RT',8],['ESP',6.5],['CP',6.5],['TD',6.5],['DES',6.5],['INT',6.5],
-    ['HL',6.5],['HG',6.5],['RIP',6.5],['MVP',6.5],['SPP Totales',16],['PRECIO',15],['DRAFT',8]];
+  const cols=[['#',6],['NOMBRE JUGADOR',30],['TIPO',19],['MO',6.5],['FU',6.5],['AG',6.5],['PA',6.5],['AR',6.5],
+    ['HABILIDADES',50],['CLAVE JUGADOR',21],['LPP /RT',8],['ESP',6.5],['CP',6.5],['TD',6.5],['DES',6.5],['INT',6.5],
+    ['HL',6.5],['HG',6.5],['RIP',6.5],['MVP',6.5],['SPP Totales',14],['PRECIO',14],['DRAFT',8],['PRIM / SEC',23]];
   const xs=[]; let acc=M; cols.forEach(c=>{ xs.push(acc); acc+=c[1]; });
-  cols.forEach((c,i)=>cell(xs[i],y,c[1],8,{fill:DK,text:c[0],size:i===9||i===20||i===22?5.2:6,bold:true,color:WH}));
+  cols.forEach((c,i)=>cell(xs[i],y,c[1],8,{fill:DK,text:c[0],size:i===9||i===20||i===22||i===23?5.2:6,bold:true,color:WH}));
   y+=8;
   const n=Math.max(11,d.players.length), rowH=Math.min(10.2,112/n);
   const lpOf=num=>l.players.find(p=>p.num===num);
@@ -1450,10 +1467,11 @@ async function makeSheetPdf(d,e,logo){
     /* habilidades ganadas en la liga (mejoras y Odio): se marcan en rojo */
     const gained=new Set(imps.filter(i=>i.skill).map(i=>sheetNorm(i.skill)));
     ((lp&&lp.injuries)||[]).forEach(inj=>{ if(inj.hatred) gained.add(sheetNorm(`Odio (${inj.hatred})`)); });
+    const acc=skillAccess(d.race,p.position), accLines=acc?`${acc.prim.split('').join(' ')||'-'} / ${acc.sec.split('').join(' ')||'-'}`:'-';
     const segs=rest.map(t=>({t,red:gained.has(sheetNorm(t))}));
     const stc=(lp&&lp.statistics)||{}, sv=k=>stc[k]?String(stc[k]):'';   /* estadísticas acumuladas de la liga */
     const vals=[String(p.num),null,p.position,p.ma,p.st,p.ag,p.pa,p.av,rest.join(', '),key,out?'SÍ':'',sv('sprints'),sv('passes'),sv('touchdowns'),sv('deflections'),sv('interceptions'),sv('lightInjuries'),sv('seriousInjuries'),sv('deaths'),sv('mvp'),
-      String(prog.sppTotal||0),fmt(price),skillsUp?`${skillsUp+1}+`:''];
+      String(prog.sppTotal||0),fmt(price),skillsUp?`${skillsUp+1}+`:'',accLines];
     cols.forEach((c,i)=>{
       const o={text:vals[i]??'',size:7}; if(out&&i>0) o.fill=ORG;
       if(i===0){ o.fill=DK; o.color=WH; o.bold=true; }
@@ -1464,6 +1482,7 @@ async function makeSheetPdf(d,e,logo){
       if(i===20){ o.bold=true; o.size=8; }
       if(i===21){ o.align='center'; o.size=7; }
       if(i===22){ if(!out) o.fill=BL; o.bold=true; o.size=9; }
+      if(i===23){ o.size=7.5; o.bold=true; }
       if(i===10){ o.bold=true; o.size=7.5; }
       cell(xs[i],y,c[1],rowH,o);
     });

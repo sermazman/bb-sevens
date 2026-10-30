@@ -132,3 +132,6 @@ Las habilidades se añaden además a `players[].skills` (nombre exacto de `roste
 
 ## PlayOffs (28-oct)
 - Jornadas 1–10 (`T6-J01`…) y fase final: semifinal (`round` 11, `T6-SF`) y final (`round` 12, `T6-F`). Los partidos con `round` > 10 no cuentan en la clasificación de la fase regular.
+
+## Habilidades posibles (30-oct)
+- Roster (gestor y visor) y hoja PDF muestran a la derecha del todo las categorías que el jugador puede ganar, en una línea: «primarias / secundarias» (G General, A Agilidad, F Fuerza, P Pase, M Mutación, T Triquiñuelas; «-» si no hay).

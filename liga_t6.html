@@ -231,6 +231,11 @@ table.hoftable td,table.hoftable th{padding:7px 10px}
 .hofkey{color:var(--muted);font-size:13px}.hofcat{color:var(--muted)}
 .tchip{display:inline-block;padding:2px 10px;border-radius:5px;font-size:13px;font-weight:600;letter-spacing:.03em;white-space:nowrap}
 @media (max-width:820px){.hofgrid{grid-template-columns:1fr}}
+
+td.acc{white-space:nowrap;text-align:center}
+td.acc .ap{color:var(--good);font-family:var(--f-mono);font-weight:600}
+td.acc .asep{color:var(--muted)}
+td.acc .as{color:var(--muted);font-family:var(--f-mono)}
 </style>
 </head>
 <body>
@@ -614,9 +619,9 @@ function tRoster(d){
     ${STAT_COLS.map(([k])=>`<td class="num">${s[k]||0}</td>`).join('')}<td class="num"><strong>${l.progression.sppTotal||0}</strong></td>
     <td class="num">${fmt((l.price||0)+impValue(l))}</td>
     <td>${out?'<span class="pill out">Baja próximo partido</span>':'<span class="pill ok">Disponible</span>'}</td>
-    <td class="draftcell">${skillCount(l)?`${skillCount(l)+1}+`:''}</td></tr>`}).join('');
-  $('#tpanel').innerHTML=`<div class="tscroll"><table><thead><tr><th>#</th><th class="l">Jugador</th><th>MO</th><th>FU</th><th>AG</th><th>PA</th><th>AR</th><th class="l">Habilidades</th>${STAT_COLS.map(([,t])=>`<th>${t}</th>`).join('')}<th>SPP</th><th>Valor</th><th>Estado</th><th>Draft</th></tr></thead><tbody>${rows}</tbody></table></div>
-  <p class="hint">Las habilidades en amarillo son mejoras ganadas en la liga.</p>`;
+    <td class="draftcell">${skillCount(l)?`${skillCount(l)+1}+`:''}</td>${accHTML(d.race,p.position)}</tr>`}).join('');
+  $('#tpanel').innerHTML=`<div class="tscroll"><table><thead><tr><th>#</th><th class="l">Jugador</th><th>MO</th><th>FU</th><th>AG</th><th>PA</th><th>AR</th><th class="l">Habilidades</th>${STAT_COLS.map(([,t])=>`<th>${t}</th>`).join('')}<th>SPP</th><th>Valor</th><th>Estado</th><th>Draft</th><th title="Categorías de habilidad que puede ganar">Prim. / Sec.</th></tr></thead><tbody>${rows}</tbody></table></div>
+  <p class="hint">Las habilidades en amarillo son mejoras ganadas en la liga. ${ACC_LEGEND}</p>`;
 }
 function tHistory(d){
   const ms=d.league.matches;
@@ -683,6 +688,17 @@ function sheetSplitSkills(p){
 function loadImgDims(dataUrl){
   return new Promise(ok=>{ const im=new Image(); im.onload=()=>ok({dataUrl,w:im.naturalWidth,h:im.naturalHeight}); im.onerror=()=>ok(null); im.src=dataUrl; });
 }
+let SKILL_ACCESS = {"Amazon":{"Eagle Warrior Linewomen":"PSS---","Python Warrior Throwers":"PSSP--","Piranha Warrior Blitzers":"PPS---","Jaguar Warrior Blockers":"PSP---","Journey Eagle Warrior Linewomen":"PSS---"},"Black Orc":{"Goblin Bruiser":"SPSS-P","Black Orc":"PSP--S","Trained Troll":"SSPS--","Journey Goblin":"SPSS-P"},"Bretonia":{"Squire":"PSS---","Knigth Catcher":"PPS---","Knigth Thrower":"PSSP--","Grial Knigths":"PSP---","Journey Eagle Warrior Linewomen":"PSS---"},"Chaos Chosen":{"Beastman Lineman":"PSSSPS","Chaos Chosen":"PSP-PS","Troll":"SSPSP-","Ogre":"SSP-P-","Minotaur":"SSP-P-","Journey Beastman":"PSSSPS"},"Chaos Dwarf":{"Hobgoblin Lineman":"SSS--P","Sneaky Stabba":"PSS--P","Chaos Dwarf Blocker":"PSP-SS","Flamesmith":"PSP-SS","Bull Centaur":"PSP-SS","Minotaur":"SSP-P-","Journey Hobgoblin Lineman":"SSS--P"},"Chaos Renegades":{"Human Renegade":"PSS-PP","Goblin Renegade":"SP-SPP","Orc Renegade":"PSS-PP","Skaven Renegade":"PSS-PP","Dark Elf Renegade":"PPS-PP","Human Thrower Renegade":"PSSPPP","Troll":"SSPSS-","Ogre":"SSP-S-","Minotaur":"SSP-S-","Rat Ogre":"SSP-S-","Journey Human Renegade":"PSS-PP"},"Dark Elf":{"Lineman":"PPS--S","Runner":"PPSP-S","Assassin":"SPS--P","Blitzer":"PPSS-S","Witch Elf":"PPS--S","Journey Elf":"PPS--S"},"Dwarf":{"Lineman":"P-S--P","Runner":"P-SP--","Blitzer":"P-PS--","Troll Slayer":"P-P--S","Deathroller":"S-P--P","Journey Lineman":"P-S--P"},"Elven Union":{"Lineman":"PPS---","Thrower":"PPSP--","Catcher":"PPS---","Blitzer":"PPSS--","Journey Elf":"PPS---"},"Goblin":{"Goblin":"SPSS--","Bombardier":"SPSP--","Looney":"SPS---","Doom Diver":"SPS---","Ooligan":"SPSS--","Fanatic":"SSP---","Pogoer":"SPSS--","Troll":"SSPS--","Journey Goblin":"SPSS--"},"Gnome":{"Linemen":"SPSS-S","Illusionist":"SP-P-S","Woodland Fox":"------","Beastmaster":"SPS--S","Altern Forest Treeman":"SSPS--","Journey Lineman":"SPSS-S"},"Halfling":{"Halfling Hopeful":"SPS---","Halfling Catcher":"SPSS--","Halfling Hefty":"SPS---","Forest Treeman":"SSPS--","Journey Halfling":"SPS---"},"High Elf":{"Lineman":"PPS---","White Lion":"PPSS--","Phoenix Warrior":"PPSP--","Dragon Prince":"PPS---","Journey Elf":"PPS---"},"Human":{"Lineman":"PSS--S","Halfling Hopeful":"SPS--S","Catcher":"PPSS-S","Thrower":"PSSP-S","Blitzer":"PSP--S","Ogre":"SSP---","Journeyman":"PSS--S"},"Imperial Nobility":{"Imperial Retainer":"PSS---","Imperial Thrower":"PSSP--","Noble Blitzer":"PPSS--","Bodyguard":"PSP---","Ogre":"SSP---","Journeyman":"PSS---"},"Khorne":{"Bloodborn Marauder":"PSS-PS","Khorngor":"PSPSPS","Bloodseeker":"PSP-PS","Bloodspawn":"SSP-P-","Journey Bloodborn":"PSS-PS"},"Lizardman":{"Skink":"SPSS-S","Chameleon Skink":"SPSP-S","Saurus":"PSP---","Kroxigor":"SSP---","Journey Skink":"SPSS-S"},"Necromantic":{"Zombie Lineman":"PSS--P","Ghoul Runner":"PPSS-S","Wraith":"PSP--S","Flesh Golem":"PSP--S","Werewolf":"PPSS-S","Raised Zombie":"PSS--P","Journey Zombie":"PSS--P"},"Norse":{"Raider Lineman":"PSSS--","Beer Boar":"-S----","Berserker":"PSPS--","Valkyrie":"PPSP--","Ulfwerner":"PSP---","Yhetee":"SSP---","Journeyman":"PSSS--"},"Nurgle":{"Rotter":"PSS-PP","Pestigor":"PSPSPS","Bloater":"PSP-PS","Rotspawn":"S-P-SS","Journey Rotter":"PSS-PP"},"Ogre":{"Gnoblar Linemen":"SP---P","Ogre Blocker":"SSPS-S","Ogre Runt Punter":"SSPP-S","Journey Gnoblar":"SP---P"},"Old World Alliance":{"Human Lineman":"PSS---","Halfling Hopeful":"SPS---","Human Catcher":"PPSS--","Dwarf Lineman":"P-S--P","Human Thrower":"PSSP--","Dwarf Runner":"PSSP--","Human Blitzer":"PSP---","Dwarf Blitzer":"P-PS--","Troll Slayer":"PSP---","Ogre":"SSP---","Altern Forest Treeman":"SSPS--","Journeyman":"PSS---"},"Orcs":{"Lineman":"PSP--S","Goblin":"SPSS-P","Thrower":"PSSP-S","Blitzer":"PSP--S","Big Un Blocker":"PSP--S","Troll":"SSPS--","Journey Orc":"PSP--S"},"Shambling Undead":{"Skeleton Lineman":"PSS--S","Zombie Lineman":"PSS--P","Ghoul Runner":"PPSS-S","Wight Blitzer":"PSP--S","Mummy":"SSP---","Raised Zombie":"PSS--P","Skeleton Journeyman":"PSS--S","Zombie Journeyman":"PSS--P"},"Slann":{"Lineman":"PSS---","Catcher":"PPSS--","Blitzer":"PPPS--","Kroxigor":"SSP---","Journey Slann":"PSS---"},"Skaven":{"ClanRat":"PSS-SP","Thrower":"PSSPSS","Gutter Runner":"PPS-SP","Blitzer":"PSP-SS","Rat Ogre":"SSP-S-","Journey ClanRat":"PSS-SP"},"Tomb King":{"Skeleton Lineman":"PSS--S","Tomb King Thrower":"PSSP-S","Tomb King Blitzers":"PSP--S","Tomb Guardian":"SSP---","Journey Skeleton":"PSS--S"},"Snotling":{"Snotling":"SPS---","Fungus Flinga":"SPSP--","Fun-hoppa":"SPS---","Stilty Runna":"SPS---","Pump Wagon":"SSP---","Trained Troll":"SSPS--","Journey Snotling":"SPS---"},"Underworld Denizens":{"Goblin":"SPSSPP","Snotling":"SP--PP","Skaven Clanrat":"PSS-PP","Skaven Thrower":"PSSPPS","Gutter Runner":"PPS-PP","Skaven Blitzer":"PSP-PS","Troll":"SSPSP-","Rat Ogre":"SSPSP-","Journey Goblin":"SPSSPP"},"Vampire":{"Thrall":"PSS---","Vampire Runner":"PPSS--","Vampire Thrower":"PPSP--","Vampire Blitzer":"PPP---","Vargheist":"SSP---","Journey Thrall":"PSS---"},"Elfos Silvanos":{"Lineman":"PP----","Thrower":"PPSP--","Catcher":"PPSS--","Wardancer":"PPSS--","Treeman":"SSPS--","Journey Elf":"PP----"}};
+/* categorías de habilidad que puede ganar un jugador: primarias y secundarias (letras G A F P M T) */
+function skillAccess(race,pos){
+  const rk=Object.keys(SKILL_ACCESS).find(k=>k.toLowerCase()===String(race||'').trim().toLowerCase()); if(!rk) return null;
+  const r=SKILL_ACCESS[rk], pk=Object.keys(r).find(k=>k.toLowerCase()===String(pos||'').trim().toLowerCase()); if(!pk) return null;
+  const L=['G','A','F','P','M','T']; let prim='',sec='';
+  r[pk].split('').forEach((c,i)=>{ if(c==='P') prim+=L[i]; else if(c==='S') sec+=L[i]; });
+  return {prim,sec};
+}
+const accHTML=(race,pos)=>{const a=skillAccess(race,pos); return a?`<td class="acc"><span class="ap">${a.prim.split('').join(' ')||'-'}</span> <span class="asep">/</span> <span class="as">${a.sec.split('').join(' ')||'-'}</span></td>`:'<td class="acc">-</td>'};
+const ACC_LEGEND='Prim. / Sec.: categorías de habilidad que puede ganar el jugador (primarias en verde / secundarias en gris). G General · A Agilidad · F Fuerza · P Pase · M Mutación · T Triquiñuelas.';
 const sheetNorm=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9()]/g,'');
 function loadIconData(url){
   return new Promise(ok=>{ const im=new Image(); im.onload=()=>{ try{ const c=document.createElement('canvas'); c.width=im.naturalWidth; c.height=im.naturalHeight; c.getContext('2d').drawImage(im,0,0); ok(c.toDataURL('image/png')); }catch(err){ ok(null); } }; im.onerror=()=>ok(null); im.src=url; });
@@ -751,11 +767,11 @@ async function makeSheetPdf(d,e,logo){
   y+=BARH+2;
 
   /* tabla de jugadores */
-  const cols=[['#',6],['NOMBRE JUGADOR',32],['TIPO',22],['MO',6.5],['FU',6.5],['AG',6.5],['PA',6.5],['AR',6.5],
-    ['HABILIDADES',62],['CLAVE JUGADOR',24],['LPP /RT',8],['ESP',6.5],['CP',6.5],['TD',6.5],['DES',6.5],['INT',6.5],
-    ['HL',6.5],['HG',6.5],['RIP',6.5],['MVP',6.5],['SPP Totales',16],['PRECIO',15],['DRAFT',8]];
+  const cols=[['#',6],['NOMBRE JUGADOR',30],['TIPO',19],['MO',6.5],['FU',6.5],['AG',6.5],['PA',6.5],['AR',6.5],
+    ['HABILIDADES',50],['CLAVE JUGADOR',21],['LPP /RT',8],['ESP',6.5],['CP',6.5],['TD',6.5],['DES',6.5],['INT',6.5],
+    ['HL',6.5],['HG',6.5],['RIP',6.5],['MVP',6.5],['SPP Totales',14],['PRECIO',14],['DRAFT',8],['PRIM / SEC',23]];
   const xs=[]; let acc=M; cols.forEach(c=>{ xs.push(acc); acc+=c[1]; });
-  cols.forEach((c,i)=>cell(xs[i],y,c[1],8,{fill:DK,text:c[0],size:i===9||i===20||i===22?5.2:6,bold:true,color:WH}));
+  cols.forEach((c,i)=>cell(xs[i],y,c[1],8,{fill:DK,text:c[0],size:i===9||i===20||i===22||i===23?5.2:6,bold:true,color:WH}));
   y+=8;
   const n=Math.max(11,d.players.length), rowH=Math.min(10.2,112/n);
   const lpOf=num=>l.players.find(p=>p.num===num);
@@ -773,10 +789,11 @@ async function makeSheetPdf(d,e,logo){
     /* habilidades ganadas en la liga (mejoras y Odio): se marcan en rojo */
     const gained=new Set(imps.filter(i=>i.skill).map(i=>sheetNorm(i.skill)));
     ((lp&&lp.injuries)||[]).forEach(inj=>{ if(inj.hatred) gained.add(sheetNorm(`Odio (${inj.hatred})`)); });
+    const acc=skillAccess(d.race,p.position), accLines=acc?`${acc.prim.split('').join(' ')||'-'} / ${acc.sec.split('').join(' ')||'-'}`:'-';
     const segs=rest.map(t=>({t,red:gained.has(sheetNorm(t))}));
     const stc=(lp&&lp.statistics)||{}, sv=k=>stc[k]?String(stc[k]):'';   /* estadísticas acumuladas de la liga */
     const vals=[String(p.num),null,p.position,p.ma,p.st,p.ag,p.pa,p.av,rest.join(', '),key,out?'SÍ':'',sv('sprints'),sv('passes'),sv('touchdowns'),sv('deflections'),sv('interceptions'),sv('lightInjuries'),sv('seriousInjuries'),sv('deaths'),sv('mvp'),
-      String(prog.sppTotal||0),fmt(price),skillsUp?`${skillsUp+1}+`:''];
+      String(prog.sppTotal||0),fmt(price),skillsUp?`${skillsUp+1}+`:'',accLines];
     cols.forEach((c,i)=>{
       const o={text:vals[i]??'',size:7}; if(out&&i>0) o.fill=ORG;
       if(i===0){ o.fill=DK; o.color=WH; o.bold=true; }
@@ -787,6 +804,7 @@ async function makeSheetPdf(d,e,logo){
       if(i===20){ o.bold=true; o.size=8; }
       if(i===21){ o.align='center'; o.size=7; }
       if(i===22){ if(!out) o.fill=BL; o.bold=true; o.size=9; }
+      if(i===23){ o.size=7.5; o.bold=true; }
       if(i===10){ o.bold=true; o.size=7.5; }
       cell(xs[i],y,c[1],rowH,o);
     });

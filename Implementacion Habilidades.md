@@ -58,15 +58,28 @@ Cuando este jugador declara una acción de Placaje, puede repetir un único resu
 Habrá que avisar en el modal si quiere usar reroll (si tiene) para lanzar todos los dados o usar LUCHADOR para lanzar solo 1 dado con resultado ambos caidos.
 Y el siguiente proceso es igual, si tiene varios dados se elige el que quiere el entrenador del equipo segun tenemos ahora programado, no hay que cambiar nada.
 
+☣️- MANTENERSE FIRME
+Cuando este jugador vaya a ser empujado durante una acción de Placaje, incluido debido a un empujón en cadena, puede elegir no ser empujado y permanecer en su casilla actual. El uso de esta habilidad no impide a un jugador con la habilidad Furia realizar una segunda acción de Placaje, siempre y cuando este jugador siga En pie.
+Debe salir un modal que indique si quiere que sea empujado o no. tambien ocurre con un zasca o un desequilibrado ya que primero se empuja y luego lo derriba.
+
 ☣️- METER LA BOTA (pruebas desde 10-09-2026) Este jugador puede prestar apoyos ofensivos cuando un compañero realiza una acción de Falta sin importar cuántos Jugadores rivales estén Marcando a este jugador.
 
 ☣️- NERVIOS DE ACERO (pruebas desde 16-09-2026) Este jugador puede ignorar todos los modificadores por estar siendo Marcado al hacer un chequeo de Agilidad para atrapar el balón, o al hacer un chequeo de Pase para pasar el balón.
+
+☣️- ODIO 
+Cuando este jugador realiza una acción de Placaje contra un jugador con la misma clave que figura entre paréntesis, puede repetir un único resultado de Atacante derribado.
+Debe salir aviso en el modal de placaje para el jugador que lo cumpla
 
 ☣️- PASE A LO LOCO (desde 28-09-2026)
 Cuando este jugador realice una acción de Pase o una acción especial de Lanzar una bomba, puede declarar cualquier casilla del campo como casilla objetivo en lugar de usar la regla de pases. Haz un chequeo de Pase de
 forma normal, tratando el lanzamiento corno una Bomba larga y cualquier resultado de pase preciso como un pase impreciso. Un Pase a lo loco no puede interceptarse.
 
 ☣️- PASE SEGURO (pruebas desde 16-09-2026) Si este Jugador saca un 1 natural al realizar un chequeo de Pase, no se producirá un balón perdido. En lugar de eso, este jugador mantendrá la posesión del balón y su activación terminará de inmediato. Eso no provoca un cambio de turno.
+
+☣️- PATADA
+Si este jugador es designado como pateador, cuando el balón se desvíe su Entrenador puede elegir que se desvíe solo 1D3 casillas, en lugar de las habituales 1D6.
+Para hacerlo más rápido, siempre que un jugador esté en el campo cuando su equipo haga la patada del balón, lo aplicamos directamente, diciento XXXX jugador usa PATADA y rebota.....
+Lo que tenemos que revisar es que en la patada inicial ahora, se lanza 1d8 y 2d6, y se elige el 1d6 menor. ASí que si un jugador tiene PATADA, se hará con 2d3 y 1 d8, eligiendo el 1d3 menor para el rebote.
 
 ☣️- PLACAJE DEFENSIVO (desde 16-10-2026)
 Cuando un jugador rival intente esquivar para salir de una casilla en la zona de defensa de este jugador, no podrá usar su habilidad Esquivar. Además, cuando este jugador realice una acción de Placaje contra un jugador rival, se considerará que dicho rival no tiene la habilidad de Esquivar si se elige un resultado de Desequilibrado.
@@ -93,18 +106,21 @@ Cuando este jugador sufra una Lesión, antes de hacer su tirada de Lesiones, tir
 
 ☣️- ROMPER DEFENSAS (pruebas desde 10-09-2026) Durante los turnos del equipo rival, los jugadores rivales Marcados por este jugador no pueden usar las habilidades Defensa ni Meter la bota.
 
+☣️- TEMBLOROSO
+Este jugador no puede declarar acciones de Asegurar el balón.
+Por lo que en la ruleta no puede tener esta opcion ese jugador.
+Así como no puede salir en ninguna ruleta mientras que el balón no esté en el suelo y que además pueda cumplir el Asegurar el balón con sus reglas específicas.
+
+☣️- ZAFARSE
+Cuando este jugador sea empujado como resultado de una acción de Placaje realizada contra él, el jugador rival no puede hacer el movimiento de impulso.
+Esta habilidad no se puede utilizar contra un jugador con el rasgo Bola con cadena, ni contra un jugador con la habilidad Imparable que esté realizando una acción de Penetración.
+
 SIGUIENTES:
-ODIO
+
 HUMANOIDE BALA
 LANZAR COMPAÑERO
 SIEMPRE HAMBRIENTO
 PROYECTIL VOMITO
 BRAZO FUERTE
 TRONCO VA
-MANTENERSE FIRME
-TEMBLOROSO
-
 LANZAR COMPAÑERO
-
-
-

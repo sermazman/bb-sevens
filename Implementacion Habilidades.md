@@ -106,6 +106,9 @@ Cuando este jugador sufra una Lesión, antes de hacer su tirada de Lesiones, tir
 
 ☣️- ROMPER DEFENSAS (pruebas desde 10-09-2026) Durante los turnos del equipo rival, los jugadores rivales Marcados por este jugador no pueden usar las habilidades Defensa ni Meter la bota.
 
+☣️- SIN BALON o EL BALON NI VERLO
+Un jugador con este rasgo nunca puede ser el portador del balón. Si se requlere que este Jugador intente atrapar o recoger el balón, fallará automáticamente dicho Intento como si hubiera sacado un 1 natural. Un Jugador con este rasgo no puede intentar Interceptar un Pase.
+
 ☣️- TEMBLOROSO
 Este jugador no puede declarar acciones de Asegurar el balón.
 Por lo que en la ruleta no puede tener esta opcion ese jugador.

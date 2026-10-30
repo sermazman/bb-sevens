@@ -76,6 +76,17 @@ function renderResourceIcons(){
         '<span class="gold-icon" style="--icon:url(\'icons/' + r.icon + '\')"></span>' +
         (num!=='' ? '<b class="mono">' + num + '</b>' : '') + '</span>';
     });
+    [2,4,5,6,7].forEach(n=>{
+      const total = despCount(t, n); if(!(total>0)) return;
+      const left = despList(t).filter(d=>d.n===n && !d.used).length;
+      const gone = left<=0, di = DESP_ICONS[n];
+      const armed = (n===2 && despisteArmed[t]) || (n===4 && ajusteArmed[t]);
+      const click = !gone && n!==5;
+      const tip = di.name + (gone ? ' (usada)' : armed ? ' (activada)' : left>0 ? ' — disponible' + (n===5 ? ' (se ofrece al declarar un Pase)' : ' — clic para usarla') : '');
+      html += '<span class="sb-ico' + (gone ? ' used' : '') + (click ? ' clickable' : '') + (armed ? ' armed' : '') + '" title="' + tip + '"' +
+        (click ? ' onclick="useDesperate(\'' + t + '\',' + n + ')"' : '') + '>' +
+        '<span class="gold-icon" style="--icon:url(\'icons/' + di.icon + '\')"></span>' + (total>1 ? '<b class="mono">' + left + '</b>' : '') + '</span>';
+    });
     if(prayerFlag(t==='A'?'B':'A','escrutinio')){
       html += '<span class="sb-ico alert" title="Escrutinio arbitral: si rompe la armadura en una Falta, este equipo es Expulsado automáticamente"><span class="gold-icon" style="--icon:url(\'icons/silbato.png\')"></span></span>';
     }
@@ -91,6 +102,7 @@ function renderResourceIcons(){
   });
 }
 function useResource(team, key){
+  if(key==='wizard'){ wizardIconClick(team); return; }
   const r = RES_ICONS.find(x=>x.key===key);
   if(!r || !r.once) return;
   const total = resTotal(team, key), used = (teamUsedRes[team] || {})[key] || 0;
@@ -142,7 +154,7 @@ function resetRerollsForNewHalf(){
   ['A','B'].forEach(team=>{
     const staff = teamStaff[team];
     const rm = rerollMax(team);
-    if(rm!==null){ teamRerollsLeft[team] = rm; }
+    if(rm!==null){ const bl = Math.min(teamBonusRR[team] || 0, teamRerollsLeft[team] || 0); teamBonusRR[team] = bl; teamRerollsLeft[team] = rm + bl; }
   });
   renderStaffPanels();
 }
@@ -614,6 +626,7 @@ function snapshotState(){
     kickoffDistRowVisible: document.getElementById('kickoffDistRow').style.display!=='none',
     kickoffDistance,
     kickoffEvt, teamBribe, cheerBonus, teamFreeRR, teamInc, teamUsedRes, trapChecked, regenHelperOpen,
+    despisteArmed, ajusteArmed, ajusteFouler, escenaCatch, teamBonusRR, ownTurnChanged, wizardSt, armorBonusMap,
     kickoffDirDieText: document.getElementById('kickoffDirDie').textContent,
     kickoffDistDieText: document.getElementById('kickoffDistDie').textContent,
     bounceDirDieText: document.getElementById('bounceDirDie').textContent,
@@ -936,6 +949,15 @@ function applyRemoteState(payload){
   teamFreeRR = Object.assign({A:-1,B:-1}, payload.teamFreeRR || {});
   teamInc = Object.assign({A:{},B:{}}, payload.teamInc || {});
   trapChecked = payload.trapChecked || {};
+  despisteArmed = Object.assign({A:false,B:false}, payload.despisteArmed || {});
+  ajusteArmed = Object.assign({A:false,B:false}, payload.ajusteArmed || {});
+  ajusteFouler = (payload.ajusteFouler===undefined ? null : payload.ajusteFouler);
+  escenaCatch = Object.assign({A:false,B:false}, payload.escenaCatch || {});
+  teamBonusRR = Object.assign({A:0,B:0}, payload.teamBonusRR || {});
+  ownTurnChanged = Object.assign({A:false,B:false}, payload.ownTurnChanged || {});
+  wizardSt = payload.wizardSt || null;
+  armorBonusMap = payload.armorBonusMap || {};
+  try{ renderWizard(); }catch(e){}
   regenHelperOpen = !!payload.regenHelperOpen;
   try{ renderRegenHelper(); }catch(e){}
   teamUsedRes = Object.assign({A:{},B:{}}, payload.teamUsedRes || {});
@@ -1003,6 +1025,7 @@ function anyModalOpen(){
          document.getElementById('forcejearModal').classList.contains('show') ||
          document.getElementById('veteranoBlockModal').classList.contains('show') ||
          document.getElementById('infoModal').classList.contains('show') ||
+         document.getElementById('wizardModal').classList.contains('show') ||
          document.getElementById('passModal').classList.contains('show') ||
          document.getElementById('interceptModal').classList.contains('show') ||
          document.getElementById('heroicReceptionPanel').style.display==='block' ||
@@ -1338,6 +1361,7 @@ function clearTeam(team){
   teamRerollsLeft[team] = 0;
   teamVerify[team] = 'none';
   teamBribe[team] = 'none'; cheerBonus[team] = 'none';
+  despisteArmed[team] = false; ajusteArmed[team] = false; escenaCatch[team] = false; teamBonusRR[team] = 0; ownTurnChanged[team] = false;
   teamInc[team] = {}; teamUsedRes[team] = {};
 
   log('🗑️ ' + oldName + ' borrado por completo (jugadores, nombre, colores, raza y staff restablecidos).');
@@ -1430,7 +1454,8 @@ function renderRosters(){
       const condTag = p.condition==='tumbado' ? `<span class="downed-tag">TUMBADO</span>`
                      : p.condition==='aturdido' ? `<span class="downed-tag">ATURDIDO</span>`
                      : p.condition==='despistado' ? `<span class="downed-tag">DESPISTADO</span>` : '';
-      const heatTag = p.indigestOut ? `<span class="ri-weather" title="Indigestión: encerrado en la letrina el resto de la entrada">🤢 LETRINA</span>` : p.heatRest ? `<span class="ri-weather" title="Descansa por Calor Asfixiante: no se puede colocar esta entrada"><span class="gold-icon" style="--icon:url('icons/calor_asfixiante.png')"></span>DESCANSA</span>` : '';
+      const heatTag = p.indigestOut ? `<span class="ri-weather" title="Indigestión: encerrado en la letrina el resto de la entrada">🤢 LETRINA</span>` : p.resaca ? `<span class="ri-weather" title="Resaca: no puede jugar la primera entrada"><span class="gold-icon" style="--icon:url('icons/calor_asfixiante.png')"></span>RESACA</span>` : p.heatRest ? `<span class="ri-weather" title="Descansa por Calor Asfixiante: no se puede colocar esta entrada"><span class="gold-icon" style="--icon:url('icons/calor_asfixiante.png')"></span>DESCANSA</span>` : '';
+      const frogTag = p.frog ? '<span class="ri-weather" title="Rana hasta el final de la entrada"><span class="gold-icon" style="--icon:url(\'icons/rana.png\'); background:' + tokenColorFor(p) + '"></span>RANA</span>' : '';
       const prayLeft = (p.prayerSkills || []).slice();
       const skillsText = (p.skills && p.skills.length) ? p.skills.map(sk=>{ const k = prayLeft.indexOf(sk); if(k>=0){ prayLeft.splice(k,1); return '<u title="Ganada por Plegaria a Nuffle">' + sk + '</u>'; } return sk; }).join(', ') : 'Sin habilidades';
       const pkS = p.prayerSkills || [];
@@ -1444,7 +1469,7 @@ function renderRosters(){
           <span class="num" style="background:${tokenColorFor(p)}; color:${textColorFor(p)}; ${numBorderStyle}">${p.num}</span>
           <span class="pname">${p.name}</span>${isCaptain(p) ? '<span class="cap-mini" title="Capitán">C</span>' : ''}
           <span class="pos">${posText}</span>
-          ${vetTag}${prayTag}${condTag}${heatTag}
+          ${vetTag}${prayTag}${frogTag}${condTag}${heatTag}
           <button class="rm-btn" title="Eliminar" onclick="removePlayer(${p.id}, event)">✕</button>
         </div>
         <div class="ri-row2 mono">MA ${p.ma ?? '-'} · ST ${p.st ?? '-'} · AG ${p.ag ?? '-'} · PA ${p.pa ?? '-'} · AV ${p.avBoost ? '<span class="av-boost" title="+1 AR por Músculos de hierro">' + p.av + '</span>' : (p.av ?? '-')}</div>
@@ -2167,13 +2192,297 @@ function incPrayerPick(team, idx){
   renderRosters();
   incCommit();
 }
+// ===== Mago deportivo: Bola de fuego y ¡ZAP! =====
+function wizardLeft(team){ return resTotal(team, 'wizard') - ((teamUsedRes[team] || {}).wizard || 0); }
+function wizardSpend(team){
+  teamUsedRes[team] = Object.assign({}, teamUsedRes[team] || {});
+  teamUsedRes[team].wizard = (teamUsedRes[team].wizard || 0) + 1;
+  renderResourceIcons();
+}
+function wizardIconClick(team){
+  if(wizardLeft(team)<=0) return;
+  if(wizardSt && (wizardSt.mode==='gap' || wizardSt.mode==='choose')){
+    wizardSt.mode = 'choose'; wizardSt.team = team;
+    renderWizard(); broadcastState();
+  } else {
+    updateStatus('El Mago deportivo se usa al final de un turno, antes de que empiece el siguiente.');
+  }
+}
+function wizardGapNeeded(){ return wizardLeft('A')>0 || wizardLeft('B')>0; }
+function wizardContinue(){
+  const next = wizardSt && wizardSt.next;
+  wizardSt = null; renderWizard(); broadcastState();
+  if(next) beginTurn(next);
+}
+function wizardChoose(spell){
+  if(!wizardSt) return;
+  if(spell==='fire'){ wizardSt.mode = 'pickCell'; updateStatus('BOLA DE FUEGO: click en la casilla objetivo.'); }
+  else { wizardSt.mode = 'pickPlayer'; updateStatus('¡ZAP!: click en el jugador objetivo.'); }
+  renderWizard(); broadcastState();
+}
+function wizardBack(){
+  if(!wizardSt) return;
+  wizardSt.mode = 'gap'; renderWizard(); broadcastState();
+}
+function renderWizard(){
+  const m = document.getElementById('wizardModal'); if(!m) return;
+  const title = document.getElementById('wizTitle'), body = document.getElementById('wizBody'), act = document.getElementById('wizActions');
+  const mode = wizardSt && wizardSt.mode;
+  const visible = mode==='gap' || mode==='choose' || mode==='pickCell' || mode==='pickPlayer';
+  m.classList.toggle('show', !!visible);
+  m.classList.toggle('pick', mode==='pickCell' || mode==='pickPlayer');
+  if(!visible){ body.innerHTML = ''; act.innerHTML = ''; return; }
+  act.innerHTML = '';
+  const btn = (label, fn, cls)=>{ const b = document.createElement('button'); if(cls) b.className = cls; b.innerHTML = label; b.onclick = fn; act.appendChild(b); return b; };
+  const wizIcon = '<span class="gold-icon" style="--icon:url(\'icons/mago.png\')"></span> ';
+  if(mode==='gap'){
+    title.innerHTML = wizIcon + 'FIN DE TURNO';
+    body.innerHTML = '<div class="pm-note">Antes de que empiece el turno de <b>' + teamName(wizardSt.next) + '</b>, un equipo con Mago deportivo disponible puede lanzar un hechizo (una vez por partido).</div>';
+    ['A','B'].forEach(t=>{ if(wizardLeft(t)>0) btn(wizIcon + teamName(t) + ': lanzar hechizo', ()=>{ wizardSt.mode='choose'; wizardSt.team=t; renderWizard(); broadcastState(); }); });
+    btn('Continuar → turno de ' + teamName(wizardSt.next), wizardContinue, 'primary');
+  } else if(mode==='choose'){
+    title.innerHTML = wizIcon + 'MAGO DE ' + teamName(wizardSt.team).toUpperCase();
+    body.innerHTML = '<div class="inc-pray"><div><b>🔥 BOLA DE FUEGO</b></div><div class="inc-desc">Elige una casilla; tira 1D6 por cada jugador en ella o en una adyacente (cualquier equipo). Con 4+ es alcanzado: si está en pie, es Derribado y se le aplica +1 a la Armadura; si está Tumbado o Aturdido, tirada de Armadura con +1.</div></div>' +
+      '<div class="inc-pray"><div><b>⚡ ¡ZAP!</b></div><div class="inc-desc">Elige un jugador del campo y tira 1D6: con un 6 natural, o igual o superior a su FU (salvo 1 natural), se convierte en Rana hasta el final de la entrada.</div></div>';
+    btn('🔥 Bola de fuego', ()=>wizardChoose('fire'), 'primary');
+    btn('⚡ ¡ZAP!', ()=>wizardChoose('zap'), 'primary');
+    btn('Atrás', wizardBack);
+  } else {
+    title.innerHTML = wizIcon + (mode==='pickCell' ? 'BOLA DE FUEGO' : '¡ZAP!');
+    body.innerHTML = '<div class="pm-note">' + (mode==='pickCell' ? 'Click en la casilla objetivo del campo.' : 'Click en el jugador objetivo del campo.') + '</div>';
+    btn('Cancelar', wizardBack);
+  }
+}
+function wizardPickAt(r, c){
+  if(!wizardSt) return false;
+  if(wizardSt.mode==='pickCell'){ wizardFireball(r, c); return true; }
+  if(wizardSt.mode==='pickPlayer'){
+    const p = players.find(x=>x.onPitch && x.row===r && x.col===c);
+    if(!p){ updateStatus('¡ZAP!: elige un jugador (una casilla ocupada).'); return true; }
+    wizardZap(p); return true;
+  }
+  return false;
+}
+function wizardFireball(r, c){
+  const team = wizardSt.team;
+  wizardSpend(team);
+  wizardSt.mode = 'wait';
+  log('🔥 BOLA DE FUEGO de ' + teamName(team) + ' sobre la casilla (fila ' + (r+1) + ', col ' + (c+1) + ').');
+  const targets = players.filter(p=>p.onPitch && p.row!==null && Math.max(Math.abs(p.row-r), Math.abs(p.col-c))<=1);
+  const hits = [];
+  targets.forEach(p=>{
+    const d = rollDieN(6);
+    if(d>=4){
+      const wasDown = p.condition==='tumbado' || p.condition==='aturdido';
+      log('🔥 ' + p.name + ' (' + teamName(p.team) + ') D6=' + d + ': ¡alcanzado!' + (wasDown ? ' Tirada de Armadura con +1.' : ' Es Derribado y su Armadura se tira con +1.'));
+      if(!wasDown){ queueBallDropIfCarrier(p.id, p.row, p.col); p.condition = 'tumbado'; p.rooted = false; }
+      armorBonusMap[p.id] = { mod:1, keep:wasDown };
+      hits.push(p.id);
+    } else {
+      log('🔥 ' + p.name + ' (' + teamName(p.team) + ') D6=' + d + ': esquiva la bola de fuego.');
+    }
+  });
+  if(!targets.length) log('🔥 No hay ningún jugador en esa casilla ni en las adyacentes.');
+  renderRosters(); renderPitch(); renderSelInfo(); renderWizard();
+  if(hits.length){
+    pendingArmorQueue = hits.slice(1);
+    const first = players.find(x=>x.id===hits[0]);
+    broadcastState();
+    openArmorModal(first);
+  } else {
+    broadcastState();
+    if(pendingBallDrop){ closeArmorModal(); }
+  }
+}
+function wizardZap(p){
+  const team = wizardSt.team;
+  wizardSpend(team);
+  wizardSt.mode = 'wait';
+  const d = rollDieN(6), fu = parseInt(p.st,10);
+  const frog = d===6 || (d!==1 && !isNaN(fu) && d>=fu);
+  log('⚡ ¡ZAP! de ' + teamName(team) + ' sobre ' + p.name + ' (' + teamName(p.team) + ', FU ' + (isNaN(fu) ? '?' : fu) + '): D6=' + d + (frog ? ' — ¡se convierte en RANA!' : ' — no ocurre nada.'));
+  if(frog){
+    const wasCarrier = ball.carrierId===p.id;
+    p.frogOrig = { ma:p.ma, st:p.st, ag:p.ag, pa:p.pa, av:p.av, skills:(p.skills || []).slice(), position:p.position, remainingMove:p.remainingMove };
+    p.frog = true; p.ma = 5; p.st = 1; p.ag = '2+'; p.pa = '6+'; p.av = '5+';
+    p.skills = ['Canijo','Escurridizo','Esquivar','Piernas muy largas','Saltar','Sin balón']; p.position = 'Rana';
+    p.remainingMove = Math.min(p.remainingMove ?? 5, 5);
+    renderRosters(); renderPitch(); renderSelInfo();
+    if(wasCarrier){ queueBallDropIfCarrier(p.id, p.row, p.col); }
+    renderWizard(); broadcastState();
+    if(wasCarrier) closeArmorModal();
+    return;
+  }
+  renderWizard(); broadcastState();
+}
+function frogRestoreAll(){
+  players.filter(p=>p.frog).forEach(p=>{
+    const o = p.frogOrig || {};
+    p.ma = o.ma ?? p.ma; p.st = o.st ?? p.st; p.ag = o.ag ?? p.ag; p.pa = o.pa ?? p.pa; p.av = o.av ?? p.av;
+    p.skills = o.skills || p.skills; p.position = o.position; p.frog = false; p.frogOrig = null;
+    log('🐸 ' + p.name + ' recobra su forma normal y va a Reservas.');
+  });
+}
+function wizardTick(){
+  if(!wizardSt || wizardSt.mode!=='wait') return;
+  if(trapdoorBusy()) return;
+  wizardSt.mode = 'gap'; renderWizard(); broadcastState();
+}
+setInterval(()=>{ try{ wizardTick(); }catch(e){ console.error(e); } }, 700);
+
+// ===== Medidas desesperadas: datos y efectos =====
+const DESP_ICONS = {
+  2:{ icon:'jugar_despiste.png', name:'Jugar al despiste' },
+  4:{ icon:'ajuste_cuentas.png', name:'Ajuste de cuentas' },
+  5:{ icon:'escena_ensayada.png', name:'Escena ensayada' },
+  6:{ icon:'espionaje.png', name:'Espionaje deportivo' },
+  7:{ icon:'pl%C3%A1tano.png', name:'Piel de plátano' }
+};
+function despList(team){ return incSt().desp[team]; }
+function despAvail(team, n){ return despList(team).find(d=>d.n===n && !d.used); }
+function despCount(team, n){ return despList(team).filter(d=>d.n===n).length; }
+function despSpend(team, n){ const d = despAvail(team, n); if(d) d.used = true; return d; }
+function despPrePending(){
+  return ['A','B'].some(t=> despList(t).some(d=> (d.n===1 || d.n===3) && !d.done));
+}
+// --- 1 Idopaje / 3 Resaca (antes de la patada inicial)
+function despPreApply(team, idx){
+  const i = incSt(); const d = i.desp[team][idx]; if(!d || d.done) return;
+  const sel = document.getElementById('despSel_' + team + '_' + idx);
+  const p = players.find(x=>x.id===parseInt(sel && sel.value,10));
+  if(!p) return;
+  if(d.n===1){
+    const stSel = document.getElementById('despStat_' + team + '_' + idx);
+    despApplyIdopaje(p, stSel && stSel.value==='ag' ? 'ag' : 'st', d);
+  } else if(d.n===3){
+    despApplyResaca(p, d);
+  }
+  d.done = true;
+  renderRosters();
+  incCommit();
+}
+function despApplyIdopaje(p, stat, d){
+  if(!p.idopajeOrig) p.idopajeOrig = { st:p.st, ag:p.ag };
+  p.idopaje = true;
+  if(stat==='ag'){
+    const m = String(p.ag).match(/\d+/); const v = m ? parseInt(m[0],10) : NaN;
+    if(!isNaN(v)) p.ag = Math.max(1, v-1) + '+';
+  } else {
+    const v = parseInt(p.st,10); if(!isNaN(v)) p.st = Math.min(10, v+1);
+  }
+  if(d){ d.target = p.id; d.stat = stat; }
+  log('💉 ¡IDOPAJE!: ' + p.name + ' (' + teamName(p.team) + ') gana +1 ' + (stat==='ag' ? 'AG (' + p.idopajeOrig.ag + ' → ' + p.ag + ')' : 'FU (' + p.idopajeOrig.st + ' → ' + p.st + ')') + '. Al final de cada entrada que juegue, D6: 1-2 queda Inconsciente.');
+}
+function despApplyResaca(p, d){
+  p.heatRest = true; p.resaca = true;
+  if(d) d.target = p.id;
+  log('🍺 RESACA: ' + p.name + ' (' + teamName(p.team) + ') no puede jugar la primera entrada.');
+}
+function despIdopajeAtDriveEnd(){
+  const retired = ['ko','injured','injuredGrave','dead','expelled'];
+  players.filter(p=>p.idopaje && p.onPitch && !retired.includes(p.condition)).forEach(p=>{
+    const d = rollDieN(6);
+    if(d<=2){
+      p.condition = 'ko';
+      log('💉 ¡IDOPAJE!: ' + p.name + ' (' + teamName(p.team) + ') tira D6=' + d + ' al final de la entrada — queda Inconsciente.');
+    } else {
+      log('💉 ¡IDOPAJE!: ' + p.name + ' (' + teamName(p.team) + ') tira D6=' + d + ' al final de la entrada — aguanta.');
+    }
+  });
+}
+// --- uso de las medidas con icono
+function useDesperate(team, n){
+  const d = despAvail(team, n); if(!d) return;
+  if(phase!=='live'){ updateStatus('Las medidas desesperadas se usan durante la entrada.'); return; }
+  const di = DESP_ICONS[n];
+  if(n===2){
+    if(state.active!==team){ updateStatus('Jugar al despiste se activa en el turno de tu equipo, antes de elegir al jugador.'); return; }
+    if(despisteArmed[team]) return;
+    if(!confirm('¿Usar JUGAR AL DESPISTE? El siguiente jugador de ' + teamName(team) + ' que actives podrá declarar dos acciones distintas (sin dos Movimientos).')) return;
+    d.used = true; despisteArmed[team] = true;
+    log('🎭 JUGAR AL DESPISTE: ' + teamName(team) + ' lo activa — el siguiente jugador que active podrá declarar dos acciones distintas.');
+  } else if(n===4){
+    if(state.active!==team || !foulUsedByTeam[team]){ updateStatus('Ajuste de cuentas solo puede usarse tras haber declarado una Falta en este turno.'); return; }
+    if(!confirm('¿Usar AJUSTE DE CUENTAS? Podréis declarar otra Falta este turno y ese jugador no podrá ser Expulsado en ella.')) return;
+    d.used = true; foulUsedByTeam[team] = false; ajusteArmed[team] = true;
+    log('🥊 AJUSTE DE CUENTAS: ' + teamName(team) + ' puede declarar otra Falta este turno; el jugador no podrá ser Expulsado en ella.');
+  } else if(n===6){
+    if(!ownTurnChanged[team]){ updateStatus('Espionaje deportivo se usa tras un cambio de turno propio.'); return; }
+    if(!confirm('¿Usar ESPIONAJE DEPORTIVO? ' + teamName(team) + ' obtiene 2 Segundas oportunidades que se suman a las normales hasta el final del partido.')) return;
+    d.used = true; teamBonusRR[team] = (teamBonusRR[team] || 0) + 2;
+    teamRerollsLeft[team] = (teamRerollsLeft[team] || 0) + 2;
+    log('🕵️ ESPIONAJE DEPORTIVO: ' + teamName(team) + ' obtiene 2 Segundas oportunidades (se pierden al final del partido). Segundas oportunidades: ' + teamRerollsLeft[team] + '.');
+  } else if(n===7){
+    if(!useBanana(team, d)) return;
+  }
+  renderResourceIcons(); renderStaffPanels(); renderScoreboard();
+  broadcastState();
+}
+function useBanana(team, d){
+  const other = team==='A' ? 'B' : 'A';
+  if(state.active!==other){ updateStatus('La Piel de plátano se usa durante el turno del rival.'); return false; }
+  if(anyModalOpen()){ updateStatus('Termina primero la tirada en curso.'); return false; }
+  const p = players.find(x=>x.id===selected);
+  if(!p || p.team!==other || !p.onPitch || p.condition!=='standing' || countOpponentTackleZones(p.row, p.col, p.team)<1){
+    updateStatus('Piel de plátano: el jugador rival activo (seleccionado) debe estar en la zona de defensa de uno de los tuyos.');
+    return false;
+  }
+  if(!confirm('¿Usar PIEL DE PLÁTANO sobre ' + p.name + ' (' + teamName(other) + ')? Queda Tumbado y su activación termina.')) return false;
+  d.used = true;
+  const wasCarrier = ball.carrierId===p.id;
+  p.condition = 'tumbado'; p.rooted = false;
+  if(declaredAction==='blitz' || blitzActivePlayer===p.id) blitzUsedByTeam[other] = true;
+  p.activated = true;
+  blockTargeting = null; blitzActivePlayer = null; selected = null; declaredAction = null;
+  log('🍌 PIEL DE PLÁTANO: ' + p.name + ' (' + teamName(other) + ') entra en la zona de defensa de un jugador de ' + teamName(team) + ' y queda Tumbado. Su activación termina' + (wasCarrier ? ' y suelta el balón: cambio de turno.' : ' (sin cambio de turno).'));
+  renderRosters(); renderPitch(); renderSelInfo();
+  if(wasCarrier){
+    queueBallDropIfCarrier(p.id, p.row, p.col);
+    pendingTurnoverAfterResolve = true;
+    broadcastState();
+    closeArmorModal();
+  }
+  return true;
+}
+function expelEscrutinio(fouler){
+  fouler.condition = 'expelled'; fouler.onPitch = false; fouler.row = null; fouler.col = null;
+  if(ball.carrierId===fouler.id) ball.carrierId = null;
+  log('🟥 ESCRUTINIO ARBITRAL: ' + fouler.name + ' (' + teamName(fouler.team) + ') rompe la armadura en su Falta y es Expulsado automáticamente.');
+  renderRosters(); renderPitch(); renderScoreboard(); renderSelInfo(); broadcastState();
+  autoTurnoverThenEndTurn();
+}
+// --- Jugar al despiste: segunda acción
+function despisteTick(){
+  if(!despisteSt) return;
+  const st = despisteSt;
+  const p = players.find(x=>x.id===st.id);
+  if(!p || phase!=='live' || state.active!==st.team || !p.onPitch || ['ko','injured','injuredGrave','dead','expelled'].includes(p.condition)){ despisteSt = null; return; }
+  if(st.stage===2){ if(p.activated) despisteSt = null; return; }
+  if(!p.activated || trapdoorBusy() || selected!==null || pendingActionMenuPlayer!==null) return;
+  const t = st.team, sn = st.snap;
+  st.first = blitzUsedByTeam[t]!==sn.blitz ? 'blitz' : passUsedByTeam[t]!==sn.pass ? 'pass' : handoffUsedByTeam[t]!==sn.handoff ? 'handoff'
+           : secureBallUsedByTeam[t]!==sn.secure ? 'secure' : foulUsedByTeam[t]!==sn.foul ? 'foul' : 'move';
+  st.stage = 2;
+  p.activated = false; p.remainingMove = p.ma; p.gfiUsed = 0; p.blockedThisActivation = false;
+  log('🎭 JUGAR AL DESPISTE: ' + p.name + ' puede declarar una segunda acción distinta (sin Placar ni repetir Movimiento).');
+  renderPitch(); renderRosters();
+  openActionMenu(p.id);
+}
+setInterval(()=>{ try{ despisteTick(); }catch(e){ console.error(e); } }, 600);
+
 // ===== Panel admin incentivos (pruebas): añadir/quitar Plegarias y Medidas desesperadas a mano =====
 const PRAYER_FLAG_KEY = { 1:'trapdoor', 6:'topos', 7:'escrutinio' };
 function admCount(kind, team, n){ const i = incSt(); return i[kind==='p' ? 'prayers' : 'desp'][team].filter(x=>x.n===n).length; }
 function admAdd(kind, team, n){
   const i = incSt();
   if(kind==='d'){
-    i.desp[team].push({ n:n, adm:true });
+    const dEnt = { n:n, adm:true }; i.desp[team].push(dEnt);
+    if(n===1 || n===3){
+      const pool = incPlayingPlayers(n===1 ? team : (team==='A' ? 'B' : 'A'));
+      const tp = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
+      if(tp){ if(n===1) despApplyIdopaje(tp, 'st', dEnt); else despApplyResaca(tp, dEnt); }
+      dEnt.done = true;
+    }
     if(n===8){ teamInc[team] = Object.assign({}, teamInc[team] || {}); teamInc[team].wizard = (teamInc[team].wizard || 0) + 1; renderStaffPanels(); }
     log('🧪 ADMIN: ' + teamName(team) + ' obtiene Medida desesperada ' + n + ' — ' + DESPERATE[n]);
   } else {
@@ -2207,6 +2516,9 @@ function admRemove(kind, team, n){
   if(k<0) return;
   const pr = arr.splice(k,1)[0];
   if(kind==='d'){
+    const tp = players.find(x=>x.id===pr.target);
+    if(n===1 && tp && tp.idopajeOrig){ tp.st = tp.idopajeOrig.st; tp.ag = tp.idopajeOrig.ag; tp.idopajeOrig = null; tp.idopaje = false; }
+    if(n===3 && tp){ tp.heatRest = false; tp.resaca = false; }
     if(n===8 && teamInc[team] && teamInc[team].wizard>0){ teamInc[team] = Object.assign({}, teamInc[team]); teamInc[team].wizard--; renderStaffPanels(); }
   } else {
     const def = PRAYERS[n];
@@ -2245,6 +2557,11 @@ function prayerFlag(team, key){ return !!(preMatch && preMatch.inc && preMatch.i
 function gfiTargetFor(p){
   const other = p.team==='A' ? 'B' : 'A';
   return (weatherKind()==='ventisca' ? 3 : 2) + (prayerFlag(other, 'topos') ? 1 : 0);
+}
+function incAfterPrayers(){
+  const i = incSt();
+  if(despPrePending()){ i.sub = 'despPre'; incCommit(); return; }
+  preMatchNext();
 }
 function incNext(){
   const i = incSt();
@@ -2295,6 +2612,31 @@ function renderIncentives(body, actions){
     okBtn(b.total<=0 ? (i.sub==='buyHigh' ? 'Sin tesorería disponible - Continuar' : 'Sin presupuesto disponible - Continuar') : over ? 'Presupuesto superado' : (tot===0 ? 'No comprar nada' : 'Confirmar compra (' + fmtMO(tot) + ')'), ()=>incConfirm(team), over);
     return;
   }
+  if(i.sub==='despPre'){
+    h += '<div class="pm-note">📜 Medidas desesperadas previas a la patada inicial</div><div class="inc-list">';
+    let pend = 0;
+    ['A','B'].forEach(t=>{
+      const other = t==='A' ? 'B' : 'A';
+      i.desp[t].forEach((d, idx)=>{
+        if(d.n!==1 && d.n!==3) return;
+        const tgt = players.find(x=>x.id===d.target);
+        let ctl;
+        if(d.done){ ctl = '<small>→ #' + (tgt ? tgt.num + ' ' + tgt.name : '—') + (d.n===1 ? ' (' + (d.stat==='ag' ? 'AG' : 'FU') + ' +1)' : '') + '</small>'; }
+        else {
+          pend++;
+          const pool = d.n===1 ? incPlayingPlayers(t) : incPlayingPlayers(other);
+          ctl = '<select id="despSel_' + t + '_' + idx + '">' + pool.map(p=>'<option value="' + p.id + '">#' + p.num + ' ' + p.name + '</option>').join('') + '</select> ' +
+            (d.n===1 ? '<select id="despStat_' + t + '_' + idx + '"><option value="st">+1 FU</option><option value="ag">+1 AG</option></select> ' : '') +
+            '<button onclick="despPreApply(\'' + t + '\',' + idx + ')">Aplicar</button>';
+        }
+        h += '<div class="inc-pray" style="border-left:4px solid ' + tokenColorFor({team:t}) + '"><div><b>' + teamName(t) + ' — ' + d.n + ' ' + DESPERATE[d.n].split(' — ')[0] + '</b></div><div class="inc-desc">' + (d.n===1 ? 'Elige un jugador de tu equipo y la característica (FU o AG).' : 'Elige un jugador RIVAL: no podrá jugar la primera entrada.') + '</div><div>' + ctl + '</div></div>';
+      });
+    });
+    h += '</div>';
+    body.innerHTML = h;
+    okBtn(pend ? 'Faltan medidas por aplicar' : 'OK → Sorteo de patada', preMatchNext, pend>0);
+    return;
+  }
   if(i.sub==='prayers'){
     h += '<div class="pm-note">🙏 Plegarias a Nuffle (D8 automático; duran hasta el final del partido)</div><div class="inc-list">';
     let pending = 0;
@@ -2319,7 +2661,7 @@ function renderIncentives(body, actions){
     h += '</div>';
     ['A','B'].forEach(t=>{ i.desp[t].forEach(d=>{ h += '<div class="inc-desc" style="margin-top:6px;">📜 Medida desesperada de ' + teamName(t) + ' (' + d.n + '): ' + DESPERATE[d.n] + '</div>'; }); });
     body.innerHTML = h;
-    okBtn(pending ? 'Faltan plegarias por aplicar' : 'OK → Sorteo de patada', preMatchNext, pending>0);
+    okBtn(pending ? 'Faltan plegarias por aplicar' : 'OK → Sorteo de patada', incAfterPrayers, pending>0);
     return;
   }
   // summary / done
@@ -2332,7 +2674,7 @@ function renderIncentives(body, actions){
   h += '<div class="pm-note" style="text-align:left;">' + lines.join('') + '</div>';
   ['A','B'].forEach(t=>{ i.desp[t].forEach(d=>{ h += '<div class="inc-desc">📜 Medida desesperada de ' + teamName(t) + ' (' + d.n + '): ' + DESPERATE[d.n] + '</div>'; }); });
   body.innerHTML = h;
-  okBtn('OK → Sorteo de patada', preMatchNext);
+  okBtn('OK → Sorteo de patada', incAfterPrayers);
 }
 
 function renderPreMatch(){
@@ -2458,7 +2800,7 @@ function placeOnPitch(id){
     return;
   }
   const hp = players.find(x=>x.id===id);
-  if(hp && hp.heatRest){ updateStatus(hp.name + ' descansa por el Calor Asfixiante y no puede colocarse en esta entrada.'); return; }
+  if(hp && hp.heatRest){ updateStatus(hp.name + (hp.resaca ? ' tiene Resaca y no puede jugar la primera entrada.' : ' descansa por el Calor Asfixiante y no puede colocarse en esta entrada.')); return; }
   placing = id;
   const p = players.find(x=>x.id===id);
   renderRosters(); renderPitch();
@@ -2516,7 +2858,7 @@ function startDrive(){
       return;
     }
   }
-  players.forEach(p=>{ p.heatRest = false; }); // los descansados por calor ya no pueden colocarse esta entrada: se liberan
+  players.forEach(p=>{ p.heatRest = false; p.resaca = false; }); // los descansados por calor ya no pueden colocarse esta entrada: se liberan
   const kicking = document.getElementById('kickSelect').value;
   const receiving = kicking==='A' ? 'B':'A';
   if(!openingKickoffDone){
@@ -2727,6 +3069,7 @@ function renderPitch(){
         t.dataset.playerId = occ.id;
         t.style.background = tokenColorFor(occ);
         t.style.color = textColorFor(occ);
+        if(occ.frog){ t.classList.add('frog'); t.style.setProperty('--frog-color', tokenColorFor(occ)); t.style.background = 'transparent'; t.style.color = '#fff'; }
         const posBorder = positionBorderColor(occ);
         if(posBorder) t.style.borderColor = posBorder;
         t.textContent = occ.num;
@@ -2958,6 +3301,13 @@ let dejadaWheelActive = false;
 // Añadir una opción nueva es añadir una línea de push() ahí — el racimo se reparte solo.
 
 function openActionMenu(id){
+  { const pp = players.find(x=>x.id===id);
+    if(pp && despisteArmed[pp.team] && !despisteSt && !pp.activated && state.active===pp.team){
+      despisteArmed[pp.team] = false;
+      despisteSt = { id:pp.id, team:pp.team, stage:1, first:'', snap:{ blitz:blitzUsedByTeam[pp.team], pass:passUsedByTeam[pp.team], handoff:handoffUsedByTeam[pp.team], secure:secureBallUsedByTeam[pp.team], foul:foulUsedByTeam[pp.team] } };
+      log('🎭 JUGAR AL DESPISTE: ' + pp.name + ' podrá declarar dos acciones.');
+    }
+  }
   pendingActionMenuPlayer = id;
   declaredAction = null;
   renderActionMenu();
@@ -3063,6 +3413,15 @@ function canFoul(p){
 }
 
 function getActionMenuOptionsFor(p){
+  const opts = getActionMenuOptionsBase(p);
+  if(despisteSt && despisteSt.stage===2 && despisteSt.id===p.id){
+    const ban = ['actionMenuBlock','actionMenuApunalar','actionMenuStandApunalar'];
+    if(despisteSt.first==='move') ban.push('actionMenuMove','actionMenuStandMove');
+    return opts.filter(o=>!ban.includes(o.fn));
+  }
+  return opts;
+}
+function getActionMenuOptionsBase(p){
   if(kickoffEvt && kickoffEvt.phase==='charge'){
     const co = [{ icon:'🏃', label:'Movimiento', fn:'actionMenuMove' }];
     if(!blitzUsedByTeam[p.team]) co.push({ icon:'⚡', label:'Blitz', fn:'actionMenuBlitz' });
@@ -3284,6 +3643,7 @@ function actionMenuFoul(){
   if(!p) return;
   selected = id;
   foulUsedByTeam[p.team] = true; // se gasta al declarar, aunque el chequeo de rasgo falle después
+  if(ajusteArmed[p.team]){ ajusteArmed[p.team] = false; ajusteFouler = p.id; log('🥊 AJUSTE DE CUENTAS: ' + p.name + ' no podrá ser Expulsado en esta Falta.'); }
   log('🥊 ' + teamName(p.team) + ' declara su Falta de este turno (' + p.name + ').');
   runTraitCheckThen(p, 'foul');
 }
@@ -3341,6 +3701,7 @@ function actionMenuStandFoul(){
   if(!p) return;
   selected = id;
   foulUsedByTeam[p.team] = true;
+  if(ajusteArmed[p.team]){ ajusteArmed[p.team] = false; ajusteFouler = p.id; log('🥊 AJUSTE DE CUENTAS: ' + p.name + ' no podrá ser Expulsado en esta Falta.'); }
   log('🥊 ' + teamName(p.team) + ' declara su Falta de este turno (' + p.name + ', levantándose).');
   runTraitCheckThen(p, 'standfoul');
 }
@@ -3456,6 +3817,7 @@ function endActivation(id){
 }
 
 function cellClicked(r,c){
+  if(wizardSt && (wizardSt.mode==='pickCell' || wizardSt.mode==='pickPlayer')){ wizardPickAt(r,c); return; }
   if(kickoffEvt && kickoffEvt.phase==='board'){ kickoffBoardCellClick(r,c); return; }
   if(pendingPassTargetSelection){
     const passer = players.find(x=>x.id===pendingPassTargetSelection.passerId);
@@ -3565,6 +3927,7 @@ function completeStep(p, r, c, consume){
 }
 
 function tokenClicked(id){
+  if(wizardSt && (wizardSt.mode==='pickCell' || wizardSt.mode==='pickPlayer')){ const wp = players.find(x=>x.id===id); if(wp && wp.onPitch){ wizardPickAt(wp.row, wp.col); } return; }
   if(kickoffEvt && kickoffEvt.phase==='board'){ kickoffBoardTokenClick(id); return; }
   if(isValidInterceptTarget(id)){
     attemptInterception(id);
@@ -5079,8 +5442,9 @@ function startFoulOn(fouler, target){
   pendingFoulContext = {
     foulerId: fouler.id, targetId: target.id,
     offAssists: offAssisters.length, defAssists: defAssisters.length, modifier,
-    doubleDetected: false
+    doubleDetected: false, ajuste: ajusteFouler===fouler.id
   };
+  if(ajusteFouler===fouler.id) ajusteFouler = null;
   const assistTxt = (offAssisters.length>0 || defAssisters.length>0)
     ? (' (' + (offAssisters.length>0 ? '+'+offAssisters.length+' apoyo ofensivo ('+joinNames(offAssisters)+')' : '') +
        (offAssisters.length>0 && defAssisters.length>0 ? ', ' : '') +
@@ -5376,9 +5740,14 @@ function startPassRoll(passer, targetR, targetC, zone, hailMary){
   const wxPassPen = weatherKind()==='soleado' ? 1 : 0;
   const totalPenalty = PASS_ZONE_PENALTIES[zone] + markers + wxPassPen;
   pendingPassRoll = { passerId: passer.id, targetR, targetC, zone, totalPenalty, hailMary: !!hailMary };
-  const target = parseAgTarget(passer.ag);
+  if(despAvail(passer.team, 5) && confirm('¿Usar ESCENA ENSAYADA en este Pase? El pasador necesita 2+ (más modificadores) y el receptor atrapa el pase con base 2+. Se gasta al usarla.')){
+    despSpend(passer.team, 5); pendingPassRoll.escena = true; escenaCatch[passer.team] = true;
+    log('🎭 ESCENA ENSAYADA: ' + teamName(passer.team) + ' la usa en este Pase (pasador 2+, recepción 2+, más modificadores).');
+    renderResourceIcons();
+  }
+  const target = pendingPassRoll.escena ? 2 : parseAgTarget(passer.ag);
   document.getElementById('passText').textContent = (hailMary ? 'PASE A LO LOCO (' + PASS_ZONE_NAMES[zone] + ')' : PASS_ZONE_NAMES[zone]) + ' de ' + passer.name +
-    ' — necesita ' + target + '+ (AG' + (passer.ag ?? '?') + ', modificador -' + totalPenalty +
+    ' — necesita ' + target + '+ (' + (pendingPassRoll.escena ? 'Escena ensayada: base 2+' : 'AG' + (passer.ag ?? '?')) + ', modificador -' + totalPenalty +
     ((markers>0 || wxPassPen>0) ? ' = -' + PASS_ZONE_PENALTIES[zone] + ' por el rango' + (markers>0 ? ', -' + markers + ' por marcaje' : '') + (wxPassPen>0 ? ', -1 por Muy soleado' : '') : ' por el rango') + '). Tirad 1D6.';
   document.getElementById('passDie').textContent = '–';
   document.getElementById('passResultText').textContent = '';
@@ -5403,7 +5772,7 @@ function rollPassDie(){
 function finishPassRoll(raw){
   const passer = players.find(x=>x.id===pendingPassRoll.passerId);
   const modified = raw - pendingPassRoll.totalPenalty;
-  const target = parseAgTarget(passer.ag);
+  const target = pendingPassRoll.escena ? 2 : parseAgTarget(passer.ag);
   let outcome;
   if(raw===6) outcome = 'preciso';
   else if(raw===1) outcome = playerHasSkill(passer, 'pase seguro', 'safe pass') ? 'safepass' : 'perdido';
@@ -5983,7 +6352,10 @@ function openCatchModal(p, noModifiers, voluntary, extraPenalty, extraReason, us
   const extra = noModifiers ? 0 : (extraPenalty || 0);
   const bonus = noModifiers ? 0 : (rhBonus || 0);
   const rainPen = (!noModifiers && weatherKind()==='lluvia') ? 1 : 0;
-  const target = noModifiers ? parseAgTarget(p.ag) : parseAgTarget(p.ag) + markers + extra + rainPen - bonus;
+  let baseT = parseAgTarget(p.ag);
+  const escenaOn = (catchKind==='pass' || catchKind==='heroic') && escenaCatch[p.team];
+  if(escenaOn){ baseT = 2; escenaCatch[p.team] = false; log('🎭 ESCENA ENSAYADA: ' + p.name + ' recibe con base 2+ (más modificadores).'); }
+  const target = noModifiers ? baseT : baseT + markers + extra + rainPen - bonus;
   pendingCatch = { playerId: p.id, target, voluntary: !!voluntary, useAtraparSkill: !!useAtraparSkill, catchKind: catchKind || (useAtraparSkill ? 'handoff' : 'pickup') };
   catchRerollUsed = false;
   updateCatchTitle();
@@ -6141,6 +6513,15 @@ const KICKOFF_EVENTS = {
 let kickoffEvt = null;          // { phase:'roll'|'show'|'board', d1, d2, sum, kind:'alert'|'high', n, moved:[], sel:-1 }
 let kickoffLandingOverride = null;   // Clima perfecto (Clima cambiante): aterrizaje tras 3 escoras, sustituye al 2º rebote
 let teamFreeRR = { A:-1, B:-1 };   // -1 = sin RR gratuita; si no, nº de RR que tenía el equipo ANTES de recibir la gratuita (Entrenador brillante)
+let despisteArmed = { A:false, B:false };   // Jugar al despiste: armado, se liga al siguiente jugador que se active
+let ajusteArmed = { A:false, B:false };     // Ajuste de cuentas: la próxima Falta del equipo no expulsa al jugador
+let ajusteFouler = null;
+let escenaCatch = { A:false, B:false };     // Escena ensayada: la recepción del pase se hace con base 2+
+let teamBonusRR = { A:0, B:0 };             // Espionaje deportivo: Segundas oportunidades extra que duran todo el partido
+let ownTurnChanged = { A:false, B:false };  // el equipo ya ha tenido un cambio de turno propio
+let despisteSt = null;
+let wizardSt = null;                        // Mago deportivo: { mode:'gap'|'choose'|'pickCell'|'pickPlayer'|'wait', team, next }
+let armorBonusMap = {};                     // Bola de fuego: +1 a la Armadura de estos jugadores { id:{ mod, keep } }                      // solo local: { id, team, stage, snap, first }
 let teamBribe = { A:'none', B:'none' };   // none | active | used  (Soborno gratuito de Árbitro intimidado)
 let cheerBonus = { A:'none', B:'none' };  // none | pending | active | used  (Los hinchas animan: +1 apoyo en el primer Placaje del próximo turno)
 
@@ -7193,6 +7574,7 @@ function openArmorModal(p){
 }
 
 function openInjuryDirect(p){
+  if(p && p.frog){ armorForPlayer = p.id; frogAutoInjury(p); return; }
   armorForPlayer = p.id;
   crowdPushMode = true;
   document.getElementById('armorText').textContent = `${p.name} sale del campo empujado — tirada de heridas directa (sin armadura).`;
@@ -7231,6 +7613,14 @@ function rollArmor(){
     return;
   }
 
+  if(p && armorBonusMap[p.id]){
+    const bm = armorBonusMap[p.id];
+    document.getElementById('armorSum').textContent = 'Suma: ' + sum + ' +' + bm.mod + ' (Bola de fuego) = ' + (sum + bm.mod);
+    log('🎲 Armadura (' + p.name + '): ' + d1 + ' + ' + d2 + ' = ' + sum + ' +' + bm.mod + ' (Bola de fuego) = ' + (sum + bm.mod));
+    document.getElementById('armorPassRow').style.display = 'block';
+    broadcastState();
+    return;
+  }
   const isFoulRoll = pendingFoulContext && pendingFoulContext.targetId===armorForPlayer;
   if(isFoulRoll && d1===d2){
     pendingFoulContext.doubleDetected = true;
@@ -7288,7 +7678,16 @@ function rollArmor(){
   broadcastState();
 }
 
+function frogAutoInjury(p){
+  log('🐸 ' + p.name + ' es una Rana: no hay tirada de Heridas, sufre automáticamente Magullado (no se puede usar Apotecario).');
+  applyInjuryOutcome(p, 'injured');
+  crowdPushMode = false;
+  renderRosters(); renderPitch(); renderSelInfo();
+  closeArmorModal();
+  broadcastState();
+}
 function showInjuryBlockAfterArmorBroken(p){
+  if(p && p.frog){ document.getElementById('armorPassRow').style.display='none'; frogAutoInjury(p); return; }
   document.getElementById('regenRow').style.display='none';
   document.getElementById('injuryBlock').style.display='block';
   document.getElementById('cabezaDuraWarning').style.display = playerHasSkill(p, 'cabeza dura', 'thick skull') ? 'block' : 'none';
@@ -7306,7 +7705,7 @@ function armorResult(broken){
   } else {
     const isApunalarRoll = p && pendingApunalarContext && pendingApunalarContext.targetId===p.id;
     if(p && !isApunalarRoll){
-      const wasAlreadyDown = pendingFoulContext && pendingFoulContext.targetId===p.id && (p.condition==='tumbado' || p.condition==='aturdido');
+      const wasAlreadyDown = (pendingFoulContext && pendingFoulContext.targetId===p.id && (p.condition==='tumbado' || p.condition==='aturdido')) || (armorBonusMap[p.id] && armorBonusMap[p.id].keep);
       if(!wasAlreadyDown) p.condition = 'tumbado';
       p.rooted = false;
     }
@@ -7522,6 +7921,7 @@ function closeArmorModal(){
   if(resolvedPlayerId!==null) delete golpeMortiferoMap[resolvedPlayerId];
   llaveDeBrazoUsedOnArmor = false;
   if(resolvedPlayerId!==null) delete llaveDeBrazoMap[resolvedPlayerId];
+  if(resolvedPlayerId!==null) delete armorBonusMap[resolvedPlayerId];
   if(pendingApunalarContext && pendingApunalarContext.targetId===resolvedPlayerId){
     pendingApunalarContext = null;
   }
@@ -7563,15 +7963,16 @@ function closeArmorModal(){
     const ctx = pendingFoulContext;
     pendingFoulContext = null;
     const fouler = players.find(x=>x.id===ctx.foulerId);
+    const escr = ctx.armorBroken && fouler && prayerFlag(fouler.team==='A' ? 'B' : 'A', 'escrutinio');
     if(ctx.doubleDetected){
-      if(fouler) startRefereeArgument(fouler);
-    } else if(ctx.armorBroken && fouler && prayerFlag(fouler.team==='A' ? 'B' : 'A', 'escrutinio')){
-      fouler.condition = 'expelled'; fouler.onPitch = false; fouler.row = null; fouler.col = null;
-      if(ball.carrierId===fouler.id) ball.carrierId = null;
-      log('🟥 ESCRUTINIO ARBITRAL: ' + fouler.name + ' (' + teamName(fouler.team) + ') rompe la armadura en su Falta y es Expulsado automáticamente.');
-      renderRosters(); renderPitch(); renderScoreboard(); renderSelInfo(); broadcastState();
-      autoTurnoverThenEndTurn();
-    }
+      if(fouler){
+        if(ctx.ajuste && !escr){
+          log('🟨 AJUSTE DE CUENTAS: ' + fouler.name + ' saca doble natural pero no puede ser Expulsado. Cambio de turno igualmente.');
+          autoTurnoverThenEndTurn();
+        } else if(ctx.ajuste && escr){ expelEscrutinio(fouler); }
+        else startRefereeArgument(fouler);
+      }
+    } else if(escr){ expelEscrutinio(fouler); }
   }
 }
 
@@ -7657,6 +8058,8 @@ function beginTurn(team){
 }
 
 function resetBoardForNewDrive(){
+  despIdopajeAtDriveEnd();
+  frogRestoreAll();
   players.forEach(p=>{
     if(p.indigestOrig){ p.ma = p.indigestOrig.ma; p.av = p.indigestOrig.av; p.indigestOrig = null; }
     p.indigestOut = false;
@@ -7748,6 +8151,8 @@ function endTurn(){
     return;
   }
   const finishing = state.active;
+  ownTurnChanged[finishing] = true;
+  escenaCatch = { A:false, B:false };
 
   players.filter(p=>p.team===finishing && p.condition==='aturdido').forEach(p=>{
     p.condition = 'tumbado'; p.rooted = false;
@@ -7772,6 +8177,7 @@ function endTurn(){
     return;
   }
   const other = finishing==='A' ? 'B':'A';
+  if(wizardGapNeeded()){ wizardSt = { mode:'gap', next:other, team:'' }; renderWizard(); broadcastState(); return; }
   beginTurn(other);
 }
 
@@ -8251,7 +8657,7 @@ try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesBut
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V68'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V70'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

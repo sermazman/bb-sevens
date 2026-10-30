@@ -519,7 +519,7 @@ function snapshotState(){
     infoModalTitle: document.getElementById('infoModalTitle').textContent,
     infoModalText: document.getElementById('infoModalText').textContent,
     forcejearText: document.getElementById('forcejearText').textContent,
-    pendingForcejearChoice,
+    pendingForcejearChoice, pendingStandFirm,
     matchEndText: document.getElementById('matchEndText').textContent,
     pendingActionMenuPlayer,
     dejadaWheelActive,
@@ -739,6 +739,7 @@ function applyRemoteState(payload){
   pendingAnimosity = payload.pendingAnimosity || null;
   pendingHailMaryChoice = payload.pendingHailMaryChoice || null;
   pendingProvocarChoice = payload.pendingProvocarChoice || null;
+  pendingStandFirm = payload.pendingStandFirm || null;
   luchadorUsed = !!payload.luchadorUsed;
   luchadorPickMode = !!payload.luchadorPickMode;
   renderAnimosityModal(); renderHailMaryModal();
@@ -890,7 +891,7 @@ function applyRemoteState(payload){
   });
   blockDiceRolled = !!payload.blockDiceRolled;
   refreshBlockSkillUi();
-  renderProvocarModal(); renderHeroicTackleModal();
+  renderProvocarModal(); renderHeroicTackleModal(); renderStandFirmModal();
   document.getElementById('blockDiceHint').style.display = blockDiceRolled ? 'block' : 'none';
   document.getElementById('blockModal').classList.toggle('show', !!payload.blockModalOpen);
 
@@ -1030,7 +1031,7 @@ function anyModalOpen(){
          document.getElementById('interceptModal').classList.contains('show') ||
          document.getElementById('heroicReceptionPanel').style.display==='block' ||
          pendingActionMenuPlayer !== null ||
-         pendingAnimosity !== null || pendingHailMaryChoice !== null || pendingProvocarChoice !== null || pendingHeroicTackle !== null ||
+         pendingAnimosity !== null || pendingHailMaryChoice !== null || pendingProvocarChoice !== null || pendingStandFirm !== null || pendingHeroicTackle !== null ||
          document.getElementById('traitCheckModal').classList.contains('show') ||
          document.getElementById('turnoverOverlay').classList.contains('show');
 }
@@ -2824,6 +2825,43 @@ function applyHeatAtDriveEnd(){
 }
 
 // Solitario (X+): para gastar una reroll de equipo hay que tirar 1D6; con X+ se repite, si no la reroll se pierde.
+
+// ===== Habilidades varias: Sin balón, Tembloroso, Odio, Patada, Mantenerse firme, Zafarse =====
+function skillExact(p, ...names){
+  if(!p || !p.skills) return false;
+  const have = p.skills.map(normalizeSkillText);
+  return names.some(n=>have.includes(normalizeSkillText(n)));
+}
+function hasNoBall(p){ return playerHasSkill(p, 'sin balon', 'el balon ni verlo', 'no ball'); }
+function hasTembloroso(p){ return playerHasSkill(p, 'tembloroso', 'trembling'); }
+function hasKickSkill(p){ return skillExact(p, 'patada', 'kick'); }
+function clavesOf(p){
+  const out = [];
+  (p.skills || []).forEach(sk=>{ if(String(sk).indexOf(' - ')>=0) String(sk).split(' - ').forEach(t=>out.push(normalizeSkillText(t).trim())); });
+  const race = String(teamRace[p.team] || '').trim().toLowerCase();
+  const pos = String(p.position || '').trim().toLowerCase();
+  const row = (typeof POSITIONS_DB !== 'undefined' && POSITIONS_DB || []).find(x=>x && String(x.race||'').trim().toLowerCase()===race && String(x.type||'').trim().toLowerCase()===pos && x.clave);
+  if(row) String(row.clave).split(' - ').forEach(t=>out.push(normalizeSkillText(t).trim()));
+  out.push(normalizeSkillText(pos).trim());
+  return out.filter(Boolean);
+}
+function odioKeyOf(p){
+  if(!p || !p.skills) return null;
+  for(const sk of p.skills){
+    const n = String(sk);
+    if(normalizeSkillText(n).startsWith('odio')){
+      const m = n.match(/\(([^)]*)\)/);
+      if(m && m[1].trim()) return m[1].trim();
+    }
+  }
+  return null;
+}
+function odioApplies(attacker, defender){
+  const k = odioKeyOf(attacker);
+  if(!k || !defender) return null;
+  const nk = normalizeSkillText(k).trim();
+  return clavesOf(defender).some(c=>c===nk || (nk.length>=4 && c.includes(nk))) ? k : null;
+}
 function lonerBlocksReroll(p){
   if(!p || !playerHasSkill(p, 'solitario', 'loner')) return false;
   const sk = (p.skills||[]).map(normalizeSkillText).find(s=>s.includes('solitario') || s.includes('loner'));
@@ -3359,6 +3397,7 @@ function openActionMenu(id){
 
 function canSecureBall(p){
   if(isBigGuy(p)) return false;
+  if(hasTembloroso(p) || hasNoBall(p)) return false;
   if(secureBallUsedByTeam[p.team]) return false;
   if(ball.carrierId!==null || ball.row===null) return false;
   const enemyNear = players.some(p2 => p2.onPitch && p2.team!==p.team && p2.condition==='standing' &&
@@ -3796,9 +3835,9 @@ function unstickState(){
   pendingFerocityAttack = null;
   pendingAnimosity = null;
   pendingHailMaryChoice = null;
-  pendingProvocarChoice = null; luchadorUsed = false; luchadorPickMode = false; blockProNote = '';
+  pendingProvocarChoice = null; pendingStandFirm = null; luchadorUsed = false; luchadorPickMode = false; blockProNote = '';
   pendingHeroicTackle = null;
-  renderProvocarModal(); renderHeroicTackleModal();
+  renderProvocarModal(); renderHeroicTackleModal(); renderStandFirmModal();
   pendingBlitzStabChoice = null;
   pendingHandoffChoice = null;
   pendingFoulContext = null;
@@ -4451,6 +4490,7 @@ function computeBlockDiceInfo(attacker, defender, isBlitz){
 function proceedToBlockDice(attacker, defender, isBlitzHit){
   activeBlock = { attackerId: attacker.id, defenderId: defender.id, isBlitz: !!isBlitzHit };
   blockDiceRolled = false;
+  odioUsed = false; odioPickMode = false; blockRrUsed = false;
   document.getElementById('blockText').textContent = `${attacker.name} placa a ${defender.name} (${teamName(defender.team)}).`;
 
   const info = computeBlockDiceInfo(attacker, defender, isBlitzHit);
@@ -4496,6 +4536,7 @@ function proceedToBlockDice(attacker, defender, isBlitzHit){
     : '🔓 Activar todos los empujes (para este placaje)';
   document.getElementById('blockFreePushBtn').classList.toggle('active-toggle', !!attacker.freePushOverride);
   document.getElementById('blockModal').classList.add('show');
+  refreshBlockOdioRr();
   broadcastState();
 }
 
@@ -4531,11 +4572,13 @@ function renderBlockDice(indices){
   indices.forEach((idx, i)=>{
     const d = document.createElement('div');
     const lucPick = luchadorPickMode && BLOCK_OUTCOME_KINDS[idx]==='bothDown';
-    d.className = 'block-face clickable-die' + (profesionalPickMode ? ' pro-pick' : (lucPick ? ' profesional-pick' : ''));
+    const odioPick = odioPickMode && BLOCK_OUTCOME_KINDS[idx]==='attackerDown';
+    d.className = 'block-face clickable-die' + (profesionalPickMode ? ' pro-pick' : ((lucPick || odioPick) ? ' profesional-pick' : ''));
     d.innerHTML = blockFaceHtml(idx);
     d.onclick = ()=>{
       if(profesionalPickMode){ rerollBlockDie(i); }
       else if(luchadorPickMode){ if(BLOCK_OUTCOME_KINDS[idx]==='bothDown') luchadorRerollDie(i); }
+      else if(odioPickMode){ if(BLOCK_OUTCOME_KINDS[idx]==='attackerDown') odioRerollDie(i); }
       else { applyBlockOutcome(BLOCK_OUTCOME_KINDS[idx]); }
     };
     el.appendChild(d);
@@ -4544,7 +4587,84 @@ function renderBlockDice(indices){
 }
 
 // LUCHADOR: al declarar un Placaje (no Blitz) puede repetir UN único dado de "Ambos caen" de toda la tirada.
+let odioUsed = false, odioPickMode = false, blockRrUsed = false;
+function refreshBlockOdioRr(){
+  const odioNote = document.getElementById('blockOdioNote'), odioBtn = document.getElementById('blockOdioBtn');
+  const rrNote = document.getElementById('blockRrNote'), rrBtn = document.getElementById('blockRrBtn');
+  if(!odioNote || !rrBtn) return;
+  const attacker = activeBlock ? players.find(x=>x.id===activeBlock.attackerId) : null;
+  const defender = activeBlock ? players.find(x=>x.id===activeBlock.defenderId) : null;
+  const key = attacker && defender ? odioApplies(attacker, defender) : null;
+  odioNote.style.display = key ? 'block' : 'none';
+  if(key) odioNote.textContent = '😠 ODIO (' + key + '): ' + attacker.name + ' puede repetir un único dado de Atacante derribado contra ' + defender.name + (odioUsed ? ' — ya usado.' : '.');
+  const hasAD = currentBlockDiceIndices.some(i=>BLOCK_OUTCOME_KINDS[i]==='attackerDown');
+  const odioAvail = !!(key && blockDiceRolled && !odioUsed && hasAD);
+  odioBtn.style.display = odioAvail ? 'block' : 'none';
+  odioBtn.textContent = odioPickMode ? '✖ Cancelar Odio' : '😠 Usar Odio (repite 1 dado de Atacante derribado)';
+  const rr = attacker ? (teamRerollsLeft[attacker.team] || 0) : 0;
+  const rrAvail = !!(attacker && blockDiceRolled && !blockRrUsed && rr>0);
+  rrNote.style.display = rrAvail ? 'block' : 'none';
+  rrBtn.style.display = rrAvail ? 'block' : 'none';
+  if(rrAvail){
+    rrNote.textContent = '🔄 ' + teamName(attacker.team) + ' tiene ' + rr + ' Segunda' + (rr===1?'':'s') + ' oportunidad' + (rr===1?'':'es') + ': puede gastar una para repetir TODOS los dados del placaje.';
+    rrBtn.textContent = '🔄 Usar Reroll de equipo (quedan ' + rr + ') — repite todos los dados';
+  }
+}
+function useOdio(){
+  if(odioUsed || !activeBlock || !blockDiceRolled) return;
+  const attacker = players.find(x=>x.id===activeBlock.attackerId);
+  const defender = players.find(x=>x.id===activeBlock.defenderId);
+  if(!odioApplies(attacker, defender)) return;
+  if(odioPickMode){ odioPickMode = false; renderBlockDice(currentBlockDiceIndices); broadcastState(); return; }
+  const idxs = [];
+  currentBlockDiceIndices.forEach((v,i)=>{ if(BLOCK_OUTCOME_KINDS[v]==='attackerDown') idxs.push(i); });
+  if(!idxs.length) return;
+  if(idxs.length===1){ odioRerollDie(idxs[0]); return; }
+  odioPickMode = true;
+  log('😠 ' + attacker.name + ' usa Odio — elegid cuál de los dados de Atacante derribado repetir (click en él).');
+  renderBlockDice(currentBlockDiceIndices);
+  broadcastState();
+}
+function odioRerollDie(i){
+  const attacker = activeBlock ? players.find(x=>x.id===activeBlock.attackerId) : null;
+  const oldFace = BLOCK_FACES[currentBlockDiceIndices[i]];
+  const newIdx = Math.floor(Math.random()*6);
+  currentBlockDiceIndices[i] = newIdx;
+  odioUsed = true; odioPickMode = false;
+  log('😠 Odio' + (attacker ? ' (' + attacker.name + ')' : '') + ': dado repetido — ' + oldFace + ' → ' + BLOCK_FACES[newIdx] + '.');
+  renderBlockDice(currentBlockDiceIndices);
+  broadcastState();
+}
+function useBlockTeamReroll(){
+  if(blockRrUsed || !activeBlock || !blockDiceRolled) return;
+  const attacker = players.find(x=>x.id===activeBlock.attackerId);
+  if(!attacker || (teamRerollsLeft[attacker.team] || 0) <= 0) return;
+  blockRrUsed = true;
+  if(captainSavesReroll(attacker.team)){
+    log('🔄 ' + teamName(attacker.team) + ' repite el placaje sin gastar reroll (Capitán) — siguen ' + teamRerollsLeft[attacker.team] + '.');
+  } else {
+    teamRerollsLeft[attacker.team] = Math.max(0, (teamRerollsLeft[attacker.team]||0) - 1);
+    log('🔄 ' + teamName(attacker.team) + ' gasta un reroll en el placaje — quedan ' + teamRerollsLeft[attacker.team] + '.');
+  }
+  renderStaffPanels();
+  if(lonerBlocksReroll(attacker)){
+    renderBlockDice(currentBlockDiceIndices);
+    broadcastState();
+    return;
+  }
+  const n = currentBlockDiceIndices.length;
+  const results = [];
+  for(let k=0;k<n;k++){ results.push(Math.floor(Math.random()*6)); }
+  currentBlockDiceIndices = results;
+  log('🔄 Placaje repetido x' + n + ': ' + results.map(i=>BLOCK_FACES[i]).join(' / '));
+  blockProfesionalUsed = false; profesionalPickMode = false; blockProNote = '';
+  luchadorUsed = false; luchadorPickMode = false; odioPickMode = false;
+  renderBlockDice(results);
+  document.getElementById('blockProfesionalBtn').style.display = hasProfesional(attacker) ? 'block' : 'none';
+  broadcastState();
+}
 function refreshBlockSkillUi(){
+  refreshBlockOdioRr();
   const proNote = document.getElementById('blockProNote');
   if(proNote){
     if(blockProNote==='ok'){ proNote.style.display='block'; proNote.className='pro-note ok'; proNote.textContent='✅ Éxito al usar PROFESIONAL: elige el dado a repetir'; }
@@ -4636,6 +4756,7 @@ function rollBlockDiceModal(n){
   blockProfesionalUsed = false;
   profesionalPickMode = false; blockProNote = '';
   luchadorUsed = false; luchadorPickMode = false;
+  odioUsed = false; odioPickMode = false; blockRrUsed = false;
   renderBlockDice(results);
   const attacker = activeBlock ? players.find(x=>x.id===activeBlock.attackerId) : null;
   document.getElementById('blockProfesionalBtn').style.display = (attacker && hasProfesional(attacker)) ? 'block' : 'none';
@@ -4878,6 +4999,16 @@ function applyBlockOutcomeConfirmed(kind){
     return;
   }
 
+  if(playerHasSkill(defender, 'mantenerse firme', 'stand firm')){
+    pendingStandFirm = { stage:'initial', defenderId: defender.id, attackerId: attacker.id, kind, isBlitz: !!isBlitz };
+    renderStandFirmModal();
+    broadcastState();
+    return;
+  }
+  startPushSelection(attacker, defender, kind, isBlitz);
+}
+
+function startPushSelection(attacker, defender, kind, isBlitz){
   chainPushStack = [];
   const offsets = computePushOffsets(attacker.row, attacker.col, defender.row, defender.col);
   pendingPush = { attackerId: attacker.id, defenderId: defender.id, kind, isBlitz, offsets, freePush: !!attacker.freePushOverride };
@@ -4995,6 +5126,82 @@ function isValidPushCell(mover, r, c, offsets, freePush){
   return currentPushTargets(mover, offsets || [], freePush).some(t=>t.row===r && t.col===c);
 }
 
+
+// ===== MANTENERSE FIRME =====
+let pendingStandFirm = null; // { stage:'initial'|'chain', defenderId, attackerId, kind, isBlitz, chain?:{...} }
+function renderStandFirmModal(){
+  const m = document.getElementById('standFirmModal');
+  if(!m) return;
+  if(!pendingStandFirm){ m.classList.remove('show'); return; }
+  const d = players.find(x=>x.id===pendingStandFirm.defenderId);
+  const a = players.find(x=>x.id===pendingStandFirm.attackerId);
+  const who = pendingStandFirm.stage==='chain' ? players.find(x=>x.id===pendingStandFirm.chain.occupantId) : d;
+  document.getElementById('standFirmText').textContent = (who ? who.name : 'El jugador') + ' tiene MANTENERSE FIRME. ¿Quiere permanecer en su casilla (no ser empujado)?'
+    + (pendingStandFirm.stage==='chain' ? ' Si se queda, el empujón en cadena se cancela y nadie se mueve.' : '')
+    + ((pendingStandFirm.stage==='initial' && (pendingStandFirm.kind==='pow' || pendingStandFirm.kind==='stumble')) ? ' (Aunque no sea empujado, el resultado de derribo se aplica igualmente.)' : '');
+  m.classList.add('show');
+}
+function standFirmStays(attacker, defender, kind, isBlitz){
+  // el defensor original no se mueve: se aplica el derribo si procede, sin movimiento de impulso
+  let fallKind = null;
+  if(kind==='pow'){ fallKind = 'pow'; }
+  else if(kind==='stumble'){
+    if(playerHasSkill(defender, 'esquiva', 'dodge') && !playerHasSkill(attacker, 'placaje defensivo', 'defensive tackle')){
+      log('🤸 ' + defender.name + ' tiene Esquiva — el Desequilibrado no le derriba.');
+    } else {
+      fallKind = 'pow';
+      log('💥 ' + defender.name + ' no puede evitar la caída — el Desequilibrado se trata como un POW.');
+    }
+  }
+  renderRosters(); renderPitch(); renderSelInfo();
+  broadcastState();
+  continueFinishPushSequenceAfterSteal({ attackerId: attacker.id, defenderId: defender.id, fallKind, isBlitz: !!isBlitz });
+}
+function standFirmChoose(stay){
+  const ctx = pendingStandFirm;
+  if(!ctx) return;
+  pendingStandFirm = null;
+  renderStandFirmModal();
+  const attacker = players.find(x=>x.id===ctx.attackerId);
+  const defender = players.find(x=>x.id===ctx.defenderId);
+  if(!attacker || !defender){ broadcastState(); return; }
+  if(ctx.stage==='initial'){
+    if(stay){
+      log('🧱 ' + defender.name + ' usa MANTENERSE FIRME — no es empujado y permanece en su casilla.');
+      standFirmStays(attacker, defender, ctx.kind, ctx.isBlitz);
+    } else {
+      log('🧱 ' + defender.name + ' no usa Mantenerse firme.');
+      startPushSelection(attacker, defender, ctx.kind, ctx.isBlitz);
+    }
+    return;
+  }
+  // stage 'chain'
+  const c = ctx.chain;
+  const occ = players.find(x=>x.id===c.occupantId);
+  if(stay){
+    log('🧱 ' + (occ ? occ.name : 'El jugador') + ' usa MANTENERSE FIRME — el empujón en cadena se cancela y nadie se mueve.');
+    chainPushStack = [];
+    document.getElementById('pushControlPanel').style.display = 'none';
+    standFirmStays(attacker, defender, ctx.kind, ctx.isBlitz);
+  } else {
+    log('🧱 ' + (occ ? occ.name : 'El jugador') + ' no usa Mantenerse firme: el empujón en cadena continúa.');
+    const mover = players.find(x=>x.id===c.moverId);
+    continueChainPush(c.info, mover, occ, c.r, c.c, true);
+  }
+}
+function continueChainPush(info, mover, occupant, r, c){
+  const newOffsets = computePushOffsets(mover.row, mover.col, r, c);
+  log('⛓️ Empuje en cadena: ' + mover.name + ' choca con ' + occupant.name + ', que también será empujado.');
+  pendingPush = { attackerId: info.attackerId, defenderId: occupant.id, kind: info.kind, isBlitz: info.isBlitz, offsets: newOffsets, freePush: info.freePush, chainRoot: info.chainRoot || info };
+  document.getElementById('pushControlText').textContent = 'Empuje en cadena: elegid casilla para ' + occupant.name + ' (dirección heredada del empujón anterior, resaltada en el campo).';
+  const rootAttacker = players.find(x=>x.id===(info.chainRoot || info).attackerId);
+  if(rootAttacker){
+    document.getElementById('pushFreeToggleBtn').textContent = rootAttacker.freePushOverride ? '🔒 Desactivar empuje libre' : '🔓 Activar todos los empujes';
+    document.getElementById('pushFreeToggleBtn').classList.toggle('active-toggle', !!rootAttacker.freePushOverride);
+  }
+  renderPitch();
+  broadcastState();
+}
 function resolvePush(r,c){
   const info = pendingPush;
   pendingPush = null;
@@ -5005,17 +5212,15 @@ function resolvePush(r,c){
   chainPushStack.push({ playerId: mover.id, fromR: mover.row, fromC: mover.col, toR: r, toC: c });
 
   if(occupant){
-    const newOffsets = computePushOffsets(mover.row, mover.col, r, c);
-    log('⛓️ Empuje en cadena: ' + mover.name + ' choca con ' + occupant.name + ', que también será empujado.');
-    pendingPush = { attackerId: info.attackerId, defenderId: occupant.id, kind: info.kind, isBlitz: info.isBlitz, offsets: newOffsets, freePush: info.freePush, chainRoot: info.chainRoot || info };
-    document.getElementById('pushControlText').textContent = 'Empuje en cadena: elegid casilla para ' + occupant.name + ' (dirección heredada del empujón anterior, resaltada en el campo).';
-    const rootAttacker = players.find(x=>x.id===(info.chainRoot || info).attackerId);
-    if(rootAttacker){
-      document.getElementById('pushFreeToggleBtn').textContent = rootAttacker.freePushOverride ? '🔒 Desactivar empuje libre' : '🔓 Activar todos los empujes';
-      document.getElementById('pushFreeToggleBtn').classList.toggle('active-toggle', !!rootAttacker.freePushOverride);
+    if(playerHasSkill(occupant, 'mantenerse firme', 'stand firm')){
+      const rootI = info.chainRoot || info;
+      const origId = chainPushStack[0].playerId;
+      pendingStandFirm = { stage:'chain', defenderId: origId, attackerId: rootI.attackerId, kind: rootI.kind, isBlitz: !!rootI.isBlitz, chain: { occupantId: occupant.id, moverId: mover.id, r, c, info } };
+      renderStandFirmModal();
+      broadcastState();
+      return;
     }
-    renderPitch();
-    broadcastState();
+    continueChainPush(info, mover, occupant, r, c, false);
     return;
   }
 
@@ -5079,6 +5284,11 @@ function resolvePush(r,c){
   if(attacker && originalPlayer){
     if(attacker.rooted){
       log('🌳 ' + attacker.name + ' está Echando raíces — no puede hacer el movimiento de impulso.');
+      finishPushSequence(pendingFollowUp);
+      return;
+    }
+    if(playerHasSkill(originalPlayer, 'zafarse') && !playerHasSkill(attacker, 'bola y cadena', 'ball and chain') && !(playerHasSkill(attacker, 'imparable', 'juggernaut') && rootInfo.isBlitz)){
+      log('🐍 ' + originalPlayer.name + ' tiene ZAFARSE — ' + attacker.name + ' no puede hacer el movimiento de impulso.');
       finishPushSequence(pendingFollowUp);
       return;
     }
@@ -5193,6 +5403,8 @@ function secureTheBall(){
   const p = players.find(x=>x.id===selected);
   if(!p || p.condition!=='standing' || p.team!==state.active || p.activated) return;
   if(isBigGuy(p)){ alert('Los jugadores con la clave Grandullón no pueden declarar Asegurar el Balón.'); return; }
+  if(hasTembloroso(p)){ alert(p.name + ' tiene Tembloroso: no puede declarar Asegurar el Balón.'); return; }
+  if(hasNoBall(p)){ alert(p.name + ' tiene Sin balón: no puede asegurar el balón.'); return; }
   if(ball.carrierId!==null || ball.row===null){ alert('No hay ningún balón suelto en el campo.'); return; }
   const enemyNear = players.some(p2 => p2.onPitch && p2.team!==p.team && p2.condition==='standing' &&
     Math.max(Math.abs(p2.row-ball.row), Math.abs(p2.col-ball.col)) <= 2);
@@ -5996,7 +6208,7 @@ function resolvePassOutcome(passer, outcome){
 
 function finishPassLandingWithIntercept(passer, landR, landC, outcome, noIntercept){
   if(noIntercept){ log('🙏 Un Pase a lo loco no puede interceptarse.'); }
-  const candidates = (noIntercept || playerHasSkill(passer, 'partenubes', 'cloud burster')) ? [] : playersNearPassLine(passer.row, passer.col, landR, landC, passer.team);
+  const candidates = (noIntercept || playerHasSkill(passer, 'partenubes', 'cloud burster')) ? [] : playersNearPassLine(passer.row, passer.col, landR, landC, passer.team).filter(c=>!hasNoBall(c));
   if(candidates.length>0){
     pendingInterceptionChoice = { landR, landC, outcome, candidateIds: candidates.map(p=>p.id) };
     updateStatus('¿Algún rival intenta interceptar el pase? (resaltados en azul, click en uno, o "sin intercepción").');
@@ -6325,6 +6537,21 @@ function isValidBounceCell(r,c){
 }
 
 function startBallBounce(){
+  const bpos = ballPosition();
+  if(bpos){
+    const dirRoll = Math.floor(Math.random()*8)+1;
+    const off = kickoffDirOffset(dirRoll);
+    const nr = bpos.row + off.dr, nc = bpos.col + off.dc;
+    log('🎲 Rebote del balón: D8=' + dirRoll + '.');
+    if(nr<0 || nr>=ROWS || nc<0 || nc>=COLS){
+      ballBounceActive = true;
+      bounceOutOfBounds(nr, nc);
+    } else {
+      ballBounceActive = true;
+      resolveBounce(nr, nc);
+    }
+    return;
+  }
   ballBounceActive = true;
   document.getElementById('ballBouncePanel').style.display = 'block';
   document.getElementById('bounceDirDie').textContent = '–';
@@ -6389,6 +6616,13 @@ function updateCatchTitle(){
 }
 
 function openCatchModal(p, noModifiers, voluntary, extraPenalty, extraReason, useAtraparSkill, catchVerb, rhBonus, catchKind){
+  if(hasNoBall(p)){
+    pendingCatch = { playerId: p.id, target: 7, voluntary: !!voluntary, useAtraparSkill: !!useAtraparSkill, catchKind: catchKind || (useAtraparSkill ? 'handoff' : 'pickup') };
+    catchRerollUsed = false;
+    log('🚫 ' + p.name + ' tiene SIN BALÓN: falla automáticamente el intento (como un 1 natural), sin tirada ni reroll.');
+    resolveCatch(false);
+    return;
+  }
   const hasNerviosCatch = playerHasSkill(p, 'nervios de acero', 'nerves of steel');
   const markers = (noModifiers || hasNerviosCatch) ? 0 : countOpponentTackleZones(p.row, p.col, p.team);
   const extra = noModifiers ? 0 : (extraPenalty || 0);
@@ -7016,8 +7250,12 @@ function startKickoffBounce(step){
   const dirRoll = Math.floor(Math.random()*8)+1;
   const offset = kickoffDirOffset(dirRoll);
   if(step===1){
-    kickoffDistance = Math.floor(Math.random()*6)+1;
-    log('🎲 Patada inicial: D8=' + dirRoll + ', D6=' + kickoffDistance + ' casilla(s).');
+    const kickP = players.find(x=>x.team===kickoffKickingTeam && x.onPitch && hasKickSkill(x));
+    const faces = kickP ? 3 : 6;
+    const dA = Math.floor(Math.random()*faces)+1, dB = Math.floor(Math.random()*faces)+1;
+    kickoffDistance = Math.min(dA, dB);
+    if(kickP) log('🦵 ' + kickP.name + ' usa PATADA y el balón rebota: D8=' + dirRoll + ', 2D3=' + dA + '+' + dB + ' → se queda con el menor: ' + kickoffDistance + ' casilla(s).');
+    else log('🎲 Patada inicial: D8=' + dirRoll + ', 2D6=' + dA + '+' + dB + ' → se queda con el menor: ' + kickoffDistance + ' casilla(s).');
   } else {
     kickoffDistance = 1;
     log('🎲 Rebote final: D8=' + dirRoll + '.');
@@ -8548,6 +8786,9 @@ function cancelActiveModal(modalId){
     case 'provocarModal':
       provocarChoose(false);
       break;
+    case 'standFirmModal':
+      standFirmChoose(false);
+      break;
     case 'heroicTackleModal':
       heroicTackleChoose(null);
       break;
@@ -8588,6 +8829,7 @@ function modalActorTeam(id){
     case 'catchModal': return pendingCatch ? pteam(pendingCatch.playerId) : act;
     case 'interceptModal': return pendingInterceptionRoll ? pteam(pendingInterceptionRoll.interceptorId) : other(act);
     case 'provocarModal': return pendingProvocarChoice ? pteam(pendingProvocarChoice.defenderId) : other(act);
+    case 'standFirmModal': return pendingStandFirm ? (pendingStandFirm.stage==='chain' ? pteam(pendingStandFirm.chain.occupantId) : pteam(pendingStandFirm.defenderId)) : other(act);
     case 'heroicTackleModal': return other(act);
     case 'jumpUpModal': return pendingJumpUpCheck!=null ? pteam(pendingJumpUpCheck) : act;
     case 'forcejearModal': {
@@ -8699,7 +8941,7 @@ try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesBut
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V72'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V73'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

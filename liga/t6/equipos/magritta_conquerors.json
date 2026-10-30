@@ -142,7 +142,8 @@
       "pa": "4+",
       "av": "9+",
       "skills": [
-        "Human - Linea"
+        "Human - Linea",
+        "Placar"
       ]
     }
   ],
@@ -232,18 +233,18 @@
         "num": 2,
         "price": 85000,
         "progression": {
-          "sppTotal": 0,
-          "sppUnspent": 0,
+          "sppTotal": 5,
+          "sppUnspent": 5,
           "improvements": []
         },
         "statistics": {
           "sprints": 0,
           "passes": 0,
-          "touchdowns": 0,
+          "touchdowns": 1,
           "deflections": 0,
           "interceptions": 0,
           "lightInjuries": 0,
-          "seriousInjuries": 0,
+          "seriousInjuries": 1,
           "deaths": 0,
           "mvp": 0
         },
@@ -298,8 +299,8 @@
         "num": 5,
         "price": 70000,
         "progression": {
-          "sppTotal": 0,
-          "sppUnspent": 0,
+          "sppTotal": 2,
+          "sppUnspent": 2,
           "improvements": []
         },
         "statistics": {
@@ -310,7 +311,7 @@
           "interceptions": 0,
           "lightInjuries": 0,
           "seriousInjuries": 0,
-          "deaths": 0,
+          "deaths": 1,
           "mvp": 0
         },
         "injuries": [],
@@ -320,8 +321,8 @@
         "num": 6,
         "price": 50000,
         "progression": {
-          "sppTotal": 0,
-          "sppUnspent": 0,
+          "sppTotal": 2,
+          "sppUnspent": 2,
           "improvements": []
         },
         "statistics": {
@@ -330,7 +331,7 @@
           "touchdowns": 0,
           "deflections": 0,
           "interceptions": 0,
-          "lightInjuries": 0,
+          "lightInjuries": 1,
           "seriousInjuries": 0,
           "deaths": 0,
           "mvp": 0
@@ -344,7 +345,17 @@
         "progression": {
           "sppTotal": 0,
           "sppUnspent": 0,
-          "improvements": []
+          "improvements": [
+            {
+              "matchId": "T6-J01",
+              "order": 1,
+              "category": "primary",
+              "selection": "chosen",
+              "skill": "Placar",
+              "sppCost": 0,
+              "valueExtra": 10000
+            }
+          ]
         },
         "statistics": {
           "sprints": 0,
@@ -361,7 +372,115 @@
         "status": "active"
       }
     ],
-    "matches": [],
+    "matches": [
+      {
+        "id": "T6-J01",
+        "round": 1,
+        "homeAway": "home",
+        "opponent": {
+          "teamId": "euskeras_orc_team",
+          "teamName": "EUSKERAS ORC TEAM",
+          "race": "Orcs"
+        },
+        "result": {
+          "teamScore": 1,
+          "opponentScore": 0,
+          "outcome": "win"
+        },
+        "statistics": {
+          "lightInjuriesFor": 1,
+          "lightInjuriesAgainst": 0,
+          "seriousInjuriesFor": 1,
+          "seriousInjuriesAgainst": 0,
+          "deathsFor": 1,
+          "deathsAgainst": 0,
+          "sentOffFor": 0,
+          "sentOffAgainst": 0,
+          "skullsFor": 2,
+          "skullsAgainst": 0,
+          "onesFor": 0,
+          "onesAgainst": 0
+        },
+        "dedicatedFansGained": 1,
+        "treasurySpent": 0,
+        "earnings": 40000,
+        "leaguePoints": 0,
+        "playerEvents": [
+          {
+            "num": 2,
+            "name": "MÁXIMO DÉCIMO NEGRIDIO",
+            "sprints": 0,
+            "passes": 0,
+            "touchdowns": 1,
+            "deflections": 0,
+            "interceptions": 0,
+            "lightInjuries": 0,
+            "seriousInjuries": 1,
+            "deaths": 0,
+            "mvp": 0,
+            "injurySuffered": "none",
+            "sppEarned": 5
+          },
+          {
+            "num": 5,
+            "name": "CORTADILLO",
+            "sprints": 0,
+            "passes": 0,
+            "touchdowns": 0,
+            "deflections": 0,
+            "interceptions": 0,
+            "lightInjuries": 0,
+            "seriousInjuries": 0,
+            "deaths": 1,
+            "mvp": 0,
+            "injurySuffered": "none",
+            "sppEarned": 2
+          },
+          {
+            "num": 6,
+            "name": "EL BURLADOR DE MYRMIDIA",
+            "sprints": 0,
+            "passes": 0,
+            "touchdowns": 0,
+            "deflections": 0,
+            "interceptions": 0,
+            "lightInjuries": 1,
+            "seriousInjuries": 0,
+            "deaths": 0,
+            "mvp": 0,
+            "injurySuffered": "none",
+            "sppEarned": 2
+          },
+          {
+            "num": 7,
+            "name": "ISABELLA DE LA ARBOLEDA",
+            "sprints": 0,
+            "passes": 0,
+            "touchdowns": 0,
+            "deflections": 0,
+            "interceptions": 0,
+            "lightInjuries": 0,
+            "seriousInjuries": 0,
+            "deaths": 0,
+            "mvp": 0,
+            "injurySuffered": "none",
+            "sppEarned": 0,
+            "improvements": [
+              {
+                "order": 1,
+                "category": "primary",
+                "selection": "chosen",
+                "skill": "Placar",
+                "sppCost": 0,
+                "valueExtra": 10000
+              }
+            ]
+          }
+        ],
+        "notes": "Clima: VENTISCA \nParecía buen inicio ya que los Incentivos daban a los Orcos 85k mo, Otorgando PIEL DE PLATANO, PUÑAL y ¡Trampillas abiertas! aunque sufren una derrota dañina para el Roster. Un HG y un MUERTO hará que el entrenador busque reemplazo con la Tesorería que pueda.",
+        "registeredAt": "2026-10-30T14:03:08.716Z"
+      }
+    ],
     "retiredPlayers": [],
     "logo": "magritta_conquerors.png"
   }

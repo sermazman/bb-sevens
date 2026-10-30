@@ -50,7 +50,8 @@
       "pa": "4+",
       "av": "10+",
       "skills": [
-        "Linea - Orc"
+        "Linea - Orc",
+        "Placar"
       ]
     },
     {
@@ -112,20 +113,8 @@
       "skills": [
         "Placar",
         "Abrirse paso",
-        "Blitzer - Orc"
-      ]
-    },
-    {
-      "num": 6,
-      "name": "KASYMARKO",
-      "position": "Lineman",
-      "ma": 5,
-      "st": 3,
-      "ag": "3+",
-      "pa": "4+",
-      "av": "10+",
-      "skills": [
-        "Linea - Orc"
+        "Blitzer - Orc",
+        "Odio (Human)"
       ]
     },
     {
@@ -173,11 +162,6 @@
       "row": 0
     },
     {
-      "num": 6,
-      "col": 9,
-      "row": 0
-    },
-    {
       "num": 7,
       "col": 6,
       "row": 0
@@ -212,7 +196,17 @@
         "progression": {
           "sppTotal": 0,
           "sppUnspent": 0,
-          "improvements": []
+          "improvements": [
+            {
+              "matchId": "T6-J01",
+              "order": 1,
+              "category": "primary",
+              "selection": "chosen",
+              "skill": "Placar",
+              "sppCost": 0,
+              "valueExtra": 10000
+            }
+          ]
         },
         "statistics": {
           "sprints": 0,
@@ -254,8 +248,8 @@
         "num": 3,
         "price": 95000,
         "progression": {
-          "sppTotal": 0,
-          "sppUnspent": 0,
+          "sppTotal": 4,
+          "sppUnspent": 4,
           "improvements": []
         },
         "statistics": {
@@ -267,7 +261,7 @@
           "lightInjuries": 0,
           "seriousInjuries": 0,
           "deaths": 0,
-          "mvp": 0
+          "mvp": 1
         },
         "injuries": [],
         "status": "active"
@@ -291,7 +285,13 @@
           "deaths": 0,
           "mvp": 0
         },
-        "injuries": [],
+        "injuries": [
+          {
+            "type": "lightInjury",
+            "matchId": "T6-J01",
+            "missNextGame": false
+          }
+        ],
         "status": "active"
       },
       {
@@ -313,30 +313,15 @@
           "deaths": 0,
           "mvp": 0
         },
-        "injuries": [],
-        "status": "active"
-      },
-      {
-        "num": 6,
-        "price": 50000,
-        "progression": {
-          "sppTotal": 0,
-          "sppUnspent": 0,
-          "improvements": []
-        },
-        "statistics": {
-          "sprints": 0,
-          "passes": 0,
-          "touchdowns": 0,
-          "deflections": 0,
-          "interceptions": 0,
-          "lightInjuries": 0,
-          "seriousInjuries": 0,
-          "deaths": 0,
-          "mvp": 0
-        },
-        "injuries": [],
-        "status": "active"
+        "injuries": [
+          {
+            "type": "seriousInjury",
+            "matchId": "T6-J01",
+            "missNextGame": true,
+            "hatred": "Human"
+          }
+        ],
+        "status": "missNextGame"
       },
       {
         "num": 7,
@@ -361,8 +346,174 @@
         "status": "active"
       }
     ],
-    "matches": [],
-    "retiredPlayers": [],
+    "matches": [
+      {
+        "id": "T6-J01",
+        "round": 1,
+        "homeAway": "away",
+        "opponent": {
+          "teamId": "magritta_conquerors",
+          "teamName": "MAGRITTA CONQUERORS",
+          "race": "Old World Alliance"
+        },
+        "result": {
+          "teamScore": 0,
+          "opponentScore": 1,
+          "outcome": "loss"
+        },
+        "statistics": {
+          "lightInjuriesFor": 0,
+          "lightInjuriesAgainst": 1,
+          "seriousInjuriesFor": 0,
+          "seriousInjuriesAgainst": 1,
+          "deathsFor": 0,
+          "deathsAgainst": 1,
+          "sentOffFor": 0,
+          "sentOffAgainst": 0,
+          "skullsFor": 0,
+          "skullsAgainst": 2,
+          "onesFor": 0,
+          "onesAgainst": 0
+        },
+        "dedicatedFansGained": 0,
+        "treasurySpent": 0,
+        "earnings": 30000,
+        "leaguePoints": 0,
+        "playerEvents": [
+          {
+            "num": 1,
+            "name": "GRUÑON",
+            "sprints": 0,
+            "passes": 0,
+            "touchdowns": 0,
+            "deflections": 0,
+            "interceptions": 0,
+            "lightInjuries": 0,
+            "seriousInjuries": 0,
+            "deaths": 0,
+            "mvp": 0,
+            "injurySuffered": "none",
+            "sppEarned": 0,
+            "improvements": [
+              {
+                "order": 1,
+                "category": "primary",
+                "selection": "chosen",
+                "skill": "Placar",
+                "sppCost": 0,
+                "valueExtra": 10000
+              }
+            ]
+          },
+          {
+            "num": 3,
+            "name": "KASIYESO",
+            "sprints": 0,
+            "passes": 0,
+            "touchdowns": 0,
+            "deflections": 0,
+            "interceptions": 0,
+            "lightInjuries": 0,
+            "seriousInjuries": 0,
+            "deaths": 0,
+            "mvp": 1,
+            "injurySuffered": "none",
+            "sppEarned": 4
+          },
+          {
+            "num": 4,
+            "name": "DURACELL",
+            "sprints": 0,
+            "passes": 0,
+            "touchdowns": 0,
+            "deflections": 0,
+            "interceptions": 0,
+            "lightInjuries": 0,
+            "seriousInjuries": 0,
+            "deaths": 0,
+            "mvp": 0,
+            "injurySuffered": "lightInjury",
+            "sppEarned": 0
+          },
+          {
+            "num": 5,
+            "name": "THE ROCK",
+            "sprints": 0,
+            "passes": 0,
+            "touchdowns": 0,
+            "deflections": 0,
+            "interceptions": 0,
+            "lightInjuries": 0,
+            "seriousInjuries": 0,
+            "deaths": 0,
+            "mvp": 0,
+            "injurySuffered": "seriousInjury",
+            "hatred": "Human",
+            "sppEarned": 0
+          },
+          {
+            "num": 6,
+            "name": "KASYMARKO",
+            "sprints": 0,
+            "passes": 0,
+            "touchdowns": 0,
+            "deflections": 0,
+            "interceptions": 0,
+            "lightInjuries": 0,
+            "seriousInjuries": 0,
+            "deaths": 0,
+            "mvp": 0,
+            "injurySuffered": "dead",
+            "sppEarned": 0
+          }
+        ],
+        "notes": "Clima: VENTISCA \nParecía buen inicio ya que los Incentivos daban a los Orcos 85k mo, Otorgando PIEL DE PLATANO, PUÑAL y ¡Trampillas abiertas! aunque sufren una derrota dañina para el Roster. Un HG y un MUERTO hará que el entrenador busque reemplazo con la Tesorería que pueda.",
+        "registeredAt": "2026-10-30T14:03:08.716Z"
+      }
+    ],
+    "retiredPlayers": [
+      {
+        "num": 6,
+        "name": "KASYMARKO",
+        "position": "Lineman",
+        "reason": "dead",
+        "retiredAtMatch": "T6-J01",
+        "attributes": {
+          "ma": 5,
+          "st": 3,
+          "ag": "3+",
+          "pa": "4+",
+          "av": "10+"
+        },
+        "skills": [
+          "Linea - Orc"
+        ],
+        "price": 50000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [
+          {
+            "type": "dead",
+            "matchId": "T6-J01",
+            "missNextGame": false
+          }
+        ]
+      }
+    ],
     "logo": "euskeras_orc_team.png"
   }
 }

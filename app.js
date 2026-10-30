@@ -1915,7 +1915,7 @@ const INC_ITEMS = [
   { key:'morgue',       name:'Ayudante de la morgue',            max:1, cost:100000, need:'undead',  needTxt:'solo Señores de los No Muertos', icon:'ayudante_morgue.png' },
   { key:'plague',       name:'Médico de la peste',               max:1, cost:100000, need:'nurgle',  needTxt:'solo Elegidos de Nurgle', icon:'medico_peste.png' },
   { key:'chef',         name:'Chef maestro halfling',            max:1, cost:300000, discount:{ rule:'halfling', cost:100000 }, icon:'chef_halfling.png' },
-  { key:'desperate',    name:'Medidas desesperadas',             max:5, cost:50000 }
+  { key:'desperate',    name:'Medidas desesperadas',             max:5, cost:50000, icon:'medida_desesperada.png' }
 ];
 const INC_RULES = [
   { k:'corrupt',  label:'Sobornos y corrupción' },
@@ -2160,6 +2160,48 @@ function incFinish(){
   });
   renderRosters();
   incCommit();
+}
+
+// ===== Habilidades por categoría (para Entrenamiento intensivo) =====
+const SKILL_CATS = {
+  G:{ name:'General',   list:['Agallas','Apartar','Bloquear','Forcejear','Jugar sucio','Furia','Patada','Manos seguras','Perseguir','Placar','Profesional','Quitar balón'] },
+  A:{ name:'Agilidad',  list:['Atrapar','Defensa','Echarse a un lado','En pie de un salto','Esprintar','Esquivar','Pegar y correr','Pies firmes','Placaje heroico','Recepción heroica','Saltar'] },
+  F:{ name:'Fuerza',    list:['Abrirse paso','Agarrar','Bloqueo múltiple','Brazo fuerte','Cabeza dura','Golpe mortífero','Imparable','Llave de brazo','Luchador','Machacar','Mantenerse firme'] },
+  P:{ name:'Pase',      list:['Atento al balón','Cañonero','Dejada','Líder','Nervios de acero','Pasar','Pase a lo loco','Pase seguro','Pase y seguir','Partenubes','Precisión'] },
+  M:{ name:'Mutación',  list:['Aspecto repugnante','Boca monstruosa','Brazos extra','Cola prensil','Cuernos','Dos cabezas','Garras','Mano grande','Piel férrea','Piernas muy largas','Presencia perturbadora','Tentáculos'] },
+  T:{ name:'Rasgos',    list:[] }
+};
+let POSITIONS_DB = null;
+function loadPositionsDb(){
+  if(POSITIONS_DB !== null) return;
+  POSITIONS_DB = [];
+  try{ fetch('rosters/positions.json', { cache:'no-store' }).then(r=>r.ok?r.json():[]).then(a=>{ POSITIONS_DB = Array.isArray(a) ? a : []; }).catch(()=>{}); }catch(e){}
+}
+loadPositionsDb();
+function primaryLettersFor(team, p){
+  const race = String(teamRace[team] || '').trim().toLowerCase();
+  const pos = String(p.position || '').trim().toLowerCase();
+  const row = (POSITIONS_DB || []).find(x=>x && String(x.race||'').trim().toLowerCase()===race && String(x.type||'').trim().toLowerCase()===pos && x.primSec);
+  if(!row) return null;
+  return String(row.primSec).split('/')[0].replace(/[^A-Za-z]/g,'').toUpperCase().split('');
+}
+function primaryOptionsFor(team, p){
+  let letters = primaryLettersFor(team, p);
+  const known = !!letters;
+  if(!letters) letters = ['G','A','F','P','M'];
+  const have = (p.skills || []).map(x=>String(x).toLowerCase());
+  return { known, groups: letters.filter(l=>SKILL_CATS[l]).map(l=>({ cat:SKILL_CATS[l].name, skills:SKILL_CATS[l].list.filter(k=>!have.includes(k.toLowerCase())) })).filter(g=>g.skills.length) };
+}
+function primarySelectHtml(id, team, p){
+  const o = primaryOptionsFor(team, p);
+  return '<select id="' + id + '">' + o.groups.map(g=>'<optgroup label="' + g.cat + '">' + g.skills.map(k=>'<option value="' + k + '">' + k + '</option>').join('') + '</optgroup>').join('') + '</select>' + (o.known ? '' : ' <small>(posición no encontrada: se muestran todas)</small>');
+}
+function admPickPrimary(team, p){
+  const flat = []; primaryOptionsFor(team, p).groups.forEach(g=>g.skills.forEach(k=>flat.push(k)));
+  if(!flat.length) return '';
+  const r = window.prompt('Habilidad Primaria para ' + p.name + ' (escribe el número):\n' + flat.map((k,x)=>(x+1)+'. '+k).join('\n'), '1');
+  const n = parseInt(r, 10);
+  return (n>=1 && n<=flat.length) ? flat[n-1] : '';
 }
 function incPrayerPick(team, idx){
   const i = incSt(); const pr = i.prayers[team][idx]; if(!pr || pr.done) return;
@@ -2499,7 +2541,7 @@ function admAdd(kind, team, n){
         pr.avFrom = p.av; p.avBoost = (p.avBoost || 0) + 1; p.av = Math.min(11, v+1) + '+';
       } else {
         let sk = def.skill;
-        if(n===8){ sk = (window.prompt('Habilidad Primaria para ' + p.name + ':', '') || '').trim(); if(!sk) return; }
+        if(n===8){ sk = admPickPrimary(team, p); if(!sk) return; }
         pr.skill = sk; p.skills = [sk].concat(p.skills || []); p.prayerSkills = (p.prayerSkills || []).concat([sk]);
       }
       const tp = players.find(x=>x.id===pr.target);
@@ -2650,7 +2692,7 @@ function renderIncentives(body, actions){
           if(def.mode==='pick'){
             ctl = '<select id="incSel_' + t + '_' + idx + '">' + incPlayingPlayers(t).map(p=>'<option value="' + p.id + '">#' + p.num + ' ' + p.name + '</option>').join('') + '</select> <button onclick="incPrayerPick(\'' + t + '\',' + idx + ')">Aplicar</button>';
           } else if(def.mode==='randomPick'){
-            ctl = '<b>' + (tgt ? '#' + tgt.num + ' ' + tgt.name : '—') + '</b> <input type="text" id="incTxt_' + t + '_' + idx + '" placeholder="Habilidad Primaria elegida"> <button onclick="incPrayerPick(\'' + t + '\',' + idx + ')">Aplicar</button>';
+            ctl = '<b>' + (tgt ? '#' + tgt.num + ' ' + tgt.name : '—') + '</b> ' + (tgt ? primarySelectHtml('incTxt_' + t + '_' + idx, t, tgt) : '') + ' <button onclick="incPrayerPick(\'' + t + '\',' + idx + ')">Aplicar</button>';
           }
         } else {
           ctl = tgt ? '<small>→ #' + tgt.num + ' ' + tgt.name + '</small>' : '<small>registrada</small>';
@@ -8657,7 +8699,7 @@ try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesBut
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V70'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V72'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

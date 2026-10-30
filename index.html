@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-w-version="W_V55">
+<html lang="es" data-w-version="W_V56">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -522,10 +522,14 @@
     <button class="full" id="blockProfesionalBtn" onclick="useProfesionalOnBlock()" style="display:none; margin-top:8px;">🎓 Usar Profesional (3+ para poder repetir un dado)</button>
     <div class="small-note" id="blockLuchadorNote" style="display:none; margin-top:8px; color:var(--gold);"></div>
     <button class="full" id="blockLuchadorBtn" onclick="useLuchador()" style="display:none; margin-top:6px;">💪 Usar Luchador (repite solo 1 dado de Ambos caen)</button>
+    <div class="small-note" id="blockOdioNote" style="display:none; margin-top:8px; color:#ff8a65; font-weight:700;"></div>
+    <button class="full" id="blockOdioBtn" onclick="useOdio()" style="display:none; margin-top:6px;">😠 Usar Odio (repite 1 dado de Atacante derribado)</button>
     <div id="blockOutcomeRow" class="disabled-block" style="margin-top:12px;">
       <button class="full" id="blockFreePushBtn" onclick="toggleFreePushForActiveBlock()" style="margin-bottom:10px;">🔓 Activar todos los empujes (para este placaje)</button>
       <div id="blockChooserBanner" class="chooser-banner">ELIGE: —</div>
     </div>
+    <div class="small-note" id="blockRrNote" style="display:none; margin-top:10px; color:var(--gold);"></div>
+    <button class="full" id="blockRrBtn" onclick="useBlockTeamReroll()" style="display:none; margin-top:6px;">🔄 Usar Reroll de equipo</button>
   </div>
 </div>
 
@@ -625,6 +629,17 @@
     <h2 id="preMatchTitle">SECUENCIA PREVIA</h2>
     <div id="preMatchBody"></div>
     <div class="row" id="preMatchActions" style="margin-top:12px; justify-content:center;"></div>
+  </div>
+</div>
+
+<div class="modal-back" id="standFirmModal">
+  <div class="modal">
+    <h2>🧱 MANTENERSE FIRME</h2>
+    <p id="standFirmText">¿Permanecer en la casilla?</p>
+    <div class="row" style="justify-content:center; gap:8px;">
+      <button class="primary" onclick="standFirmChoose(true)">Sí, mantenerse firme</button>
+      <button onclick="standFirmChoose(false)">No, que me empujen</button>
+    </div>
   </div>
 </div>
 

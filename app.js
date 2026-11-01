@@ -519,7 +519,7 @@ function snapshotState(){
     infoModalTitle: document.getElementById('infoModalTitle').textContent,
     infoModalText: document.getElementById('infoModalText').textContent,
     forcejearText: document.getElementById('forcejearText').textContent,
-    pendingForcejearChoice, pendingStandFirm,
+    pendingForcejearChoice, pendingStandFirm, pendingJump,
     matchEndText: document.getElementById('matchEndText').textContent,
     pendingActionMenuPlayer,
     dejadaWheelActive,
@@ -740,6 +740,7 @@ function applyRemoteState(payload){
   pendingHailMaryChoice = payload.pendingHailMaryChoice || null;
   pendingProvocarChoice = payload.pendingProvocarChoice || null;
   pendingStandFirm = payload.pendingStandFirm || null;
+  pendingJump = payload.pendingJump || null;
   luchadorUsed = !!payload.luchadorUsed;
   luchadorPickMode = !!payload.luchadorPickMode;
   renderAnimosityModal(); renderHailMaryModal();
@@ -1551,7 +1552,7 @@ function standUp(){
   if(selected===null) return;
   const p = players.find(x=>x.id===selected);
   if(!p || p.condition!=='tumbado') return;
-  const hasJumpUp = playerHasSkill(p, 'salto', 'jump up');
+  const hasJumpUp = playerHasSkill(p, 'en pie de un salto', 'jump up');
   p.condition = 'standing';
   p.justStoodThisActivation = true;
   if(hasJumpUp){
@@ -1570,7 +1571,7 @@ let pendingJumpUpCheck = null;
 function jumpUpBlitzCheck(){
   if(selected===null) return;
   const p = players.find(x=>x.id===selected);
-  if(!p || p.condition!=='tumbado' || !playerHasSkill(p, 'salto', 'jump up')) return;
+  if(!p || p.condition!=='tumbado' || !playerHasSkill(p, 'en pie de un salto', 'jump up')) return;
   const hasTarget = players.some(p2 => p2.onPitch && p2.team!==p.team && p2.condition==='standing' &&
     Math.max(Math.abs(p2.row-p.row), Math.abs(p2.col-p.col))===1);
   if(!hasTarget){ alert('No hay rivales en pie adyacentes.'); return; }
@@ -3042,6 +3043,7 @@ function renderPitch(){
     for(let c=0;c<COLS;c++){
       const cell = document.createElement('div');
       cell.className = cellClass(r,c);
+      cell.dataset.r = r; cell.dataset.c = c;
       if(trapdoorActive() && isTrapCell(r,c)){
         cell.classList.add('trapdoor-cell');
         const tdi = document.createElement('span'); tdi.className = 'trapdoor-ico'; tdi.title = 'Trampilla traicionera'; cell.appendChild(tdi);
@@ -3093,6 +3095,8 @@ function renderPitch(){
         if(isValidKickoffBounceCell(r,c)){ highlightable = true; highlightBounce = true; }
       } else if(ballBounceActive){
         if(isValidBounceCell(r,c)){ highlightable = true; highlightBounce = true; }
+      } else if(pendingJump){
+        if(isJumpDestCell(r,c)){ highlightable = true; highlightGfi = false; highlightPush = true; }
       } else if(pendingPush){
         const defender = players.find(x=>x.id===pendingPush.defenderId);
         const freeActive = isFreePushActive(pendingPush);
@@ -3157,6 +3161,11 @@ function renderPitch(){
           ((occ.gfiUsed ?? 0) > 0 ? ' · A por ellos ' + occ.gfiUsed + '/' + maxGfiFor(occ) : '') +
           (occ.condition==='tumbado' ? ' · TUMBADO' : occ.condition==='aturdido' ? ' · ATURDIDO' : occ.condition==='despistado' ? ' · DESPISTADO' : '');
         t.title = playerTooltipText(occ, pitchExtra);
+        if(occ.eyeGouged){
+          const eg = document.createElement('div');
+          eg.className = 'token-eye-mark'; eg.textContent = 'P'; eg.title = 'Piquete de ojos: no puede prestar apoyos hasta que sea activado de nuevo';
+          t.appendChild(eg);
+        }
         if(occ.condition==='tumbado' || occ.condition==='aturdido' || occ.condition==='despistado'){
           const mark = document.createElement('div');
           mark.className = 'token-mark';
@@ -3335,6 +3344,18 @@ function resolveThrowIn(exitR, exitC, fromR, fromC, depth){
 function handlePitchRightClick(e){
   e.preventDefault();
   if(phase==='live' && selected!==null && !anyModalOpen()){
+    const ce = e.target && e.target.closest ? e.target.closest('[data-r][data-c]') : null;
+    const sp = players.find(x=>x.id===selected);
+    if(ce && sp && jumpAllowed(sp)){
+      const r = parseInt(ce.dataset.r,10), c = parseInt(ce.dataset.c,10);
+      if(!occupiedBy(r,c) && ball.carrierId===null && ball.row===r && ball.col===c &&
+         Math.max(Math.abs(r-sp.row), Math.abs(c-sp.col))===1 && playerHasSkill(sp, 'saltar', 'leap')){
+        openJumpWheel(sp, 'saltar', r, c);
+        return false;
+      }
+    }
+  }
+  if(phase==='live' && selected!==null && !anyModalOpen()){
     handleTokenRightClick(selected);
   }
   return false;
@@ -3342,6 +3363,13 @@ function handlePitchRightClick(e){
 
 function handleTokenRightClick(id){
   if(phase!=='live' || anyModalOpen()) return;
+  { const sp = selected!==null ? players.find(x=>x.id===selected) : null;
+    const tg = players.find(x=>x.id===id);
+    if(sp && tg && sp.id!==tg.id && tg.onPitch && jumpAllowed(sp) && Math.max(Math.abs(tg.row-sp.row), Math.abs(tg.col-sp.col))===1){
+      if(tg.condition==='tumbado' || tg.condition==='aturdido'){ openJumpWheel(sp, 'brincar', tg.row, tg.col); return; }
+      if(playerHasSkill(sp, 'saltar', 'leap')){ openJumpWheel(sp, 'saltar', tg.row, tg.col); return; }
+    }
+  }
   const p = players.find(x=>x.id===id);
   if(!p || p.team!==state.active) return;
   if(selected===id && ball.carrierId===id && declaredAction==='pass'){
@@ -3381,6 +3409,7 @@ let dejadaWheelActive = false;
 // Añadir una opción nueva es añadir una línea de push() ahí — el racimo se reparte solo.
 
 function openActionMenu(id){
+  { const eg = players.find(x=>x.id===id); if(eg && eg.eyeGouged){ eg.eyeGouged = false; log('👁️ ' + eg.name + ' se recupera del Piquete de ojos al ser activado.'); } }
   { const pp = players.find(x=>x.id===id);
     if(pp && despisteArmed[pp.team] && !despisteSt && !pp.activated && state.active===pp.team){
       despisteArmed[pp.team] = false;
@@ -3494,6 +3523,9 @@ function canFoul(p){
 }
 
 function getActionMenuOptionsFor(p){
+  if(jumpWheel && jumpWheel.playerId===p.id){
+    return [{ icon: jumpWheel.kind==='saltar' ? '🦘' : '🤸', label: jumpWheel.kind==='saltar' ? 'Saltar' : 'Brincar', fn:'actionMenuJump' }];
+  }
   const opts = getActionMenuOptionsBase(p);
   if(despisteSt && despisteSt.stage===2 && despisteSt.id===p.id){
     const ban = ['actionMenuBlock','actionMenuApunalar','actionMenuStandApunalar'];
@@ -3528,7 +3560,7 @@ function getActionMenuOptionsBase(p){
     if(canApunalar(p)){
       opts.push({ icon:'🔪', label:'Levantar/Apuñalar', fn:'actionMenuStandApunalar' });
     }
-    if(playerHasSkill(p, 'salto', 'jump up')){
+    if(playerHasSkill(p, 'en pie de un salto', 'jump up')){
       opts.push({ icon:'🤸', label:'Salto+Placar', fn:'actionMenuJumpUp' });
     }
     return opts;
@@ -3596,6 +3628,7 @@ function closeActionMenu(){
   const el = document.getElementById('radialMenuContainer');
   if(el) el.remove();
   pendingActionMenuPlayer = null;
+  jumpWheel = null;
   dejadaWheelActive = false;
   passThrowWheelActive = false;
   broadcastState();
@@ -3835,7 +3868,7 @@ function unstickState(){
   pendingFerocityAttack = null;
   pendingAnimosity = null;
   pendingHailMaryChoice = null;
-  pendingProvocarChoice = null; pendingStandFirm = null; luchadorUsed = false; luchadorPickMode = false; blockProNote = '';
+  pendingProvocarChoice = null; pendingStandFirm = null; pendingJump = null; jumpWheel = null; luchadorUsed = false; luchadorPickMode = false; blockProNote = '';
   pendingHeroicTackle = null;
   renderProvocarModal(); renderHeroicTackleModal(); renderStandFirmModal();
   pendingBlitzStabChoice = null;
@@ -3898,6 +3931,7 @@ function endActivation(id){
 }
 
 function cellClicked(r,c){
+  if(pendingJump){ handleJumpDest(r,c); return; }
   if(wizardSt && (wizardSt.mode==='pickCell' || wizardSt.mode==='pickPlayer')){ wizardPickAt(r,c); return; }
   if(kickoffEvt && kickoffEvt.phase==='board'){ kickoffBoardCellClick(r,c); return; }
   if(pendingPassTargetSelection){
@@ -4008,6 +4042,7 @@ function completeStep(p, r, c, consume){
 }
 
 function tokenClicked(id){
+  if(pendingJump){ cancelJump(); return; }
   if(wizardSt && (wizardSt.mode==='pickCell' || wizardSt.mode==='pickPlayer')){ const wp = players.find(x=>x.id===id); if(wp && wp.onPitch){ wizardPickAt(wp.row, wp.col); } return; }
   if(kickoffEvt && kickoffEvt.phase==='board'){ kickoffBoardTokenClick(id); return; }
   if(isValidInterceptTarget(id)){
@@ -4210,7 +4245,7 @@ function renderSelInfo(){
     despBtn.style.display = 'none';
   }
 
-  jumpUpBtn.style.display = (p.condition==='tumbado' && phase==='live' && p.team===state.active && playerHasSkill(p, 'salto', 'jump up')) ? 'block' : 'none';
+  jumpUpBtn.style.display = (p.condition==='tumbado' && phase==='live' && p.team===state.active && playerHasSkill(p, 'en pie de un salto', 'jump up')) ? 'block' : 'none';
 }
 
 function assignBall(){
@@ -4431,6 +4466,7 @@ function getAssistingPlayers(supporterTeam, targetId, excludeId, context){
   return players.filter(p2=>{
     if(p2.id===excludeId) return false;
     if(!(p2.onPitch && p2.team===supporterTeam && p2.condition==='standing')) return false;
+    if(p2.eyeGouged) return false;
     const distToTarget = Math.max(Math.abs(p2.row-target.row), Math.abs(p2.col-target.col));
     if(distToTarget!==1) return false;
     const markingEnemies = players.filter(e => e.onPitch && e.team===enemyTeam && e.condition==='standing' && e.id!==targetId &&
@@ -5287,6 +5323,11 @@ function resolvePush(r,c){
       finishPushSequence(pendingFollowUp);
       return;
     }
+    if(attacker && originalPlayer && originalPlayer.team!==attacker.team && playerHasSkill(attacker, 'piquete de ojos', 'eye gouge')){
+      originalPlayer.eyeGouged = true;
+      log('👁️ PIQUETE DE OJOS: ' + originalPlayer.name + ' no podrá prestar apoyos hasta que sea activado de nuevo.');
+      renderPitch();
+    }
     if(playerHasSkill(originalPlayer, 'zafarse') && !playerHasSkill(attacker, 'bola y cadena', 'ball and chain') && !(playerHasSkill(attacker, 'imparable', 'juggernaut') && rootInfo.isBlitz)){
       log('🐍 ' + originalPlayer.name + ' tiene ZAFARSE — ' + attacker.name + ' no puede hacer el movimiento de impulso.');
       finishPushSequence(pendingFollowUp);
@@ -5992,7 +6033,10 @@ function startPassRoll(passer, targetR, targetC, zone, hailMary){
   const hasNerviosPass = playerHasSkill(passer, 'nervios de acero', 'nerves of steel');
   const markers = hasNerviosPass ? 0 : countOpponentTackleZones(passer.row, passer.col, passer.team);
   const wxPassPen = weatherKind()==='soleado' ? 1 : 0;
-  const totalPenalty = PASS_ZONE_PENALTIES[zone] + markers + wxPassPen;
+  const cannonBonus = (zone>=2 && playerHasSkill(passer, 'cañonero', 'cannoneer')) ? 1 : 0;
+  const precisionBonus = (zone<=1 && playerHasSkill(passer, 'precisión', 'accurate')) ? 1 : 0;
+  const skillBonus = cannonBonus + precisionBonus;
+  const totalPenalty = PASS_ZONE_PENALTIES[zone] + markers + wxPassPen - skillBonus;
   pendingPassRoll = { passerId: passer.id, targetR, targetC, zone, totalPenalty, hailMary: !!hailMary };
   if(despAvail(passer.team, 5) && confirm('¿Usar ESCENA ENSAYADA en este Pase? El pasador necesita 2+ (más modificadores) y el receptor atrapa el pase con base 2+. Se gasta al usarla.')){
     despSpend(passer.team, 5); pendingPassRoll.escena = true; escenaCatch[passer.team] = true;
@@ -6001,8 +6045,8 @@ function startPassRoll(passer, targetR, targetC, zone, hailMary){
   }
   const target = pendingPassRoll.escena ? 2 : parseAgTarget(passer.ag);
   document.getElementById('passText').textContent = (hailMary ? 'PASE A LO LOCO (' + PASS_ZONE_NAMES[zone] + ')' : PASS_ZONE_NAMES[zone]) + ' de ' + passer.name +
-    ' — necesita ' + target + '+ (' + (pendingPassRoll.escena ? 'Escena ensayada: base 2+' : 'AG' + (passer.ag ?? '?')) + ', modificador -' + totalPenalty +
-    ((markers>0 || wxPassPen>0) ? ' = -' + PASS_ZONE_PENALTIES[zone] + ' por el rango' + (markers>0 ? ', -' + markers + ' por marcaje' : '') + (wxPassPen>0 ? ', -1 por Muy soleado' : '') : ' por el rango') + '). Tirad 1D6.';
+    ' — necesita ' + target + '+ (' + (pendingPassRoll.escena ? 'Escena ensayada: base 2+' : 'AG' + (passer.ag ?? '?')) + ', modificador ' + (totalPenalty>0 ? '-' + totalPenalty : totalPenalty<0 ? '+' + (-totalPenalty) : '0') +
+    ((markers>0 || wxPassPen>0 || skillBonus>0) ? ' = ' + (PASS_ZONE_PENALTIES[zone]>0 ? '-' + PASS_ZONE_PENALTIES[zone] : '0') + ' por el rango' + (markers>0 ? ', -' + markers + ' por marcaje' : '') + (wxPassPen>0 ? ', -1 por Muy soleado' : '') + (cannonBonus ? ', +1 por Cañonero' : '') + (precisionBonus ? ', +1 por Precisión' : '') : ' por el rango') + '). Tirad 1D6.';
   document.getElementById('passDie').textContent = '–';
   document.getElementById('passResultText').textContent = '';
   document.getElementById('passResultText').className = 'check-result';
@@ -6040,7 +6084,7 @@ function finishPassRoll(raw){
   const resEl = document.getElementById('passResultText');
   resEl.textContent = outcome==='preciso' ? '✅ PRECISO' : (outcome==='safepass' ? '🛡️ PASE SEGURO — SIN BALÓN PERDIDO' : (outcome==='impreciso' ? (hailMaryDowngrade ? '➖ IMPRECISO (Pase a lo loco: el preciso cuenta como impreciso)' : '➖ IMPRECISO') : '❌ BALÓN PERDIDO'));
   resEl.className = 'check-result ' + (outcome==='preciso' || outcome==='safepass' ? 'ok' : 'fail');
-  log('🎲 Pase de ' + passer.name + ': ' + raw + ' - ' + pendingPassRoll.totalPenalty + ' = ' + modified + ' (necesitaba ' + target + '+) → ' + outcome.toUpperCase());
+  log('🎲 Pase de ' + passer.name + ': ' + raw + (pendingPassRoll.totalPenalty<0 ? ' + ' + (-pendingPassRoll.totalPenalty) : ' - ' + pendingPassRoll.totalPenalty) + ' = ' + modified + ' (necesitaba ' + target + '+) → ' + outcome.toUpperCase());
   document.getElementById('passRollBtn').style.display = 'none';
   broadcastState();
   renderPassActionRow(passer, outcome);
@@ -6624,10 +6668,13 @@ function openCatchModal(p, noModifiers, voluntary, extraPenalty, extraReason, us
     return;
   }
   const hasNerviosCatch = playerHasSkill(p, 'nervios de acero', 'nerves of steel');
-  const markers = (noModifiers || hasNerviosCatch) ? 0 : countOpponentTackleZones(p.row, p.col, p.team);
-  const extra = noModifiers ? 0 : (extraPenalty || 0);
+  const isPickupKind = (catchKind || (useAtraparSkill ? 'handoff' : 'pickup'))==='pickup';
+  const manoGrande = isPickupKind && !noModifiers && playerHasSkill(p, 'mano grande', 'big hand');
+  if(manoGrande) log('🖐️ MANO GRANDE: ' + p.name + ' ignora los modificadores negativos al recoger el balón.');
+  const markers = (noModifiers || hasNerviosCatch || manoGrande) ? 0 : countOpponentTackleZones(p.row, p.col, p.team);
+  const extra = (noModifiers || manoGrande) ? 0 : (extraPenalty || 0);
   const bonus = noModifiers ? 0 : (rhBonus || 0);
-  const rainPen = (!noModifiers && weatherKind()==='lluvia') ? 1 : 0;
+  const rainPen = (!noModifiers && !manoGrande && weatherKind()==='lluvia') ? 1 : 0;
   let baseT = parseAgTarget(p.ag);
   const escenaOn = (catchKind==='pass' || catchKind==='heroic') && escenaCatch[p.team];
   if(escenaOn){ baseT = 2; escenaCatch[p.team] = false; log('🎭 ESCENA ENSAYADA: ' + p.name + ' recibe con base 2+ (más modificadores).'); }
@@ -7014,7 +7061,7 @@ function endCharge(){
   players.filter(p=>p.team===team).forEach(p=>{
     p.activated = false; p.remainingMove = p.ma; p.gfiUsed = 0;
     p.blockedThisActivation = false; p.justStoodThisActivation = false;
-    p.dodgeSkillUsedThisTurn = false; p.proRerollUsedThisTurn = false; p.breakTackleUsedThisTurn = false;
+    p.dodgeSkillUsedThisTurn = false; p.proRerollUsedThisTurn = false; p.breakTackleUsedThisTurn = false; p.piesFirmesUsedThisTurn = false;
   });
   if(ev.prevActive) state.active = ev.prevActive;
   selected = null; declaredAction = null; pendingActionMenuPlayer = null; blitzActivePlayer = null; blockTargeting = null;
@@ -7428,17 +7475,18 @@ function checkActionButtons(prefix, success, p){
 
   const usedFlag = prefix==='dodge' ? dodgeRerollUsed : prefix==='gfi' ? gfiRerollUsed : prefix==='secureBall' ? secureBallRerollUsed : catchRerollUsed;
   if(!usedFlag){
-    const hasDodgeSkill = prefix==='dodge' && playerHasSkill(p, 'esquiva', 'dodge') && !p.dodgeSkillUsedThisTurn && !dodgeBlockedByDefensiveTackle(p);
+    const hasDodgeSkill = prefix==='dodge' && !(pendingDodge && pendingDodge.jump) && playerHasSkill(p, 'esquiva', 'dodge') && !p.dodgeSkillUsedThisTurn && !dodgeBlockedByDefensiveTackle(p);
     const isAtraparCatch = prefix==='catch' && pendingCatch && pendingCatch.useAtraparSkill;
     const hasCatchSkill = prefix==='catch' && !p.catchSkillUsedThisTurn &&
       (isAtraparCatch ? playerHasSkill(p, 'atrapar', 'catch') : playerHasSkill(p, 'manos seguras', 'sure hands'));
     // Nota: Manos Seguras NUNCA ofrece repetición gratis para Asegurar Balón — solo para recoger el balón del suelo.
     // Atrapar es la habilidad correcta para recibir una Entrega de Balón (y, más adelante, un Pase).
     const skillLabel = isAtraparCatch ? 'Atrapar' : 'Manos Seguras';
-    const hasFreeSkillReroll = hasDodgeSkill || hasCatchSkill;
+    const hasPiesFirmes = prefix==='gfi' && playerHasSkill(p, 'pies firmes', 'sure feet') && !p.piesFirmesUsedThisTurn;
+    const hasFreeSkillReroll = hasDodgeSkill || hasCatchSkill || hasPiesFirmes;
     if(hasFreeSkillReroll){
       const btn = document.createElement('button');
-      btn.textContent = prefix==='dodge' ? '🔁 Usar Esquivar (repite gratis)' : ('🔁 Usar ' + skillLabel + ' (repite gratis)');
+      btn.textContent = hasPiesFirmes ? '🔁 Usar Pies firmes (repite gratis, 1 vez por turno)' : prefix==='dodge' ? '🔁 Usar Esquivar (repite gratis)' : ('🔁 Usar ' + skillLabel + ' (repite gratis)');
       btn.onclick = ()=> useCheckReroll(prefix, true);
       actionRow.appendChild(btn);
     } else if((teamRerollsLeft[p.team] || 0) > 0){
@@ -7519,6 +7567,9 @@ function useCheckReroll(prefix, isSkill){
       broadcastState();
       return;
     }
+  } else if(prefix==='gfi'){
+    p.piesFirmesUsedThisTurn = true;
+    log('🔁 ' + p.name + ' repite gratis con PIES FIRMES (ya no podrá volver a usarlo este turno).');
   } else if(prefix==='dodge'){
     p.dodgeSkillUsedThisTurn = true;
     log('🔁 ' + p.name + ' repite gratis con su habilidad Esquivar (ya no podrá volver a usarla este turno).');
@@ -7628,16 +7679,18 @@ function openDodgeModal(p, toR, toC, fromGfi){
   const canijoBonus = hasCanijo ? 1 : 0;
   const tailers = prehensileTailersAt(p);
   const tailPenalty = tailers.length ? 1 : 0;
-  const target = parseAgTarget(p.ag) + tz - canijoBonus + tailPenalty;
+  const twoHeads = playerHasSkill(p, 'dos cabezas', 'two heads') ? 1 : 0;
+  const target = parseAgTarget(p.ag) + tz - canijoBonus + tailPenalty - twoHeads;
   pendingDodge = { playerId:p.id, toR, toC, fromGfi: !!fromGfi, target, baseTarget: target, breakTackle: false, btCommitted: false, baseText: '', lastDie: null, heroicAsked: false, heroicId: null };
   dodgeRerollUsed = false;
   const defTk = defensiveTacklersAt(p);
   const msg = (fromGfi
     ? `${p.name} ha superado "a por ellos" pero esa casilla también sale de una zona de marcaje rival. `
     : `${p.name} sale de una zona de marcaje rival. `)
-    + `Necesita ${target}+ (AG${p.ag ?? '?'}${hasEscurridizo ? ', Escurridizo ignora el marcaje' : ' + ' + tz + ' zona(s) de marcaje en destino'}${hasCanijo ? ', -1 por Canijo' : ''}${tailPenalty ? ', +1 por Cola prensil de ' + tailers[0].name : ''}). Tirad D6.`
+    + `Necesita ${target}+ (AG${p.ag ?? '?'}${hasEscurridizo ? ', Escurridizo ignora el marcaje' : ' + ' + tz + ' zona(s) de marcaje en destino'}${hasCanijo ? ', -1 por Canijo' : ''}${twoHeads ? ', -1 por Dos cabezas' : ''}${tailPenalty ? ', +1 por Cola prensil de ' + tailers[0].name : ''}). Tirad D6.`
     + (defTk.length && playerHasSkill(p, 'esquiva', 'dodge') ? ' ⛔ PLACAJE DEFENSIVO de ' + defTk.map(o=>o.name).join(', ') + ': no puede usar Esquivar.' : '');
   pendingDodge.baseText = msg;
+  document.querySelector('#dodgeModal h2').textContent = '¡ESQUIVA!';
   document.getElementById('dodgeText').textContent = msg;
   document.getElementById('dodgeDie').textContent = '–';
   document.getElementById('dodgeResultText').textContent = '';
@@ -7696,13 +7749,14 @@ function rollDodgeDie(){
   const success = r===6 ? true : (r===1 ? false : r>=pendingDodge.target);
   pendingDodge.lastSuccess = success;
   pendingDodge.lastDie = r;
-  log('🎲 Esquiva: tirada ' + r + ' (necesitaba ' + pendingDodge.target + '+) → ' + (success?'CONSEGUIDO':'FALLADO'));
+  log('🎲 ' + (pendingDodge.jump ? (pendingDodge.jump.kind==='saltar' ? 'Saltar' : 'Brincar') : 'Esquiva') + ': tirada ' + r + ' (necesitaba ' + pendingDodge.target + '+) → ' + (success?'CONSEGUIDO':'FALLADO'));
   checkActionButtons('dodge', success, p);
   broadcastState();
 }
 
 function resolveDodge(success){
   if(!pendingDodge) return;
+  if(pendingDodge.jump){ resolveJump(success); return; }
   if(success && !pendingDodge.heroicAsked && pendingDodge.lastDie!==null){
     const dp = players.find(x=>x.id===pendingDodge.playerId);
     const cands = dp ? heroicTacklersAt(dp) : [];
@@ -7746,14 +7800,143 @@ function resolveDodge(success){
   }
 }
 
-function openGfiModal(p, toR, toC, chainDodge, blockDefenderId, stabDefenderId){
-  pendingGfi = { playerId:p.id, toR, toC, chainDodge: !!chainDodge, blockDefenderId: blockDefenderId || null, stabDefenderId: stabDefenderId || null };
+
+// ===== BRINCAR (sobre tumbado/aturdido) y SALTAR (habilidad: sobre cualquier casilla adyacente) =====
+let jumpWheel = null;     // solo local: { playerId, kind, midR, midC } — ruleta de Brincar/Saltar abierta
+let pendingJump = null;   // { playerId, kind, midR, midC } — elegir casilla de aterrizaje
+function jumpAllowed(sp){
+  return !!(sp && phase==='live' && sp.team===state.active && sp.condition==='standing' && !sp.activated && !sp.rooted &&
+    ['move','blitz','secureball','handoff'].includes(declaredAction) && !pendingJump && !pendingPush && !pendingDodge && !pendingGfi);
+}
+function jumpFeasible(p){
+  const rem = p.remainingMove ?? p.ma;
+  const gfiNeed = 2 - Math.min(rem, 2);
+  return (p.gfiUsed ?? 0) + gfiNeed <= maxGfiFor(p);
+}
+function jumpDestCells(p, midR, midC){
+  const out = [];
+  for(let dr=-1; dr<=1; dr++) for(let dc=-1; dc<=1; dc++){
+    if(!dr && !dc) continue;
+    const r = midR+dr, c = midC+dc;
+    if(r<0 || r>=ROWS || c<0 || c>=COLS) continue;
+    if(occupiedBy(r,c)) continue;
+    if(Math.max(Math.abs(r-p.row), Math.abs(c-p.col)) < 2) continue; // no adyacente al jugador que brinca
+    out.push({ r, c });
+  }
+  return out;
+}
+function openJumpWheel(p, kind, midR, midC){
+  const label = kind==='saltar' ? 'Saltar' : 'Brincar';
+  if(!jumpFeasible(p)){ updateStatus(p.name + ' no tiene MA ni "a por ellos" suficientes para ' + label + ' (cuesta 2 casillas de movimiento).'); return; }
+  if(!jumpDestCells(p, midR, midC).length){ updateStatus('No hay casilla libre de aterrizaje al otro lado para ' + label + '.'); return; }
+  jumpWheel = { playerId: p.id, kind, midR, midC };
+  pendingActionMenuPlayer = p.id;
+  renderActionMenu();
+  broadcastState();
+}
+function actionMenuJump(){
+  const w = jumpWheel;
+  closeActionMenu();
+  if(!w) return;
+  const p = players.find(x=>x.id===w.playerId);
+  if(!p) return;
+  pendingJump = { playerId: p.id, kind: w.kind, midR: w.midR, midC: w.midC };
+  log((w.kind==='saltar' ? '🦘 ' : '🤸 ') + p.name + ' va a ' + (w.kind==='saltar' ? 'SALTAR' : 'BRINCAR') + ' sobre la casilla indicada: elegid la casilla de aterrizaje (resaltada).');
+  updateStatus('Elegid la casilla de aterrizaje de ' + p.name + ' (resaltada). Click en otra casilla para cancelar.');
+  renderPitch(); renderSelInfo();
+  broadcastState();
+}
+function cancelJump(){
+  if(!pendingJump) return;
+  pendingJump = null;
+  updateStatus('Salto cancelado.');
+  renderPitch(); renderSelInfo();
+  broadcastState();
+}
+function isJumpDestCell(r,c){
+  if(!pendingJump) return false;
+  const p = players.find(x=>x.id===pendingJump.playerId);
+  return !!(p && jumpDestCells(p, pendingJump.midR, pendingJump.midC).some(d=>d.r===r && d.c===c));
+}
+function handleJumpDest(r,c){
+  const pj = pendingJump;
+  const p = players.find(x=>x.id===pj.playerId);
+  if(!p || !isJumpDestCell(r,c)){ cancelJump(); return; }
+  pendingJump = null;
+  const rem = p.remainingMove ?? p.ma;
+  const useMA = Math.min(rem, 2);
+  const gfiNeed = 2 - useMA;
+  p.remainingMove = rem - useMA;
+  p.justStoodThisActivation = false;
+  const jump = { kind: pj.kind, midR: pj.midR, midC: pj.midC, destR: r, destC: c, gfiLeft: gfiNeed };
+  log((pj.kind==='saltar' ? '🦘 ' : '🤸 ') + p.name + ' intenta ' + (pj.kind==='saltar' ? 'SALTAR' : 'BRINCAR') + ' (2 casillas de movimiento' + (gfiNeed ? ', ' + gfiNeed + ' de ellas con "a por ellos"' : '') + ').');
+  renderRosters(); renderPitch(); renderSelInfo();
+  broadcastState();
+  if(gfiNeed>0) openGfiModal(p, p.row, p.col, false, null, null, jump);
+  else openJumpCheck(p, jump);
+}
+function openJumpCheck(p, jump){
+  const mO = countOpponentTackleZones(p.row, p.col, p.team);
+  const mD = countOpponentTackleZones(jump.destR, jump.destC, p.team);
+  let pen = Math.max(mO, mD);
+  let note = '';
+  if(jump.kind==='saltar' && pen>=2){ pen -= 1; note = ' (Saltar reduce el modificador en 1)'; }
+  const target = parseAgTarget(p.ag) + pen;
+  const label = jump.kind==='saltar' ? 'Saltar' : 'Brincar';
+  pendingDodge = { playerId:p.id, toR:jump.destR, toC:jump.destC, fromGfi:false, target, baseTarget:target, breakTackle:false, btCommitted:true, baseText:'', lastDie:null, heroicAsked:true, heroicId:null, jump };
+  dodgeRerollUsed = false;
+  const msg = p.name + ' intenta ' + label + '. Necesita ' + target + '+ (AG' + (p.ag ?? '?') + ', marcaje en origen ' + mO + ' / en destino ' + mD + ' → se aplica el mayor: −' + Math.max(mO, mD) + note + '). Un 1 natural: cae en la casilla de origen y termina su activación; otro fallo: cae en la casilla de destino.';
+  pendingDodge.baseText = msg;
+  document.querySelector('#dodgeModal h2').textContent = jump.kind==='saltar' ? '🦘 ¡SALTAR!' : '🤸 ¡BRINCAR!';
+  document.getElementById('dodgeText').textContent = msg;
+  document.getElementById('dodgeDie').textContent = '–';
+  document.getElementById('dodgeResultText').textContent = '';
+  document.getElementById('dodgeResultText').className = 'check-result';
+  document.getElementById('dodgeRollBtn').style.display = 'block';
+  document.getElementById('dodgeActionRow').style.display = 'none';
+  document.getElementById('dodgeActionRow').innerHTML = '';
+  document.getElementById('dodgeModal').classList.add('show');
+  refreshDodgeBreakTackle();
+  broadcastState();
+}
+function resolveJump(success){
+  const pd = pendingDodge;
+  if(!pd || !pd.jump) return;
+  const jump = pd.jump;
+  const natural1 = pd.lastDie===1;
+  const p = players.find(x=>x.id===pd.playerId);
+  document.getElementById('dodgeModal').classList.remove('show');
+  document.querySelector('#dodgeModal h2').textContent = '¡ESQUIVA!';
+  pendingDodge = null;
+  if(!p){ broadcastState(); return; }
+  const label = jump.kind==='saltar' ? 'Saltar' : 'Brincar';
+  if(success){
+    log('✅ ' + p.name + ' consigue ' + label + ' y aterriza en su destino.');
+    completeStep(p, jump.destR, jump.destC, 'none');
+    return;
+  }
+  const fr = natural1 ? p.row : jump.destR, fc = natural1 ? p.col : jump.destC;
+  p.row = fr; p.col = fc;
+  p.condition = 'tumbado'; p.rooted = false;
+  p.activated = true;
+  selected = null;
+  renderRosters(); renderPitch(); renderSelInfo();
+  log('💥 ' + p.name + ' falla al ' + label + (natural1 ? ' (1 natural) y cae en la casilla de origen; su activación termina.' : ' y cae en la casilla de destino.'));
+  queueBallDropIfCarrier(p.id, fr, fc);
+  broadcastState();
+  pendingTurnoverAfterResolve = true;
+  openArmorModal(p);
+}
+function openGfiModal(p, toR, toC, chainDodge, blockDefenderId, stabDefenderId, jump){
+  pendingGfi = { playerId:p.id, toR, toC, chainDodge: !!chainDodge, blockDefenderId: blockDefenderId || null, stabDefenderId: stabDefenderId || null, jump: jump || null };
   gfiRerollUsed = false;
   const attempt = (p.gfiUsed ?? 0) + 1;
   const gfiNeed = gfiTargetFor(p);
   const gfiWx = (weatherKind()==='ventisca' ? ' (-1 por Ventisca)' : '') + (prayerFlag(p.team==='A'?'B':'A','topos') ? ' (-1 por Topos bajo el campo)' : '');
   let msg = `${p.name} intenta "a por ellos" — casilla extra ${attempt}/${maxGfiFor(p)}. Necesita ${gfiNeed}+${gfiWx}${gfiNeed===2 ? ' (solo falla con un 1)' : ''}. Tirad D6.`;
-  if(blockDefenderId){
+  if(jump){
+    msg += ' (Forzar la marcha antes de ' + (jump.kind==='saltar' ? 'Saltar' : 'Brincar') + ': si falla, cae en la casilla de origen).';
+  } else if(blockDefenderId){
     msg = `${p.name} ya no le queda MA para el placaje del Blitz — tirad D6 "a por ellos" para intentarlo igualmente (necesita ${gfiNeed}+${gfiWx}).`;
   } else if(stabDefenderId){
     msg = `${p.name} ya no le queda MA para el Apuñalar del Blitz — tirad D6 "a por ellos" para intentarlo igualmente (necesita ${gfiNeed}+${gfiWx}).`;
@@ -7785,13 +7968,22 @@ function rollGfiDie(){
 
 function resolveGfi(success){
   if(!pendingGfi) return;
-  const { playerId, toR, toC, chainDodge, blockDefenderId, stabDefenderId } = pendingGfi;
+  const { playerId, toR, toC, chainDodge, blockDefenderId, stabDefenderId, jump } = pendingGfi;
   const p = players.find(x=>x.id===playerId);
   document.getElementById('gfiModal').classList.remove('show');
   pendingGfi = null;
   if(!p){ broadcastState(); return; }
 
   if(success || checkEquilibrioFirme(p)){
+    if(jump){
+      p.gfiUsed = (p.gfiUsed ?? 0) + 1;
+      jump.gfiLeft = (jump.gfiLeft ?? 1) - 1;
+      renderRosters(); renderPitch(); renderSelInfo();
+      broadcastState();
+      if(jump.gfiLeft>0) openGfiModal(p, p.row, p.col, false, null, null, jump);
+      else openJumpCheck(p, jump);
+      return;
+    }
     if(blockDefenderId){
       p.gfiUsed = (p.gfiUsed ?? 0) + 1;
       const defender = players.find(x=>x.id===blockDefenderId);
@@ -8331,6 +8523,7 @@ function beginTurn(team){
     p.catchSkillUsedThisTurn = false;
     p.passSkillUsedThisTurn = false;
     p.breakTackleUsedThisTurn = false;
+    p.piesFirmesUsedThisTurn = false;
   });
   renderScoreboard(); renderRosters(); renderPitch();
   updateStatus('Turno de ' + teamName(team));
@@ -8340,6 +8533,7 @@ function beginTurn(team){
 function resetBoardForNewDrive(){
   despIdopajeAtDriveEnd();
   frogRestoreAll();
+  players.forEach(p=>{ p.eyeGouged = false; });
   players.forEach(p=>{
     if(p.indigestOrig){ p.ma = p.indigestOrig.ma; p.av = p.indigestOrig.av; p.indigestOrig = null; }
     p.indigestOut = false;
@@ -8941,7 +9135,7 @@ try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesBut
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V73'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V74'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

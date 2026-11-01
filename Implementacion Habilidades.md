@@ -127,3 +127,37 @@ PROYECTIL VOMITO
 BRAZO FUERTE
 TRONCO VA
 LANZAR COMPAÑERO
+
+SALTAR (es otra diferente a lo que teniamos de En Pie de Un salto)
+Durante su accion de moviento, este jugador puede intentar Saltar por encima de una sola casilla adyacente, sin importar lo que haya en ella. Saltar funciona igual que brincar (te lo describo despues)  con la excepción de que puede reducir en 1, hasta un minimo de -1, los modificadores negativos que reciba por hacerlo.
+un jugador con esta habilidad no puede tener el rasgo de Pogo Saltarin
+
+BRINCAR sobre jugadores
+Cuando un jugador hace un movimiento puede intentar Brincar por encima de un jugador que este tumbado o aturdido, hasta una casilla desocupada en el lado opuesto. Puede intentar brincar a una casilla desocupada que este adyacente al jugador que esta intentando brincar pero que no este adyacente a el jugador que Brinca. 
+Cuando intente brincar usa su movimiento normal, contando la casilla sobre la que Brinca con un punto de MA, si no le queda suficiente MA para Brincar, debe de Forzar la marcha tantas veces como necesite pero con maximo de 2 estandar o 3 si tiene esprintar. Se tira siempre antes Forzar la marcha que Brincar. Si se falla algun Forzar la Marcha, el jugador cae en la casilla de Origen de la acción de Brincar.
+Para Brincar se hace chequeo de Agilidad, este chequeo tiene modificadores negativos igual al numero de jugadores que esten marcando la casilla de Origen o al numero de jugadore sque esten marcando la casilla de destino, solo tenemos en cuenta la que sea mas elevada.
+Si pasa el chequeo, se coloca al Jugadoe en la casilla destino y podrá seguir su movimiento si le quedan puntos de MA o Forzar la marcha.
+Si falla el chequeo el jugador se cae en la casilla destino (tirandole armadura y teniendo cambio de turno), si saca un 1 natural, cae en la casilla de origen del Brincar y su activacion termina.
+Para marcarlo, cuando este haciendo el movimiento el jugador, si marca con el boton derecho una casilla con un jugador tumbado o aturdido, debe salir una opcion en una ruleta nueva de Brincar o Saltar si es el balón o un jugador en pie. Y asi hacer el Brincar o Saltar.
+
+CAÑONERO
+Cuando se realiza una acción de pase largo o bomba larga, este jugador aplica un +1  al chequeo de pase
+
+DEFENSA
+Este jugador siempre puede ofrecer apoyos defensivos y ofensivos en las acciones de Placaje sin importar que haya jugadores marcando al jugador con la habilidad de DEFENSA
+
+DOS CABEZAS
+Este jugador aplica un +1 a los chequeos de Agilidad para intentar esquivar
+
+MANO GRANDE
+Este jugador ignora todos los modificadores negativos para intentar recoger el balon
+
+PIES FIRMES
+Una vez por turno este jugador puede repetir la tirada 1d6 al intentar forzar la marcha
+
+PIQUETE DE OJOS
+Cuando un jugador rival sea empujado por este jugador, es ejugador no puede prestar apoyos defensivos ni ofensivos hasta que sea activado de nuevo.
+Lo marcamos con una P (de piquete) en Morado claro pero sin oscurecer la ficha como hacemos en Tumbado o Aturdido.
+
+PRECISION
+Cuando este jugador haga un pase rapido o corto aplica un modificador de +1 al chequeo de PASE

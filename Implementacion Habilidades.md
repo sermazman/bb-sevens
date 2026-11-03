@@ -42,6 +42,9 @@ Si un jugador rival intenta esquivar, saltar o brincar desde una casilla en la z
 Si la casilla desde la que intenta esquivar un jugador, esta en la zona de defensa de varios jugadores con Cola prensil, sólo uno de ellos puede utilizarla.
 No se que de dificil es, pero si cuando ponemos en el menu que salgan las zonas de defensa de los jugadores, podemos marcar las zonas de defensa de este jugador en el mismo color pero que sean rayadas en diagonal 45º haciendo lineas de color establecido y sin color, quedaría bien no?? asi marcamos todas las zonas de defensa con el mismo color pero las diferenciamos un poco.
 
+☣️- CRUJIR 03-11-2026
+Cuando un jugador rival sea Derribado por este jugador durante una acción de Placaje, este jugador puede realizar de inmediato una acción de Falta gratuita contra el jugador rival, siempre que este jugador siga estando En pie y Marcando al jugador rival (sacar modal para que el entrenador diga SI o NO siempre que se pueda). A continuación, el jugador que hace la falta se coloca Tumbado boca arriba y su activación termina inmediatamente sin cambio de turno.
+
 ☣️- DEFENSA (pruebas desde 10-09-2026) Este jugador siempre puede ofrecer apoyos tanto ofensivos como defensivos en las acciones de Placaje, sin importar por cuántos jugadores rivales esté siendo Marcado.
 
 ☣️-  DESCOMPOSICION: desde 15-10-2026

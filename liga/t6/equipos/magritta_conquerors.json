@@ -315,8 +315,8 @@
         "num": 5,
         "price": 70000,
         "progression": {
-          "sppTotal": 2,
-          "sppUnspent": 2,
+          "sppTotal": 6,
+          "sppUnspent": 6,
           "improvements": []
         },
         "statistics": {

@@ -519,7 +519,7 @@ function snapshotState(){
     infoModalTitle: document.getElementById('infoModalTitle').textContent,
     infoModalText: document.getElementById('infoModalText').textContent,
     forcejearText: document.getElementById('forcejearText').textContent,
-    pendingForcejearChoice, pendingStandFirm, pendingJump,
+    pendingForcejearChoice, pendingStandFirm, pendingJump, passTargetMark, pendingCrujir,
     matchEndText: document.getElementById('matchEndText').textContent,
     pendingActionMenuPlayer,
     dejadaWheelActive,
@@ -741,6 +741,8 @@ function applyRemoteState(payload){
   pendingProvocarChoice = payload.pendingProvocarChoice || null;
   pendingStandFirm = payload.pendingStandFirm || null;
   pendingJump = payload.pendingJump || null;
+  passTargetMark = payload.passTargetMark || null;
+  pendingCrujir = payload.pendingCrujir || null;
   luchadorUsed = !!payload.luchadorUsed;
   luchadorPickMode = !!payload.luchadorPickMode;
   renderAnimosityModal(); renderHailMaryModal();
@@ -892,7 +894,7 @@ function applyRemoteState(payload){
   });
   blockDiceRolled = !!payload.blockDiceRolled;
   refreshBlockSkillUi();
-  renderProvocarModal(); renderHeroicTackleModal(); renderStandFirmModal();
+  renderProvocarModal(); renderHeroicTackleModal(); renderStandFirmModal(); renderCrujirModal();
   document.getElementById('blockDiceHint').style.display = blockDiceRolled ? 'block' : 'none';
   document.getElementById('blockModal').classList.toggle('show', !!payload.blockModalOpen);
 
@@ -1032,7 +1034,7 @@ function anyModalOpen(){
          document.getElementById('interceptModal').classList.contains('show') ||
          document.getElementById('heroicReceptionPanel').style.display==='block' ||
          pendingActionMenuPlayer !== null ||
-         pendingAnimosity !== null || pendingHailMaryChoice !== null || pendingProvocarChoice !== null || pendingStandFirm !== null || pendingHeroicTackle !== null ||
+         pendingAnimosity !== null || pendingHailMaryChoice !== null || pendingProvocarChoice !== null || pendingStandFirm !== null || pendingCrujir !== null || pendingHeroicTackle !== null ||
          document.getElementById('traitCheckModal').classList.contains('show') ||
          document.getElementById('turnoverOverlay').classList.contains('show');
 }
@@ -2600,7 +2602,7 @@ function renderAdminInc(){
 function prayerFlag(team, key){ return !!(preMatch && preMatch.inc && preMatch.inc.flags && preMatch.inc.flags[team] && preMatch.inc.flags[team][key]); }
 function gfiTargetFor(p){
   const other = p.team==='A' ? 'B' : 'A';
-  return (weatherKind()==='ventisca' ? 3 : 2) + (prayerFlag(other, 'topos') ? 1 : 0);
+  return (weatherKind()==='ventisca' ? 3 : 2) + (prayerFlag(other, 'topos') ? 1 : 0) + (playerHasSkill(p, 'borracho', 'drunkard') ? 1 : 0);
 }
 function incAfterPrayers(){
   const i = incSt();
@@ -3044,6 +3046,11 @@ function renderPitch(){
       const cell = document.createElement('div');
       cell.className = cellClass(r,c);
       cell.dataset.r = r; cell.dataset.c = c;
+      if(passTargetMark && passTargetMark.r===r && passTargetMark.c===c){
+        const pm = document.createElement('div'); pm.className = 'pass-target-mark';
+        pm.innerHTML = '<span class="gold-icon" style="--icon:url(\'icons/mira.png\')"></span>';
+        cell.appendChild(pm);
+      }
       if(trapdoorActive() && isTrapCell(r,c)){
         cell.classList.add('trapdoor-cell');
         const tdi = document.createElement('span'); tdi.className = 'trapdoor-ico'; tdi.title = 'Trampilla traicionera'; cell.appendChild(tdi);
@@ -3868,9 +3875,9 @@ function unstickState(){
   pendingFerocityAttack = null;
   pendingAnimosity = null;
   pendingHailMaryChoice = null;
-  pendingProvocarChoice = null; pendingStandFirm = null; pendingJump = null; jumpWheel = null; luchadorUsed = false; luchadorPickMode = false; blockProNote = '';
+  pendingProvocarChoice = null; pendingStandFirm = null; pendingJump = null; jumpWheel = null; passTargetMark = null; pendingCrujir = null; crujirQueue = []; removePassConfirmMenu(); luchadorUsed = false; luchadorPickMode = false; blockProNote = '';
   pendingHeroicTackle = null;
-  renderProvocarModal(); renderHeroicTackleModal(); renderStandFirmModal();
+  renderProvocarModal(); renderHeroicTackleModal(); renderStandFirmModal(); renderCrujirModal();
   pendingBlitzStabChoice = null;
   pendingHandoffChoice = null;
   pendingFoulContext = null;
@@ -3937,7 +3944,7 @@ function cellClicked(r,c){
   if(pendingPassTargetSelection){
     const passer = players.find(x=>x.id===pendingPassTargetSelection.passerId);
     if(!passer){ pendingPassTargetSelection = null; broadcastState(); return; }
-    handlePassTargetChosen(passer, r, c);
+    setPassTargetMark(passer, r, c);
     return;
   }
   if(placingBallFree){
@@ -4057,7 +4064,7 @@ function tokenClicked(id){
     const passer = players.find(x=>x.id===pendingPassTargetSelection.passerId);
     const target = players.find(x=>x.id===id);
     if(passer && target){
-      handlePassTargetChosen(passer, target.row, target.col);
+      setPassTargetMark(passer, target.row, target.col);
     }
     return;
   }
@@ -4893,7 +4900,7 @@ function resolveBothDownFall(attacker, defender, isBlitz, forcejearUsed){
   if(fallenNames.length===0) return;
 
   const armorQueue = [];
-  if(defenderFalls){ armorQueue.push(defender.id); golpeMortiferoMap[defender.id] = attacker.id; }
+  if(defenderFalls){ armorQueue.push(defender.id); golpeMortiferoMap[defender.id] = attacker.id; registerCrujir(attacker, defender); }
   if(attackerFalls) armorQueue.push(attacker.id);
   pendingArmorQueue = armorQueue;
   if(attackerFalls) pendingTurnoverAfterResolve = true;
@@ -5024,7 +5031,7 @@ function applyBlockOutcomeConfirmed(kind){
       queueBallDropIfCarrier(defender.id, defender.row, defender.col);
       renderRosters(); renderPitch(); renderSelInfo();
       broadcastState();
-      golpeMortiferoMap[defender.id] = attacker.id;
+      golpeMortiferoMap[defender.id] = attacker.id; registerCrujir(attacker, defender);
       pendingArmorQueue = [defender.id];
       processNextArmorInQueue();
     } else {
@@ -5058,14 +5065,23 @@ function startPushSelection(attacker, defender, kind, isBlitz){
       if(!occupiedBy(rr,cc)) hasEmptyAdjacent = true;
     }
   }
-  const hasSideStep = !attacker.freePushOverride && playerHasSkill(defender, 'echarse a un lado', 'side step') && hasEmptyAdjacent;
-  if(hasSideStep){
+  const hasApartar = !attacker.freePushOverride && !isBlitz && playerHasSkill(attacker, 'apartar', 'fend') && hasEmptyAdjacent;
+  const sideStepBlocked = playerHasSkill(attacker, 'apartar', 'fend') && playerHasSkill(defender, 'echarse a un lado', 'side step');
+  if(hasApartar){
+    pendingPush.apartar = true;
+    showInfoModal('🛡️ APARTAR', attacker.name + ' tiene Apartar. Es el EQUIPO DE ' + teamName(attacker.team).toUpperCase() + ' (el del atacante) quien elige a qué casilla desocupada adyacente a ' + defender.name + ' se le empuja.');
+    document.getElementById('pushControlText').textContent = '🛡️ Apartar: el equipo de ' + attacker.name + ' elige cualquier casilla desocupada adyacente a ' + defender.name + ' (resaltadas).' + (sideStepBlocked ? ' (' + defender.name + ' no puede usar Echarse a un lado.)' : '');
+  }
+  const hasSideStep = !hasApartar && !sideStepBlocked && !attacker.freePushOverride && playerHasSkill(defender, 'echarse a un lado', 'side step') && hasEmptyAdjacent;
+  if(hasApartar){
+    // texto ya establecido arriba
+  } else if(hasSideStep){
     showInfoModal('🔀 ECHARSE A UN LADO', defender.name + ' tiene esta habilidad. Es el EQUIPO DE ' + teamName(defender.team).toUpperCase() + ' (el del propio jugador empujado) quien elige a qué casilla desocupada adyacente se mueve — no el equipo atacante.');
     document.getElementById('pushControlText').textContent = '🔀 Echarse a un Lado: el equipo de ' + defender.name + ' elige cualquier casilla desocupada adyacente (resaltadas).';
   } else {
     document.getElementById('pushControlText').textContent = attacker.freePushOverride
       ? 'Empuje libre activado: elegid cualquiera de las 8 casillas adyacentes para ' + defender.name + '.'
-      : 'Elegid una de las 3 casillas resaltadas para ' + defender.name + ' (según la dirección del placaje) — puede empujar en cadena si hay otro jugador ahí.';
+      : 'Elegid una de las 3 casillas resaltadas para ' + defender.name + ' (según la dirección del placaje) — puede empujar en cadena si hay otro jugador ahí.' + (sideStepBlocked ? ' (' + defender.name + ' no puede usar Echarse a un lado por Apartar.)' : '');
   }
   document.getElementById('pushFreeToggleBtn').textContent = attacker.freePushOverride ? '🔒 Desactivar empuje libre' : '🔓 Activar todos los empujes';
   document.getElementById('pushFreeToggleBtn').classList.toggle('active-toggle', !!attacker.freePushOverride);
@@ -5124,8 +5140,28 @@ function toggleFreePushDuringPush(){
   broadcastState();
 }
 
+function apartarActive(mover){
+  return !!(pendingPush && pendingPush.apartar && mover && pendingPush.defenderId===mover.id);
+}
+function blockedSideStepByApartar(mover){
+  if(!pendingPush || !mover) return false;
+  const root = pendingPush.chainRoot || pendingPush;
+  if(root.defenderId!==mover.id) return false;
+  const att = players.find(x=>x.id===root.attackerId);
+  return !!(att && playerHasSkill(att, 'apartar', 'fend'));
+}
 function currentPushTargets(mover, offsets, freePush){
-  if(mover && !freePush && playerHasSkill(mover, 'echarse a un lado', 'side step')){
+  if(apartarActive(mover)){
+    const list = [];
+    for(let dr=-1; dr<=1; dr++) for(let dc=-1; dc<=1; dc++){
+      if(dr===0 && dc===0) continue;
+      const rr = mover.row+dr, cc = mover.col+dc;
+      if(rr<0 || rr>=ROWS || cc<0 || cc>=COLS) continue;
+      if(!occupiedBy(rr,cc)) list.push({ row: rr, col: cc });
+    }
+    if(list.length) return list;
+  }
+  if(mover && !freePush && !blockedSideStepByApartar(mover) && playerHasSkill(mover, 'echarse a un lado', 'side step')){
     const sideStepOptions = [];
     for(let dr=-1; dr<=1; dr++) for(let dc=-1; dc<=1; dc++){
       if(dr===0 && dc===0) continue;
@@ -5730,6 +5766,54 @@ function startApunalarOn(attacker, target){
   openArmorModal(target);
 }
 
+
+// ===== CRUJIR: Falta gratuita tras derribar con un Placaje =====
+let crujirMap = {};        // { defenderId: attackerId } — derribado por un jugador con Crujir en este Placaje
+let crujirQueue = [];      // [{ attackerId, defenderId }] a ofrecer cuando el tablero esté en reposo
+let pendingCrujir = null;  // { attackerId, defenderId } — modal SÍ/NO
+function registerCrujir(attacker, defender){
+  if(attacker && defender && attacker.team!==defender.team && playerHasSkill(attacker, 'crujir', 'crush')) crujirMap[defender.id] = attacker.id;
+}
+function crujirEligible(att, def){
+  return !!(att && def && att.onPitch && def.onPitch && att.condition==='standing' && (def.condition==='tumbado' || def.condition==='aturdido') &&
+    Math.max(Math.abs(att.row-def.row), Math.abs(att.col-def.col))===1);
+}
+function renderCrujirModal(){
+  const m = document.getElementById('crujirModal');
+  if(!m) return;
+  if(!pendingCrujir){ m.classList.remove('show'); return; }
+  const a = players.find(x=>x.id===pendingCrujir.attackerId);
+  const d = players.find(x=>x.id===pendingCrujir.defenderId);
+  document.getElementById('crujirText').textContent = (a ? a.name : 'El jugador') + ' tiene CRUJIR y sigue En pie marcando a ' + (d ? d.name : 'su rival') +
+    '. ¿Hace ahora una Falta gratuita? (Después se coloca Tumbado y su activación termina, sin cambio de turno.)';
+  m.classList.add('show');
+}
+function crujirChoose(yes){
+  const ctx = pendingCrujir;
+  if(!ctx) return;
+  pendingCrujir = null;
+  renderCrujirModal();
+  const a = players.find(x=>x.id===ctx.attackerId);
+  const d = players.find(x=>x.id===ctx.defenderId);
+  if(!a || !d || !crujirEligible(a, d)){ broadcastState(); return; }
+  if(!yes){ log('💢 ' + a.name + ' no usa Crujir.'); broadcastState(); return; }
+  log('💢 CRUJIR: ' + a.name + ' remata a ' + d.name + ' con una Falta gratuita.');
+  startFoulOn(a, d);
+  pendingFoulContext.crujir = true;
+  broadcastState();
+}
+function crujirTick(){
+  if(phase!=='live' || pendingCrujir) return;
+  if(crujirQueue.length===0 || trapdoorBusy()) return;
+  const c = crujirQueue.shift();
+  const a = players.find(x=>x.id===c.attackerId);
+  const d = players.find(x=>x.id===c.defenderId);
+  if(!crujirEligible(a, d) || a.team!==state.active) return;
+  pendingCrujir = { attackerId: a.id, defenderId: d.id };
+  renderCrujirModal();
+  broadcastState();
+}
+setInterval(()=>{ try{ crujirTick(); }catch(e){ console.error(e); } }, 650);
 function startFoulOn(fouler, target){
   const offAssisters = getAssistingPlayers(fouler.team, target.id, fouler.id, 'foulOff');
   const defAssisters = getAssistingPlayers(target.team, fouler.id, target.id, 'foulDef');
@@ -5859,6 +5943,70 @@ const PASS_ZONE_NAMES = ['Pase Rápido', 'Pase Corto', 'Pase Largo', 'Bomba Larg
 const PASS_ZONE_PENALTIES = [0, 1, 2, 3];
 
 // ---------- Habilidad: Pase a lo loco ----------
+
+// ===== Pase: marcar casilla destino con mira.png + ruleta Confirmar/Cancelar =====
+let passTargetMark = null; // { passerId, r, c }
+function passTargetReachable(passer, r, c){
+  const zone = passRangeZone(r-passer.row, c-passer.col);
+  if(zone!==-1) return true;
+  return playerHasSkill(passer, 'pase a lo loco', 'hail mary pass') && weatherKind()!=='ventisca';
+}
+function setPassTargetMark(passer, r, c){
+  if(!passTargetReachable(passer, r, c)){
+    updateStatus(weatherKind()==='ventisca' ? 'Ventisca: solo se pueden hacer Pases Rápidos o Cortos.' : 'Esa casilla está fuera del alcance máximo de pase.');
+    return;
+  }
+  passTargetMark = { passerId: passer.id, r, c };
+  updateStatus(passer.name + ': casilla objetivo marcada. Confirmad o cancelad en la ruleta.');
+  renderPitch(); renderSelInfo();
+  broadcastState();
+}
+function passTargetConfirm(){
+  const m = passTargetMark;
+  if(!m) return;
+  passTargetMark = null;
+  removePassConfirmMenu();
+  const passer = players.find(x=>x.id===m.passerId);
+  if(!passer){ renderPitch(); broadcastState(); return; }
+  renderPitch();
+  handlePassTargetChosen(passer, m.r, m.c);
+}
+function passTargetCancel(){
+  if(!passTargetMark) return;
+  passTargetMark = null;
+  removePassConfirmMenu();
+  updateStatus('Objetivo del pase cancelado: elegid otra casilla.');
+  renderPitch(); renderSelInfo();
+  broadcastState();
+}
+function removePassConfirmMenu(){
+  const old = document.getElementById('passConfirmMenu');
+  if(old) old.remove();
+}
+function renderPassConfirmMenu(){
+  removePassConfirmMenu();
+  if(!passTargetMark) return;
+  const cellEl = document.querySelector('[data-r="' + passTargetMark.r + '"][data-c="' + passTargetMark.c + '"]');
+  if(!cellEl) return;
+  const rect = cellEl.getBoundingClientRect();
+  const cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
+  const box = document.createElement('div');
+  box.id = 'passConfirmMenu';
+  const mk = (label, icon, dy, fn, danger)=>{
+    const b = document.createElement('div');
+    b.className = 'radial-menu-btn' + (danger ? ' danger' : '');
+    const x = Math.max(30, Math.min(window.innerWidth-30, cx));
+    const y = Math.max(30, Math.min(window.innerHeight-30, cy + dy));
+    b.style.left = (x-28)+'px'; b.style.top = (y-28)+'px';
+    b.innerHTML = '<div class="rm-icon">' + icon + '</div><div class="rm-label">' + label + '</div>';
+    b.onclick = (e)=>{ e.stopPropagation(); fn(); };
+    box.appendChild(b);
+  };
+  mk('Confirmar', '✅', -64, passTargetConfirm, false);
+  mk('Cancelar', '✖', 64, passTargetCancel, true);
+  document.body.appendChild(box);
+}
+(function(){ const _rp = renderPitch; renderPitch = function(){ _rp.apply(this, arguments); try{ renderPassConfirmMenu(); }catch(e){ console.error(e); } }; })();
 function handlePassTargetChosen(passer, r, c){
   const zone = passRangeZone(r-passer.row, c-passer.col);
   const hasHailMary = playerHasSkill(passer, 'pase a lo loco', 'hail mary pass') && weatherKind()!=='ventisca';
@@ -6020,6 +6168,7 @@ function continueAnimosity(){
 
 function declarePassTarget(passer, targetR, targetC, zone, hailMary){
   pendingPassTargetSelection = null;
+  passTargetMark = null;
   // Animosidad: si en la casilla objetivo hay un compañero afectado, hay que tirar antes de lanzar.
   const receiver = players.find(x=>x.onPitch && x.row===targetR && x.col===targetC && x.id!==passer.id);
   if(receiver && animosityAppliesTo(passer, receiver)){
@@ -6518,7 +6667,7 @@ function continueFinishPushSequenceAfterSteal(info){
       queueBallDropIfCarrier(defender.id, defender.row, defender.col);
       renderRosters(); renderPitch();
       broadcastState();
-      if(attacker) golpeMortiferoMap[defender.id] = attacker.id;
+      if(attacker){ golpeMortiferoMap[defender.id] = attacker.id; registerCrujir(attacker, defender); }
       openArmorModal(defender);
     }
   } else {
@@ -7932,7 +8081,7 @@ function openGfiModal(p, toR, toC, chainDodge, blockDefenderId, stabDefenderId, 
   gfiRerollUsed = false;
   const attempt = (p.gfiUsed ?? 0) + 1;
   const gfiNeed = gfiTargetFor(p);
-  const gfiWx = (weatherKind()==='ventisca' ? ' (-1 por Ventisca)' : '') + (prayerFlag(p.team==='A'?'B':'A','topos') ? ' (-1 por Topos bajo el campo)' : '');
+  const gfiWx = (weatherKind()==='ventisca' ? ' (-1 por Ventisca)' : '') + (prayerFlag(p.team==='A'?'B':'A','topos') ? ' (-1 por Topos bajo el campo)' : '') + (playerHasSkill(p, 'borracho', 'drunkard') ? ' (-1 por Borracho)' : '');
   let msg = `${p.name} intenta "a por ellos" — casilla extra ${attempt}/${maxGfiFor(p)}. Necesita ${gfiNeed}+${gfiWx}${gfiNeed===2 ? ' (solo falla con un 1)' : ''}. Tirad D6.`;
   if(jump){
     msg += ' (Forzar la marcha antes de ' + (jump.kind==='saltar' ? 'Saltar' : 'Brincar') + ': si falla, cae en la casilla de origen).';
@@ -8030,6 +8179,12 @@ function openArmorModal(p){
   const garrasAttackerId0 = golpeMortiferoMap[p.id];
   const garrasAttacker0 = garrasAttackerId0 ? players.find(x=>x.id===garrasAttackerId0) : null;
   document.getElementById('garrasWarning').style.display = (garrasAttacker0 && playerHasSkill(garrasAttacker0, 'garras', 'claws')) ? 'block' : 'none';
+  { const fc = pendingFoulContext && pendingFoulContext.targetId===p.id ? pendingFoulContext : null;
+    const fl = fc ? players.find(x=>x.id===fc.foulerId) : null;
+    const ag = !!(fc && fl && playerHasSkill(fl, 'agresor discreto', 'sneaky git') && fc.offAssists===0 && fc.defAssists===0 && !fc.agresorUsed);
+    document.getElementById('agresorWarning').style.display = ag ? 'block' : 'none';
+    if(ag) document.getElementById('agresorWarning').textContent = '🕵️ AGRESOR DISCRETO: ' + fl.name + ' no tiene apoyos ofensivos ni defensivos — puede repetir UNA tirada de Armadura fallida.';
+    const abtn = document.getElementById('armorAgresorBtn'); if(abtn) abtn.style.display = ag ? 'block' : 'none'; }
   document.getElementById('armorRollBtn').style.display = 'block';
   document.getElementById('armorDie1').textContent='–';
   document.getElementById('armorDie2').textContent='–';
@@ -8065,6 +8220,18 @@ function openInjuryDirect(p){
   broadcastState();
 }
 
+function useAgresorDiscreto(){
+  const fc = pendingFoulContext;
+  if(!fc || fc.agresorUsed || fc.targetId!==armorForPlayer) return;
+  fc.agresorUsed = true;
+  fc.doubleDetected = false;
+  const fl = players.find(x=>x.id===fc.foulerId);
+  log('🕵️ AGRESOR DISCRETO: ' + (fl ? fl.name : 'el agresor') + ' repite la tirada de Armadura fallida.');
+  document.getElementById('agresorWarning').style.display = 'none';
+  const abtn = document.getElementById('armorAgresorBtn'); if(abtn) abtn.style.display = 'none';
+  document.getElementById('armorPassRow').style.display = 'none';
+  rollArmor();
+}
 function rollArmor(){
   const d1=Math.floor(Math.random()*6)+1, d2=Math.floor(Math.random()*6)+1;
   const sum = d1+d2;
@@ -8394,6 +8561,10 @@ function closeArmorModal(){
   llaveDeBrazoUsedOnArmor = false;
   if(resolvedPlayerId!==null) delete llaveDeBrazoMap[resolvedPlayerId];
   if(resolvedPlayerId!==null) delete armorBonusMap[resolvedPlayerId];
+  if(resolvedPlayerId!==null && crujirMap[resolvedPlayerId]!==undefined){
+    crujirQueue.push({ attackerId: crujirMap[resolvedPlayerId], defenderId: resolvedPlayerId });
+    delete crujirMap[resolvedPlayerId];
+  }
   if(pendingApunalarContext && pendingApunalarContext.targetId===resolvedPlayerId){
     pendingApunalarContext = null;
   }
@@ -8436,6 +8607,15 @@ function closeArmorModal(){
     pendingFoulContext = null;
     const fouler = players.find(x=>x.id===ctx.foulerId);
     const escr = ctx.armorBroken && fouler && prayerFlag(fouler.team==='A' ? 'B' : 'A', 'escrutinio');
+    if(ctx.crujir && fouler && fouler.onPitch){
+      const hadBall = ball.carrierId===fouler.id;
+      fouler.condition = 'tumbado'; fouler.rooted = false; fouler.activated = true;
+      selected = null; declaredAction = null;
+      log('💢 ' + fouler.name + ' termina su Falta de Crujir Tumbado boca arriba; su activación termina (sin cambio de turno).');
+      if(hadBall){ ball.carrierId = null; ball.row = fouler.row; ball.col = fouler.col; log('🏈 Se le cae el balón al caer.'); renderPitch(); startBallBounce(); }
+      renderRosters(); renderPitch(); renderSelInfo();
+      broadcastState();
+    }
     if(ctx.doubleDetected){
       if(fouler){
         if(ctx.ajuste && !escr){
@@ -8983,6 +9163,9 @@ function cancelActiveModal(modalId){
     case 'standFirmModal':
       standFirmChoose(false);
       break;
+    case 'crujirModal':
+      crujirChoose(false);
+      break;
     case 'heroicTackleModal':
       heroicTackleChoose(null);
       break;
@@ -9023,6 +9206,7 @@ function modalActorTeam(id){
     case 'catchModal': return pendingCatch ? pteam(pendingCatch.playerId) : act;
     case 'interceptModal': return pendingInterceptionRoll ? pteam(pendingInterceptionRoll.interceptorId) : other(act);
     case 'provocarModal': return pendingProvocarChoice ? pteam(pendingProvocarChoice.defenderId) : other(act);
+    case 'crujirModal': return pendingCrujir ? pteam(pendingCrujir.attackerId) : act;
     case 'standFirmModal': return pendingStandFirm ? (pendingStandFirm.stage==='chain' ? pteam(pendingStandFirm.chain.occupantId) : pteam(pendingStandFirm.defenderId)) : other(act);
     case 'heroicTackleModal': return other(act);
     case 'jumpUpModal': return pendingJumpUpCheck!=null ? pteam(pendingJumpUpCheck) : act;
@@ -9135,7 +9319,7 @@ try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesBut
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V74'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V76'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

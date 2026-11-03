@@ -118,22 +118,6 @@
       ]
     },
     {
-      "num": 6,
-      "name": "FLO",
-      "position": "Goblin",
-      "ma": 6,
-      "st": 2,
-      "ag": "3+",
-      "pa": "3+",
-      "av": "8+",
-      "skills": [
-        "Esquivar",
-        "Humanoide bala",
-        "Escurridizo",
-        "Linea - Goblin"
-      ]
-    },
-    {
       "num": 7,
       "name": "IL MURO",
       "position": "Big Un Blocker",
@@ -152,6 +136,22 @@
     },
     {
       "num": 8,
+      "name": "FLO",
+      "position": "Goblin",
+      "ma": 6,
+      "st": 2,
+      "ag": "3+",
+      "pa": "3+",
+      "av": "8+",
+      "skills": [
+        "Esquivar",
+        "Humanoide bala",
+        "Escurridizo",
+        "Linea - Goblin"
+      ]
+    },
+    {
+      "num": 9,
       "name": "PPY",
       "position": "Goblin",
       "ma": 6,

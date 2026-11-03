@@ -135,3 +135,7 @@ Las habilidades se añaden además a `players[].skills` (nombre exacto de `roste
 
 ## Habilidades posibles (30-oct)
 - Roster (gestor y visor) y hoja PDF muestran a la derecha del todo las categorías que el jugador puede ganar, en una línea: «primarias / secundarias» (G General, A Agilidad, F Fuerza, P Pase, M Mutación, T Triquiñuelas; «-» si no hay).
+
+
+## Quién mató al jugador (3-nov)
+En `retiredPlayers` con `reason:'dead'` se guarda `killedBy:{team,num,name}`: `team` = equipo rival del partido; `num`/`name` = jugador rival con calavera (opcional, se elige en «Matado por…» al registrar). Registros antiguos sin `killedBy` muestran el rival del partido.

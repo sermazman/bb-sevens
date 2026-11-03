@@ -883,7 +883,7 @@ function sideHTML(side){
       <td class="l">${esc(tp.name)}<br><span class="race">${esc(tp.position)}${out?' · baja (herido grave)':''}</span></td>
       ${STAT_COLS.map(([k,tt])=>`<td><input type="number" min="0" value="0" name="${side}_ev_${tp.num}_${k}" data-evk="${k}" ${out?'disabled':''} aria-label="${tt} de ${esc(tp.name)}"></td>`).join('')}
       <td><select name="${side}_inj_${tp.num}" ${out?'disabled':''} aria-label="Lesión sufrida por ${esc(tp.name)}">${INJURY_OPTS.map(([v,tx])=>`<option value="${v}">${tx}</option>`).join('')}</select>
-        <div class="hatbox" data-hatbox="${side}_${tp.num}" hidden><select name="${side}_hat_${tp.num}" aria-label="Odio de ${esc(tp.name)}"><option value="">Sin Odio</option></select><br><span class="race" data-hatinfo="${side}_${tp.num}"></span></div></td>
+        <div class="hatbox" data-hatbox="${side}_${tp.num}" hidden><select name="${side}_hat_${tp.num}" aria-label="Odio de ${esc(tp.name)}"><option value="">Sin Odio</option></select><br><span class="race" data-hatinfo="${side}_${tp.num}"></span></div><div class="hatbox" data-killbox="${side}_${tp.num}" hidden><select name="${side}_kill_${tp.num}" aria-label="Matado por (${esc(tp.name)})"><option value="">Matado por…</option></select></div></td>
       <td class="impcell l" data-impcell="${side}_${tp.num}"></td>
       <td class="num" data-sppcell="${side}_${tp.num}"></td>
       <td class="l"><select name="${side}_draft_${tp.num}" disabled aria-label="Draft de ${esc(tp.name)}"><option value="">—</option><option value="drafted">Drafteado</option><option value="paid">Pagar valor</option></select><br><span class="race" data-draftinfo="${side}_${tp.num}"></span></td></tr>`;
@@ -981,10 +981,25 @@ function refreshHatred(){
     });
   });
 }
+function refreshKillers(){
+  const f=$('#matchForm'); if(!f||!mv.home||!mv.away) return;
+  ['home','away'].forEach(side=>{
+    const os=side==='home'?'away':'home', t=mvTeam(side), o=mvTeam(os); if(!t||!o) return;
+    const cands=o.doc.players.filter(op=>readEv(os,op.num).deaths>0);
+    t.doc.players.forEach(tp=>{
+      const inj=f.elements[`${side}_inj_${tp.num}`], sel=f.elements[`${side}_kill_${tp.num}`], box=document.querySelector(`[data-killbox="${side}_${tp.num}"]`); if(!inj||!sel||!box) return;
+      const show=inj.value==='dead'&&!inj.disabled; box.hidden=!show;
+      if(!show){ sel.value=''; return; }
+      const cur=sel.value;
+      sel.innerHTML='<option value="">Matado por… (sin indicar)</option>'+cands.map(op=>`<option value="${op.num}">#${op.num} ${esc(op.name)}</option>`).join('');
+      sel.value=cands.some(op=>String(op.num)===cur)?cur:(cands.length===1?String(cands[0].num):'');
+    });
+  });
+}
 /* actualiza SPP en vivo, sumas automáticas y comprobación de TD de un equipo */
 function updateSide(side){
   const f=$('#matchForm'), t=mvTeam(side); if(!f||!t) return;
-  setTimeout(refreshHatred,0);
+  setTimeout(refreshHatred,0); setTimeout(refreshKillers,0);
   const sums={hl:0,hg:0,rip:0}; let td=0;
   t.doc.players.forEach(tp=>{
     const ev=readEv(side,tp.num); td+=ev.touchdowns; sums.hl+=ev.lightInjuries; sums.hg+=ev.seriousInjuries; sums.rip+=ev.deaths;
@@ -1072,6 +1087,7 @@ function collectSide(side){
     const lp=l.players.find(p=>p.num===tp.num), out=lp.status==='missNextGame';
     const ev=Object.assign({num:tp.num,name:tp.name},readEv(side,tp.num));
     ev.injurySuffered=out?'none':String(f.elements[`${side}_inj_${tp.num}`].value||'none');
+    if(ev.injurySuffered==='dead'){ const ks=f.elements[`${side}_kill_${tp.num}`], oo=mvTeam(side==='home'?'away':'home'); if(ks&&ks.value&&oo){ const kp=oo.doc.players.find(p=>String(p.num)===ks.value); if(kp){ ev.killerNum=kp.num; ev.killerName=kp.name; } } }
     { const hs=f.elements[`${side}_hat_${tp.num}`]; if(hs&&hs.value&&ev.injurySuffered==='seriousInjury') ev.hatred=hs.value; }
     ev.sppEarned=sppFromStats(ev); td+=ev.touchdowns; mvp+=ev.mvp;
     const drafts=mv.imp[side][tp.num]||[]; let cost=0;
@@ -1138,7 +1154,7 @@ function applyMatchSide(doc,S,O,meta){
   S.dying.forEach(ev=>{
     const lp=lpOf(ev.num), tp=tpOf(ev.num);
     lp.injuries.push({type:'dead',matchId:meta.id,missNextGame:false});
-    l.retiredPlayers.push({num:tp.num,name:tp.name,position:tp.position,reason:'dead',retiredAtMatch:meta.id,
+    l.retiredPlayers.push({num:tp.num,name:tp.name,position:tp.position,reason:'dead',retiredAtMatch:meta.id,killedBy:{team:(O&&O.teamName)||'',num:ev.killerNum||null,name:ev.killerName||''},
       attributes:{ma:tp.ma,st:tp.st,ag:tp.ag,pa:tp.pa,av:tp.av},skills:clone(tp.skills||[]),price:lp.price,
       progression:clone(lp.progression),statistics:clone(lp.statistics),injuries:clone(lp.injuries)});
     l.players=l.players.filter(p=>p.num!==ev.num);

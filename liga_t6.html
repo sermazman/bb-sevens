@@ -242,6 +242,7 @@ td.acc .as{color:var(--muted);font-family:var(--f-mono)}
 .hlcol h4{font-family:var(--f-title);text-transform:uppercase;letter-spacing:.05em;font-size:17px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
 .hlcol h4 .lg{height:26px;margin:0}
 @media (max-width:700px){.hlcols{grid-template-columns:1fr}}
+[data-dfilter]{margin:0 4px}
 </style>
 </head>
 <body>
@@ -280,7 +281,7 @@ const inkOf=d=>d.textColor&&d.textColor!=='auto'?d.textColor:textInk(colorOf(d))
 let LOAD_TS=Date.now();
 let teams=[];          // {file, name, text, doc}
 let skipped=[];
-let ui={tab:'standings', team:null, match:null, teamTab:'roster', sort:null};
+let ui={deadFilter:'all',tab:'standings', team:null, match:null, teamTab:'roster', sort:null};
 
 /* ---------- cálculos (los mismos que el gestor) ---------- */
 const impCost=(im,i)=>{const r=IMPROVEMENT_COSTS[im.order||i+1];if(!r)return 0;return im.category==='stat'?r.st:r[(im.category==='primary'?'p':'s')+(im.selection==='random'?'r':'c')]};
@@ -380,14 +381,15 @@ async function downloadZip(){
 
 /* ---------- vistas ---------- */
 const ROUND_MAX=10;
+const roundShort=n=>n>=1&&n<=ROUND_MAX?`J${n}`:n===ROUND_MAX+1?'SF':n===ROUND_MAX+2?'Final':'—';
 const roundLabel=n=>n>=1&&n<=ROUND_MAX?`Jornada ${n}`:n===ROUND_MAX+1?'PlayOff - Semifinal':n===ROUND_MAX+2?'PlayOff - Final':'—';
-const MAIN_TABS=[['standings','Clasificación'],['teams','Equipos'],['matches','Partidos'],['hof','Hall of Fame']];
+const MAIN_TABS=[['standings','Clasificación'],['teams','Equipos'],['matches','Partidos'],['hof','Hall of Fame'],['dead','Drafteados y Muertos']];
 function render(){
   $('#mainTabs').innerHTML=MAIN_TABS.map(([id,l])=>`<button class="tab" role="tab" data-main="${id}" aria-selected="${ui.tab===id&&!ui.team}">${l}</button>`).join('');
   if(ui.match)return renderMatchReport();
   if(ui.team&&teams.find(t=>t.file===ui.team))return renderTeam();
   ui.team=null;
-  ({standings:renderStandings,teams:renderTeams,matches:renderMatches,hof:renderHof})[ui.tab]();
+  ({standings:renderStandings,teams:renderTeams,matches:renderMatches,hof:renderHof,dead:renderRetired})[ui.tab]();
 }
 function badge(t){const d=t.doc;return`<span class="dot" style="background:${colorOf(d)}"></span>`}
 const pctTxt=p=>(p*100).toFixed(1).replace('.',',')+' %';
@@ -440,6 +442,31 @@ function renderStandings(){
   <p class="hint">La clasificación se ordena por <strong class="c-pct">%</strong> de victorias, calculado como (V + E × 0,5) / PJ, al estilo NFL. Si hay empate, por orden: <strong class="c-tie">≠</strong> (puntos de desempate), calaverunos, diferencia de TD y puntos de estrellato. <strong class="c-tie">≠</strong> = calaverunos × 0,5 + <span class="c-ext">Dif3</span> (victoria por 3 TD o más) + <span class="c-ext">A«0»</span> (rival a 0 TD) + <span class="c-ext">3H</span> (3 o más bajas causadas), sumado partido a partido. Pasan a la fase final los ${QUALIFY} primeros. Los partidos de PlayOff no cuentan para esta tabla. Puedes ordenar por cualquier columna pulsando su cabecera.</p>
   ${playoffsHTML(official)}
   ${calavTableHTML()}`;
+}
+/* ---------- Drafteados y Muertos ---------- */
+function renderRetired(){
+  if(!teams.length){$('#view').innerHTML='<div class="empty">Todavía no hay equipos inscritos.</div>';return}
+  const all=[];
+  for(const t of teams){ const d=t.doc, col=colorOf(d), ink=inkOf(d);
+    (d.league.retiredPlayers||[]).forEach(p=>{
+      const m=(d.league.matches||[]).find(x=>x.id===p.retiredAtMatch);
+      all.push({p,t,col,ink,dr:p.reason==='drafted',round:m?m.round||0:0,when:m?roundShort(m.round):(p.retiredAtMatch||'—'),killer:p.reason==='dead'?((p.killedBy&&p.killedBy.team)||(m&&m.opponent&&m.opponent.teamName)||''):'',kp:p.killedBy||{}}); }); }
+  all.sort((a,b)=>b.round-a.round||a.t.name.localeCompare(b.t.name,'es')||(a.p.num-b.p.num));
+  const nd=all.filter(x=>x.dr).length, nm=all.length-nd, f=ui.deadFilter||'all';
+  const rows=all.filter(x=>f==='all'||(f==='drafted'?x.dr:!x.dr));
+  const flt=(id,l,n)=>`<button type="button" class="btn small ${f===id?'primary':''}" data-dfilter="${id}">${l} (${n})</button>`;
+  const body=rows.map(({p,t,col,ink,dr,when,killer,kp})=>{const a=p.attributes||{},s=p.statistics||{},pr=p.progression||{improvements:[]};
+    const gained=new Set((pr.improvements||[]).filter(i=>i.skill).map(i=>normTxt(i.skill)));
+    const sk=(p.skills||[]).map(k=>gained.has(normTxt(k))?`<span class="newsk">${esc(k)}</span>`:esc(k)).join(', ');
+    return`<tr><td class="l"><span class="tchip" style="background:${col};color:${ink}">${esc(t.name)}</span></td><td class="num">${esc(p.num)}</td>
+      <td class="l"><strong>${esc(p.name)}</strong><br><span class="race">${esc(p.position)}</span></td>
+      <td><span class="pill ${dr?'draft':'out'}">${dr?'Drafteado':'Muerto'}</span>${dr&&p.draftValue?`<br><span class="race">Draft ${esc(p.draftValue)}</span>`:''}${!dr&&killer?`<br><span class="race">por ${esc(killer)}${kp.name?` · #${esc(kp.num)} ${esc(kp.name)}`:''}</span>`:''}</td><td class="l">${esc(when)}</td>
+      ${['ma','st','ag','pa','av'].map(k=>`<td class="num">${esc(a[k]??'')}</td>`).join('')}<td class="skills">${sk}</td>
+      ${STAT_COLS.map(([k])=>`<td class="num">${s[k]||0}</td>`).join('')}<td class="num"><strong>${pr.sppTotal||0}</strong></td><td class="num">${fmt((p.price||0)+impValue({progression:pr}))}</td></tr>`}).join('');
+  $('#view').innerHTML=`<div class="hofintro"><h2 class="round">Drafteados y Muertos</h2><p class="hint" style="text-align:center">Jugadores que han salido de su equipo, con lo que llevaban conseguido.</p></div>
+  <div class="row" style="justify-content:center;margin:10px 0 14px">${flt('all','Todos',all.length)}${flt('drafted','Drafteados',nd)}${flt('dead','Muertos',nm)}</div>
+  ${rows.length?`<div class="tscroll"><table><thead><tr><th class="l">Equipo</th><th>#</th><th class="l">Jugador</th><th>Estado</th><th class="l">Cuándo</th><th>MO</th><th>FU</th><th>AG</th><th>PA</th><th>AR</th><th class="l">Habilidades</th>${STAT_COLS.map(([,t])=>`<th>${t}</th>`).join('')}<th>SPP</th><th>Valor</th></tr></thead><tbody>${body}</tbody></table></div>
+  <p class="hint">«Cuándo» es la jornada en la que el jugador salió del equipo (J1, J2… SF = semifinal). Las habilidades en amarillo se ganaron en la liga. Valor = precio + mejoras en el momento de salir.</p>`:'<div class="empty">Todavía no hay jugadores en esta lista.</div>'}`;
 }
 /* ---------- Hall of Fame ---------- */
 const HOF_TABLES=[
@@ -890,6 +917,7 @@ document.addEventListener('click',async e=>{
   const b=e.target.closest('button,a');if(!b)return;
   if(b.dataset.main){ui.tab=b.dataset.main;ui.team=null;ui.match=null;document.documentElement.style.removeProperty('--accent');document.documentElement.style.removeProperty('--accent-ink');history.replaceState(null,'',location.pathname+location.search);render()}
   else if(b.dataset.sort!==undefined){const k=b.dataset.sort;if(!k)ui.sort=null;else if(ui.sort&&ui.sort.key===k)ui.sort={key:k,dir:ui.sort.dir==='desc'?'asc':'desc'};else ui.sort={key:k,dir:k==='name'?'asc':'desc'};render()}
+  else if(b.dataset.dfilter){ui.deadFilter=b.dataset.dfilter;render()}
   else if(b.dataset.tt){ui.teamTab=b.dataset.tt;render()}
   else if(b.dataset.dl){downloadTeam(b.dataset.dl)}
   else if(b.dataset.sheet){const t=teams.find(x=>x.file===b.dataset.sheet);if(t)downloadSheet(t.doc,economy(t.doc),t.file.replace(/\.json$/i,''),await fetchLogo(t))}

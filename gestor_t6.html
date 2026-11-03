@@ -633,25 +633,35 @@ function signHTML(){
         const why=signBlock(e), n=c.of(e.type);
         return `<option value="${esc(e.type)}" ${why?'disabled':''}>${esc(e.type)}${e.qty!=null?` (${n}/${e.qty})`:''} · ${fmt(e.prize)}${e.clave?' · '+esc(e.clave):''}</option>`; }).join('')}</select></label>
       <label class="f">Nombre<input type="text" id="signName" placeholder="Nombre del jugador"></label>
+      <label class="f">Número<input type="text" id="signNum" value="AUTO" inputmode="numeric" maxlength="4" autocomplete="off" onfocus="this.select()" aria-label="Número del jugador (AUTO o 1-99)"></label>
     </div>
     <p class="hint" id="signInfo"></p>
     <button class="btn primary" type="button" id="signBtn" disabled>Fichar</button></div>`;
+}
+/* número del fichaje: AUTO (el primero libre) o un número de 1 o 2 cifras que no use otro jugador del equipo */
+function signNumber(){
+  const raw=($('#signNum')?$('#signNum').value:'').trim(), used=new Set(state.data.players.map(p=>p.num));
+  if(raw===''||/^auto$/i.test(raw)){ let n=1; while(used.has(n)) n++; return {num:n,auto:true}; }
+  if(!/^\d{1,2}$/.test(raw)||int(raw)<1) return {error:'Escribe AUTO o un número de 1 a 99.'};
+  const n=int(raw);
+  if(used.has(n)){ const o=state.data.players.find(p=>p.num===n); return {error:`El nº ${n} ya lo lleva ${o.name}.`}; }
+  return {num:n,auto:false};
 }
 function signRefresh(){
   const sel=$('#signPos'), name=$('#signName'), btn=$('#signBtn'), info=$('#signInfo'); if(!sel) return;
   const e=posEntry(state.data.race,sel.value);
   if(!e){ info.textContent=''; btn.disabled=true; return; }
-  const why=signBlock(e);
-  info.className='hint'+(why?' warn':'');
-  info.textContent = why || `MO ${e.ma} · FU ${e.st} · AG ${e.ag}+ · PA ${e.pa!=null?e.pa+'+':'—'} · AR ${e.av}+ · ${[...(e.skills||[]),e.clave].filter(Boolean).join(', ')}`;
-  btn.disabled = !!why || !name.value.trim();
+  const why=signBlock(e), sn=signNumber(), whyAll=why||sn.error||'';
+  info.className='hint'+(whyAll?' warn':'');
+  info.textContent = whyAll || `${sn.auto?`Nº automático: ${sn.num}. `:''}MO ${e.ma} · FU ${e.st} · AG ${e.ag}+ · PA ${e.pa!=null?e.pa+'+':'—'} · AR ${e.av}+ · ${[...(e.skills||[]),e.clave].filter(Boolean).join(', ')}`;
+  btn.disabled = !!whyAll || !name.value.trim();
 }
 function signPlayer(){
   const d=state.data, e=posEntry(d.race,$('#signPos').value), name=$('#signName').value.trim();
   if(!e||!name) return;
   const why=signBlock(e); if(why){ toast(why); return; }
-  const used=new Set(d.players.map(p=>p.num));
-  let num=1; while(used.has(num)) num++;
+  const sn=signNumber(); if(sn.error){ toast(sn.error); return; }
+  const num=sn.num;
   d.players.push({num,name,position:e.type,ma:e.ma??'',st:e.st??'',ag:e.ag!=null?e.ag+'+':'',pa:e.pa!=null?e.pa+'+':'',av:e.av!=null?e.av+'+':'',
     skills:[...(e.skills||[]),...(e.clave?[e.clave]:[])]});
   L().players.push(emptyPlayerLeague(num,e.prize||0));
@@ -1292,7 +1302,7 @@ app.addEventListener('click',e=>{
 app.addEventListener('input',e=>{
   if(mvInput(e)) return;
   const t=e.target;
-  if(t.id==='signName'){ signRefresh(); return; }
+  if(t.id==='signName'||t.id==='signNum'){ signRefresh(); return; }
   if(t.dataset.coach!==undefined){ L().coach=t.value.trim(); markDirty(`Liga T${L().season}: entrenador de ${state.data.teamName}`); return; }
   if(t.dataset.price){ leaguePlayer(int(t.dataset.price)).price=int(t.value); markDirty(); renderTiles(); renderTeam(); }
 });

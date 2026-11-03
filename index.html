@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-w-version="W_V56">
+<html lang="es" data-w-version="W_V57">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -434,6 +434,7 @@
   <div class="modal">
     <h2>ARMADURA</h2>
     <div id="garrasWarning" style="display:none; color:var(--bad); font-weight:800; text-align:center; margin-bottom:8px;">🩸 Jugador con GARRAS</div>
+    <div id="agresorWarning" style="display:none; color:var(--gold); font-weight:800; text-align:center; margin-bottom:8px; font-size:13px;"></div>
     <p id="armorText">Tirada de armadura.</p>
     <div class="row" style="justify-content:center; gap:10px;">
       <div class="die-face" id="armorDie1">–</div>
@@ -448,6 +449,7 @@
         <button id="armorNoBtn" onclick="armorResult(false)">NO — sigue tumbado</button>
         <button class="danger" onclick="armorResult(true)">SÍ — tirar heridas</button>
       </div>
+      <button class="full" id="armorAgresorBtn" onclick="useAgresorDiscreto()" style="display:none; margin-top:8px;">🕵️ Repetir tirada (Agresor discreto)</button>
     </div>
 
     <div id="regenRow" style="display:none; margin-top:12px; border-top:1px solid var(--panel-line); padding-top:12px;">
@@ -629,6 +631,17 @@
     <h2 id="preMatchTitle">SECUENCIA PREVIA</h2>
     <div id="preMatchBody"></div>
     <div class="row" id="preMatchActions" style="margin-top:12px; justify-content:center;"></div>
+  </div>
+</div>
+
+<div class="modal-back" id="crujirModal">
+  <div class="modal">
+    <h2>💢 CRUJIR</h2>
+    <p id="crujirText">¿Falta gratuita?</p>
+    <div class="row" style="justify-content:center; gap:8px;">
+      <button class="primary" onclick="crujirChoose(true)">Sí, hacer la Falta</button>
+      <button onclick="crujirChoose(false)">No</button>
+    </div>
   </div>
 </div>
 

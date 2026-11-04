@@ -13,7 +13,13 @@ Cuando este jugador intente realizar una acción de Pase o de Entregar el balón
 termina de Inmediato.
 Algunos Jugadores pueden tener Animosidad (todos), en cuyo caso esta regla se aplica a todos sus compañeros de equipo, sin Importar las claves que tengan.
 ✅ APUÑALAR (OK desde 28-09-2026) (Hay que elegir Blitz si está separado o directamente APUÑALAR si está pegado a un rival) Cuando este jugador es activado, puede declarar una acción especial de Apuñalar; no hay límite al número de jugadores que pueden declarar esta acción especial cada turno. Cuando este jugador realiza una acción de Apuñalar, elige a un jugador rival En pie y adyacente a él, y haz una tirada de Armadura contra dicho jugador rival. Esta tirada de Armadura no puede modificarse de ningún modo. Si la armadura del jugador rival se rompe, haz una tirada de Heridas contra él. Este jugador puede usar la acción especial de Apuñalar para reemplazar la acción de Placaje que forma parte de una acción de Penetración. pero su activación finalizará igualmente una vez resuelta la acción especial de Apuñalar.
+☣️- ATENTO AL BALON
+Cuando un jugador rival realice una acción de Pase, tras declarar la casilla objetivo pero antes de hacer el chequeo de Pase, este jugador puede moverse hasta 3 casillas, siguiendo todas las reglas normales de movimiento excepto que no puede forzar la marcha. Si este jugador se Cae durante dicho movimiento, el movimiento termina de inmediato (y se le tira armadura por caerse) y se retoma la acción de Pase. Si hay varios jugadores con esta habilidad, todos ellos pueden usarla durante la misma acción de Pase, aunque deben hacerlo de uno en uno, y si uno de ellos se Cae antes de que otros hayan podido usar esta habilidad, ya no podrán hacerlo. Además, durante la secuencia de inicio de una entrada, tras el desvío del balón pero antes de tirar el Evento de patada inicial, un único jugador Desmarcado del equipo receptor con esta habilidad puede moverse hasta 3 casillas, siguiendo todas las reglas normales de movimiento excepto que no puede forzar la marcha. Esta habilidad no puede utilizarse si se produce una recepción libre, ni permite cruzar a la parte del campo del equipo rival pero si a la zona central. Si este jugador se Cae durante dicho movimiento, el movimiento termina de inmediato y se tira el Evento de patada inicial.
 ☣️- ATRAPAR (pruebas desde 03-09-2026) - 17-09-26 funciona pero falta mas testeo
+☣️- BRAZO FUERTE
+Cuando este jugador realice una acción de Lanzar compañero, puede aplicar un modificador de +1 al chequeo de Pase. Un jugador que no tenga el rasgo Lanzar compañero no puede tener esta habilidad.
+☣️- BRAZOS ADICIONALES
+Este jugador aplica un modificador de +1 a sus chequeos de Agilidad para intentar atrapar, recoger o interceptar el balón.
 ☣️- CABEZA DURA (pruebas desde 08-09-2026 - Sale aviso de que tiene esta habilidad, no se optimiza hasta que se tire automaticamente Heridas) De momento, avisar en el modal cuando se haga una tirada de Heridas contra ese jugador en letras de color rojo que tiene "Jugador con CABEZA DURA" para avisarnos al elegir el resultado _________ SOLO SALE AVISO, NO ESTÁ AUTOMATIZADO 100% ___________
 ☣️- CANIJO (pruebas desde 17-09-2026) Este jugador puede aplicar un modificador de +1 a sus chequeos de Agilidad para intentar esquivar. Aparte de esto, si un jugador rival intenta esquivar moviéndose a una casilla en la zona de defensa de este jugador, este jugador no aplicará un modificador de -1 al chequeo de Agilidad del jugador rival por estarlo Marcando.
 ☣️- CAÑONERO Cuando se realiza una acción de pase largo o bomba larga, este jugador aplica un +1  al chequeo de pase
@@ -37,6 +43,7 @@ Hablamos de lesiones cuando se saca un 10, 11 o 12 despues de pasar la armadura 
 ☣️- ESCURRIDIZO (pruebas desde 17-09-2026 - falta Tabla Heridas Escurridizo) Cuando este jugador intente esquivar, no sufre modificadores negativos a su chequeo de Agilidad por estar siendo Marcado por jugadores rivales. Además, este jugador aplica un modificador de-1 a su chequeo de Agilidad al intentar interceptar el balón.
 ✅ ESQUIVAR (OK // TE PREGUNTA SI USAR ESQUIVAR)
 ✅ ESPRINTAR (OK)
+☣️- FALTA RAPIDA La activación de este jugador no termina tras realizar la acción de Falta, sino que puede seguir con su acción de Movimiento, usando el movimiento que aún le quede.
 ✅ FORCEJEAR (OK 10-09-2026 // TE PREGUNTA SI USAR HABILIDAD O SEGUIR)
 ✅ FURIA (OK 03-09-2026 // AUTOMÁTICO)
 ✅ GARRAS (OK 10-09-2026)
@@ -122,14 +129,8 @@ Si pasa el chequeo, se coloca al Jugadoe en la casilla destino y podrá seguir s
 Si falla el chequeo el jugador se cae en la casilla destino (tirandole armadura y teniendo cambio de turno), si saca un 1 natural, cae en la casilla de origen del Brincar y su activacion termina.
 Para marcarlo, cuando este haciendo el movimiento el jugador, si marca con el boton derecho una casilla con un jugador tumbado o aturdido, debe salir una opcion en una ruleta nueva de Brincar o Saltar si es el balón o un jugador en pie. Y asi hacer el Brincar o Saltar.
 
-ATENTO AL BALON
-Cuando un jugador rival realice una acción de Pase, tras declarar la casilla objetivo pero antes de hacer el chequeo de Pase, este jugador puede moverse hasta 3 casillas, siguiendo todas las reglas normales de movimiento excepto que no puede forzar la marcha. Si este jugador se Cae durante dicho movimiento, el movimiento termina de inmediato (y se le tira armadura por caerse) y se retoma la acción de Pase. Si hay varios jugadores con esta habilidad, todos ellos pueden usarla durante la misma acción de Pase, aunque deben hacerlo de uno en uno, y si uno de ellos se Cae antes de que otros hayan podido usar esta habilidad, ya no podrán hacerlo. Además, durante la secuencia de inicio de una entrada, tras el desvío del balón pero antes de tirar el Evento de patada inicial, un único jugador Desmarcado del equipo receptor con esta habilidad puede moverse hasta 3 casillas, siguiendo todas las reglas normales de movimiento excepto que no puede forzar la marcha. Esta habilidad no puede utilizarse si se produce una recepción libre, ni permite cruzar a la parte del campo del equipo rival pero si a la zona central. Si este jugador se Cae durante dicho movimiento, el movimiento termina de inmediato y se tira el Evento de patada inicial.
 
-BRAZO FUERTE
-Cuando este jugador realice una acción de Lanzar compañero, puede aplicar un modificador de +1 al chequeo de Pase. Un jugador que no tenga el rasgo Lanzar compañero no puede tener esta habilidad.
 
-BRAZOS ADICIONALES
-Este jugador aplica un modificador de +1 a sus chequeos de Agilidad para intentar atrapar, recoger o interceptar el balón.
 
-FALTA RAPIDA
-La activación de este jugador no termina tras realizar la acción de Falta, sino que puede seguir con su acción de Movimiento, usando el movimiento que aún le quede.
+
+

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-w-version="W_V57">
+<html lang="es" data-w-version="W_V58">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -38,6 +38,9 @@
       </div>
       <!-- Botón "Desatascar" oculto a propósito (la función unstickState sigue en app.js). Quitar display:none para recuperarlo. -->
       <button class="danger full" style="margin-top:8px; display:none;" onclick="unstickState()">🆘 Desatascar (cerrar modales colgados)</button>
+
+      <button class="full" id="adminToggleBtn" style="margin-top:8px;" onclick="toggleAdminPanel()">🛠 Panel admin (mostrar/ocultar)</button>
+      <button class="full" id="adminReportBtn" style="margin-top:6px; display:none;" onclick="downloadMatchReport()">📄 Descargar informe del partido</button>
 
       <h3 style="margin-top:14px;">Partida</h3>
       <div class="small-note">Se guarda sola en este navegador tras cada acción. Si se cae la conexión, recargad la página y os ofrecerá recuperarla.</div>
@@ -323,7 +326,7 @@
         </div>
       </div>
     </div>
-    <div class="panel" id="adminIncPanel">
+    <div class="panel" id="adminIncPanel" style="display:none;">
       <h2>Panel admin incentivos</h2>
       <div class="small-note" style="margin-bottom:6px;">Pruebas: + añade la Plegaria / Medida desesperada al equipo (efecto inmediato, jugador al azar si procede); − la quita y revierte el efecto.</div>
       <div id="adminIncBody"></div>
@@ -778,5 +781,13 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <script src="app.js?v=20260925-3"></script>
 
+<div id="roleChip" onclick="toggleSoftOverride()" style="display:none;"></div>
+<div id="rivalGoneOverlay" style="display:none;">
+  <div class="rg-box">
+    <h2>⚠️ Rival desconectado</h2>
+    <p>Esperando a que se vuelva a conectar (abre el mismo enlace y escribe el código de sala). Si no vuelve, guarda la partida para retomarla más tarde.</p>
+    <button class="primary" onclick="rivalGoneSave()">⬇️ Guardar partida</button>
+  </div>
+</div>
 </body>
 </html>

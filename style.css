@@ -656,7 +656,7 @@ button.full{width:100%; margin-top:6px;}
 .conn-dot.on{background:var(--good);}
 
 /* --- Versión del archivo (para el badge de verificación en el pie) --- */
-:root{ --css-version: "S_V67"; }
+:root{ --css-version: "S_V68"; }
 
 /* ---- Iconos dorados (se tiñen con el color del marcador mediante máscara) ---- */
 .gold-icon{display:inline-block; width:18px; height:18px; vertical-align:middle; background:var(--gold);
@@ -923,3 +923,12 @@ button.full{width:100%; margin-top:6px;}
 }
 .pass-target-mark .gold-icon{ width:80%; height:80%; background:#ffd400; filter:drop-shadow(0 0 3px #000); }
 #passConfirmMenu .radial-menu-btn .rm-icon{ font-size:18px; }
+
+/* Roles multi-PC */
+#roleChip{ position:fixed; left:8px; bottom:8px; z-index:900; padding:4px 10px; border-radius:12px; font-size:12px; font-weight:700; cursor:pointer; background:#222; color:#fff; border:2px solid #888; opacity:.9; }
+#roleChip[data-role="A"]{ border-color:#c0392b; }
+#roleChip[data-role="B"]{ border-color:#2a6fb0; }
+.lock-overlay{ position:absolute; inset:0; z-index:60; background:rgba(15,15,20,.78); display:none; flex-direction:column; align-items:center; justify-content:center; gap:12px; border-radius:inherit; color:#fff; text-align:center; padding:12px; }
+.lock-overlay .lock-msg{ font-size:18px; font-weight:700; }
+#rivalGoneOverlay{ position:fixed; inset:0; z-index:5000; background:rgba(0,0,0,.72); align-items:center; justify-content:center; }
+#rivalGoneOverlay .rg-box{ background:#1c1f26; color:#fff; border-radius:12px; padding:20px 24px; max-width:420px; text-align:center; border:2px solid #e0a800; }

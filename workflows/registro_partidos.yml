@@ -1,0 +1,29 @@
+# Copiar a: .github/workflows/registro_partidos.yml
+name: Guardar informes de partido
+on:
+  schedule: [{ cron: '*/30 * * * *' }]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descargar informes desde Firebase
+        run: |
+          mkdir -p registro_partidos
+          curl -sf "https://bb-sevens-default-rtdb.europe-west1.firebasedatabase.app/registro_partidos.json" -o /tmp/rp.json || echo null > /tmp/rp.json
+          python3 - <<'PY'
+          import json, os
+          d = json.load(open('/tmp/rp.json')) or {}
+          for k, v in d.items():
+              fn = os.path.join('registro_partidos', v.get('nombre', k + '.json'))
+              if not os.path.exists(fn):
+                  open(fn, 'w', encoding='utf-8').write(json.dumps(json.loads(v['json']), ensure_ascii=False, indent=2))
+          PY
+      - name: Commit
+        run: |
+          git config user.name "bb-sevens-bot"; git config user.email "bot@users.noreply.github.com"
+          git add registro_partidos
+          git diff --cached --quiet || (git commit -m "Nuevos informes de partido" && git push)

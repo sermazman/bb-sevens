@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-w-version="W_V58">
+<html lang="es" data-w-version="W_V59">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -637,6 +637,17 @@
   </div>
 </div>
 
+<div class="modal-back" id="atentoModal">
+  <div class="modal">
+    <h2>👀 ATENTO AL BALÓN</h2>
+    <p id="atentoText"></p>
+    <div class="row" style="justify-content:center; gap:8px;">
+      <button class="primary" onclick="atentoChoose(true)">Mover hasta 3 casillas</button>
+      <button onclick="atentoChoose(false)">No usar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-back" id="crujirModal">
   <div class="modal">
     <h2>💢 CRUJIR</h2>
@@ -781,6 +792,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <script src="app.js?v=20260925-3"></script>
 
+<div id="atentoBar" style="display:none;"><span id="atentoBarText"></span><button class="primary" onclick="atentoEndMove(true)">✅ Terminar movimiento</button></div>
 <div id="roleChip" onclick="toggleSoftOverride()" style="display:none;"></div>
 <div id="rivalGoneOverlay" style="display:none;">
   <div class="rg-box">

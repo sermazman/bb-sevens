@@ -524,7 +524,7 @@ function snapshotState(){
     infoModalTitle: document.getElementById('infoModalTitle').textContent,
     infoModalText: document.getElementById('infoModalText').textContent,
     forcejearText: document.getElementById('forcejearText').textContent,
-    pendingForcejearChoice, pendingStandFirm, pendingJump, passTargetMark, pendingCrujir,
+    pendingForcejearChoice, pendingStandFirm, pendingJump, passTargetMark, pendingCrujir, atentoSt,
     matchEndText: document.getElementById('matchEndText').textContent,
     pendingActionMenuPlayer,
     dejadaWheelActive,
@@ -748,6 +748,7 @@ function applyRemoteState(payload){
   pendingJump = payload.pendingJump || null;
   passTargetMark = payload.passTargetMark || null;
   pendingCrujir = payload.pendingCrujir || null;
+  atentoSt = payload.atentoSt || null;
   luchadorUsed = !!payload.luchadorUsed;
   luchadorPickMode = !!payload.luchadorPickMode;
   renderAnimosityModal(); renderHailMaryModal();
@@ -899,7 +900,7 @@ function applyRemoteState(payload){
   });
   blockDiceRolled = !!payload.blockDiceRolled;
   refreshBlockSkillUi();
-  renderProvocarModal(); renderHeroicTackleModal(); renderStandFirmModal(); renderCrujirModal();
+  renderProvocarModal(); renderHeroicTackleModal(); renderStandFirmModal(); renderCrujirModal(); renderAtento();
   document.getElementById('blockDiceHint').style.display = blockDiceRolled ? 'block' : 'none';
   document.getElementById('blockModal').classList.toggle('show', !!payload.blockModalOpen);
 
@@ -1039,7 +1040,7 @@ function anyModalOpen(){
          document.getElementById('interceptModal').classList.contains('show') ||
          document.getElementById('heroicReceptionPanel').style.display==='block' ||
          pendingActionMenuPlayer !== null ||
-         pendingAnimosity !== null || pendingHailMaryChoice !== null || pendingProvocarChoice !== null || pendingStandFirm !== null || pendingCrujir !== null || pendingHeroicTackle !== null ||
+         pendingAnimosity !== null || pendingHailMaryChoice !== null || pendingProvocarChoice !== null || pendingStandFirm !== null || pendingCrujir !== null || (atentoSt && atentoSt.stage==='ask') || pendingHeroicTackle !== null ||
          document.getElementById('traitCheckModal').classList.contains('show') ||
          document.getElementById('turnoverOverlay').classList.contains('show');
 }
@@ -3882,9 +3883,9 @@ function unstickState(){
   pendingFerocityAttack = null;
   pendingAnimosity = null;
   pendingHailMaryChoice = null;
-  pendingProvocarChoice = null; pendingStandFirm = null; pendingJump = null; jumpWheel = null; passTargetMark = null; pendingCrujir = null; crujirQueue = []; removePassConfirmMenu(); luchadorUsed = false; luchadorPickMode = false; blockProNote = '';
+  pendingProvocarChoice = null; pendingStandFirm = null; pendingJump = null; jumpWheel = null; passTargetMark = null; pendingCrujir = null; atentoSt = null; crujirQueue = []; removePassConfirmMenu(); luchadorUsed = false; luchadorPickMode = false; blockProNote = '';
   pendingHeroicTackle = null;
-  renderProvocarModal(); renderHeroicTackleModal(); renderStandFirmModal(); renderCrujirModal();
+  renderProvocarModal(); renderHeroicTackleModal(); renderStandFirmModal(); renderCrujirModal(); renderAtento();
   pendingBlitzStabChoice = null;
   pendingHandoffChoice = null;
   pendingFoulContext = null;
@@ -4011,6 +4012,10 @@ function cellClicked(r,c){
     const p = players.find(x=>x.id===selected);
     if(p && kickoffEvt && kickoffEvt.phase==='charge' && ball.carrierId===null && ball.row===r && ball.col===c && inAdjacentReach(p,r,c)){
       updateStatus('¡A la carga!: no se puede pisar la casilla donde va a caer el balón.');
+      return;
+    }
+    if(p && atentoSt && atentoSt.stage==='move' && atentoSt.mode==='kick' && p.id===atentoSt.cur && inAdjacentReach(p,r,c) && !kickoffAlertCellOk(p,r,c)){
+      updateStatus('Atento al balón: solo puede moverse por su campo o la zona central.');
       return;
     }
     if(p && inAdjacentReach(p,r,c) && !occupiedBy(r,c)){
@@ -5777,6 +5782,103 @@ function startApunalarOn(attacker, target){
 // ===== CRUJIR: Falta gratuita tras derribar con un Placaje =====
 let crujirMap = {};        // { defenderId: attackerId } — derribado por un jugador con Crujir en este Placaje
 let crujirQueue = [];      // [{ attackerId, defenderId }] a ofrecer cuando el tablero esté en reposo
+
+// ===== ATENTO AL BALÓN =====
+let atentoSt = null;   // { mode:'pass'|'kick', queue:[ids], cur:id|null, stage:'ask'|'move', ctx, saved }
+function atentoEligible(p, team){ return !!p && p.onPitch && p.team===team && p.condition==='standing' && playerHasSkill(p, 'atento al balon', 'eyes on the ball'); }
+function startAtentoForPass(passer, tr, tc, zone, hm){
+  const other = passer.team==='A' ? 'B' : 'A';
+  const q = players.filter(p=>atentoEligible(p, other)).map(p=>p.id);
+  if(!q.length) return false;
+  atentoSt = { mode:'pass', queue:q, cur:null, stage:'ask', ctx:{ passerId:passer.id, targetR:tr, targetC:tc, zone, hailMary:!!hm } };
+  atentoNext();
+  return true;
+}
+function startAtentoKick(){
+  const q = players.filter(p=>atentoEligible(p, kickoffReceivingTeam) && kickoffBoardEligible(p, kickoffReceivingTeam)).map(p=>p.id);
+  if(!q.length) return false;
+  atentoSt = { mode:'kick', queue:q, cur:null, stage:'ask', ctx:{} };
+  atentoNext();
+  return true;
+}
+function atentoNext(){
+  if(!atentoSt) return;
+  while(atentoSt.queue.length){
+    const id = atentoSt.queue.shift();
+    const p = players.find(x=>x.id===id);
+    if(atentoEligible(p, p ? p.team : '') && (atentoSt.mode!=='kick' || kickoffBoardEligible(p, p.team))){
+      atentoSt.cur = id; atentoSt.stage = 'ask';
+      renderAtento(); renderPitch(); broadcastState();
+      return;
+    }
+  }
+  atentoFinish();
+}
+function atentoFinish(){
+  const st = atentoSt; atentoSt = null;
+  renderAtento(); renderPitch(); renderRosters(); renderSelInfo();
+  if(!st){ return; }
+  if(st.mode==='pass'){
+    const passer = players.find(x=>x.id===st.ctx.passerId);
+    if(passer && passer.onPitch){ startPassRoll(passer, st.ctx.targetR, st.ctx.targetC, st.ctx.zone, st.ctx.hailMary, true); }
+    else broadcastState();
+  } else {
+    showKickoffEvent();
+  }
+}
+function atentoChoose(use){
+  if(!atentoSt || atentoSt.stage!=='ask') return;
+  const p = players.find(x=>x.id===atentoSt.cur);
+  if(!p || !use){
+    if(p) log('👀 ATENTO AL BALÓN: ' + p.name + ' no lo usa.');
+    atentoSt.cur = null; atentoNext(); return;
+  }
+  atentoSt.saved = { activated:p.activated, remainingMove:p.remainingMove, gfiUsed:p.gfiUsed, selected, declaredAction, prevActive:state.active };
+  state.active = p.team; p.activated = false; p.remainingMove = 3; p.gfiUsed = maxGfiFor(p);
+  selected = p.id; declaredAction = 'move'; atentoSt.stage = 'move';
+  log('👀 ATENTO AL BALÓN: ' + p.name + ' (' + teamName(p.team) + ') se mueve hasta 3 casillas' + (atentoSt.mode==='pass' ? ' antes del chequeo de Pase' : ' antes del Evento de patada inicial') + ' (sin forzar la marcha).');
+  updateStatus('Atento al balón: mueve a ' + p.name + ' hasta 3 casillas y pulsa "Terminar movimiento".');
+  renderAtento(); renderRosters(); renderPitch(); renderSelInfo(); broadcastState();
+}
+function atentoEndMove(force){
+  if(!atentoSt || atentoSt.stage!=='move') return;
+  if(!force && trapdoorBusy()){ updateStatus('Termina primero la tirada en curso.'); return; }
+  const p = players.find(x=>x.id===atentoSt.cur);
+  const sv = atentoSt.saved || {};
+  const fell = !p || !p.onPitch || p.condition!=='standing';
+  if(p){ p.activated = !!sv.activated; p.remainingMove = sv.remainingMove; p.gfiUsed = sv.gfiUsed; }
+  if(sv.prevActive) state.active = sv.prevActive;
+  selected = sv.selected!==undefined ? sv.selected : null; declaredAction = sv.declaredAction!==undefined ? sv.declaredAction : null;
+  atentoSt.saved = null; atentoSt.cur = null; atentoSt.stage = 'ask';
+  if(atentoSt.mode==='kick' || fell) atentoSt.queue = [];
+  atentoNext();
+}
+function renderAtento(){
+  const m = document.getElementById('atentoModal'), bar = document.getElementById('atentoBar');
+  const p = atentoSt && atentoSt.cur!=null ? players.find(x=>x.id===atentoSt.cur) : null;
+  if(m){
+    if(atentoSt && atentoSt.stage==='ask' && p){
+      document.getElementById('atentoText').textContent = p.name + ' (' + teamName(p.team) + ') tiene ATENTO AL BALÓN: ' +
+        (atentoSt.mode==='pass' ? 'el rival ha declarado un Pase. Puede moverse hasta 3 casillas (sin forzar la marcha) antes del chequeo de Pase. Si cae, el movimiento termina y se retoma el Pase.'
+                                : 'puede moverse hasta 3 casillas (sin forzar la marcha, solo su campo o la zona central) antes del Evento de patada inicial. Solo un jugador puede hacerlo.');
+      m.classList.add('show');
+    } else m.classList.remove('show');
+  }
+  if(bar){
+    if(atentoSt && atentoSt.stage==='move' && p){ document.getElementById('atentoBarText').textContent = '👀 ' + p.name + ': mueve hasta 3 casillas'; bar.style.display = 'flex'; }
+    else bar.style.display = 'none';
+  }
+}
+setInterval(()=>{
+  try{
+    if(!atentoSt || atentoSt.stage!=='move') return;
+    if(roomCode && lockActive() && myRole!=='A') return;
+    const p = players.find(x=>x.id===atentoSt.cur);
+    if(trapdoorBusy()) return;
+    if(!p || p.activated || p.condition!=='standing' || !p.onPitch || (p.remainingMove ?? 0) < 1) atentoEndMove(true);
+  }catch(e){}
+}, 500);
+
 let pendingCrujir = null;  // { attackerId, defenderId } — modal SÍ/NO
 function registerCrujir(attacker, defender){
   if(attacker && defender && attacker.team!==defender.team && playerHasSkill(attacker, 'crujir', 'crush')) crujirMap[defender.id] = attacker.id;
@@ -6184,8 +6286,9 @@ function declarePassTarget(passer, targetR, targetC, zone, hailMary){
   startPassRoll(passer, targetR, targetC, zone, hailMary);
 }
 
-function startPassRoll(passer, targetR, targetC, zone, hailMary){
+function startPassRoll(passer, targetR, targetC, zone, hailMary, skipAtento){
   pendingPassTargetSelection = null;
+  if(!skipAtento && startAtentoForPass(passer, targetR, targetC, zone, hailMary)) return;
   const hasNerviosPass = playerHasSkill(passer, 'nervios de acero', 'nerves of steel');
   const markers = hasNerviosPass ? 0 : countOpponentTackleZones(passer.row, passer.col, passer.team);
   const wxPassPen = weatherKind()==='soleado' ? 1 : 0;
@@ -6441,12 +6544,13 @@ function attemptInterception(id){
   const markers = countOpponentTackleZones(interceptor.row, interceptor.col, interceptor.team);
   const escurridizoPenalty = playerHasSkill(interceptor, 'escurridizo', 'diving tackle immune', 'slippery') ? 1 : 0;
   const rainPen = weatherKind()==='lluvia' ? 1 : 0;
-  const target = parseAgTarget(interceptor.ag) + zonePenalty + markers + escurridizoPenalty + rainPen;
+  const brazosAdI = playerHasSkill(interceptor, 'brazos adicionales', 'extra arms') ? 1 : 0;
+  const target = parseAgTarget(interceptor.ag) + zonePenalty + markers + escurridizoPenalty + rainPen - brazosAdI;
   pendingInterceptionRoll = { interceptorId: interceptor.id, target };
   document.getElementById('interceptText').textContent = interceptor.name + ' intenta interceptar — necesita ' + target + '+ (AG' + (interceptor.ag ?? '?') +
     ' -' + zonePenalty + ' por ser ' + (outcome==='preciso' ? 'un pase preciso' : 'un pase impreciso') +
     (markers>0 ? (', -' + markers + ' por marcaje') : '') +
-    (escurridizoPenalty>0 ? ', -1 por Escurridizo' : '') + (rainPen>0 ? ', -1 por Lluvioso' : '') + '). Tirad 1D6.';
+    (escurridizoPenalty>0 ? ', -1 por Escurridizo' : '') + (rainPen>0 ? ', -1 por Lluvioso' : '') + (brazosAdI ? ', +1 por Brazos adicionales' : '') + '). Tirad 1D6.';
   document.getElementById('interceptDie').textContent = '–';
   document.getElementById('interceptResultText').textContent = '';
   document.getElementById('interceptResultText').className = 'check-result';
@@ -6834,7 +6938,8 @@ function openCatchModal(p, noModifiers, voluntary, extraPenalty, extraReason, us
   let baseT = parseAgTarget(p.ag);
   const escenaOn = (catchKind==='pass' || catchKind==='heroic') && escenaCatch[p.team];
   if(escenaOn){ baseT = 2; escenaCatch[p.team] = false; log('🎭 ESCENA ENSAYADA: ' + p.name + ' recibe con base 2+ (más modificadores).'); }
-  const target = noModifiers ? baseT : baseT + markers + extra + rainPen - bonus;
+  const brazosAd = (!noModifiers && playerHasSkill(p, 'brazos adicionales', 'extra arms')) ? 1 : 0;
+  const target = noModifiers ? baseT : baseT + markers + extra + rainPen - bonus - brazosAd;
   pendingCatch = { playerId: p.id, target, voluntary: !!voluntary, useAtraparSkill: !!useAtraparSkill, catchKind: catchKind || (useAtraparSkill ? 'handoff' : 'pickup') };
   catchRerollUsed = false;
   updateCatchTitle();
@@ -6847,6 +6952,7 @@ function openCatchModal(p, noModifiers, voluntary, extraPenalty, extraReason, us
     if(extra>0) parts.push('-1 por ser ' + (extraReason || 'recogida especial'));
     if(rainPen>0) parts.push('-1 por Lluvioso');
     if(bonus>0) parts.push('+1 por Recepción Heroica (en la casilla objetivo)');
+    if(brazosAd>0) parts.push('+1 por Brazos adicionales');
     modText = `(AG${p.ag ?? '?'}${parts.length ? ' ' + parts.join(' ') : ', sin modificadores'})`;
   }
   const verb = catchVerb || (useAtraparSkill ? 'atrapar la entrega de balón' : 'recoger el balón');
@@ -7535,7 +7641,7 @@ function resolveKickoffBounce(r,c){
     } else {
       kickoffPendingOOBAfterEvent = false;
     }
-    showKickoffEvent();
+    if(kickoffPendingOOBAfterEvent || !startAtentoKick()) showKickoffEvent();
     return;
   }
 
@@ -8181,6 +8287,11 @@ function resolveGfi(success){
 
 function openArmorModal(p){
   armorForPlayer = p.id;
+  // Si el jugador cae en la casilla del balón suelto, el balón rebota (tras resolver armadura y heridas)
+  if(!pendingBallDrop && !ballInFlight && ball.carrierId===null && p.row!==null && ball.row===p.row && ball.col===p.col){
+    pendingBallDrop = { playerId:p.id, r:p.row, c:p.col, exitR:null, exitC:null, loose:true };
+    log('🏈 ' + p.name + ' cae sobre la casilla del balón: el balón rebotará.');
+  }
   crowdPushMode = false;
   document.getElementById('armorText').textContent = `Tirando armadura a ${p.name} con AV ${p.av ?? '(sin dato)'}.`;
   const garrasAttackerId0 = golpeMortiferoMap[p.id];
@@ -8591,7 +8702,7 @@ function closeArmorModal(){
       log('🏈 El balón sale del campo junto con su portador — el Público lo devuelve.');
       resolveThrowIn(info.exitR, info.exitC, info.r, info.c, 0);
     } else {
-      log('🏈 Se le cae el balón.');
+      if(!info.loose) log('🏈 Se le cae el balón.');
       const dirRoll = Math.floor(Math.random()*8)+1;
       const off = kickoffDirOffset(dirRoll);
       log('🎲 Rebote: D8=' + dirRoll + '.');
@@ -8620,6 +8731,12 @@ function closeArmorModal(){
       selected = null; declaredAction = null;
       log('💢 ' + fouler.name + ' termina su Falta de Crujir Tumbado boca arriba; su activación termina (sin cambio de turno).');
       if(hadBall){ ball.carrierId = null; ball.row = fouler.row; ball.col = fouler.col; log('🏈 Se le cae el balón al caer.'); renderPitch(); startBallBounce(); }
+      renderRosters(); renderPitch(); renderSelInfo();
+      broadcastState();
+    }
+    if(!ctx.doubleDetected && !escr && fouler && fouler.onPitch && fouler.condition==='standing' && !ctx.crujir && playerHasSkill(fouler, 'falta rápida', 'falta rapida', 'quick foul')){
+      fouler.activated = false; selected = fouler.id; declaredAction = 'move';
+      log('⚡ FALTA RÁPIDA: ' + fouler.name + ' no termina su activación; puede seguir moviéndose con el movimiento que le queda.');
       renderRosters(); renderPitch(); renderSelInfo();
       broadcastState();
     }
@@ -8796,6 +8913,7 @@ function hideTurnoverOverlay(){
 }
 
 function autoTurnoverThenEndTurn(){
+  if(atentoSt && atentoSt.stage==='move'){ log('👀 ATENTO AL BALÓN: el jugador cae — su movimiento termina de inmediato (sin cambio de turno).'); atentoEndMove(true); return; }
   if(kickoffEvt && kickoffEvt.phase==='charge'){
     log('🛑 Un jugador se ha Caído o ha sido Derribado: la Carga termina.');
     endCharge();
@@ -8806,6 +8924,7 @@ function autoTurnoverThenEndTurn(){
 }
 
 function endTurn(){
+  if(atentoSt && atentoSt.stage==='move'){ atentoEndMove(true); return; }
   if(kickoffEvt && kickoffEvt.phase==='charge'){ endCharge(); return; }
   if(phase!=='live'){
     alert('Terminad de colocar y pulsad "Iniciar Entrada" primero.');
@@ -9174,6 +9293,9 @@ function cancelActiveModal(modalId){
     case 'crujirModal':
       crujirChoose(false);
       break;
+    case 'atentoModal':
+      atentoChoose(false);
+      break;
     case 'heroicTackleModal':
       heroicTackleChoose(null);
       break;
@@ -9215,6 +9337,7 @@ function modalActorTeam(id){
     case 'interceptModal': return pendingInterceptionRoll ? pteam(pendingInterceptionRoll.interceptorId) : other(act);
     case 'provocarModal': return pendingProvocarChoice ? pteam(pendingProvocarChoice.defenderId) : other(act);
     case 'crujirModal': return pendingCrujir ? pteam(pendingCrujir.attackerId) : act;
+    case 'atentoModal': return atentoSt && atentoSt.cur!=null ? pteam(atentoSt.cur) : act;
     case 'standFirmModal': return pendingStandFirm ? (pendingStandFirm.stage==='chain' ? pteam(pendingStandFirm.chain.occupantId) : pteam(pendingStandFirm.defenderId)) : other(act);
     case 'heroicTackleModal': return other(act);
     case 'jumpUpModal': return pendingJumpUpCheck!=null ? pteam(pendingJumpUpCheck) : act;
@@ -9362,7 +9485,7 @@ function boardBlocked(id){
   if(myRole==='S') return true;
   if(!lockActive() || softOverride) return false;
   if(phase!=='live') return false;
-  if(pendingJump || wizardSt || kickoffEvt || placingBallFree || pendingKickPlacement || kickoffBounceStep || ballBounceActive ||
+  if(pendingJump || atentoSt || wizardSt || kickoffEvt || placingBallFree || pendingKickPlacement || kickoffBounceStep || ballBounceActive ||
      freeCatchTeam!==null || pendingPassTargetSelection || pendingManualStatus!==null || pendingFerocityAttack!==null || pendingPush) return false;
   if(id!=null){ try{ if(isValidInterceptTarget(id) || isValidHeroicReceptionTarget(id)) return false; }catch(e){} }
   return myRole!==state.active;
@@ -9543,7 +9666,7 @@ try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesBut
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V77'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V78'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

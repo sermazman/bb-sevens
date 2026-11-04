@@ -102,6 +102,7 @@ function renderResourceIcons(){
   });
 }
 function useResource(team, key){
+  if(!guardTeam(team)) return;
   if(key==='wizard'){ wizardIconClick(team); return; }
   const r = RES_ICONS.find(x=>x.key===key);
   if(!r || !r.once) return;
@@ -434,7 +435,9 @@ function joinPresence(){
 
 function listenForPeers(){
   peersRef.on('value', snap=>{
+    roomPeers = snap.exists() ? snap.val() : {};
     const count = snap.exists() ? Object.keys(snap.val()).length : 0;
+    try{ refreshRoleUI(); }catch(e){}
     if(count>=2){
       updateConnStatus('✅ Conectado — sala ' + roomCode, true);
     } else {
@@ -486,6 +489,7 @@ function hostRoom(){
   updateConnStatus('Sala creada. Esperando al rival...', false);
   joinPresence();
   listenForPeers();
+  initRoles(true);
   listenForState();
   broadcastState(); // publica el estado actual (por si ya había equipos cargados antes de crear la sala)
 }
@@ -499,6 +503,7 @@ function joinRoom(){
   updateConnStatus('Conectando...', false);
   joinPresence();
   listenForPeers();
+  initRoles(false);
   listenForState(); // recibe el estado actual de la sala automáticamente; NO se envía el propio (evita sobrescribir al creador)
 }
 
@@ -1942,6 +1947,7 @@ function trapdoorBusy(){
   return anyModalOpen() || pendingPush || pendingFollowUp || (pendingArmorQueue && pendingArmorQueue.length) || pendingCatch || pendingBallDrop || ballBounceActive || pendingTurnoverAfterResolve || pendingTD || kickoffBounceStep || (kickoffEvt && kickoffEvt.phase);
 }
 function trapdoorTick(){
+  if(roomCode && lockActive() && myRole!=='A') return;
   if(!trapdoorActive() || phase!=='live') return;
   // limpiar a quien ya no está en una casilla de trampilla
   players.forEach(p=>{ if(trapChecked[p.id] && !(p.onPitch && isTrapCell(p.row,p.col))) delete trapChecked[p.id]; });
@@ -2438,6 +2444,7 @@ function despIdopajeAtDriveEnd(){
 }
 // --- uso de las medidas con icono
 function useDesperate(team, n){
+  if(!guardTeam(team)) return;
   const d = despAvail(team, n); if(!d) return;
   if(phase!=='live'){ updateStatus('Las medidas desesperadas se usan durante la entrada.'); return; }
   const di = DESP_ICONS[n];
@@ -8845,6 +8852,7 @@ function showMatchEndModal(){
   document.getElementById('matchEndText').textContent = resultText;
   document.getElementById('matchEndModal').classList.add('show');
   log('🏁 Fin del partido — ' + resultText);
+  createMatchReport();
   broadcastState();
 }
 
@@ -9243,6 +9251,222 @@ function setupModalTint(){
   document.querySelectorAll('.modal-back').forEach(b=>mo.observe(b, { attributes:true, attributeFilter:['class'] }));
 }
 try{ setupModalTint(); }catch(e){}
+window.addEventListener('load', ()=>{ try{ updateAdminPanelVisibility(); }catch(e){} });
+
+// =====================================================================
+// ROLES MULTI-PC (bloqueo SUAVE) + panel admin oculto + informe de partido
+// =====================================================================
+let myRole = null;              // 'A' = Local (izquierda, crea la sala) · 'B' = Visitante (derecha) · 'S' = espectador · null = sin sala
+let roomRoles = {};             // { A:peerId, B:peerId }
+let roomPeers = {};
+let rolesRef = null;
+let hadBothPlayers = false;
+let softOverride = false;       // "control total" manual (bloqueo suave)
+const forcedModals = new Set();
+
+function roleLabel(r){ return r==='A' ? 'LOCAL (izq.)' : r==='B' ? 'VISITANTE (der.)' : r==='S' ? 'ESPECTADOR' : ''; }
+function peerHere(role){ const id = roomRoles[role]; return !!(id && roomPeers[id]); }
+function lockActive(){ return !!(roomCode && (myRole==='A' || myRole==='B') && peerHere('A') && peerHere('B')); }
+function rivalGone(){
+  if(!roomCode || !(myRole==='A' || myRole==='B')) return false;
+  const other = myRole==='A' ? 'B' : 'A';
+  return hadBothPlayers && !peerHere(other);
+}
+function canActFor(team){
+  if(!roomCode) return true;
+  if(myRole==='S') return false;
+  if(softOverride || !lockActive()) return true;
+  return myRole===team;
+}
+function guardTeam(team){
+  if(canActFor(team)) return true;
+  updateStatus('Esto lo decide ' + teamName(team) + ' (tú eres ' + roleLabel(myRole) + '). Si hace falta, pulsa el aviso de rol para tomar el control.');
+  return false;
+}
+
+function claimRole(role){
+  myRole = role;
+  try{ localStorage.setItem('bb7role_' + roomCode, role); }catch(e){}
+  if(role==='A' || role==='B'){
+    try{ rolesRef.child(role).set(myPeerId); }catch(e){}
+  }
+  refreshRoleUI();
+}
+function initRoles(isHost){
+  rolesRef = fbDb.ref('rooms/' + roomCode + '/roles');
+  rolesRef.on('value', s=>{ roomRoles = s.val() || {}; refreshRoleUI(); });
+  if(isHost){ claimRole('A'); return; }
+  let stored = null; try{ stored = localStorage.getItem('bb7role_' + roomCode); }catch(e){}
+  Promise.all([rolesRef.once('value'), peersRef.once('value')]).then(([rs, ps])=>{
+    const roles = rs.val() || {}, peers = ps.val() || {};
+    const free = r=> !roles[r] || !peers[roles[r]] || roles[r]===myPeerId;
+    if((stored==='A' || stored==='B') && free(stored)) claimRole(stored);
+    else if(free('B')) claimRole('B');
+    else if(free('A') && stored==='A') claimRole('A');
+    else claimRole('S');
+  }).catch(()=>claimRole('B'));
+}
+
+function refreshRoleUI(){
+  const chip = document.getElementById('roleChip');
+  if(chip){
+    if(!roomCode || !myRole){ chip.style.display = 'none'; }
+    else {
+      chip.style.display = 'block';
+      chip.dataset.role = myRole;
+      chip.textContent = 'Eres: ' + roleLabel(myRole) + (softOverride ? ' · CONTROL TOTAL' : '') + (lockActive() ? '' : ' · sin bloqueo');
+      chip.title = myRole==='S' ? 'Solo observas' : 'Bloqueo suave: solo decide el equipo al que le toca. Pulsa para activar/desactivar CONTROL TOTAL (saltarse el bloqueo).';
+    }
+  }
+  const ct = document.getElementById('connStatus');
+  const gone = rivalGone();
+  const ov = document.getElementById('rivalGoneOverlay');
+  if(ov) ov.style.display = gone ? 'flex' : 'none';
+  if(lockActive()) hadBothPlayers = true;
+  updateAdminPanelVisibility();
+  refreshModalLocks();
+}
+function toggleSoftOverride(){
+  if(myRole==='S' || !myRole) return;
+  softOverride = !softOverride; forcedModals.clear(); refreshRoleUI();
+}
+
+// --- Bloqueo suave de modales ---
+function refreshModalLocks(){
+  document.querySelectorAll('.modal-back').forEach(back=>{
+    const modal = back.querySelector('.modal'); if(!modal) return;
+    let ov = modal.querySelector(':scope > .lock-overlay');
+    const shown = back.classList.contains('show');
+    if(!shown){ forcedModals.delete(back.id); if(ov) ov.style.display = 'none'; return; }
+    let actor = null; try{ actor = modalActorTeam(back.id); }catch(e){}
+    let locked = false;
+    if(roomCode && myRole==='S') locked = true;
+    else if(actor && lockActive() && !softOverride && myRole!==actor && !forcedModals.has(back.id)) locked = true;
+    if(!locked){ if(ov) ov.style.display = 'none'; return; }
+    if(!ov){
+      ov = document.createElement('div'); ov.className = 'lock-overlay';
+      ov.innerHTML = '<div class="lock-msg"></div><button class="lock-take">Tomar el control</button>';
+      ov.querySelector('.lock-take').onclick = (e)=>{ e.stopPropagation(); forcedModals.add(back.id); refreshModalLocks(); };
+      modal.appendChild(ov);
+    }
+    ov.style.display = 'flex';
+    ov.querySelector('.lock-msg').textContent = myRole==='S' ? 'Modo espectador' : '⏳ Esperando a ' + teamName(actor) + '…';
+    ov.querySelector('.lock-take').style.display = myRole==='S' ? 'none' : '';
+  });
+}
+setInterval(()=>{ try{ refreshModalLocks(); }catch(e){} }, 400);
+
+// --- Bloqueo suave del tablero y de los botones laterales ---
+function boardBlocked(id){
+  if(!roomCode) return false;
+  if(myRole==='S') return true;
+  if(!lockActive() || softOverride) return false;
+  if(phase!=='live') return false;
+  if(pendingJump || wizardSt || kickoffEvt || placingBallFree || pendingKickPlacement || kickoffBounceStep || ballBounceActive ||
+     freeCatchTeam!==null || pendingPassTargetSelection || pendingManualStatus!==null || pendingFerocityAttack!==null || pendingPush) return false;
+  if(id!=null){ try{ if(isValidInterceptTarget(id) || isValidHeroicReceptionTarget(id)) return false; }catch(e){} }
+  return myRole!==state.active;
+}
+function blockedMsg(){ updateStatus('Ahora decide ' + teamName(state.active) + ' (tú eres ' + roleLabel(myRole) + ').'); }
+(function(){
+  const _tc = tokenClicked, _cc = cellClicked, _rc = handleTokenRightClick;
+  tokenClicked = function(id){ if(boardBlocked(id)){ blockedMsg(); return; } return _tc.apply(this, arguments); };
+  cellClicked = function(r,c){ if(boardBlocked()){ blockedMsg(); return; } return _cc.apply(this, arguments); };
+  handleTokenRightClick = function(id){ if(boardBlocked(id)){ blockedMsg(); return; } return _rc.apply(this, arguments); };
+})();
+document.addEventListener('click', (e)=>{
+  if(!roomCode) return;
+  const b = e.target.closest && e.target.closest('button'); if(!b || b.closest('.modal-back')) return;
+  const oc = b.getAttribute('onclick') || '';
+  let deny = false, msg = '';
+  if(myRole==='S'){ deny = !/toggleGameMenu|downloadSaveFile/.test(oc) && !b.closest('.game-menu-dropdown'); }
+  else if(lockActive() && !softOverride){
+    if(/^(endTurn|startBlockTargeting|declareBlitz|jumpUpBlitzCheck|toggleDespistado|toggleFreePush|knockDown|sendToBench|resetActivations|startManualStatus)\b/.test(oc) && phase==='live' && myRole!==state.active){
+      deny = true; msg = 'Ahora decide ' + teamName(state.active) + '.';
+    }
+    const m = oc.match(/^(adjustReroll|clearTeam|presetPositions)\('([AB])'/) || oc.match(/fileImport([AB])/);
+    if(m){ const t = m[2] || m[1]; if(t!==myRole){ deny = true; msg = 'Solo puedes tocar el equipo ' + roleLabel(myRole) + '.'; } }
+  }
+  if(deny){ e.stopImmediatePropagation(); e.preventDefault(); if(msg) updateStatus(msg); }
+}, true);
+
+// --- Panel admin: oculto, solo local ---
+let adminOpen = false;
+function updateAdminPanelVisibility(){
+  const panel = document.getElementById('adminIncPanel');
+  const btn = document.getElementById('adminToggleBtn');
+  const allowed = !roomCode || myRole==='A';
+  if(btn) btn.style.display = allowed ? '' : 'none';
+  if(panel) panel.style.display = (allowed && adminOpen) ? '' : 'none';
+  const rb = document.getElementById('adminReportBtn'); if(rb) rb.style.display = (allowed && adminOpen) ? '' : 'none';
+}
+function toggleAdminPanel(){
+  if(roomCode && myRole!=='A'){ return; }
+  adminOpen = !adminOpen; updateAdminPanelVisibility();
+  if(adminOpen){ try{ renderAdminInc(); }catch(e){} }
+}
+
+// --- Rival desconectado: guardar partida y esperar ---
+function rivalGoneSave(){ downloadSaveFile(); }
+
+// --- Informe de partido ---
+let lastMatchReport = null, lastMatchReportName = null;
+function sanitizeName(s){ return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'Equipo'; }
+function histEntriesChrono(){
+  const h = document.getElementById('hist'); if(!h) return [];
+  return Array.from(h.children).map(d=>d.textContent.trim()).filter(Boolean).reverse();   // el log lleva lo más nuevo arriba
+}
+function buildMatchReport(){
+  const now = new Date(), pad = n=>String(n).padStart(2,'0');
+  const date = now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate());
+  const time = pad(now.getHours()) + pad(now.getMinutes());
+  const nameA = teamName('A'), nameB = teamName('B');
+  const scoreA = parseInt(document.getElementById('scoreA').textContent, 10) || 0;
+  const scoreB = parseInt(document.getElementById('scoreB').textContent, 10) || 0;
+  const key = date + '_' + time + '_' + sanitizeName(nameA) + '_' + sanitizeName(nameB);
+  const keep = ['id','num','name','position','team','ma','st','ag','pa','av','skills','condition','onPitch','row','col','activated','sppGained','casualties','spp','level','injuries','lastingInjuries'];
+  const pl = players.map(p=>{ const o = {}; keep.forEach(k=>{ if(p[k]!==undefined) o[k] = p[k]; }); return o; });
+  let prematch = null;
+  try{ prematch = JSON.parse(JSON.stringify(preMatch || null)); }catch(e){}
+  const report = {
+    formato: 'bb-sevens-informe-partido/1',
+    clave: key,
+    fecha: date, hora: time.slice(0,2) + ':' + time.slice(2),
+    generado: now.toISOString(),
+    versiones: { app: window.APP_JS_VERSION || null, web: (document.documentElement.getAttribute('data-w-version') || null) },
+    sala: roomCode || null,
+    equipos: { local: { nombre: nameA, raza: teamRace && teamRace.A || null, touchdowns: scoreA }, visitante: { nombre: nameB, raza: teamRace && teamRace.B || null, touchdowns: scoreB } },
+    resultado: scoreA > scoreB ? 'local' : scoreB > scoreA ? 'visitante' : 'empate',
+    mitad: state && state.half || null,
+    turnos: state && state.turns || null,
+    segundasOportunidadesRestantes: teamRerollsLeft || null,
+    recursosUsados: { generales: teamUsedRes || null, desesperadas: (function(){ try{ return JSON.parse(JSON.stringify(incSt().desp)); }catch(e){ return null; } })() },
+    previoPartido: prematch,
+    jugadoresFinal: pl,
+    registro: histEntriesChrono()
+  };
+  return { key, report };
+}
+function createMatchReport(){
+  try{
+    // solo un cliente lo genera (el local) para no duplicar; sin sala, el único jugador
+    if(roomCode && myRole!=='A') return;
+    const { key, report } = buildMatchReport();
+    lastMatchReport = report; lastMatchReportName = key;
+    const fbKey = key.replace(/[.#$\[\]\/]/g,'_');
+    if(typeof fbDb!=='undefined' && fbDb){
+      fbDb.ref('registro_partidos/' + fbKey).set({ nombre: key + '.json', json: JSON.stringify(report) })
+        .catch(err=>console.warn('[BB7] No se pudo guardar el informe en Firebase:', err));
+    }
+    try{ localStorage.setItem('bb7_ultimo_informe', JSON.stringify({ nombre: key + '.json', json: JSON.stringify(report) })); }catch(e){}
+  }catch(e){ console.error('[BB7] Error creando informe de partido', e); }
+}
+function downloadMatchReport(){
+  if(!lastMatchReport){ const b = buildMatchReport(); lastMatchReport = b.report; lastMatchReportName = b.key; }
+  const blob = new Blob([JSON.stringify(lastMatchReport, null, 2)], { type:'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = lastMatchReportName + '.json'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
 
 // ---------- Botón de cerrar + arrastre para TODOS los modales ----------
 function setupModalEnhancements(){
@@ -9319,7 +9543,7 @@ try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesBut
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V76'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V77'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

@@ -121,3 +121,15 @@ Para Brincar se hace chequeo de Agilidad, este chequeo tiene modificadores negat
 Si pasa el chequeo, se coloca al Jugadoe en la casilla destino y podrá seguir su movimiento si le quedan puntos de MA o Forzar la marcha.
 Si falla el chequeo el jugador se cae en la casilla destino (tirandole armadura y teniendo cambio de turno), si saca un 1 natural, cae en la casilla de origen del Brincar y su activacion termina.
 Para marcarlo, cuando este haciendo el movimiento el jugador, si marca con el boton derecho una casilla con un jugador tumbado o aturdido, debe salir una opcion en una ruleta nueva de Brincar o Saltar si es el balón o un jugador en pie. Y asi hacer el Brincar o Saltar.
+
+ATENTO AL BALON
+Cuando un jugador rival realice una acción de Pase, tras declarar la casilla objetivo pero antes de hacer el chequeo de Pase, este jugador puede moverse hasta 3 casillas, siguiendo todas las reglas normales de movimiento excepto que no puede forzar la marcha. Si este jugador se Cae durante dicho movimiento, el movimiento termina de inmediato (y se le tira armadura por caerse) y se retoma la acción de Pase. Si hay varios jugadores con esta habilidad, todos ellos pueden usarla durante la misma acción de Pase, aunque deben hacerlo de uno en uno, y si uno de ellos se Cae antes de que otros hayan podido usar esta habilidad, ya no podrán hacerlo. Además, durante la secuencia de inicio de una entrada, tras el desvío del balón pero antes de tirar el Evento de patada inicial, un único jugador Desmarcado del equipo receptor con esta habilidad puede moverse hasta 3 casillas, siguiendo todas las reglas normales de movimiento excepto que no puede forzar la marcha. Esta habilidad no puede utilizarse si se produce una recepción libre, ni permite cruzar a la parte del campo del equipo rival pero si a la zona central. Si este jugador se Cae durante dicho movimiento, el movimiento termina de inmediato y se tira el Evento de patada inicial.
+
+BRAZO FUERTE
+Cuando este jugador realice una acción de Lanzar compañero, puede aplicar un modificador de +1 al chequeo de Pase. Un jugador que no tenga el rasgo Lanzar compañero no puede tener esta habilidad.
+
+BRAZOS ADICIONALES
+Este jugador aplica un modificador de +1 a sus chequeos de Agilidad para intentar atrapar, recoger o interceptar el balón.
+
+FALTA RAPIDA
+La activación de este jugador no termina tras realizar la acción de Falta, sino que puede seguir con su acción de Movimiento, usando el movimiento que aún le quede.

@@ -12,10 +12,21 @@ Una vez por turno, cuando este jugador intente esquivar, puede aplicar a su cheq
 Cuando este jugador intente realizar una acción de Pase o de Entregar el balón a un compañero con la misma clave que se indica entre paréntesis, tira 1D6. Con un 1, el jugador se niega a realizar la acción y su activación
 termina de Inmediato.
 Algunos Jugadores pueden tener Animosidad (todos), en cuyo caso esta regla se aplica a todos sus compañeros de equipo, sin Importar las claves que tengan.
+☣️- APARIENCIA ASQUEROSA (esta zona de defensa de este jugador la marcaríamos con color rojizo-magenta, a 45º en direccion contraria a la Cola Prensil)
+Cuando un jugador rival intente realizar una acción de Placaje contra este jugador, o una acción especial que tome como blanco a este jugador directamente, debe tirar 1D6 antes de hacer cualquier otra tirada. Con 2+, la acción puede seguir adelante de manera normal. Con un 1, la acción queda cancelada y la activación del jugador rival termina de inmediato.
+(directamente la haces tu en el Historial sin que se vea modal y si saca el 1, si que sacamos modal que ponga APARIENCIA ASQUEROSA, no se puede realizar la acción)
+☣️- APARTAR Cuando declara una accion de placaje (no un blitz), si el blanco resulta empujado, el entrenador de este jugador puede elegir cualquier casilla desocupada adyacente al blanco y empujarlo alli (en este caso hay que avisar quien decide), si no hay casillas desocupadas adyacentes no se puede usar.
+Ademas cuando realiza una accion de placaje (esta si puede ser parte de una accion de blitz) el blanco no puede usar Echarse a un lado.
+Un jugador con Furia no puede tener esta habilidad
 ✅ APUÑALAR (OK desde 28-09-2026) (Hay que elegir Blitz si está separado o directamente APUÑALAR si está pegado a un rival) Cuando este jugador es activado, puede declarar una acción especial de Apuñalar; no hay límite al número de jugadores que pueden declarar esta acción especial cada turno. Cuando este jugador realiza una acción de Apuñalar, elige a un jugador rival En pie y adyacente a él, y haz una tirada de Armadura contra dicho jugador rival. Esta tirada de Armadura no puede modificarse de ningún modo. Si la armadura del jugador rival se rompe, haz una tirada de Heridas contra él. Este jugador puede usar la acción especial de Apuñalar para reemplazar la acción de Placaje que forma parte de una acción de Penetración. pero su activación finalizará igualmente una vez resuelta la acción especial de Apuñalar.
+☣️- ARMA SECRETA Al final de una entrada en la que este jugador haya particlpado, Incluso si no está en el campo al final de la misma, este jugador es Expulsado por cometer una Falta. La cual se puede recurrir como si de otras falta se tratase de lo que tenemos automatizado
 ☣️- ATENTO AL BALON
 Cuando un jugador rival realice una acción de Pase, tras declarar la casilla objetivo pero antes de hacer el chequeo de Pase, este jugador puede moverse hasta 3 casillas, siguiendo todas las reglas normales de movimiento excepto que no puede forzar la marcha. Si este jugador se Cae durante dicho movimiento, el movimiento termina de inmediato (y se le tira armadura por caerse) y se retoma la acción de Pase. Si hay varios jugadores con esta habilidad, todos ellos pueden usarla durante la misma acción de Pase, aunque deben hacerlo de uno en uno, y si uno de ellos se Cae antes de que otros hayan podido usar esta habilidad, ya no podrán hacerlo. Además, durante la secuencia de inicio de una entrada, tras el desvío del balón pero antes de tirar el Evento de patada inicial, un único jugador Desmarcado del equipo receptor con esta habilidad puede moverse hasta 3 casillas, siguiendo todas las reglas normales de movimiento excepto que no puede forzar la marcha. Esta habilidad no puede utilizarse si se produce una recepción libre, ni permite cruzar a la parte del campo del equipo rival pero si a la zona central. Si este jugador se Cae durante dicho movimiento, el movimiento termina de inmediato y se tira el Evento de patada inicial.
 ☣️- ATRAPAR (pruebas desde 03-09-2026) - 17-09-26 funciona pero falta mas testeo
+☣️- BOCA MONSTRUOSA Cuando este jugador es activado, puede declarar una acción especial de Masticar (debemos ponerla en la Ruleta si el jugador tiene la habilidad, unos dientes no vienen mal de icono).
+No hay límite al número de jugadores que pueden declarar esta acción especial cada turno. Cuando este jugador declara una acción especial de Masticar, puede elegir a un jugador rival En pie al que esté Marcando y tirar 1D6. Con 3+, el jugador rival se considera Masticado (nuevo estado, que le ponemos con una "M"). Mientras sea Masticado y este jugador lo esté Marcando, el jugador rival no puede abandonar la casilla que ocupa. La condición de Masticado termina de inmediato si este jugador deja de Marcar al Jugador rival por cualquier motivo. Este jugador puede usar la acción especial de Masticar para reemplazar la acción de Placaje que forma parte de una acción de Penetración. Por lo que si hace un Blitz y señala al rival , debemos sacar modal para que elija si usar BOCA MONSTRUOSA o PLACAJE NORMAL.
+Además, la habilidad Robar balón no puede utilizarse contra este Jugador.
+☣️- BORRACHO Este jugador aplica un modificador de -1 a sus chequeos para intentar forzar la marcha.
 ☣️- BRAZO FUERTE
 Cuando este jugador realice una acción de Lanzar compañero, puede aplicar un modificador de +1 al chequeo de Pase. Un jugador que no tenga el rasgo Lanzar compañero no puede tener esta habilidad.
 ☣️- BRAZOS ADICIONALES
@@ -40,6 +51,9 @@ Hablamos de lesiones cuando se saca un 10, 11 o 12 despues de pasar la armadura 
 ✅ EN PIE DE UN SALTO
 ✅ EQUILIBRIO FIRME (OK 10-09-2026 // TIRADA AUTOMATICA, VER HISTORIAL)
 ✅ EL BALON ES MIO (OK 10-09-2026) - No deja pasar ni entregar la pelota.
+☣️- EL BALON NI VERLO (SIN BALON)
+☣️- EQUILIBRIO FIRME Cuando este jugador vaya a ser Derribado o a Caerse por cualquier motivo, tira 1D6. Con un resultado de 6, este jugador no es Derribado o no se Cae. Si esto ocurre durante su activación este jugador puede seguir adelante con su activación de forma normal y no se produce un cambio de turno.
+Tirada automatica en el Historial, si no sale un 6, sigue con las demas reglas de tirada armaduras... si sale un 6 se queda en el campo normal.
 ☣️- ESCURRIDIZO (pruebas desde 17-09-2026 - falta Tabla Heridas Escurridizo) Cuando este jugador intente esquivar, no sufre modificadores negativos a su chequeo de Agilidad por estar siendo Marcado por jugadores rivales. Además, este jugador aplica un modificador de-1 a su chequeo de Agilidad al intentar interceptar el balón.
 ✅ ESQUIVAR (OK // TE PREGUNTA SI USAR ESQUIVAR)
 ✅ ESPRINTAR (OK)
@@ -86,6 +100,8 @@ Si un jugador intenta salir de una casilla en la Zona de defensa de varios Jugad
 ✅ PLACAR (OK)
 ☣️- PRECISION Cuando este jugador haga un pase rapido o corto aplica un modificador de +1 al chequeo de PASE
 ☣️- PROFESIONAL (pruebas desde 01-09-2026) Ok con recoger balón // PDTE de dados bloqueo / Esquivar / A por Ellos
+☣️- PROTEGER EL CUERO
+Si este jugador va a ser Derribado, a Caerse o a quedar Tumbado boca arriba mientras es el portador del balón, antes de eso puede colocar el balón en una casilla desocupada adyacente a la que ocupará él cuando sea Derribado, se Caiga o quede Tumbado boca arriba. En ese caso, el balón no rebota.
 ☣️- PROVOCAR: desde 15-10-2026
 Cuando este jugador es empujado debido a una acción de Placaje (sea placaje o blitz) realizada contra él, su Entrenador puede obligar al jugador rival a que haga un movimiento de impulso. Esta habilidad no puede usarse contra un Jugador rival que haya Echado raíces debido al rasgo Echar raíces.
 Habrá que preguntar al equipo con un modal que tiene ese jugador si quiere que le siga o no.
@@ -105,6 +121,8 @@ Un jugador con este rasgo nunca puede ser el portador del balón. Si se requlere
 Este jugador no puede declarar acciones de Asegurar el balón.
 Por lo que en la ruleta no puede tener esta opcion ese jugador.
 Así como no puede salir en ninguna ruleta mientras que el balón no esté en el suelo y que además pueda cumplir el Asegurar el balón con sus reglas específicas.
+☣️- TRONCO VA (ojo que puede tener simbolos de exclamaciones delante o detras)
+Si este jugador tiene un atributo MV de 2 o menos, aplica un modificador de +1 a sus tiradas para intentar levantarse por cada compañero Desmarcado y En pie adyacente a él. Un 1 natural en esta tirada sigue siendo un fallo.
 ☣️- ZAFARSE
 Cuando este jugador sea empujado como resultado de una acción de Placaje realizada contra él, el jugador rival no puede hacer el movimiento de impulso.
 Esta habilidad no se puede utilizar contra un jugador con el rasgo Bola con cadena, ni contra un jugador con la habilidad Imparable que esté realizando una acción de Penetración.

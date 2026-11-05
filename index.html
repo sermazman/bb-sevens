@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-w-version="W_V59">
+<html lang="es" data-w-version="W_V61">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -648,6 +648,19 @@
   </div>
 </div>
 
+<div class="modal-back" id="blitzMastModal">
+  <div class="modal">
+    <h2>PENETRACIÓN</h2>
+    <p>Este jugador puede sustituir el Placaje del Blitz. ¿Placaje, Apuñalar o Masticar?</p>
+    <div class="row" style="justify-content:center; gap:10px; margin-top:10px;">
+      <button onclick="blitzMastChoose('placaje')">⚔️ Placaje</button>
+      <button class="danger" id="blitzMastStabBtn" onclick="blitzMastChoose('apunalar')">🔪 Apuñalar</button>
+      <button class="danger" onclick="blitzMastChoose('masticar')">🦷 Masticar</button>
+    </div>
+    <button class="full" style="margin-top:10px;" onclick="blitzMastChoose('cancel')">Cancelar</button>
+  </div>
+</div>
+
 <div class="modal-back" id="crujirModal">
   <div class="modal">
     <h2>💢 CRUJIR</h2>
@@ -793,6 +806,7 @@
 <script src="app.js?v=20260925-3"></script>
 
 <div id="atentoBar" style="display:none;"><span id="atentoBarText"></span><button class="primary" onclick="atentoEndMove(true)">✅ Terminar movimiento</button></div>
+<div id="protegerBar" style="display:none;"><span>🛡️ Proteger el cuero: elegid casilla libre adyacente</span><button onclick="protegerDecline()">Sin colocar (rebota)</button></div>
 <div id="roleChip" onclick="toggleSoftOverride()" style="display:none;"></div>
 <div id="rivalGoneOverlay" style="display:none;">
   <div class="rg-box">

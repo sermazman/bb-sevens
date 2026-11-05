@@ -88,6 +88,9 @@ forma normal, tratando el lanzamiento corno una Bomba larga y cualquier resultad
 Si este jugador es designado como pateador, cuando el balón se desvíe su Entrenador puede elegir que se desvíe solo 1D3 casillas, en lugar de las habituales 1D6.
 Para hacerlo más rápido, siempre que un jugador esté en el campo cuando su equipo haga la patada del balón, lo aplicamos directamente, diciento XXXX jugador usa PATADA y rebota.....
 Lo que tenemos que revisar es que en la patada inicial ahora, se lanza 1d8 y 2d6, y se elige el 1d6 menor. ASí que si un jugador tiene PATADA, se hará con 2d3 y 1 d8, eligiendo el 1d3 menor para el rebote.
+☣️- PIERNAS MUY LARGAS
+Este jugador puede aplicar un modificador de +1 a su chequeo de Agilidad al intentar brincar o saltar, y un modificador de +2 a su chequeo de Agilidad al intentar interceptar el balón.
+Además, este jugador ignora la habilidad Partenubes.
 ☣️- PIES FIRMES Una vez por turno este jugador puede repetir la tirada 1d6 al intentar forzar la marcha
 ☣️- PIQUETE DE OJOS Cuando un jugador rival sea empujado por este jugador, es ejugador no puede prestar apoyos defensivos ni ofensivos hasta que sea activado de nuevo.
 Lo marcamos con una P (de piquete) en Morado claro pero sin oscurecer la ficha como hacemos en Tumbado o Aturdido.
@@ -98,7 +101,12 @@ Cuando un jugador rival intente salir de la zona de defensa de este jugador esqu
 Se aplica de inmediato un modificador de -2 al chequeo de Agilidad del jugador rival y este jugador se coloca Tumbado boca arriba en la casilla que ha dejado vacante el rival.
 Si un jugador intenta salir de una casilla en la Zona de defensa de varios Jugadores con esta habilidad, solo uno de ellos podrá utilizarla.
 ✅ PLACAR (OK)
+☣️- POGO SALTARIN
+Durante su movimiento, este jugador puede intentar "hacer pogo", saltando por encima de una sola casilla adyacente, sin importar lo que haya en ella. Hacer pogo funciona igual que Brincar, con la excepción de que este jugador puede ignorar todos los modificadores negativos que reciba para hacerlo. Un jugador con este rasgo no puede tener la habilidad Saltar.
 ☣️- PRECISION Cuando este jugador haga un pase rapido o corto aplica un modificador de +1 al chequeo de PASE
+☣️- PRESENCIA PERTURBADORA
+Cuando un jugador rival realice una acciôn de Pase, una acción de Lanzar compañero, una acción especial de Lanzar una bomba, o intente interceptar o atrapar el balón, deberá aplicar un modificador de -1 al chequeo de Pase o de Agilidad por cada jugador de tu equipo con esta habilidad a tres casillas o menos de él.
+Como es solo cuando se declare PASE, marcaríamos esas 3 casillas de distancia desde el jugador con lineas a 45º en color rojizo por ejemplo
 ☣️- PROFESIONAL (pruebas desde 01-09-2026) Ok con recoger balón // PDTE de dados bloqueo / Esquivar / A por Ellos
 ☣️- PROTEGER EL CUERO
 Si este jugador va a ser Derribado, a Caerse o a quedar Tumbado boca arriba mientras es el portador del balón, antes de eso puede colocar el balón en una casilla desocupada adyacente a la que ocupará él cuando sea Derribado, se Caiga o quede Tumbado boca arriba. En ese caso, el balón no rebota.

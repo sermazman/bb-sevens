@@ -155,8 +155,22 @@ Si pasa el chequeo, se coloca al Jugadoe en la casilla destino y podrá seguir s
 Si falla el chequeo el jugador se cae en la casilla destino (tirandole armadura y teniendo cambio de turno), si saca un 1 natural, cae en la casilla de origen del Brincar y su activacion termina.
 Para marcarlo, cuando este haciendo el movimiento el jugador, si marca con el boton derecho una casilla con un jugador tumbado o aturdido, debe salir una opcion en una ruleta nueva de Brincar o Saltar si es el balón o un jugador en pie. Y asi hacer el Brincar o Saltar.
 
+INCLUIDAS 09-11-2026
 
+JUGAR SUCIO
+Cuando este jugadorrealiza una falta añade un +1 a la tirada de armadura o de Heridas (aplicalo automaticamente como hacemos en el Golpe Mortifero)
 
+LANZAR COMPAÑERO
+El jugador con esta habilidad es el que puede declarar la accion de Lanzar compañero, el resto no debe salir esta opcion en a ruleta.
+
+HUMANOIDE BALA
+Este jugador puede ser lanzado por un compañero que tenga la habilidad LANZAR COMPAÑERO, incluso si este jugador esta tumbado boca arriba (no tumbado boca abajo / aturdido)
+
+FURTIVO
+Este jugador no es expulsado al realizar una accion de falta si saca un doble natural en la tirada de Armadura, siempre y cuando la armadura del jugador atacado no se rompa. Si dicha armadura se rompa (pasa o iguala el valor de armadura), entonces este jugador puede ser Expulsado de forma normal.
+
+PASAR Y SEGUIR
+Si este jugador hace un pase que sea Rapido o una entrega de balón, si no se produce un cambio de turno, su activación no termina tras resolver el Pase rapido o la entrega. En su lugar, este jugador puede continuar su movimiento usando el movimiento que aun le quede, e incluso Forzando la marcha.
 
 
 

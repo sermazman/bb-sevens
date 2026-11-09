@@ -4199,6 +4199,7 @@ function tokenClicked(id){
     mover.activated = true;
     selected = null;
     declaredAction = null;
+    armPasarSeguir(mover);
     resolveHandoffTo(carrier, receiver);
     return;
   }
@@ -6017,6 +6018,29 @@ function renderProteger(){
   bar.style.display = protegerSt ? 'flex' : 'none';
 }
 
+// ===== PASAR Y SEGUIR =====
+let pasarSeguirSt = null;   // { id, active, idle }
+function armPasarSeguir(p){
+  if(p && playerHasSkill(p, 'pasar y seguir', 'pass and run')){ pasarSeguirSt = { id:p.id, active:state.active, idle:0 }; }
+}
+setInterval(()=>{
+  try{
+    if(!pasarSeguirSt) return;
+    if(roomCode && lockActive() && myRole!=='A') return;
+    const st = pasarSeguirSt;
+    if(state.active!==st.active){ pasarSeguirSt = null; return; }
+    const ov = document.getElementById('turnoverOverlay');
+    if(trapdoorBusy() || (ov && ov.classList.contains('show')) || atentoSt || protegerSt){ st.idle = 0; return; }
+    if(++st.idle < 4) return;
+    pasarSeguirSt = null;
+    const p = players.find(x=>x.id===st.id);
+    if(!p || !p.onPitch || p.condition!=='standing') return;
+    p.activated = false; selected = p.id; declaredAction = 'move';
+    log('🏃 PASAR Y SEGUIR: ' + p.name + ' no termina su activación; puede seguir moviéndose (también forzando la marcha) con el movimiento que le queda.');
+    renderRosters(); renderPitch(); renderSelInfo(); broadcastState();
+  }catch(e){}
+}, 500);
+
 // ===== ATENTO AL BALÓN =====
 let atentoSt = null;   // { mode:'pass'|'kick', queue:[ids], cur:id|null, stage:'ask'|'move', ctx, saved }
 function atentoEligible(p, team){ return !!p && p.onPitch && p.team===team && p.condition==='standing' && playerHasSkill(p, 'atento al balon', 'eyes on the ball'); }
@@ -6505,6 +6529,7 @@ function continueAnimosity(){
     const receiver = players.find(x=>x.id===a.ctx.receiverId);
     if(!mover || !carrier || !receiver){ broadcastState(); return; }
     mover.activated = true; selected = null; declaredAction = null;
+    armPasarSeguir(mover);
     resolveHandoffTo(carrier, receiver);
   }
 }
@@ -6551,6 +6576,7 @@ function startPassRoll(passer, targetR, targetC, zone, hailMary, skipAtento){
   passer.activated = true;
   declaredAction = null;
   selected = null;
+  if(zone===0 && !hailMary) armPasarSeguir(passer);
   renderPitch(); renderRosters(); renderSelInfo();
   broadcastState();
 }
@@ -6964,6 +6990,12 @@ function parseAvTarget(avStr){
 let golpeMortiferoMap = {}; // { fallingPlayerId: attackerId } — Golpe Mortífero elegible en esta caída concreta
 let llaveDeBrazoMap = {}; // { fallingPlayerId: opponentId } — Llave de Brazo elegible en esta caída concreta (esquiva fallida)
 let golpeMortiferoUsedOnArmor = false;
+let jugarSucioUsedOnArmor = false;
+function foulerWithSkill(skillA, skillB){
+  if(!pendingFoulContext || pendingFoulContext.targetId!==armorForPlayer) return null;
+  const f = players.find(x=>x.id===pendingFoulContext.foulerId);
+  return (f && playerHasSkill(f, skillA, skillB)) ? f : null;
+}
 let llaveDeBrazoUsedOnArmor = false;
 
 let pendingRobarBalonContinuation = null; // { attackerId, defenderId, fallKind, directInjuryPlayerId, isBlitz } — el 'info' original de finishPushSequence
@@ -8641,6 +8673,20 @@ function rollArmor(){
     log('🎲 Armadura (' + (p?p.name:'?') + '): ' + d1 + ' + ' + d2 + ' = ' + sum);
   }
 
+  jugarSucioUsedOnArmor = false;
+  { const js = foulerWithSkill('jugar sucio', 'dirty player');
+    if(p && js){
+      const effective = sum + (pendingFoulContext.modifier || 0);
+      const target = parseAvTarget(p.av);
+      if(effective < target && effective + 1 >= target){
+        jugarSucioUsedOnArmor = true;
+        document.getElementById('armorSum').textContent = 'Suma: ' + effective + ' +1 (Jugar sucio de ' + js.name + ') = ' + (effective+1);
+        log('🥷 Jugar sucio de ' + js.name + ' aplicado en Armadura: ' + effective + '+1 = ' + (effective+1) + ' — ROTA.');
+        armorResult(true);
+        return;
+      }
+    }
+  }
   const garrasAttackerId = p ? golpeMortiferoMap[p.id] : null;
   const garrasAttacker = garrasAttackerId ? players.find(x=>x.id===garrasAttackerId) : null;
   golpeMortiferoUsedOnArmor = false;
@@ -8714,6 +8760,13 @@ function armorResult(broken){
       const wasAlreadyDown = (pendingFoulContext && pendingFoulContext.targetId===p.id && (p.condition==='tumbado' || p.condition==='aturdido')) || (armorBonusMap[p.id] && armorBonusMap[p.id].keep);
       if(!wasAlreadyDown) p.condition = 'tumbado';
       p.rooted = false;
+    }
+    if(p && pendingFoulContext && pendingFoulContext.targetId===p.id && pendingFoulContext.doubleDetected){
+      const fl = players.find(x=>x.id===pendingFoulContext.foulerId);
+      if(fl && playerHasSkill(fl, 'furtivo', 'sneaky git')){
+        pendingFoulContext.doubleDetected = false;
+        log('🥷 FURTIVO: ' + fl.name + ' saca doble natural pero la Armadura de ' + p.name + ' no se rompe — NO es Expulsado.');
+      }
     }
     log('🛡️ Armadura aguanta' + (p?(' — '+p.name+(isApunalarRoll ? ', sigue en pie (Apuñalar no lo tumba).' : '.')):'.'));
     renderRosters(); renderPitch(); renderSelInfo();
@@ -8848,6 +8901,7 @@ function rollInjury(){
   const injBonuses = [];
   if(gmForInjury) injBonuses.push('Golpe Mortífero de ' + gmAttacker.name);
   else if(llaveForInjury) injBonuses.push('Llave de Brazo de ' + llaveAttacker.name);
+  { const js = !jugarSucioUsedOnArmor ? foulerWithSkill('jugar sucio', 'dirty player') : null; if(js) injBonuses.push('Jugar sucio de ' + js.name); }
   if(p && playerHasSkill(p, 'descomposicion', 'descomposición', 'decay')) injBonuses.push('Descomposición de ' + p.name);
   if(injBonuses.length){
     const bonusTxt = injBonuses.map(t=>'+1 (' + t + ')').join(' ');
@@ -9933,7 +9987,7 @@ try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesBut
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V80'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V81'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

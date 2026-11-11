@@ -140,7 +140,13 @@ a:hover{text-decoration:underline}
 .lgc{height:56px;width:auto;max-width:90px;object-fit:contain;margin-right:6px}
 .lgh{height:84px;width:auto;max-width:150px;object-fit:contain}
 .dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:8px;vertical-align:middle}
-.tgrid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.tgrid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(310px,1fr))}
+.thead{display:grid;grid-template-columns:auto 1fr;grid-template-rows:1fr 1fr;column-gap:14px;align-items:center;margin-bottom:6px}
+.thead .tlogobig{grid-row:1/3;grid-column:1;width:96px;height:96px;display:flex;align-items:center;justify-content:center}
+.thead .tlogobig img{max-width:96px;max-height:96px;width:auto;height:auto;object-fit:contain;margin:0}
+.thead .tname{grid-column:2;grid-row:1;align-self:end;margin:0;line-height:1.1;overflow-wrap:anywhere}
+.thead .trace{grid-column:2;grid-row:2;align-self:start;margin-top:4px}
+.thead.nologo{grid-template-columns:1fr}.thead.nologo .tname,.thead.nologo .trace{grid-column:1}
 .tcard .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .tcard .btn{text-decoration:none;display:inline-block}
 h2.round{font-family:var(--f-title);text-transform:uppercase;letter-spacing:.06em;font-size:22px;margin:22px 0 10px}
@@ -524,9 +530,9 @@ function calavTableHTML(){
 function renderTeams(){
   if(!teams.length){$('#view').innerHTML='<div class="empty">Todavía no hay equipos inscritos.</div>';return}
   $('#view').innerHTML=`<div class="tgrid">${teams.map(t=>{const e=economy(t.doc);return`<div class="card tcard" style="border-top:6px solid ${colorOf(t.doc)}">
-    <h3>${logoImg(t,'lgc')}<a href="#team=${encodeURIComponent(t.file)}">${esc(t.name)}</a></h3>
-    <div class="race">${esc(t.doc.race||'')}</div>
-    <div class="meta">${t.doc.league.coach?'Entrenador: '+esc(t.doc.league.coach)+' · ':''}${t.doc.players.length} jugadores · Valor ${fmt(e.teamValue)} · ${e.t.played} partidos jugados</div>
+    <div class="thead ${logoImg(t,'x')?'':'nologo'}">${logoImg(t,'x')?`<div class="tlogobig">${logoImg(t,'lgx')}</div>`:''}<h3 class="tname"><a href="#team=${encodeURIComponent(t.file)}">${esc(t.name)}</a></h3><div class="race trace">${esc(t.doc.race||'')}</div></div>
+    <div class="meta">${t.doc.league.coach?'Entrenador: '+esc(t.doc.league.coach)+' · ':''}<strong>${t.doc.players.filter(p=>{const lp=t.doc.league.players.find(x=>x.num===p.num);return !(lp&&lp.status==='missNextGame')}).length} disponibles</strong> (total: ${t.doc.players.length})</div>
+    <div class="meta">Valor ${fmt(e.teamValue)} · ${e.t.played} partidos jugados</div>
     <div class="row"><a class="btn small" href="#team=${encodeURIComponent(t.file)}">Ver equipo</a>
     <button class="btn small primary" type="button" data-dl="${esc(t.file)}">Descargar EQUIPO</button>
     <button class="btn small" type="button" data-sheet="${esc(t.file)}">Hoja de partido (PDF)</button></div></div>`}).join('')}</div>

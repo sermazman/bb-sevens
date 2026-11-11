@@ -546,7 +546,7 @@ function renderRoster(){
 function renderHistory(){
   const ms=L().matches;
   if(!ms.length){ $('#p-history').innerHTML='<div class="empty">Todavía no hay partidos registrados.</div>'; return; }
-  const label={win:'Victoria',draw:'Empate',loss:'Derrota'};
+  const label={win:'Victoria',draw:'Empate',loss:'Derrota',unplayed:'No jugado'};
   $('#p-history').innerHTML='<div class="cards">'+[...ms].reverse().map(m=>{
     const evs=(m.playerEvents||[]).map(ev=>{
       const acts=STAT_COLS.filter(([k])=>ev[k]).map(([k,t])=>`${t}×${ev[k]}`).join(', ');
@@ -554,7 +554,7 @@ function renderHistory(){
     }).join('');
     const s=m.statistics||{};
     return `<div class="card"><h3>${esc(m.id)} · ${m.homeAway==='home'?'(local) ':m.homeAway==='away'?'(visitante) ':''}vs ${esc(m.opponent.teamName)}
-        <span class="res ${m.result.outcome}">${m.result.teamScore} - ${m.result.opponentScore}</span><span class="pill ${m.result.outcome==='win'?'ok':m.result.outcome==='loss'?'out':''}">${label[m.result.outcome]}</span></h3>
+        <span class="res ${m.result.outcome}">${m.result.outcome==='unplayed'?'NJ':m.result.teamScore+' - '+m.result.opponentScore}</span><span class="pill ${m.result.outcome==='win'?'ok':m.result.outcome==='loss'?'out':''}">${label[m.result.outcome]}</span></h3>
       <div class="meta">${esc(m.opponent.race||'')} · Ganancias ${fmt(m.earnings)} · Gastado ${fmt(m.treasurySpent)} · Fans ${sgn(m.dedicatedFansGained||0)}
         · HL ${s.lightInjuriesFor}-${s.lightInjuriesAgainst} · HG ${s.seriousInjuriesFor}-${s.seriousInjuriesAgainst} · RIP ${s.deathsFor}-${s.deathsAgainst} · Expulsados ${s.sentOffFor}-${s.sentOffAgainst} · Calaveras ${s.skullsFor||0}-${s.skullsAgainst||0} · Unos ${s.onesFor||0}-${s.onesAgainst||0}</div>
       ${evs?`<ul>${evs}</ul>`:''}${m.notes?`<div class="meta">${esc(m.notes)}</div>`:''}</div>`;
@@ -869,7 +869,7 @@ function renderMatchView(){
       </fieldset>
       <div id="mvSides"></div>
       <div id="mvErrors" aria-live="polite"></div>
-      <div id="mvSubmitRow" hidden><button class="btn primary" type="submit" id="mvSubmit">Registrar partido</button></div>
+      <div id="mvSubmitRow" hidden><button class="btn primary" type="submit" id="mvSubmit">Registrar partido</button> <button class="btn" type="button" id="mvNJ" title="Nadie jugó este partido: cuenta como partido (PJ*) sin victoria, empate ni derrota">Partido no jugado (NJ para ambos)</button></div>
     </form>`}`;
   if(t.length>=2) renderSides();
 }
@@ -1227,6 +1227,37 @@ async function mvSubmit(){
   }catch(e){ if(state.view==='match'){ fail(['No se pudo guardar en GitHub: '+e.message]); btn.disabled=false; btn.textContent='Registrar partido'; } else toast('No se pudo guardar el partido: '+e.message); }
 }
 
+/* partido no jugado (NJ): cuenta como PJ en el %, sin victoria/empate/derrota ni estadísticas */
+async function mvUnplayed(){
+  const err=$('#mvErrors'); err.innerHTML='';
+  const H=mvTeam('home'), A=mvTeam('away'), round=int($('#mvRound').value), problems=[];
+  const fail=list=>{ err.innerHTML='<div class="banner bad"><strong>No se puede registrar todavía:</strong><ul>'+list.map(x=>`<li>${esc(x)}</li>`).join('')+'</ul></div>'; err.scrollIntoView({behavior:'smooth',block:'center'}); };
+  if(!H||!A||H===A) problems.push('Elige dos equipos distintos.');
+  if(!round) problems.push('Indica la jornada.');
+  if(problems.length) return fail(problems);
+  const season=H.doc.league.season, id=roundId(season,round);
+  if(A.doc.league.season!==season) problems.push(`Los equipos son de temporadas distintas (${season} y ${A.doc.league.season}).`);
+  [H,A].forEach(t=>{ if(t.doc.league.matches.some(m=>m.id===id)) problems.push(`${t.name} ya tiene registrado el partido ${id}. Cambia la jornada o la fase.`); });
+  if(problems.length) return fail(problems);
+  if(!confirm(`¿Marcar ${id} como NO JUGADO?\n${H.name} - ${A.name}\nCuenta como partido para los dos (PJ*), sin victoria, empate ni derrota, y sin estadísticas ni ganancias.`)) return;
+  const zero={lightInjuriesFor:0,lightInjuriesAgainst:0,seriousInjuriesFor:0,seriousInjuriesAgainst:0,deathsFor:0,deathsAgainst:0,sentOffFor:0,sentOffAgainst:0,skullsFor:0,skullsAgainst:0,onesFor:0,onesAgainst:0};
+  const mk=(doc,O,ha)=>doc.league.matches.push({id,round,homeAway:ha,opponent:{teamId:O.doc.league.teamId,teamName:O.doc.teamName,race:O.doc.race},
+    result:{teamScore:0,opponentScore:0,outcome:'unplayed'},unplayed:true,statistics:Object.assign({},zero),
+    dedicatedFansGained:0,treasurySpent:0,earnings:0,leaguePoints:0,playerEvents:[],notes:'Partido no jugado (NJ)',registeredAt:new Date().toISOString()});
+  const btn=$('#mvNJ'); btn.disabled=true;
+  try{
+    const newH=clone(H.doc), newA=clone(A.doc); mk(newH,A,'home'); mk(newA,H,'away');
+    const files=[{path:H.path,text:JSON.stringify(newH,null,2)+'\n'},{path:A.path,text:JSON.stringify(newA,null,2)+'\n'}];
+    await mvCheckFresh([H,A]);
+    await ghCommitFiles(files,`Liga T${season} · ${id} · NO JUGADO · ${H.name} - ${A.name}`);
+    const fresh=await Promise.all([ghGetFile(H.path),ghGetFile(A.path)]);
+    mv.last={id,home:H.name,away:A.name,score:['NJ','NJ'],
+      teams:[{name:H.name,path:H.path,before:H.text,afterSha:fresh[0].sha},{name:A.name,path:A.path,before:A.text,afterSha:fresh[1].sha}],summary:[]};
+    adoptIfOpen(H.path,files[0].text,fresh[0].sha); adoptIfOpen(A.path,files[1].text,fresh[1].sha);
+    if(state.view==='match') renderMatchDone(); else toast(`Partido ${id} marcado como no jugado.`);
+  }catch(e){ fail(['No se pudo guardar en GitHub: '+e.message]); btn.disabled=false; }
+}
+
 function renderMatchDone(){
   const m=mv.last;
   app.innerHTML=`
@@ -1260,6 +1291,7 @@ async function mvUndo(){
 function mvClick(e){
   const t=e.target;
   if(t.closest('#mvBack')){ backToTeam(); return true; }
+  if(t.closest('#mvNJ')){ mvUnplayed(); return true; }
   if(t.closest('#mvUndo')){ mvUndo(); return true; }
   if(t.closest('#mvAgain')){ openMatchView(); return true; }
   const add=t.closest('[data-impadd]'); if(add){ const [s,n]=add.dataset.impadd.split('_'); const used=Object.values(mv.imp[s]||{}).reduce((a,l)=>a+l.length,0); if(used>=1){ toast('Solo se puede subir 1 mejora por equipo y partido. Quita la anterior si quieres cambiarla.'); return true; } openImpDialog(s,int(n)); return true; }

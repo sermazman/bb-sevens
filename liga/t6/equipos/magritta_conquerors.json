@@ -39,24 +39,6 @@
   },
   "players": [
     {
-      "num": 1,
-      "name": "MARCOSCORRÓN",
-      "position": "Troll Slayer",
-      "ma": 5,
-      "st": 3,
-      "ag": "4+",
-      "pa": "5+",
-      "av": "9+",
-      "skills": [
-        "Placar",
-        "Furia",
-        "Agallas",
-        "Cabeza dura",
-        "Odio (Troll)",
-        "Dwarf - Especial"
-      ]
-    },
-    {
       "num": 2,
       "name": "MÁXIMO DÉCIMO NEGRIDIO",
       "position": "Human Blitzer",
@@ -159,16 +141,12 @@
         "Esquivar",
         "Humanoide bala",
         "Escurridizo",
-        "Halfling - Linea"
+        "Halfling - Linea",
+        "Pies Firmes"
       ]
     }
   ],
   "formation": [
-    {
-      "num": 1,
-      "col": 5,
-      "row": 0
-    },
     {
       "num": 2,
       "col": 2,
@@ -224,45 +202,23 @@
     },
     "players": [
       {
-        "num": 1,
-        "price": 95000,
-        "progression": {
-          "sppTotal": 0,
-          "sppUnspent": 0,
-          "improvements": []
-        },
-        "statistics": {
-          "sprints": 0,
-          "passes": 0,
-          "touchdowns": 0,
-          "deflections": 0,
-          "interceptions": 0,
-          "lightInjuries": 0,
-          "seriousInjuries": 0,
-          "deaths": 0,
-          "mvp": 0
-        },
-        "injuries": [],
-        "status": "active"
-      },
-      {
         "num": 2,
         "price": 85000,
         "progression": {
-          "sppTotal": 5,
-          "sppUnspent": 5,
+          "sppTotal": 14,
+          "sppUnspent": 14,
           "improvements": []
         },
         "statistics": {
           "sprints": 0,
           "passes": 0,
-          "touchdowns": 1,
+          "touchdowns": 2,
           "deflections": 0,
           "interceptions": 0,
           "lightInjuries": 0,
-          "seriousInjuries": 1,
+          "seriousInjuries": 2,
           "deaths": 0,
-          "mvp": 0
+          "mvp": 1
         },
         "injuries": [],
         "status": "active"
@@ -271,14 +227,14 @@
         "num": 3,
         "price": 75000,
         "progression": {
-          "sppTotal": 0,
-          "sppUnspent": 0,
+          "sppTotal": 6,
+          "sppUnspent": 6,
           "improvements": []
         },
         "statistics": {
           "sprints": 0,
           "passes": 0,
-          "touchdowns": 0,
+          "touchdowns": 2,
           "deflections": 0,
           "interceptions": 0,
           "lightInjuries": 0,
@@ -393,7 +349,17 @@
         "progression": {
           "sppTotal": 0,
           "sppUnspent": 0,
-          "improvements": []
+          "improvements": [
+            {
+              "matchId": "T6-J02",
+              "order": 1,
+              "category": "primary",
+              "selection": "chosen",
+              "skill": "Pies Firmes",
+              "sppCost": 0,
+              "valueExtra": 10000
+            }
+          ]
         },
         "statistics": {
           "sprints": 0,
@@ -517,9 +483,170 @@
         ],
         "notes": "Clima: VENTISCA \nParecía buen inicio ya que los Incentivos daban a los Orcos 85k mo, Otorgando PIEL DE PLATANO, PUÑAL y ¡Trampillas abiertas! aunque sufren una derrota dañina para el Roster. Un HG y un MUERTO hará que el entrenador busque reemplazo con la Tesorería que pueda.",
         "registeredAt": "2026-10-30T14:03:08.716Z"
+      },
+      {
+        "id": "T6-J02",
+        "round": 2,
+        "homeAway": "home",
+        "opponent": {
+          "teamId": "marienburg_ravens",
+          "teamName": "MARIENBURG RAVENS",
+          "race": "Elven Union"
+        },
+        "result": {
+          "teamScore": 3,
+          "opponentScore": 0,
+          "outcome": "win"
+        },
+        "statistics": {
+          "lightInjuriesFor": 0,
+          "lightInjuriesAgainst": 0,
+          "seriousInjuriesFor": 1,
+          "seriousInjuriesAgainst": 0,
+          "deathsFor": 0,
+          "deathsAgainst": 1,
+          "sentOffFor": 0,
+          "sentOffAgainst": 0,
+          "skullsFor": 0,
+          "skullsAgainst": 0,
+          "onesFor": 1,
+          "onesAgainst": 4
+        },
+        "dedicatedFansGained": 1,
+        "treasurySpent": 0,
+        "earnings": 60000,
+        "leaguePoints": 0,
+        "playerEvents": [
+          {
+            "num": 1,
+            "name": "MARCOSCORRÓN",
+            "sprints": 0,
+            "passes": 0,
+            "touchdowns": 0,
+            "deflections": 0,
+            "interceptions": 0,
+            "lightInjuries": 0,
+            "seriousInjuries": 0,
+            "deaths": 0,
+            "mvp": 0,
+            "injurySuffered": "dead",
+            "killerNum": 4,
+            "killerName": "AELINDOR BLACKWING",
+            "sppEarned": 0
+          },
+          {
+            "num": 2,
+            "name": "MÁXIMO DÉCIMO NEGRIDIO",
+            "sprints": 0,
+            "passes": 0,
+            "touchdowns": 1,
+            "deflections": 0,
+            "interceptions": 0,
+            "lightInjuries": 0,
+            "seriousInjuries": 1,
+            "deaths": 0,
+            "mvp": 1,
+            "injurySuffered": "none",
+            "sppEarned": 9
+          },
+          {
+            "num": 3,
+            "name": "LÓPEZ DE VEGA",
+            "sprints": 0,
+            "passes": 0,
+            "touchdowns": 2,
+            "deflections": 0,
+            "interceptions": 0,
+            "lightInjuries": 0,
+            "seriousInjuries": 0,
+            "deaths": 0,
+            "mvp": 0,
+            "injurySuffered": "none",
+            "sppEarned": 6
+          },
+          {
+            "num": 8,
+            "name": "CHUFO",
+            "sprints": 0,
+            "passes": 0,
+            "touchdowns": 0,
+            "deflections": 0,
+            "interceptions": 0,
+            "lightInjuries": 0,
+            "seriousInjuries": 0,
+            "deaths": 0,
+            "mvp": 0,
+            "injurySuffered": "none",
+            "sppEarned": 0,
+            "improvements": [
+              {
+                "order": 1,
+                "category": "primary",
+                "selection": "chosen",
+                "skill": "Pies Firmes",
+                "sppCost": 0,
+                "valueExtra": 10000
+              }
+            ]
+          }
+        ],
+        "notes": "Partido con control total por Magritta Conquerors y sentenciado en contra de Marienburg Ravens por los 4 \"unos\" sacados al intentar esquivar para anotar TD (en dos ocasiones) y en posicionamiento las otras dos. Se torció al final para el equipo Local cuando el Matatrolls sufrio un MUERTO. Ambos equipos se plantean contratar jugadores.",
+        "registeredAt": "2026-11-11T14:03:00.516Z"
       }
     ],
-    "retiredPlayers": [],
+    "retiredPlayers": [
+      {
+        "num": 1,
+        "name": "MARCOSCORRÓN",
+        "position": "Troll Slayer",
+        "reason": "dead",
+        "retiredAtMatch": "T6-J02",
+        "killedBy": {
+          "team": "MARIENBURG RAVENS",
+          "num": 4,
+          "name": "AELINDOR BLACKWING"
+        },
+        "attributes": {
+          "ma": 5,
+          "st": 3,
+          "ag": "4+",
+          "pa": "5+",
+          "av": "9+"
+        },
+        "skills": [
+          "Placar",
+          "Furia",
+          "Agallas",
+          "Cabeza dura",
+          "Odio (Troll)",
+          "Dwarf - Especial"
+        ],
+        "price": 95000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": []
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": [
+          {
+            "type": "dead",
+            "matchId": "T6-J02",
+            "missNextGame": false
+          }
+        ]
+      }
+    ],
     "logo": "magritta_conquerors.png"
   }
 }

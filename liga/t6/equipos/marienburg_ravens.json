@@ -101,21 +101,8 @@
         "Atrapar",
         "Nervios de acero",
         "Recepción heroica",
-        "Elf - Receptor"
-      ]
-    },
-    {
-      "num": 7,
-      "name": "LETHIAN COINCRAWLER",
-      "position": "Lineman",
-      "ma": 6,
-      "st": 3,
-      "ag": "2+",
-      "pa": "3+",
-      "av": "8+",
-      "skills": [
-        "Dejada",
-        "Elf - Linea"
+        "Elf - Receptor",
+        "Odio (Human)"
       ]
     }
   ],
@@ -149,11 +136,6 @@
       "num": 6,
       "col": 1,
       "row": 0
-    },
-    {
-      "num": 7,
-      "col": 9,
-      "row": 0
     }
   ],
   "league": {
@@ -183,8 +165,8 @@
         "num": 1,
         "price": 65000,
         "progression": {
-          "sppTotal": 0,
-          "sppUnspent": 0,
+          "sppTotal": 4,
+          "sppUnspent": 4,
           "improvements": []
         },
         "statistics": {
@@ -196,7 +178,7 @@
           "lightInjuries": 0,
           "seriousInjuries": 0,
           "deaths": 0,
-          "mvp": 0
+          "mvp": 1
         },
         "injuries": [],
         "status": "active"
@@ -256,17 +238,17 @@
           {
             "type": "seriousInjury",
             "matchId": "T6-J01",
-            "missNextGame": true
+            "missNextGame": false
           }
         ],
-        "status": "missNextGame"
+        "status": "active"
       },
       {
         "num": 4,
         "price": 115000,
         "progression": {
-          "sppTotal": 0,
-          "sppUnspent": 0,
+          "sppTotal": 2,
+          "sppUnspent": 2,
           "improvements": []
         },
         "statistics": {
@@ -277,7 +259,7 @@
           "interceptions": 0,
           "lightInjuries": 0,
           "seriousInjuries": 0,
-          "deaths": 0,
+          "deaths": 1,
           "mvp": 0
         },
         "injuries": [],
@@ -324,30 +306,15 @@
           "deaths": 0,
           "mvp": 0
         },
-        "injuries": [],
-        "status": "active"
-      },
-      {
-        "num": 7,
-        "price": 65000,
-        "progression": {
-          "sppTotal": 0,
-          "sppUnspent": 0,
-          "improvements": []
-        },
-        "statistics": {
-          "sprints": 0,
-          "passes": 0,
-          "touchdowns": 0,
-          "deflections": 0,
-          "interceptions": 0,
-          "lightInjuries": 0,
-          "seriousInjuries": 0,
-          "deaths": 0,
-          "mvp": 0
-        },
-        "injuries": [],
-        "status": "active"
+        "injuries": [
+          {
+            "type": "seriousInjury",
+            "matchId": "T6-J02",
+            "missNextGame": true,
+            "hatred": "Human"
+          }
+        ],
+        "status": "missNextGame"
       }
     ],
     "matches": [
@@ -452,9 +419,168 @@
         ],
         "notes": "Ambos han tenido un Sobornos por patada inicial, en la segunda parte cambio el Clima a LLUVIOSO. Pendiente de tirada para ganacia de ODIO",
         "registeredAt": "2026-10-27T16:50:50.739Z"
+      },
+      {
+        "id": "T6-J02",
+        "round": 2,
+        "homeAway": "away",
+        "opponent": {
+          "teamId": "magritta_conquerors",
+          "teamName": "MAGRITTA CONQUERORS",
+          "race": "Old World Alliance"
+        },
+        "result": {
+          "teamScore": 0,
+          "opponentScore": 3,
+          "outcome": "loss"
+        },
+        "statistics": {
+          "lightInjuriesFor": 0,
+          "lightInjuriesAgainst": 0,
+          "seriousInjuriesFor": 0,
+          "seriousInjuriesAgainst": 1,
+          "deathsFor": 1,
+          "deathsAgainst": 0,
+          "sentOffFor": 0,
+          "sentOffAgainst": 0,
+          "skullsFor": 0,
+          "skullsAgainst": 0,
+          "onesFor": 4,
+          "onesAgainst": 1
+        },
+        "dedicatedFansGained": 0,
+        "treasurySpent": 0,
+        "earnings": 30000,
+        "leaguePoints": 0,
+        "playerEvents": [
+          {
+            "num": 1,
+            "name": "PIMENTH OLDYOUNGELF",
+            "sprints": 0,
+            "passes": 0,
+            "touchdowns": 0,
+            "deflections": 0,
+            "interceptions": 0,
+            "lightInjuries": 0,
+            "seriousInjuries": 0,
+            "deaths": 0,
+            "mvp": 1,
+            "injurySuffered": "none",
+            "sppEarned": 4
+          },
+          {
+            "num": 4,
+            "name": "AELINDOR BLACKWING",
+            "sprints": 0,
+            "passes": 0,
+            "touchdowns": 0,
+            "deflections": 0,
+            "interceptions": 0,
+            "lightInjuries": 0,
+            "seriousInjuries": 0,
+            "deaths": 1,
+            "mvp": 0,
+            "injurySuffered": "none",
+            "sppEarned": 2
+          },
+          {
+            "num": 6,
+            "name": "CARLION SILVERSHADOW",
+            "sprints": 0,
+            "passes": 0,
+            "touchdowns": 0,
+            "deflections": 0,
+            "interceptions": 0,
+            "lightInjuries": 0,
+            "seriousInjuries": 0,
+            "deaths": 0,
+            "mvp": 0,
+            "injurySuffered": "seriousInjury",
+            "hatred": "Human",
+            "sppEarned": 0
+          },
+          {
+            "num": 7,
+            "name": "LETHIAN COINCRAWLER",
+            "sprints": 0,
+            "passes": 0,
+            "touchdowns": 0,
+            "deflections": 0,
+            "interceptions": 0,
+            "lightInjuries": 0,
+            "seriousInjuries": 0,
+            "deaths": 0,
+            "mvp": 0,
+            "injurySuffered": "none",
+            "sppEarned": 0,
+            "improvements": [
+              {
+                "order": 1,
+                "category": "primary",
+                "selection": "chosen",
+                "skill": "Recepción heroica",
+                "sppCost": 0,
+                "valueExtra": 10000
+              }
+            ],
+            "draft": "drafted",
+            "draftValue": "2+"
+          }
+        ],
+        "notes": "Partido con control total por Magritta Conquerors y sentenciado en contra de Marienburg Ravens por los 4 \"unos\" sacados al intentar esquivar para anotar TD (en dos ocasiones) y en posicionamiento las otras dos. Se torció al final para el equipo Local cuando el Matatrolls sufrio un MUERTO. Ambos equipos se plantean contratar jugadores.",
+        "registeredAt": "2026-11-11T14:03:00.516Z"
       }
     ],
-    "retiredPlayers": [],
+    "retiredPlayers": [
+      {
+        "num": 7,
+        "name": "LETHIAN COINCRAWLER",
+        "position": "Lineman",
+        "reason": "drafted",
+        "draftValue": "2+",
+        "retiredAtMatch": "T6-J02",
+        "attributes": {
+          "ma": 6,
+          "st": 3,
+          "ag": "2+",
+          "pa": "3+",
+          "av": "8+"
+        },
+        "skills": [
+          "Dejada",
+          "Elf - Linea",
+          "Recepción heroica"
+        ],
+        "price": 65000,
+        "progression": {
+          "sppTotal": 0,
+          "sppUnspent": 0,
+          "improvements": [
+            {
+              "matchId": "T6-J02",
+              "order": 1,
+              "category": "primary",
+              "selection": "chosen",
+              "skill": "Recepción heroica",
+              "sppCost": 0,
+              "valueExtra": 10000
+            }
+          ]
+        },
+        "statistics": {
+          "sprints": 0,
+          "passes": 0,
+          "touchdowns": 0,
+          "deflections": 0,
+          "interceptions": 0,
+          "lightInjuries": 0,
+          "seriousInjuries": 0,
+          "deaths": 0,
+          "mvp": 0
+        },
+        "injuries": []
+      }
+    ],
     "logo": "marienburg_ravens.png"
   }
 }

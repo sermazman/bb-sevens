@@ -830,7 +830,7 @@ async function openMatchView(){
     const saved=await ghSave(state.reason,true);
     if(!saved){ toast('Antes de registrar un partido hay que guardar los cambios del equipo abierto.'); return; }
   }
-  state.view='match'; mv.last=null; mv.imp={home:{},away:{}}; mv.touched={}; mv.home=''; mv.away=''; mv.season=null;
+  state.view='match'; mv.editing=null; mv.last=null; mv.imp={home:{},away:{}}; mv.touched={}; mv.home=''; mv.away=''; mv.season=null;
   app.innerHTML='<div class="empty">Cargando los equipos de GitHub…</div>';
   try{ await mvLoadTeams(); }
   catch(e){ app.innerHTML=`<div class="banner bad">No se pudieron leer los equipos: ${esc(e.message)}</div><button class="btn" id="mvBack" type="button">← Volver</button>`; return; }
@@ -854,7 +854,7 @@ function renderMatchView(){
   const t=mvSeasonTeams(), opts=sel=>'<option value="">— elige equipo —</option>'+t.map(x=>`<option value="${esc(x.file)}" ${x.file===sel?'selected':''}>${esc(x.name)}</option>`).join('');
   const skipped=mv.skipped.length?`<div class="banner">No se han podido usar: ${mv.skipped.map(s=>`<code>${esc(s.file)}</code> (${esc(s.error)})`).join(', ')}.</div>`:'';
   app.innerHTML=`
-    <div class="teamhead"><span class="mvtitle">Registrar partido</span><button class="btn" id="mvBack" type="button">← Volver</button></div>
+    <div class="teamhead"><span class="mvtitle">Registrar partido</span><span class="row"><button class="btn" id="mvList" type="button">Partidos registrados</button><button class="btn" id="mvBack" type="button">← Volver</button></span></div>
     ${skipped}
     ${t.length<2 ? '<div class="empty">Hacen falta al menos dos equipos inscritos en la carpeta de GitHub para registrar un partido.</div>' : `
     <form id="matchForm" autocomplete="off" novalidate>
@@ -872,6 +872,7 @@ function renderMatchView(){
       <div id="mvSubmitRow" hidden><button class="btn primary" type="submit" id="mvSubmit">Registrar partido</button> <button class="btn" type="button" id="mvNJ" title="Nadie jugó este partido: cuenta como partido (PJ*) sin victoria, empate ni derrota">Partido no jugado (NJ para ambos)</button></div>
     </form>`}`;
   if(t.length>=2) renderSides();
+  if(mv.editing && t.length>=2) mvEditBanner();
 }
 
 function sideHTML(side){
@@ -1207,7 +1208,7 @@ async function mvSubmit(){
     s.drafts.forEach(({ev,kind})=>lines.push(kind==='drafted'?`${s.teamName}: #${ev.num} ${ev.name} es drafteado y sale del equipo.`:`${s.teamName}: #${ev.num} ${ev.name} se queda; paga ${fmt(ev.valuePaid)} de la tesorería y sube 15.000 de valor.`));
   });
   if(warns.length) lines.push('','Avisos:',...warns);
-  if(!confirm(lines.join('\n'))) return;
+  if(mv.editing) lines.unshift('EDITAR partido ya registrado: sustituye al anterior.',''); if(!confirm(lines.join('\n'))) return;
 
   const btn=$('#mvSubmit'); btn.disabled=true; btn.textContent='Guardando en GitHub…';
   try{
@@ -1216,8 +1217,9 @@ async function mvSubmit(){
     applyMatchSide(newH,sh,sa,meta); applyMatchSide(newA,sa,sh,meta);
     const files=[{path:H.path,text:JSON.stringify(newH,null,2)+'\n'},{path:A.path,text:JSON.stringify(newA,null,2)+'\n'}];
     await mvCheckFresh([H,A]);
-    await ghCommitFiles(files,`Liga T${season} · ${id} · ${H.name} ${sh.score}-${sa.score} ${A.name}`);
+    await ghCommitFiles(files,`Liga T${season} · ${id} · ${H.name} ${sh.score}-${sa.score} ${A.name}${mv.editing?' (editado)':''}`);
     const fresh=await Promise.all([ghGetFile(H.path),ghGetFile(A.path)]);
+    mv.editing=null;
     mv.last={id,home:H.name,away:A.name,score:[sh.score,sa.score],
       teams:[{name:H.name,path:H.path,before:H.text,afterSha:fresh[0].sha},{name:A.name,path:A.path,before:A.text,afterSha:fresh[1].sha}],
       summary:[sh,sa].map(s=>({name:s.teamName,spp:s.events.reduce((a,e)=>a+e.sppEarned,0),
@@ -1258,6 +1260,120 @@ async function mvUnplayed(){
   }catch(e){ fail(['No se pudo guardar en GitHub: '+e.message]); btn.disabled=false; }
 }
 
+/* ---- partidos registrados: editar o deshacer el último partido de los dos equipos ---- */
+async function ghFileAt(path,ref){
+  const c=ghSettings(), r=await ghFetch(c,ghApi(c,path)+'?ref='+encodeURIComponent(ref),{cache:'no-store'});
+  if(r.status===404) return null;
+  if(!r.ok) throw new Error(await ghErr(r));
+  const j=await r.json(); return {sha:j.sha,text:b64dec(j.content)};
+}
+/* partidos de la temporada elegida, sin duplicar (cada partido está en los dos equipos) */
+function mvMatchEntries(){
+  const out=new Map();
+  mv.teams.filter(t=>t.doc.league.season===mv.season).forEach(t=>t.doc.league.matches.forEach(m=>{
+    const opp=mv.teams.find(x=>x!==t&&(x.doc.league.teamId===m.opponent.teamId||x.name===m.opponent.teamName));
+    const key=m.id+'|'+[t.file,opp?opp.file:m.opponent.teamName].sort().join('|');
+    if(!out.has(key)) out.set(key,{key,id:m.id,round:m.round||0,sides:[]});
+    out.get(key).sides.push({t,m,opp});
+  }));
+  return [...out.values()].map(e=>{
+    const s0=e.sides[0], home=e.sides.find(s=>s.m.homeAway==='home')||s0, away=e.sides.find(s=>s!==home)||null;
+    let why='';
+    if(!away||!home.opp) why='uno de los dos equipos no está en la carpeta de la liga';
+    else for(const s of [home,away]){ const ms=s.t.doc.league.matches, last=ms[ms.length-1];
+      if(last.id!==e.id){ why=`${s.t.name} tiene después el partido ${last.id}`; break; } }
+    return Object.assign(e,{home,away,why});
+  }).sort((a,b)=>b.round-a.round||a.id.localeCompare(b.id));
+}
+function renderMatchList(){
+  const es=mvMatchEntries();
+  app.innerHTML=`<div class="teamhead"><span class="mvtitle">Partidos registrados</span><button class="btn" id="mvListBack" type="button">← Volver</button></div>
+    <p class="hint">Solo se puede editar o deshacer el último partido de cada uno de los dos equipos. Si alguno tiene otro partido después, aparece bloqueado hasta que se deshagan los posteriores (del más nuevo al más viejo).</p>
+    ${es.length?es.map(e=>{ const m=e.home.m, nj=m.result.outcome==='unplayed', hn=e.home.t.name, an=e.away?e.away.t.name:m.opponent.teamName;
+      const res=nj?'NJ':(m.homeAway==='home'?`${m.result.teamScore} - ${m.result.opponentScore}`:`${m.result.opponentScore} - ${m.result.teamScore}`);
+      return `<div class="card"><h3>${esc(e.id)} · ${esc(roundLabel(e.round))} · ${esc(hn)} <span class="res">${res}</span> ${esc(an)}</h3>
+        ${e.why?`<p class="hint warn">Bloqueado: ${esc(e.why)}.</p>`:`<div class="actions"><button class="btn primary" type="button" data-medit="${esc(e.key)}">Editar</button><button class="btn" type="button" data-mundo="${esc(e.key)}">Deshacer</button></div>`}</div>`; }).join(''):'<div class="empty">Todavía no hay partidos registrados en esta temporada.</div>'}`;
+}
+/* busca en el historial de GitHub el commit que registró el partido y devuelve el archivo tal como estaba justo antes */
+async function mvBeforeState(t,id){
+  const c=ghSettings(), repo=`https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}`;
+  const r=await ghFetch(c,`${repo}/commits?path=${encodeURIComponent(t.path)}&sha=${encodeURIComponent(c.branch)}&per_page=60`,{cache:'no-store'});
+  if(!r.ok) throw new Error(await ghErr(r));
+  const list=await r.json();
+  /* el partido puede haberse guardado varias veces (registro + ediciones): vale el registro más antiguo de la serie actual, que termina en un «deshecho» anterior */
+  let i=-1;
+  for(let k=0;k<list.length;k++){ const msg=String(list[k].commit.message);
+    if(/^Liga: deshecho/.test(msg)){ if(msg.includes(id)) break; continue; }
+    if(msg.includes(`· ${id} ·`)) i=k; }
+  if(i<0) throw new Error(`No encuentro en el historial de GitHub el guardado del partido ${id} para ${t.name}.`);
+  const g=await ghFileAt(t.path,list[i].parents[0].sha);
+  if(!g) throw new Error(`No existe la versión anterior de ${t.name}.`);
+  return {text:g.text,later:list.slice(0,i).filter(x=>!String(x.commit.message).includes(`· ${id} ·`)).map(x=>String(x.commit.message).split('\n')[0])};
+}
+async function mvStartEdit(key,mode){
+  const e=mvMatchEntries().find(x=>x.key===key); if(!e||e.why){ toast('Ese partido está bloqueado.'); return; }
+  const H=e.home.t, A=e.away.t;
+  try{
+    toast('Buscando el estado anterior en GitHub…');
+    const [bh,ba]=await Promise.all([mvBeforeState(H,e.id),mvBeforeState(A,e.id)]);
+    const later=[...bh.later.map(x=>`${H.name}: ${x}`),...ba.later.map(x=>`${A.name}: ${x}`)];
+    const warn=later.length?`\n\nOjo: después de este partido se guardaron estos cambios, que SE PERDERÁN al volver al estado anterior:\n- ${later.join('\n- ')}`:'';
+    if(mode==='undo'){
+      if(!confirm(`¿Deshacer el partido ${e.id} (${H.name} - ${A.name})? Los dos equipos vuelven a como estaban antes de jugarlo.${warn}`)) return;
+      await mvCheckFresh([H,A]);
+      await ghCommitFiles([{path:H.path,text:bh.text},{path:A.path,text:ba.text}],`Liga: deshecho ${e.id} · ${H.name} - ${A.name}`);
+      await mvLoadTeams(); renderMatchList(); toast(`Partido ${e.id} deshecho.`); return;
+    }
+    if(later.length && !confirm(`Vas a editar ${e.id}.${warn}\n\n(Hasta que no guardes no se cambia nada.) ¿Seguir?`)) return;
+    const dH=JSON.parse(bh.text), dA=JSON.parse(ba.text); normalizeDoc(dH); normalizeDoc(dA);
+    const ix=t=>mv.teams.findIndex(x=>x.file===t.file);
+    /* el equipo se usa tal como estaba antes del partido; sha y texto siguen siendo los actuales para comprobar cambios y poder deshacer */
+    mv.teams[ix(H)]=Object.assign({},H,{doc:dH}); mv.teams[ix(A)]=Object.assign({},A,{doc:dA});
+    mv.season=H.doc.league.season; mv.home=H.file; mv.away=A.file; mv.touched={round:true}; mv.editing={id:e.id,round:e.round,mH:e.home.m,mA:e.away.m};
+    mv.imp={home:{},away:{}};
+    renderMatchView(); mvPrefill();
+  }catch(err){ toast('No se pudo preparar la edición: '+err.message); }
+}
+function mvEditBanner(){
+  const f=$('#matchForm'); if(!f||!mv.editing) return;
+  f.insertAdjacentHTML('afterbegin',`<div class="banner">Editando el partido <strong>${esc(mv.editing.id)}</strong>. Los equipos están como antes de jugarlo; al guardar, este partido sustituye al anterior. Si sales sin guardar, no cambia nada.</div>`);
+  ['mvSeason','mvHome','mvAway','mvRound'].forEach(id=>{ const el=$('#'+id); if(el) el.disabled=true; });
+  const b=$('#mvSubmit'); if(b) b.textContent='Guardar cambios del partido';
+  const nj=$('#mvNJ'); if(nj) nj.hidden=true;
+}
+function mvPrefill(){
+  const f=$('#matchForm'), ed=mv.editing; if(!f||!ed) return;
+  const setv=(n,v)=>{ const el=f.elements[n]; if(el) el.value=v; };
+  $('#mvRound').value=String(ed.round);
+  const recs=[['home',ed.mH],['away',ed.mA]];
+  recs.forEach(([side,m])=>{
+    const t=mvTeam(side); if(!t||!m||m.result.outcome==='unplayed') return;
+    const s=m.statistics||{};
+    setv(`${side}_score`,m.result.teamScore); setv(`${side}_hl`,s.lightInjuriesFor||0); setv(`${side}_hg`,s.seriousInjuriesFor||0); setv(`${side}_rip`,s.deathsFor||0);
+    setv(`${side}_sentoff`,s.sentOffFor||0); setv(`${side}_skulls`,s.skullsFor||0); setv(`${side}_ones`,s.onesFor||0);
+    setv(`${side}_fans`,m.dedicatedFansGained||0); setv(`${side}_earnings`,m.earnings||0); setv(`${side}_spent`,m.treasurySpent||0);
+    ['hl','hg','rip'].forEach(k=>{ mv.touched[`${side}_${k}`]=true; });
+    (m.playerEvents||[]).forEach(ev=>{
+      if(!t.doc.players.find(p=>p.num===ev.num)) return;
+      STAT_COLS.forEach(([k])=>setv(`${side}_ev_${ev.num}_${k}`,ev[k]||0));
+      setv(`${side}_inj_${ev.num}`,ev.injurySuffered||'none');
+      mv.imp[side][ev.num]=(ev.improvements||[]).map(im=>im.skill?{kind:'skill',skill:im.skill,other:false,category:im.category,selection:im.selection||'chosen'}:{kind:'stat',attr:im.attribute});
+      renderImpCell(side,ev.num);
+    });
+  });
+  const notes=(ed.mH&&ed.mH.notes)||''; if(f.elements.notes) f.elements.notes.value=notes;
+  ['home','away'].forEach(updateSide);
+  /* draft, Odio y «matado por» dependen de lo anterior: se ponen cuando ya están sus opciones */
+  refreshHatred(); refreshKillers();
+  recs.forEach(([side,m])=>{ const t=mvTeam(side); if(!t||!m) return;
+    (m.playerEvents||[]).forEach(ev=>{
+      if(ev.draft) setv(`${side}_draft_${ev.num}`,ev.draft==='drafted'?'drafted':'paid');
+      if(ev.hatred) setv(`${side}_hat_${ev.num}`,ev.hatred);
+      if(ev.killerNum!=null) setv(`${side}_kill_${ev.num}`,String(ev.killerNum));
+    }); });
+  ['home','away'].forEach(updateSide);
+}
+
 function renderMatchDone(){
   const m=mv.last;
   app.innerHTML=`
@@ -1292,6 +1408,10 @@ function mvClick(e){
   const t=e.target;
   if(t.closest('#mvBack')){ backToTeam(); return true; }
   if(t.closest('#mvNJ')){ mvUnplayed(); return true; }
+  if(t.closest('#mvList')){ renderMatchList(); return true; }
+  if(t.closest('#mvListBack')){ mv.editing=null; renderMatchView(); return true; }
+  { const b=t.closest('[data-medit]'); if(b){ mvStartEdit(b.dataset.medit,'edit'); return true; } }
+  { const b=t.closest('[data-mundo]'); if(b){ mvStartEdit(b.dataset.mundo,'undo'); return true; } }
   if(t.closest('#mvUndo')){ mvUndo(); return true; }
   if(t.closest('#mvAgain')){ openMatchView(); return true; }
   const add=t.closest('[data-impadd]'); if(add){ const [s,n]=add.dataset.impadd.split('_'); const used=Object.values(mv.imp[s]||{}).reduce((a,l)=>a+l.length,0); if(used>=1){ toast('Solo se puede subir 1 mejora por equipo y partido. Quita la anterior si quieres cambiarla.'); return true; } openImpDialog(s,int(n)); return true; }

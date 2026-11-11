@@ -532,7 +532,7 @@ function renderTeams(){
   $('#view').innerHTML=`<div class="tgrid">${teams.map(t=>{const e=economy(t.doc);return`<div class="card tcard" style="border-top:6px solid ${colorOf(t.doc)}">
     <div class="thead ${logoImg(t,'x')?'':'nologo'}">${logoImg(t,'x')?`<div class="tlogobig">${logoImg(t,'lgx')}</div>`:''}<h3 class="tname"><a href="#team=${encodeURIComponent(t.file)}">${esc(t.name)}</a></h3><div class="race trace">${esc(t.doc.race||'')}</div></div>
     <div class="meta">${t.doc.league.coach?'Entrenador: '+esc(t.doc.league.coach)+' · ':''}<strong>${t.doc.players.filter(p=>{const lp=t.doc.league.players.find(x=>x.num===p.num);return !(lp&&lp.status==='missNextGame')}).length} disponibles</strong> (total: ${t.doc.players.length})</div>
-    <div class="meta">Valor ${fmt(e.teamValue)} · ${e.t.played} partidos jugados</div>
+    <div class="meta">Valor ${fmt(e.teamValue)} · Tesorería ${fmt(e.treasury)} · ${e.t.played} PJ</div>
     <div class="row"><a class="btn small" href="#team=${encodeURIComponent(t.file)}">Ver equipo</a>
     <button class="btn small primary" type="button" data-dl="${esc(t.file)}">Descargar EQUIPO</button>
     <button class="btn small" type="button" data-sheet="${esc(t.file)}">Hoja de partido (PDF)</button></div></div>`}).join('')}</div>

@@ -594,13 +594,20 @@ button.full{width:100%; margin-top:6px;}
 }
 @media (max-width: 700px){ #halfTimeOverlayText{font-size:34px; letter-spacing:3px;} }
 .app-footer{
-  text-align:center;
-  padding:18px 10px 24px 10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:24px;
+  padding:18px 20px 24px 20px;
   color:#6b5e48;
   font-family:'Oswald', sans-serif;
   font-size:12px;
   letter-spacing:0.5px;
 }
+.footer-legal{ flex:1 1 auto; text-align:left; font-size:10.5px; line-height:1.35; letter-spacing:0.2px; }
+.footer-legal p{ margin:0 0 4px 0; }
+.footer-ver{ flex:0 0 auto; width:max-content; text-align:right; white-space:nowrap; }
+@media (max-width:700px){ .app-footer{ flex-direction:column; } .footer-ver{ text-align:left; } }
 .version-badge{
   font-family:'JetBrains Mono', monospace;
   font-size:11px;
@@ -656,7 +663,7 @@ button.full{width:100%; margin-top:6px;}
 .conn-dot.on{background:var(--good);}
 
 /* --- Versión del archivo (para el badge de verificación en el pie) --- */
-:root{ --css-version: "S_V71"; }
+:root{ --css-version: "S_V72"; }
 
 /* ---- Iconos dorados (se tiñen con el color del marcador mediante máscara) ---- */
 .gold-icon{display:inline-block; width:18px; height:18px; vertical-align:middle; background:var(--gold);

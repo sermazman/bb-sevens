@@ -1292,7 +1292,7 @@ function renderMatchList(){
     ${es.length?es.map(e=>{ const m=e.home.m, nj=m.result.outcome==='unplayed', hn=e.home.t.name, an=e.away?e.away.t.name:m.opponent.teamName;
       const res=nj?'NJ':(m.homeAway==='home'?`${m.result.teamScore} - ${m.result.opponentScore}`:`${m.result.opponentScore} - ${m.result.teamScore}`);
       return `<div class="card"><h3>${esc(e.id)} · ${esc(roundLabel(e.round))} · ${esc(hn)} <span class="res">${res}</span> ${esc(an)}</h3>
-        ${e.why?`<p class="hint warn">Bloqueado: ${esc(e.why)}.</p>`:`<div class="actions"><button class="btn primary" type="button" data-medit="${esc(e.key)}">Editar</button><button class="btn" type="button" data-mundo="${esc(e.key)}">Deshacer</button></div>`}</div>`; }).join(''):'<div class="empty">Todavía no hay partidos registrados en esta temporada.</div>'}`;
+        ${e.why?`<p class="hint warn">Bloqueado: ${esc(e.why)}.</p>`:`<div class="actions"><button class="btn primary" type="button" data-medit="${esc(e.key)}">Editar</button><button class="btn" type="button" data-mundo="${esc(e.key)}">Deshacer</button><button class="btn" type="button" data-mig="${esc(e.id)}">Imagen para Instagram</button></div>`}${e.why?`<div class="actions"><button class="btn" type="button" data-mig="${esc(e.id)}">Imagen para Instagram</button></div>`:''}</div>`; }).join(''):'<div class="empty">Todavía no hay partidos registrados en esta temporada.</div>'}`;
 }
 /* busca en el historial de GitHub el commit que registró el partido y devuelve el archivo tal como estaba justo antes */
 async function mvBeforeState(t,id){
@@ -1374,6 +1374,172 @@ function mvPrefill(){
   ['home','away'].forEach(updateSide);
 }
 
+/* ---- imágenes para Instagram ---- */
+async function igLoadImg(path,fallbackUrl){
+  const c=ghSettings(); let blob=null;
+  try{ if(ghReady()){ const r=await ghFetch(c,ghApi(c,path)+'?ref='+encodeURIComponent(c.branch),{headers:{Accept:'application/vnd.github.raw'},cache:'no-store'}); if(r.ok) blob=await r.blob(); } }catch(e){}
+  if(!blob&&fallbackUrl){ try{ const r=await fetch(fallbackUrl+'?v='+Date.now(),{cache:'no-store'}); if(r.ok) blob=await r.blob(); }catch(e){} }
+  if(!blob) return null;
+  const url=URL.createObjectURL(new Blob([blob],{type:blob.type||'image/png'}));
+  return await new Promise(ok=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=()=>ok(null); i.src=url; });
+}
+async function mvInstagram(id){
+  let e=mvMatchEntries().find(x=>x.id===id);
+  if(!e||!e.away){ try{ await mvLoadTeams(); }catch(err){} e=mvMatchEntries().find(x=>x.id===id); }
+  if(!e||!e.away){ toast('No encuentro ese partido en la carpeta de la liga.'); return; }
+  toast('Preparando imágenes…');
+  try{
+    const side=async s=>{ const d=s.t.doc, lg=d.league.logo&&/^[\w.-]+\.png$/i.test(d.league.logo)?d.league.logo:null;
+      return {name:s.t.name,race:d.race||'',color:d.color,m:s.m,logo:lg?await igLoadImg(s.t.path.replace(/[^/]+$/,'')+lg,ghFolder(ghSettings())+'/'+lg):null}; };
+    const [h,a,ll]=await Promise.all([side(e.home),side(e.away),igLoadImg('logoBB7.png','logoBB7.png')]);
+    const imgs=await buildMatchImages({season:e.home.t.doc.league.season,id:e.id,roundLabel:roundLabel(e.round),home:h,away:a,leagueLogo:ll,statLabel:STAT_IMP_LABEL});
+    igShow(e.id,imgs);
+  }catch(err){ toast('No se pudieron crear las imágenes: '+err.message); }
+}
+function igShow(id,imgs){
+  const urls=imgs.map(c=>c.toDataURL('image/png')), nm=['resultado','protagonistas','protagonistas2'];
+  const old=document.getElementById('igModal'); if(old) old.remove();
+  const d=document.createElement('div'); d.id='igModal';
+  d.style.cssText='position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.85);overflow:auto;padding:16px';
+  d.innerHTML=`<div style="max-width:1100px;margin:0 auto"><div class="actions" style="margin-bottom:12px"><strong style="align-self:center">Imágenes para Instagram · ${esc(id)}</strong>
+    <button class="btn primary" type="button" id="igAll">Descargar todas</button><button class="btn" type="button" id="igClose">Cerrar</button></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px">${urls.map((u,i)=>`<div><img src="${u}" style="width:100%;border-radius:8px;display:block"><button class="btn" type="button" data-igdl="${i}" style="margin-top:6px;width:100%">Descargar ${i+1} (${nm[i]||'imagen'})</button></div>`).join('')}</div>
+    <p class="hint">1080×1350 px (4:5). Súbelas a Instagram como publicación normal, en este orden.</p></div>`;
+  document.body.appendChild(d);
+  const dl=i=>{ const a=document.createElement('a'); a.href=urls[i]; a.download=`${id}_${i+1}_${nm[i]||'imagen'}.png`; document.body.appendChild(a); a.click(); a.remove(); };
+  d.addEventListener('click',ev=>{ if(ev.target.id==='igClose'||ev.target===d) d.remove();
+    const b=ev.target.closest('[data-igdl]'); if(b) dl(+b.dataset.igdl);
+    if(ev.target.id==='igAll') urls.forEach((u,i)=>setTimeout(()=>dl(i),i*400)); });
+}
+
+/* Imágenes del resumen de partido para Instagram (publicación normal, vertical 4:5 = 1080×1350).
+   buildMatchImages({season,id,roundLabel,home:{name,race,coach,color,logo,m},away:{...}}) → Promise<canvas[]>
+   Cada lado trae su registro de partido `m` (el del propio equipo). Sale 1 imagen de resultado + 1 o 2 de protagonistas. */
+async function buildMatchImages(o){
+  const W=1080,H=1350, FT="'Anton',Impact,sans-serif", FU="'Oswald',system-ui,sans-serif";
+  try{ await Promise.all([document.fonts.load('400 60px Anton'),document.fonts.load('400 30px Oswald'),document.fonts.load('500 30px Oswald')]); }catch(e){}
+  const BG='#0d1014', PANEL='#151a21', LINE='#2a323e', TXT='#e9ecf0', MUT='#8c97a6', ACC='#b30000';
+  const okc=c=>/^#[0-9a-f]{6}$/i.test(c||'')?c:ACC;
+  const H_=o.home, A_=o.away; H_.col=okc(H_.color); A_.col=okc(A_.color);
+  const fmtN=n=>String(Math.round(n||0)).replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+  const lite=c=>{ const n=parseInt(c.slice(1),16); const m=v=>Math.round(v+(255-v)*.45); return `rgb(${m(n>>16)},${m((n>>8)&255)},${m(n&255)})`; };
+  const sg=n=>n>0?'+'+n:String(n);
+  const mk=()=>{ const c=document.createElement('canvas'); c.width=W; c.height=H; return c; };
+  const hex=(c,a)=>{ const n=parseInt(c.slice(1),16); return `rgba(${n>>16},${(n>>8)&255},${n&255},${a})`; };
+  function fit(g,txt,font,max,start,min){ let s=start; do{ g.font=font.replace('#',s); if(g.measureText(txt).width<=max||s<=min) break; s-=2; }while(s>min); return s; }
+  function ell(g,txt,max){ if(g.measureText(txt).width<=max) return txt; let t=txt; while(t.length>1&&g.measureText(t+'…').width>max) t=t.slice(0,-1); return t+'…'; }
+  function background(g){
+    g.fillStyle=BG; g.fillRect(0,0,W,H);
+    let gr=g.createLinearGradient(0,0,W/2,H); gr.addColorStop(0,hex(H_.col,.30)); gr.addColorStop(.55,'rgba(13,16,20,0)'); g.fillStyle=gr; g.fillRect(0,0,W,H);
+    gr=g.createLinearGradient(W,0,W/2,H); gr.addColorStop(0,hex(A_.col,.30)); gr.addColorStop(.55,'rgba(13,16,20,0)'); g.fillStyle=gr; g.fillRect(0,0,W,H);
+    g.fillStyle=ACC; g.fillRect(0,0,W,12); g.fillRect(0,H-12,W,12);
+  }
+  function header(g,sub,main){
+    g.textAlign='center'; g.textBaseline='alphabetic';
+    g.fillStyle=MUT; g.font=`500 28px ${FU}`; g.letterSpacing='6px'; g.fillText('LIGA BLOOD BOWL SEVENS · TEMPORADA '+o.season,W/2,main?60:68); g.letterSpacing='0px';
+    if(o.leagueLogo){ const L=o.leagueLogo;
+      if(main){ const b=150; g.drawImage(L,W/2-b/2,84,b,b*L.height/L.width); }
+      else { const b=104; g.drawImage(L,34,30,b,b*L.height/L.width); } }
+    g.fillStyle=TXT; g.font=`400 84px ${FT}`; g.fillText(sub.toUpperCase(),W/2,main?318:160);
+  }
+  function logo(g,t,cx,cy,box){
+    if(t.logo){ const r=Math.min(box/t.logo.width,box/t.logo.height); const w=t.logo.width*r,h=t.logo.height*r; g.drawImage(t.logo,cx-w/2,cy-h/2,w,h); return; }
+    g.fillStyle=hex(t.col,.9); g.beginPath(); g.arc(cx,cy,box/2.2,0,7); g.fill();
+    g.fillStyle='#fff'; g.font=`400 ${box/2.4}px ${FT}`; g.textAlign='center'; g.textBaseline='middle'; g.fillText((t.name||'?').trim().slice(0,2).toUpperCase(),cx,cy+4); g.textBaseline='alphabetic';
+  }
+  const sc=t=>t.m.result.teamScore, oc=t=>t.m.result.opponentScore;
+  const unplayed=H_.m.result.outcome==='unplayed';
+  /* ---------- imagen 1: resultado ---------- */
+  const c1=mk(), g1=c1.getContext('2d'); background(g1); header(g1,o.roundLabel||o.id,true);
+  const cxL=230, cxR=850, cyL=530;
+  [[H_,cxL],[A_,cxR]].forEach(([t,cx])=>{
+    logo(g1,t,cx,cyL,270);
+    g1.textAlign='center'; g1.fillStyle=TXT; const fs=fit(g1,t.name.toUpperCase(),`400 #px ${FT}`,400,64,30); g1.fillText(t.name.toUpperCase(),cx,722);
+    g1.fillStyle=lite(t.col); g1.font=`500 34px ${FU}`; g1.letterSpacing='3px'; g1.fillText((t.race||'').toUpperCase(),cx,774); g1.letterSpacing='0px';
+  });
+  g1.textAlign='center'; g1.fillStyle=TXT;
+  if(unplayed){ g1.font=`400 150px ${FT}`; g1.fillText('NJ',W/2,590); }
+  else { g1.font=`400 190px ${FT}`; g1.fillText(sc(H_)+' - '+sc(A_),W/2,605); }
+  /* veredicto */
+  const hs=unplayed?null:sc(H_), as=unplayed?null:sc(A_);
+  const verdict=unplayed?'PARTIDO NO JUGADO':hs===as?'EMPATE':'VICTORIA DE '+(hs>as?H_.name:A_.name).toUpperCase();
+  g1.font=`500 34px ${FU}`; g1.letterSpacing='4px'; const vw=g1.measureText(verdict).width+80; const vx=W/2-vw/2;
+  g1.fillStyle=hs===as?'#3a4350':(hs>as?H_.col:A_.col); g1.beginPath(); g1.roundRect(vx,826,vw,64,32); g1.fill();
+  g1.fillStyle='#fff'; g1.fillText(verdict,W/2+2,871); g1.letterSpacing='0px';
+  /* tabla comparativa */
+  if(!unplayed){
+    const sH=H_.m.statistics||{}, rows=[
+      ['HERIDOS LEVES',sH.lightInjuriesFor,sH.lightInjuriesAgainst],['HERIDOS GRAVES',sH.seriousInjuriesFor,sH.seriousInjuriesAgainst],
+      ['MUERTOS',sH.deathsFor,sH.deathsAgainst],['EXPULSADOS',sH.sentOffFor,sH.sentOffAgainst],['CALAVERAS',sH.skullsFor,sH.skullsAgainst]];
+    let y=980; g1.strokeStyle=LINE; g1.lineWidth=2;
+    rows.forEach(([lab,a,b])=>{
+      a=a||0; b=b||0; g1.beginPath(); g1.moveTo(120,y-52); g1.lineTo(W-120,y-52); g1.stroke();
+      g1.textAlign='center'; g1.fillStyle=MUT; g1.font=`500 30px ${FU}`; g1.letterSpacing='4px'; g1.fillText(lab,W/2,y,360); g1.letterSpacing='0px';
+      g1.font=`400 50px ${FT}`; g1.fillStyle=a>b?TXT:MUT; g1.textAlign='left'; g1.fillText(a,150,y+6); g1.fillStyle=b>a?TXT:MUT; g1.textAlign='right'; g1.fillText(b,W-150,y+6);
+      y+=66; });
+    g1.beginPath(); g1.moveTo(120,y-52); g1.lineTo(W-120,y-52); g1.stroke();
+  }
+  g1.textAlign='center'; g1.fillStyle=MUT; g1.font=`400 26px ${FU}`; g1.fillText(o.id,W/2,H-34);
+  if(unplayed) return [c1];
+  /* ---------- imágenes 2(+3): protagonistas ---------- */
+  const rowsOf=t=>{
+    const out=[];
+    (t.m.playerEvents||[]).forEach(ev=>{
+      const acts=[['touchdowns','TD'],['passes','Pase'],['sprints','Esprint'],['deflections','Desvío'],['interceptions','Intercepción'],['lightInjuries','HL causada'],['seriousInjuries','HG causada'],['deaths','RIP causada']].filter(([k])=>ev[k]).map(([k,l])=>l+(ev[k]>1?' ×'+ev[k]:'')).join(' · ');
+      const tags=[]; let pr=0;
+      if(ev.injurySuffered==='dead'){ tags.push({t:'MUERTO'+(ev.killerName?' · por '+ev.killerName:''),c:'#e5534b'}); pr+=100; }
+      if(ev.injurySuffered==='seriousInjury'){ tags.push({t:'HERIDA GRAVE'+(ev.hatred?' · Odio ('+ev.hatred+')':''),c:'#e3b341'}); pr+=40; }
+      if(ev.injurySuffered==='lightInjury'){ tags.push({t:'HERIDA LEVE',c:'#8c97a6'}); pr+=5; }
+      (ev.improvements||[]).forEach(im=>{ tags.push({t:'MEJORA: '+(im.skill||((o.statLabel&&o.statLabel[im.attribute])||im.attribute)),c:'#3fb97b'}); pr+=30; });
+      if(ev.draft==='drafted'){ tags.push({t:'DRAFTEADO',c:'#e3b341'}); pr+=60; }
+      if(ev.mvp){ tags.unshift({t:'MVP',c:'#e3b341'}); pr+=50; }
+      pr+=(ev.touchdowns||0)*20+(ev.passes||0)*8+(ev.sprints||0)*3+(ev.deflections||0)*6+(ev.interceptions||0)*10+(ev.deaths||0)*15+(ev.seriousInjuries||0)*8+(ev.lightInjuries||0)*2;
+      if(acts||tags.length) out.push({num:ev.num,name:ev.name||('#'+ev.num),acts,tags,pr,spp:ev.sppEarned||0});
+    });
+    return out.sort((a,b)=>b.pr-a.pr||b.spp-a.spp);
+  };
+  const TOP=330, BOT=1160, PER=Math.floor((BOT-TOP)/112);
+  const L=rowsOf(H_), R=rowsOf(A_);
+  const pages=Math.min(2,Math.max(1,Math.ceil(Math.max(L.length,R.length)/PER)));
+  const imgs=[c1];
+  for(let p=0;p<pages;p++){
+    const nrow=Math.max(1,Math.min(PER,Math.max(L.length,R.length)-p*PER)), RH=Math.min(164,Math.max(112,Math.floor((BOT-TOP)/nrow))), k=RH/112;
+    const c=mk(), g=c.getContext('2d'); background(g); header(g,pages>1?`Protagonistas ${p+1}/${pages}`:'Protagonistas');
+    [[H_,L,60],[A_,R,560]].forEach(([t,list,x0])=>{
+      const w=460;
+      g.fillStyle=hex(t.col,.9); g.beginPath(); g.roundRect(x0,205,w,92,14); g.fill();
+      logo(g,t,x0+52,251,64); g.textAlign='left'; g.fillStyle='#fff'; fit(g,t.name.toUpperCase(),`400 #px ${FT}`,w-190,44,24); g.fillText(t.name.toUpperCase(),x0+100,262);
+      g.textAlign='right'; g.font=`400 62px ${FT}`; g.fillText(String(sc(t)),x0+w-22,270);
+      const slice=list.slice(p*PER,(p+1)*PER);
+      if(!slice.length&&p===0){ g.textAlign='left'; g.fillStyle=MUT; g.font=`400 28px ${FU}`; g.fillText('Sin acciones destacadas',x0+8,TOP+40); }
+      slice.forEach((r,i)=>{
+        const y=TOP+i*RH; g.fillStyle=PANEL; g.beginPath(); g.roundRect(x0,y,w,RH-12,12); g.fill();
+        g.fillStyle=t.col; g.fillRect(x0,y+8,6,RH-28);
+        const kk=Math.min(k,1.2), y1=y+((RH-12)-72*kk)/2+30*kk, y2=y1+40*kk-4;
+        g.textAlign='left'; g.fillStyle=MUT; g.font=`500 ${28*Math.min(k,1.15)}px ${FU}`; g.fillText('#'+r.num,x0+22,y1);
+        g.fillStyle=TXT; g.font=`500 ${32*Math.min(k,1.15)}px ${FU}`; g.fillText(ell(g,r.name,r.spp?w-225:w-100),x0+82,y1);
+        if(r.spp){ g.textAlign='right'; g.fillStyle='#3fb97b'; g.font=`500 ${26*Math.min(k,1.15)}px ${FU}`; g.fillText('+'+r.spp+' SPP',x0+w-16,y1); }
+        g.textAlign='left'; let tx=x0+22, ty=y2+12*kk;
+        if(r.acts){ g.fillStyle=MUT; g.font=`400 ${25*Math.min(k,1.15)}px ${FU}`; g.fillText(r.acts,tx,ty); tx+=g.measureText(r.acts).width+16; }
+        r.tags.forEach(tag=>{ g.font=`500 22px ${FU}`; const tw=g.measureText(tag.t).width+20; if(tx+tw>x0+w-8){ return; }
+          g.fillStyle=hex(tag.c,.22); g.beginPath(); g.roundRect(tx,ty-24,tw,34,17); g.fill(); g.strokeStyle=tag.c; g.lineWidth=1.5; g.stroke();
+          g.fillStyle=tag.c; g.fillText(tag.t,tx+10,ty); tx+=tw+8; });
+      });
+      if(p===pages-1 && list.length>pages*PER){ g.textAlign='left'; g.fillStyle=MUT; g.font=`400 24px ${FU}`; g.fillText(`+${list.length-pages*PER} más en el acta del partido`,x0+4,BOT+10); }
+    });
+    if(p===pages-1){ /* fans y ganancias */
+      [[H_,60],[A_,560]].forEach(([t,x0])=>{
+        g.textAlign='left'; g.fillStyle=MUT; g.font=`500 24px ${FU}`; g.letterSpacing='3px';
+        g.fillText('FANS',x0+4,1212); g.fillText('GANANCIAS',x0+170,1212); g.letterSpacing='0px';
+        g.fillStyle=TXT; g.font=`400 46px ${FT}`; g.fillText(sg(t.m.dedicatedFansGained||0),x0+4,1264); g.fillText(fmtN(t.m.earnings)+' mo',x0+170,1264);
+      });
+    }
+    g.textAlign='center'; g.fillStyle=MUT; g.font=`400 24px ${FU}`; g.fillText(o.id+' · '+(o.roundLabel||''),W/2,H-26);
+    imgs.push(c);
+  }
+  return imgs;
+}
+
 function renderMatchDone(){
   const m=mv.last;
   app.innerHTML=`
@@ -1385,6 +1551,7 @@ function renderMatchDone(){
     </div>
     <div class="actions" style="margin-top:14px">
       <button class="btn" id="mvUndo" type="button">Deshacer este partido</button>
+      <button class="btn" id="mvIg" type="button">Imagen para Instagram</button>
       <button class="btn primary" id="mvAgain" type="button">Registrar otro partido</button>
       <button class="btn" id="mvBack" type="button">Volver al equipo</button>
     </div>`;
@@ -1409,6 +1576,8 @@ function mvClick(e){
   if(t.closest('#mvBack')){ backToTeam(); return true; }
   if(t.closest('#mvNJ')){ mvUnplayed(); return true; }
   if(t.closest('#mvList')){ renderMatchList(); return true; }
+  if(t.closest('#mvIg')){ mvInstagram(mv.last.id); return true; }
+  { const b=t.closest('[data-mig]'); if(b){ mvInstagram(b.dataset.mig); return true; } }
   if(t.closest('#mvListBack')){ mv.editing=null; renderMatchView(); return true; }
   { const b=t.closest('[data-medit]'); if(b){ mvStartEdit(b.dataset.medit,'edit'); return true; } }
   { const b=t.closest('[data-mundo]'); if(b){ mvStartEdit(b.dataset.mundo,'undo'); return true; } }

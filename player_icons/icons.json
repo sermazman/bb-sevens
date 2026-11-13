@@ -1,0 +1,1024 @@
+{
+ "version": 1,
+ "size": 38,
+ "base_opacity": 0.6,
+ "armor_opacity": 0.25,
+ "layers": {
+  "AMA_EAGLE": 3,
+  "AMA_PYTHON": 3,
+  "AMA_PIRANHA": 3,
+  "AMA_JAGUAR": 3,
+  "BLA_GOBLIN": 3,
+  "BLA_BLACK": 3,
+  "BLA_TRAINED": 3,
+  "BRE_SQUIRE": 3,
+  "BRE_CATCHER": 3,
+  "BRE_THROWER": 3,
+  "BRE_GRIAL": 3,
+  "CHC_BEASTMAN": 3,
+  "CHC_CHAOS": 3,
+  "CHC_TROLL": 3,
+  "CHC_OGRE": 3,
+  "CHC_MINOTAUR": 3,
+  "CHD_HOBGOBLIN": 3,
+  "CHD_SNEAKY": 3,
+  "CHD_CHAOS": 3,
+  "CHD_FLAMESMITH": 3,
+  "CHD_BULL": 3,
+  "CHD_MINOTAUR": 3,
+  "CHR_HUMAN": 3,
+  "CHR_GOBLIN": 3,
+  "CHR_ORC": 3,
+  "CHR_SKAVEN": 3,
+  "CHR_DARK": 3,
+  "CHR_HUTHROWER": 3,
+  "CHR_TROLL": 3,
+  "CHR_OGRE": 3,
+  "CHR_MINOTAUR": 3,
+  "CHR_RATOGRE": 3,
+  "DEL_LINEMAN": 3,
+  "DEL_RUNNER": 3,
+  "DEL_ASSASIN": 3,
+  "DEL_BLITZER": 3,
+  "DEL_WITCH": 3,
+  "DWA_LINEMAN": 3,
+  "DWA_RUNNER": 3,
+  "DWA_BLITZER": 3,
+  "DWA_TROLL": 3,
+  "DWA_DEATHROLLER": 3,
+  "ELV_LINEMAN": 3,
+  "ELV_THROWER": 3,
+  "ELV_CATCHER": 3,
+  "ELV_BLITZER": 3,
+  "GOB_GOBLIN": 3,
+  "GOB_BOMBARDIER": 3,
+  "GOB_LOONEY": 3,
+  "GOB_DOOM": 3,
+  "GOB_OOLIGAN": 3,
+  "GOB_FANATIC": 3,
+  "GOB_POGOER": 3,
+  "GOB_TROLL": 3,
+  "GNO_LINEMAN": 3,
+  "GNO_WOODLAND": 3,
+  "GNO_ILLUSIONIST": 3,
+  "GNO_BEASTMASTER": 3,
+  "GNO_TREEMAN": 3,
+  "HAL_HALFLING": 3,
+  "HAL_CATCHER": 3,
+  "HAL_HEFTY": 3,
+  "HAL_TREEMAN": 3,
+  "HIE_LINEMAN": 3,
+  "HIE_WHITE": 3,
+  "HIE_PHOENIX": 3,
+  "HIE_DRAGON": 3,
+  "HUM_LINEMAN": 3,
+  "HUM_HALFLING": 3,
+  "HUM_CATCHER": 3,
+  "HUM_THROWER": 3,
+  "HUM_BLITZER": 3,
+  "HUM_OGRE": 3,
+  "IMP_RETAINER": 3,
+  "IMP_THROWER": 3,
+  "IMP_NOBLE": 3,
+  "IMP_BODYGUARD": 3,
+  "IMP_OGRE": 3,
+  "KHO_BLOODBORN": 3,
+  "KHO_KHORNGOR": 3,
+  "KHO_BLOODSEEKER": 3,
+  "KHO_BLOODSPAWN": 3,
+  "LIZ_SKINK": 3,
+  "LIZ_CHAMELEON": 3,
+  "LIZ_SAURUS": 3,
+  "LIZ_KROXIGOR": 3,
+  "NEC_ZOMBIE": 3,
+  "NEC_GHOUL": 3,
+  "NEC_WRAITH": 3,
+  "NEC_GOLEM": 3,
+  "NEC_WEREWOLF": 3,
+  "NOR_RAIDER": 3,
+  "NOR_BEER": 3,
+  "NOR_BERSERKER": 3,
+  "NOR_VALKYRIE": 3,
+  "NOR_ULFWERNER": 3,
+  "NOR_YHETEE": 3,
+  "NUR_ROTTER": 3,
+  "NUR_PESTIGOR": 3,
+  "NUR_BLOATER": 3,
+  "NUR_ROTSPAWN": 3,
+  "OGR_GNOBLAR": 3,
+  "OGR_BLOCKER": 3,
+  "OGR_PUNTER": 3,
+  "OWA_HUMLINEA": 3,
+  "OWA_HALFLING": 3,
+  "OWA_CATCHER": 3,
+  "OWA_DWLINEA": 3,
+  "OWA_THROWER": 3,
+  "OWA_DWRUNNER": 3,
+  "OWA_HUMBLITZER": 3,
+  "OWA_DWBLITZER": 3,
+  "OWA_SLAYER": 3,
+  "OWA_OGRE": 3,
+  "OWA_TREEMAN": 3,
+  "ORC_LINEMAN": 3,
+  "ORC_GOBLIN": 3,
+  "ORC_THROWER": 3,
+  "ORC_BLITZER": 3,
+  "ORC_BIG": 3,
+  "ORC_TROLL": 3,
+  "SHA_SKELETON": 3,
+  "SHA_ZOMBIE": 3,
+  "SHA_GHOUL": 3,
+  "SHA_WIGHT": 3,
+  "SHA_MUMMY": 3,
+  "SLA_LINEMAN": 3,
+  "SLA_CATCHER": 3,
+  "SLA_BLITZER": 3,
+  "SLA_KROXIGOR": 3,
+  "SKA_CLANRAT": 3,
+  "SKA_THROWER": 3,
+  "SKA_GUTTER": 3,
+  "SKA_BLITZER": 3,
+  "SKA_RATOGRE": 3,
+  "TOM_SKELETON": 3,
+  "TOM_THROWER": 3,
+  "TOM_BLITZER": 3,
+  "TOM_GUARDIAN": 3,
+  "SNO_SNOTLING": 3,
+  "SNO_FUNGUS": 3,
+  "SNO_FUN": 3,
+  "SNO_STILTY": 3,
+  "SNO_PUMP": 3,
+  "SNO_TRAINED": 3,
+  "SNO_JOURNEY": 3,
+  "UND_GOBLIN": 3,
+  "UND_SNOTLING": 3,
+  "UND_SKCLANRAT": 3,
+  "UND_SKTHROWER": 3,
+  "UND_SKGUTTER": 3,
+  "UND_SKBLITZER": 3,
+  "UND_TROLL": 3,
+  "UND_RATOGRE": 3,
+  "VAM_THRALL": 3,
+  "VAM_RUNNER": 3,
+  "VAM_THROWER": 3,
+  "VAM_BLITZER": 3,
+  "VAM_VARGHEIST": 3,
+  "ELF_LINEMAN": 3,
+  "ELF_THROWER": 3,
+  "ELF_CATCHER": 3,
+  "ELF_WARDANCER": 3,
+  "ELF_TREEMAN": 3
+ },
+ "icons": {
+  "Amazon": {
+   "Eagle Warrior Linewomen": {
+    "icon": "AMA_EAGLE",
+    "layers": 3
+   },
+   "Python Warrior Throwers": {
+    "icon": "AMA_PYTHON",
+    "layers": 3
+   },
+   "Piranha Warrior Blitzers": {
+    "icon": "AMA_PIRANHA",
+    "layers": 3
+   },
+   "Jaguar Warrior Blockers": {
+    "icon": "AMA_JAGUAR",
+    "layers": 3
+   },
+   "Journey Eagle Warrior Linewomen": {
+    "icon": "AMA_EAGLE",
+    "layers": 3
+   }
+  },
+  "Black Orc": {
+   "Goblin Bruiser": {
+    "icon": "BLA_GOBLIN",
+    "layers": 3
+   },
+   "Black Orc": {
+    "icon": "BLA_BLACK",
+    "layers": 3
+   },
+   "Trained Troll": {
+    "icon": "BLA_TRAINED",
+    "layers": 3
+   },
+   "Journey Goblin": {
+    "icon": "BLA_GOBLIN",
+    "layers": 3
+   }
+  },
+  "Bretonia": {
+   "Squire": {
+    "icon": "BRE_SQUIRE",
+    "layers": 3
+   },
+   "Knigth Catcher": {
+    "icon": "BRE_CATCHER",
+    "layers": 3
+   },
+   "Knigth Thrower": {
+    "icon": "BRE_THROWER",
+    "layers": 3
+   },
+   "Grial Knigths": {
+    "icon": "BRE_GRIAL",
+    "layers": 3
+   },
+   "Journey Squire": {
+    "icon": "BRE_SQUIRE",
+    "layers": 3
+   }
+  },
+  "Chaos Chosen": {
+   "Beastman Lineman": {
+    "icon": "CHC_BEASTMAN",
+    "layers": 3
+   },
+   "Chaos Chosen": {
+    "icon": "CHC_CHAOS",
+    "layers": 3
+   },
+   "Troll": {
+    "icon": "CHC_TROLL",
+    "layers": 3
+   },
+   "Ogre": {
+    "icon": "CHC_OGRE",
+    "layers": 3
+   },
+   "Minotaur": {
+    "icon": "CHC_MINOTAUR",
+    "layers": 3
+   },
+   "Journey Beastman": {
+    "icon": "CHC_BEASTMAN",
+    "layers": 3
+   }
+  },
+  "Chaos Dwarf": {
+   "Hobgoblin Lineman": {
+    "icon": "CHD_HOBGOBLIN",
+    "layers": 3
+   },
+   "Sneaky Stabba": {
+    "icon": "CHD_SNEAKY",
+    "layers": 3
+   },
+   "Chaos Dwarf Blocker": {
+    "icon": "CHD_CHAOS",
+    "layers": 3
+   },
+   "Flamesmith": {
+    "icon": "CHD_FLAMESMITH",
+    "layers": 3
+   },
+   "Bull Centaur": {
+    "icon": "CHD_BULL",
+    "layers": 3
+   },
+   "Minotaur": {
+    "icon": "CHD_MINOTAUR",
+    "layers": 3
+   },
+   "Journey Hobgoblin Lineman": {
+    "icon": "CHD_HOBGOBLIN",
+    "layers": 3
+   }
+  },
+  "Chaos Renegades": {
+   "Human Renegade": {
+    "icon": "CHR_HUMAN",
+    "layers": 3
+   },
+   "Goblin Renegade": {
+    "icon": "CHR_GOBLIN",
+    "layers": 3
+   },
+   "Orc Renegade": {
+    "icon": "CHR_ORC",
+    "layers": 3
+   },
+   "Skaven Renegade": {
+    "icon": "CHR_SKAVEN",
+    "layers": 3
+   },
+   "Dark Elf Renegade": {
+    "icon": "CHR_DARK",
+    "layers": 3
+   },
+   "Human Thrower Renegade": {
+    "icon": "CHR_HUTHROWER",
+    "layers": 3
+   },
+   "Troll": {
+    "icon": "CHR_TROLL",
+    "layers": 3
+   },
+   "Ogre": {
+    "icon": "CHR_OGRE",
+    "layers": 3
+   },
+   "Minotaur": {
+    "icon": "CHR_MINOTAUR",
+    "layers": 3
+   },
+   "Rat Ogre": {
+    "icon": "CHR_RATOGRE",
+    "layers": 3
+   },
+   "Journey Human Renegade": {
+    "icon": "CHR_HUMAN",
+    "layers": 3
+   }
+  },
+  "Dark Elf": {
+   "Lineman": {
+    "icon": "DEL_LINEMAN",
+    "layers": 3
+   },
+   "Runner": {
+    "icon": "DEL_RUNNER",
+    "layers": 3
+   },
+   "Assassin": {
+    "icon": "DEL_ASSASIN",
+    "layers": 3
+   },
+   "Blitzer": {
+    "icon": "DEL_BLITZER",
+    "layers": 3
+   },
+   "Witch Elf": {
+    "icon": "DEL_WITCH",
+    "layers": 3
+   },
+   "Journey Elf": {
+    "icon": "DEL_LINEMAN",
+    "layers": 3
+   }
+  },
+  "Dwarf": {
+   "Lineman": {
+    "icon": "DWA_LINEMAN",
+    "layers": 3
+   },
+   "Runner": {
+    "icon": "DWA_RUNNER",
+    "layers": 3
+   },
+   "Blitzer": {
+    "icon": "DWA_BLITZER",
+    "layers": 3
+   },
+   "Troll Slayer": {
+    "icon": "DWA_TROLL",
+    "layers": 3
+   },
+   "Deathroller": {
+    "icon": "DWA_DEATHROLLER",
+    "layers": 3
+   },
+   "Journey Lineman": {
+    "icon": "DWA_LINEMAN",
+    "layers": 3
+   }
+  },
+  "Elven Union": {
+   "Lineman": {
+    "icon": "ELV_LINEMAN",
+    "layers": 3
+   },
+   "Thrower": {
+    "icon": "ELV_THROWER",
+    "layers": 3
+   },
+   "Catcher": {
+    "icon": "ELV_CATCHER",
+    "layers": 3
+   },
+   "Blitzer": {
+    "icon": "ELV_BLITZER",
+    "layers": 3
+   },
+   "Journey Elf": {
+    "icon": "ELV_LINEMAN",
+    "layers": 3
+   }
+  },
+  "Goblin": {
+   "Goblin": {
+    "icon": "GOB_GOBLIN",
+    "layers": 3
+   },
+   "Bombardier": {
+    "icon": "GOB_BOMBARDIER",
+    "layers": 3
+   },
+   "Looney": {
+    "icon": "GOB_LOONEY",
+    "layers": 3
+   },
+   "Doom Diver": {
+    "icon": "GOB_DOOM",
+    "layers": 3
+   },
+   "Ooligan": {
+    "icon": "GOB_OOLIGAN",
+    "layers": 3
+   },
+   "Fanatic": {
+    "icon": "GOB_FANATIC",
+    "layers": 3
+   },
+   "Pogoer": {
+    "icon": "GOB_POGOER",
+    "layers": 3
+   },
+   "Troll": {
+    "icon": "GOB_TROLL",
+    "layers": 3
+   },
+   "Journey Goblin": {
+    "icon": "GOB_GOBLIN",
+    "layers": 3
+   }
+  },
+  "Gnome": {
+   "Lineman": {
+    "icon": "GNO_LINEMAN",
+    "layers": 3
+   },
+   "Woodland Fox": {
+    "icon": "GNO_WOODLAND",
+    "layers": 3
+   },
+   "Illusionist": {
+    "icon": "GNO_ILLUSIONIST",
+    "layers": 3
+   },
+   "Beastmaster": {
+    "icon": "GNO_BEASTMASTER",
+    "layers": 3
+   },
+   "Altern Forest Treeman": {
+    "icon": "GNO_TREEMAN",
+    "layers": 3
+   },
+   "Journey Lineman": {
+    "icon": "GNO_LINEMAN",
+    "layers": 3
+   }
+  },
+  "Halfling": {
+   "Halfling Hopeful": {
+    "icon": "HAL_HALFLING",
+    "layers": 3
+   },
+   "Halfling Catcher": {
+    "icon": "HAL_CATCHER",
+    "layers": 3
+   },
+   "Halfling Hefty": {
+    "icon": "HAL_HEFTY",
+    "layers": 3
+   },
+   "Forest Treeman": {
+    "icon": "HAL_TREEMAN",
+    "layers": 3
+   },
+   "Journey Halfling": {
+    "icon": "HAL_HALFLING",
+    "layers": 3
+   }
+  },
+  "High Elf": {
+   "Lineman": {
+    "icon": "HIE_LINEMAN",
+    "layers": 3
+   },
+   "White Lion": {
+    "icon": "HIE_WHITE",
+    "layers": 3
+   },
+   "Phoenix Warrior": {
+    "icon": "HIE_PHOENIX",
+    "layers": 3
+   },
+   "Dragon Prince": {
+    "icon": "HIE_DRAGON",
+    "layers": 3
+   },
+   "Journey Elf": {
+    "icon": "HIE_LINEMAN",
+    "layers": 3
+   }
+  },
+  "Human": {
+   "Lineman": {
+    "icon": "HUM_LINEMAN",
+    "layers": 3
+   },
+   "Halfling Hopeful": {
+    "icon": "HUM_HALFLING",
+    "layers": 3
+   },
+   "Catcher": {
+    "icon": "HUM_CATCHER",
+    "layers": 3
+   },
+   "Thrower": {
+    "icon": "HUM_THROWER",
+    "layers": 3
+   },
+   "Blitzer": {
+    "icon": "HUM_BLITZER",
+    "layers": 3
+   },
+   "Ogre": {
+    "icon": "HUM_OGRE",
+    "layers": 3
+   },
+   "Journeyman": {
+    "icon": "HUM_LINEMAN",
+    "layers": 3
+   }
+  },
+  "Imperial Nobility": {
+   "Imperial Retainer": {
+    "icon": "IMP_RETAINER",
+    "layers": 3
+   },
+   "Imperial Thrower": {
+    "icon": "IMP_THROWER",
+    "layers": 3
+   },
+   "Noble Blitzer": {
+    "icon": "IMP_NOBLE",
+    "layers": 3
+   },
+   "Bodyguard": {
+    "icon": "IMP_BODYGUARD",
+    "layers": 3
+   },
+   "Ogre": {
+    "icon": "IMP_OGRE",
+    "layers": 3
+   },
+   "Journeyman": {
+    "icon": "IMP_RETAINER",
+    "layers": 3
+   }
+  },
+  "Khorne": {
+   "Bloodborn Marauder": {
+    "icon": "KHO_BLOODBORN",
+    "layers": 3
+   },
+   "Khorngor": {
+    "icon": "KHO_KHORNGOR",
+    "layers": 3
+   },
+   "Bloodseeker": {
+    "icon": "KHO_BLOODSEEKER",
+    "layers": 3
+   },
+   "Bloodspawn": {
+    "icon": "KHO_BLOODSPAWN",
+    "layers": 3
+   },
+   "Journey Bloodborn": {
+    "icon": "KHO_BLOODBORN",
+    "layers": 3
+   }
+  },
+  "Lizardman": {
+   "Skink": {
+    "icon": "LIZ_SKINK",
+    "layers": 3
+   },
+   "Chameleon Skink": {
+    "icon": "LIZ_CHAMELEON",
+    "layers": 3
+   },
+   "Saurus": {
+    "icon": "LIZ_SAURUS",
+    "layers": 3
+   },
+   "Kroxigor": {
+    "icon": "LIZ_KROXIGOR",
+    "layers": 3
+   },
+   "Journey Skink": {
+    "icon": "LIZ_SKINK",
+    "layers": 3
+   }
+  },
+  "Necromantic": {
+   "Zombie Lineman": {
+    "icon": "NEC_ZOMBIE",
+    "layers": 3
+   },
+   "Ghoul Runner": {
+    "icon": "NEC_GHOUL",
+    "layers": 3
+   },
+   "Wraith": {
+    "icon": "NEC_WRAITH",
+    "layers": 3
+   },
+   "Flesh Golem": {
+    "icon": "NEC_GOLEM",
+    "layers": 3
+   },
+   "Werewolf": {
+    "icon": "NEC_WEREWOLF",
+    "layers": 3
+   },
+   "Raised Zombie": {
+    "icon": "NEC_ZOMBIE",
+    "layers": 3
+   },
+   "Journey Zombie": {
+    "icon": "NEC_ZOMBIE",
+    "layers": 3
+   }
+  },
+  "Norse": {
+   "Raider Lineman": {
+    "icon": "NOR_RAIDER",
+    "layers": 3
+   },
+   "Beer Boar": {
+    "icon": "NOR_BEER",
+    "layers": 3
+   },
+   "Berserker": {
+    "icon": "NOR_BERSERKER",
+    "layers": 3
+   },
+   "Valkyrie": {
+    "icon": "NOR_VALKYRIE",
+    "layers": 3
+   },
+   "Ulfwerner": {
+    "icon": "NOR_ULFWERNER",
+    "layers": 3
+   },
+   "Yhetee": {
+    "icon": "NOR_YHETEE",
+    "layers": 3
+   },
+   "Journeyman": {
+    "icon": "NOR_RAIDER",
+    "layers": 3
+   }
+  },
+  "Nurgle": {
+   "Rotter": {
+    "icon": "NUR_ROTTER",
+    "layers": 3
+   },
+   "Pestigor": {
+    "icon": "NUR_PESTIGOR",
+    "layers": 3
+   },
+   "Bloater": {
+    "icon": "NUR_BLOATER",
+    "layers": 3
+   },
+   "Rotspawn": {
+    "icon": "NUR_ROTSPAWN",
+    "layers": 3
+   },
+   "Journey Rotter": {
+    "icon": "NUR_ROTTER",
+    "layers": 3
+   }
+  },
+  "Ogre": {
+   "Gnoblar Linemen": {
+    "icon": "OGR_GNOBLAR",
+    "layers": 3
+   },
+   "Ogre Blocker": {
+    "icon": "OGR_BLOCKER",
+    "layers": 3
+   },
+   "Ogre Runt Punter": {
+    "icon": "OGR_PUNTER",
+    "layers": 3
+   },
+   "Journey Gnoblar": {
+    "icon": "OGR_GNOBLAR",
+    "layers": 3
+   }
+  },
+  "Old World Alliance": {
+   "Human Lineman": {
+    "icon": "OWA_HUMLINEA",
+    "layers": 3
+   },
+   "Halfling Hopeful": {
+    "icon": "OWA_HALFLING",
+    "layers": 3
+   },
+   "Human Catcher": {
+    "icon": "OWA_CATCHER",
+    "layers": 3
+   },
+   "Dwarf Lineman": {
+    "icon": "OWA_DWLINEA",
+    "layers": 3
+   },
+   "Human Thrower": {
+    "icon": "OWA_THROWER",
+    "layers": 3
+   },
+   "Dwarf Runner": {
+    "icon": "OWA_DWRUNNER",
+    "layers": 3
+   },
+   "Human Blitzer": {
+    "icon": "OWA_HUMBLITZER",
+    "layers": 3
+   },
+   "Dwarf Blitzer": {
+    "icon": "OWA_DWBLITZER",
+    "layers": 3
+   },
+   "Troll Slayer": {
+    "icon": "OWA_SLAYER",
+    "layers": 3
+   },
+   "Ogre": {
+    "icon": "OWA_OGRE",
+    "layers": 3
+   },
+   "Altern Forest Treeman": {
+    "icon": "OWA_TREEMAN",
+    "layers": 3
+   },
+   "Journeyman": {
+    "icon": "OWA_HUMLINEA",
+    "layers": 3
+   }
+  },
+  "Orcs": {
+   "Lineman": {
+    "icon": "ORC_LINEMAN",
+    "layers": 3
+   },
+   "Goblin": {
+    "icon": "ORC_GOBLIN",
+    "layers": 3
+   },
+   "Thrower": {
+    "icon": "ORC_THROWER",
+    "layers": 3
+   },
+   "Blitzer": {
+    "icon": "ORC_BLITZER",
+    "layers": 3
+   },
+   "Big Un Blocker": {
+    "icon": "ORC_BIG",
+    "layers": 3
+   },
+   "Troll": {
+    "icon": "ORC_TROLL",
+    "layers": 3
+   },
+   "Journey Orc": {
+    "icon": "ORC_LINEMAN",
+    "layers": 3
+   }
+  },
+  "Shambling Undead": {
+   "Skeleton Lineman": {
+    "icon": "SHA_SKELETON",
+    "layers": 3
+   },
+   "Zombie Lineman": {
+    "icon": "SHA_ZOMBIE",
+    "layers": 3
+   },
+   "Ghoul Runner": {
+    "icon": "SHA_GHOUL",
+    "layers": 3
+   },
+   "Wight Blitzer": {
+    "icon": "SHA_WIGHT",
+    "layers": 3
+   },
+   "Mummy": {
+    "icon": "SHA_MUMMY",
+    "layers": 3
+   },
+   "Raised Zombie": {
+    "icon": "SHA_ZOMBIE",
+    "layers": 3
+   },
+   "Skeleton Journeyman": {
+    "icon": "SHA_SKELETON",
+    "layers": 3
+   },
+   "Zombie Journeyman": {
+    "icon": "SHA_ZOMBIE",
+    "layers": 3
+   }
+  },
+  "Slann": {
+   "Lineman": {
+    "icon": "SLA_LINEMAN",
+    "layers": 3
+   },
+   "Catcher": {
+    "icon": "SLA_CATCHER",
+    "layers": 3
+   },
+   "Blitzer": {
+    "icon": "SLA_BLITZER",
+    "layers": 3
+   },
+   "Kroxigor": {
+    "icon": "SLA_KROXIGOR",
+    "layers": 3
+   },
+   "Journey Slann": {
+    "icon": "SLA_LINEMAN",
+    "layers": 3
+   }
+  },
+  "Skaven": {
+   "ClanRat": {
+    "icon": "SKA_CLANRAT",
+    "layers": 3
+   },
+   "Thrower": {
+    "icon": "SKA_THROWER",
+    "layers": 3
+   },
+   "Gutter Runner": {
+    "icon": "SKA_GUTTER",
+    "layers": 3
+   },
+   "Blitzer": {
+    "icon": "SKA_BLITZER",
+    "layers": 3
+   },
+   "Rat Ogre": {
+    "icon": "SKA_RATOGRE",
+    "layers": 3
+   },
+   "Journey ClanRat": {
+    "icon": "SKA_CLANRAT",
+    "layers": 3
+   }
+  },
+  "Tomb King": {
+   "Skeleton Lineman": {
+    "icon": "TOM_SKELETON",
+    "layers": 3
+   },
+   "Tomb King Thrower": {
+    "icon": "TOM_THROWER",
+    "layers": 3
+   },
+   "Tomb King Blitzers": {
+    "icon": "TOM_BLITZER",
+    "layers": 3
+   },
+   "Tomb Guardian": {
+    "icon": "TOM_GUARDIAN",
+    "layers": 3
+   },
+   "Journey Skeleton": {
+    "icon": "TOM_SKELETON",
+    "layers": 3
+   }
+  },
+  "Snotling": {
+   "Snotling": {
+    "icon": "SNO_SNOTLING",
+    "layers": 3
+   },
+   "Fungus Flinga": {
+    "icon": "SNO_FUNGUS",
+    "layers": 3
+   },
+   "Fun-hoppa": {
+    "icon": "SNO_FUN",
+    "layers": 3
+   },
+   "Stilty Runna": {
+    "icon": "SNO_STILTY",
+    "layers": 3
+   },
+   "Pump Wagon": {
+    "icon": "SNO_PUMP",
+    "layers": 3
+   },
+   "Trained Troll": {
+    "icon": "SNO_TRAINED",
+    "layers": 3
+   },
+   "Journey Snotling": {
+    "icon": "SNO_JOURNEY",
+    "layers": 3
+   }
+  },
+  "Underworld Denizens": {
+   "Goblin": {
+    "icon": "UND_GOBLIN",
+    "layers": 3
+   },
+   "Snotling": {
+    "icon": "UND_SNOTLING",
+    "layers": 3
+   },
+   "Skaven Clanrat": {
+    "icon": "UND_SKCLANRAT",
+    "layers": 3
+   },
+   "Skaven Thrower": {
+    "icon": "UND_SKTHROWER",
+    "layers": 3
+   },
+   "Gutter Runner": {
+    "icon": "UND_SKGUTTER",
+    "layers": 3
+   },
+   "Skaven Blitzer": {
+    "icon": "UND_SKBLITZER",
+    "layers": 3
+   },
+   "Troll": {
+    "icon": "UND_TROLL",
+    "layers": 3
+   },
+   "Rat Ogre": {
+    "icon": "UND_RATOGRE",
+    "layers": 3
+   },
+   "Journey Goblin": {
+    "icon": "UND_GOBLIN",
+    "layers": 3
+   }
+  },
+  "Vampire": {
+   "Thrall": {
+    "icon": "VAM_THRALL",
+    "layers": 3
+   },
+   "Vampire Runner": {
+    "icon": "VAM_RUNNER",
+    "layers": 3
+   },
+   "Vampire Thrower": {
+    "icon": "VAM_THROWER",
+    "layers": 3
+   },
+   "Vampire Blitzer": {
+    "icon": "VAM_BLITZER",
+    "layers": 3
+   },
+   "Vargheist": {
+    "icon": "VAM_VARGHEIST",
+    "layers": 3
+   },
+   "Journey Thrall": {
+    "icon": "VAM_THRALL",
+    "layers": 3
+   }
+  },
+  "Elfos Silvanos": {
+   "Lineman": {
+    "icon": "ELF_LINEMAN",
+    "layers": 3
+   },
+   "Thrower": {
+    "icon": "ELF_THROWER",
+    "layers": 3
+   },
+   "Catcher": {
+    "icon": "ELF_CATCHER",
+    "layers": 3
+   },
+   "Wardancer": {
+    "icon": "ELF_WARDANCER",
+    "layers": 3
+   },
+   "Treeman": {
+    "icon": "ELF_TREEMAN",
+    "layers": 3
+   },
+   "Journey Elf": {
+    "icon": "ELF_LINEMAN",
+    "layers": 3
+   }
+  }
+ }
+}

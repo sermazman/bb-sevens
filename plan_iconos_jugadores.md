@@ -25,14 +25,16 @@ Estado: **DISEÑO ACORDADO, SIN CÓDIGO TODAVÍA.** Orden de trabajo: 1) cerrar 
 - Sin ningún color → **rojo / azul** básicos en la capa 3 (local / visitante).
 - Sin icono para ese jugador → **se mantiene la ficha actual** (con `textColor` como ahora).
 
-### Datos de color en los JSON de equipo
+### Datos de color en los JSON de equipo (dos uniformes)
+La app ya tiene **Uniforme Primario** y **Uniforme Secundario** (cada jugador elige cuál ve, solo en su pantalla). El icono pinta el uniforme activo.
 ```
-"color": "#0a0a0a"                  → color primario   → capa 3
-"color_secundary": "#00ff2a"        → color secundario → capa 4
-"textColor" / "textColor_secundary" → se conservan (para las fichas sin icono)
-"color_armadura": (NUEVO)           → veladura de la capa 2 (a implementar; opcional)
+                    Primario                Secundario
+capa 3 (principal)  color                   color_secundary          (ya existen)
+capa 4 (detalle)    color_detalle           color_detalle_secundary  (NUEVO, opcional)
+capa 2 (armadura)   color_armadura          color_armadura_secundary (NUEVO, opcional)
+fichas sin icono    textColor               textColor_secundary      (se conservan)
 ```
-> ⚠️ En tu mensaje ponía "capa 2" para primario y secundario; lo he interpretado como **capa 3 y capa 4** (la 2 es la armadura). Confírmalo.
+Detalle completo y fallbacks en `iconos_en_json_equipo.md`.
 
 ### Calibrado de los grises (importante)
 El método de teñido previsto es **multiplicar**. Con multiplicación, un gris oscuro oscurece mucho el color. `UND_TROLL_3.png` usa grises entre 32 y 116 (y alguno a 175/255): con un color como `#00ff2a` saldría muy apagado. Antes de dibujar todas las razas hay que **probar esta imagen con 2-3 colores** y decidir: (a) que las luces de las capas 3/4 lleguen cerca de 255 y las sombras no bajen de ~100, o (b) que la app normalice el brillo al teñir. Decidir tras la primera prueba.

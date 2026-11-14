@@ -1470,7 +1470,7 @@ async function buildMatchImages(o){
   if(!unplayed){
     const sH=H_.m.statistics||{}, rows=[
       ['HERIDOS LEVES',sH.lightInjuriesFor,sH.lightInjuriesAgainst],['HERIDOS GRAVES',sH.seriousInjuriesFor,sH.seriousInjuriesAgainst],
-      ['MUERTOS',sH.deathsFor,sH.deathsAgainst],['EXPULSADOS',sH.sentOffFor,sH.sentOffAgainst],['CALAVERAS',sH.skullsFor,sH.skullsAgainst]];
+      ['MUERTOS',sH.deathsFor,sH.deathsAgainst],['EXPULSADOS',sH.sentOffFor,sH.sentOffAgainst],['CALAVERUNOS',(sH.skullsFor||0)+(sH.onesFor||0),(sH.skullsAgainst||0)+(sH.onesAgainst||0)]];
     let y=980; g1.strokeStyle=LINE; g1.lineWidth=2;
     rows.forEach(([lab,a,b])=>{
       a=a||0; b=b||0; g1.beginPath(); g1.moveTo(120,y-52); g1.lineTo(W-120,y-52); g1.stroke();

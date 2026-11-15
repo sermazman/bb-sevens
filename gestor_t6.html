@@ -1292,7 +1292,7 @@ function renderMatchList(){
     ${es.length?es.map(e=>{ const m=e.home.m, nj=m.result.outcome==='unplayed', hn=e.home.t.name, an=e.away?e.away.t.name:m.opponent.teamName;
       const res=nj?'NJ':(m.homeAway==='home'?`${m.result.teamScore} - ${m.result.opponentScore}`:`${m.result.opponentScore} - ${m.result.teamScore}`);
       return `<div class="card"><h3>${esc(e.id)} · ${esc(roundLabel(e.round))} · ${esc(hn)} <span class="res">${res}</span> ${esc(an)}</h3>
-        ${e.why?`<p class="hint warn">Bloqueado: ${esc(e.why)}.</p>`:`<div class="actions"><button class="btn primary" type="button" data-medit="${esc(e.key)}">Editar</button><button class="btn" type="button" data-mundo="${esc(e.key)}">Deshacer</button><button class="btn" type="button" data-mig="${esc(e.id)}">Imagen para Instagram</button></div>`}${e.why?`<div class="actions"><button class="btn" type="button" data-mig="${esc(e.id)}">Imagen para Instagram</button></div>`:''}</div>`; }).join(''):'<div class="empty">Todavía no hay partidos registrados en esta temporada.</div>'}`;
+        ${e.why?`<p class="hint warn">Bloqueado: ${esc(e.why)}.</p>`:`<div class="actions"><button class="btn primary" type="button" data-medit="${esc(e.key)}">Editar</button><button class="btn" type="button" data-mundo="${esc(e.key)}">Deshacer</button><button class="btn" type="button" data-mig="${esc(e.key)}">Imagen para Instagram</button></div>`}${e.why?`<div class="actions"><button class="btn" type="button" data-mig="${esc(e.key)}">Imagen para Instagram</button></div>`:''}</div>`; }).join(''):'<div class="empty">Todavía no hay partidos registrados en esta temporada.</div>'}`;
 }
 /* busca en el historial de GitHub el commit que registró el partido y devuelve el archivo tal como estaba justo antes */
 async function mvBeforeState(t,id){
@@ -1383,9 +1383,11 @@ async function igLoadImg(path,fallbackUrl){
   const url=URL.createObjectURL(new Blob([blob],{type:blob.type||'image/png'}));
   return await new Promise(ok=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=()=>ok(null); i.src=url; });
 }
-async function mvInstagram(id){
-  let e=mvMatchEntries().find(x=>x.id===id);
-  if(!e||!e.away){ try{ await mvLoadTeams(); }catch(err){} e=mvMatchEntries().find(x=>x.id===id); }
+async function mvInstagram(sel){
+  /* sel = {key} (lista de partidos) o {id,home,away} (recién registrado): un mismo id (T6-J01) lo comparten varios partidos */
+  const find=()=>mvMatchEntries().find(x=>sel.key?x.key===sel.key:(x.id===sel.id&&x.away&&x.home.t.name===sel.home&&x.away.t.name===sel.away));
+  let e=find();
+  if(!e||!e.away){ try{ await mvLoadTeams(); }catch(err){} e=find(); }
   if(!e||!e.away){ toast('No encuentro ese partido en la carpeta de la liga.'); return; }
   toast('Preparando imágenes…');
   try{
@@ -1393,10 +1395,10 @@ async function mvInstagram(id){
       return {name:s.t.name,race:d.race||'',color:d.color,m:s.m,logo:lg?await igLoadImg(s.t.path.replace(/[^/]+$/,'')+lg,ghFolder(ghSettings())+'/'+lg):null}; };
     const [h,a,ll]=await Promise.all([side(e.home),side(e.away),igLoadImg('logoBB7.png','logoBB7.png')]);
     const imgs=await buildMatchImages({season:e.home.t.doc.league.season,id:e.id,roundLabel:roundLabel(e.round),home:h,away:a,leagueLogo:ll,statLabel:STAT_IMP_LABEL});
-    igShow(e.id,imgs);
+    igShow(e.id,imgs,`${e.id}_${slug(h.name)}-${slug(a.name)}`);
   }catch(err){ toast('No se pudieron crear las imágenes: '+err.message); }
 }
-function igShow(id,imgs){
+function igShow(id,imgs,fname){
   const urls=imgs.map(c=>c.toDataURL('image/png')), nm=['resultado','protagonistas','protagonistas2'];
   const old=document.getElementById('igModal'); if(old) old.remove();
   const d=document.createElement('div'); d.id='igModal';
@@ -1406,7 +1408,7 @@ function igShow(id,imgs){
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px">${urls.map((u,i)=>`<div><img src="${u}" style="width:100%;border-radius:8px;display:block"><button class="btn" type="button" data-igdl="${i}" style="margin-top:6px;width:100%">Descargar ${i+1} (${nm[i]||'imagen'})</button></div>`).join('')}</div>
     <p class="hint">1080×1350 px (4:5). Súbelas a Instagram como publicación normal, en este orden.</p></div>`;
   document.body.appendChild(d);
-  const dl=i=>{ const a=document.createElement('a'); a.href=urls[i]; a.download=`${id}_${i+1}_${nm[i]||'imagen'}.png`; document.body.appendChild(a); a.click(); a.remove(); };
+  const dl=i=>{ const a=document.createElement('a'); a.href=urls[i]; a.download=`${fname||id}_${i+1}_${nm[i]||'imagen'}.png`; document.body.appendChild(a); a.click(); a.remove(); };
   d.addEventListener('click',ev=>{ if(ev.target.id==='igClose'||ev.target===d) d.remove();
     const b=ev.target.closest('[data-igdl]'); if(b) dl(+b.dataset.igdl);
     if(ev.target.id==='igAll') urls.forEach((u,i)=>setTimeout(()=>dl(i),i*400)); });
@@ -1505,12 +1507,12 @@ async function buildMatchImages(o){
   function layout(r){
     const nameMax=r.spp?CW-225:CW-100; let size=32, lines=null;
     for(;size>=28;size-=2){ mg.font=`500 ${size}px ${FU}`; if(mg.measureText(r.name).width<=nameMax){ lines=[r.name]; break; } }
-    if(!lines){ size=28; mg.font=`500 ${size}px ${FU}`; lines=[]; let cur='';
+    let wrapped=false; if(!lines){ wrapped=true; size=28; mg.font=`500 ${size}px ${FU}`; lines=[]; let cur='';
       const lim=()=>CW-100;
       r.name.split(/\s+/).forEach(wd=>{ const t=cur?cur+' '+wd:wd; if(mg.measureText(t).width<=lim()||!cur) cur=t; else { lines.push(cur); cur=wd; } });
       if(cur) lines.push(cur);
       lines=lines.map(l=>ell(mg,l,CW-100)); }
-    const inl=r.spp&&lines.length>1;
+    const inl=!!(r.spp&&wrapped);
     const items=[]; if(inl) items.push({txt:'+'+r.spp+' SPP',green:true}); if(r.acts) items.push({txt:r.acts});
     r.tags.forEach(tg=>items.push({tag:tg}));
     const maxX=CW-8; let x=22, line=0; const place=[];
@@ -1606,8 +1608,8 @@ function mvClick(e){
   if(t.closest('#mvBack')){ backToTeam(); return true; }
   if(t.closest('#mvNJ')){ mvUnplayed(); return true; }
   if(t.closest('#mvList')){ renderMatchList(); return true; }
-  if(t.closest('#mvIg')){ mvInstagram(mv.last.id); return true; }
-  { const b=t.closest('[data-mig]'); if(b){ mvInstagram(b.dataset.mig); return true; } }
+  if(t.closest('#mvIg')){ mvInstagram({id:mv.last.id,home:mv.last.home,away:mv.last.away}); return true; }
+  { const b=t.closest('[data-mig]'); if(b){ mvInstagram({key:b.dataset.mig}); return true; } }
   if(t.closest('#mvListBack')){ mv.editing=null; renderMatchView(); return true; }
   { const b=t.closest('[data-medit]'); if(b){ mvStartEdit(b.dataset.medit,'edit'); return true; } }
   { const b=t.closest('[data-mundo]'); if(b){ mvStartEdit(b.dataset.mundo,'undo'); return true; } }

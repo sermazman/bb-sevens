@@ -15,7 +15,7 @@
   --team-b:#2a6fb0;
   --good:#5aa469;
   --bad:#c0392b;
-  --cell:34px;
+  --cell:38px;
 }
 *{box-sizing:border-box;}
 body{
@@ -28,7 +28,7 @@ body{
 }
 h1,h2,h3{font-family:'Anton', sans-serif; letter-spacing:0.5px; margin:0;}
 .mono{font-family:'JetBrains Mono', monospace;}
-.wrap{max-width:1400px; margin:0 auto;}
+.wrap{max-width:1560px; margin:0 auto;}
 
 /* ---- Header ---- */
 header.top{
@@ -343,7 +343,7 @@ button.full{width:100%; margin-top:6px;}
   position:absolute; inset:2.5px;
   border-radius:50%;
   display:flex; align-items:center; justify-content:center;
-  font-family:'JetBrains Mono'; font-weight:800; font-size:11px; color:#fff;
+  font-family:'JetBrains Mono'; font-weight:800; font-size:13px; color:#fff;
   border:2px solid rgba(0,0,0,0.4);
   cursor:pointer;
   box-shadow:0 2px 3px rgba(0,0,0,0.5);
@@ -663,7 +663,7 @@ button.full{width:100%; margin-top:6px;}
 .conn-dot.on{background:var(--good);}
 
 /* --- Versión del archivo (para el badge de verificación en el pie) --- */
-:root{ --css-version: "S_V72"; }
+:root{ --css-version: "S_V73"; }
 
 /* ---- Iconos dorados (se tiñen con el color del marcador mediante máscara) ---- */
 .gold-icon{display:inline-block; width:18px; height:18px; vertical-align:middle; background:var(--gold);
@@ -861,7 +861,7 @@ button.full{width:100%; margin-top:6px;}
 /* ---- Orientación del tablero: --rot = giro del plano; todo lo de dentro se contra-gira para seguir legible ---- */
 .pitch-wrap.ori-a{ --rot:-90deg; }
 .pitch-wrap.ori-b{ --rot:90deg; }
-.pitch-wrap.ori-a, .pitch-wrap.ori-b{ width:480px; height:790px; padding:0; overflow:visible; }
+.pitch-wrap.ori-a, .pitch-wrap.ori-b{ width:520px; height:850px; padding:0; overflow:visible; }
 .pitch-wrap.ori-a .pitch, .pitch-wrap.ori-b .pitch{ position:absolute; left:50%; top:50%; margin:0; }
 /* 2D */
 .pitch-wrap.ori-a:not(.view3d) .pitch, .pitch-wrap.ori-b:not(.view3d) .pitch{ transform:translate(-50%,-50%) rotate(var(--rot)); }
@@ -958,3 +958,60 @@ button.full{width:100%; margin-top:6px;}
 #protegerBar{ position:fixed; left:50%; bottom:14px; transform:translateX(-50%); z-index:950; background:#1c1f26; color:#fff; border:2px solid var(--gold,#d4a017); border-radius:10px; padding:8px 14px; align-items:center; gap:12px; font-weight:700; }
 .cell.proteger-cell{ outline:3px solid #3ddc84; outline-offset:-3px; cursor:pointer; }
 .pp-zone{ position:absolute; inset:0; pointer-events:none; z-index:1; background:repeating-linear-gradient(45deg, rgba(230,60,50,0.30) 0 4px, transparent 4px 9px); }
+
+
+/* ===== Maquetación v3 (W_V65 / S_V73) ===== */
+#appScaleBox{ width:100%; }
+#appScale{ transform-origin:top left; }
+header.top-v3{ display:grid; grid-template-columns:315px minmax(0,1fr) 315px; align-items:start; gap:16px; }
+header.top-v3 .top-left{ display:flex; flex-direction:column; align-items:flex-start; gap:10px; }
+header.top-v3 .top-score .scoreboard{ margin-bottom:0; }
+header.top-v3 .header-right{ white-space:normal; text-align:center; align-self:center; }
+.app-v3{ max-width:1560px; margin:0 auto; display:grid; grid-template-columns:315px minmax(0,1fr) 315px; gap:16px; align-items:start; }
+.app-v3 .side-bench-col{ display:flex; flex-direction:column; gap:14px; }
+.app-v3 .side-bench-col > .panel, .app-v3 .side-bench-col > .team-wide-panel{ margin-bottom:0; }
+.v3-bottom{ grid-column:1 / -1; display:grid; grid-template-columns:minmax(0,3fr) minmax(0,2fr); gap:14px; }
+.v3-bottom .panel{ margin-bottom:0; }
+.v3-bottom .hist{ max-height:240px; }
+.v3-tools{ grid-column:2; }
+.chat-log{ height:200px; overflow-y:auto; background:#100e0c; border:1px solid var(--panel-line); border-radius:4px; padding:6px 8px; font-size:12px; }
+.chat-row{ display:flex; gap:8px; margin-top:8px; }
+.chat-row input{ margin-bottom:0; }
+.chat-row button{ width:auto; margin-top:0; }
+/* banquillo: solo fichas / iconos */
+.bench-box{ min-height:400px; display:flex; flex-direction:column; border-width:2px; }
+.bench-grid{ display:grid; grid-template-columns:repeat(auto-fill, 44px); gap:12px 8px; align-content:start; justify-content:center; margin-top:4px; flex:1; }
+.bench-tok{ position:relative; width:44px; height:44px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.bench-tok .token-chip{ width:38px; height:38px; font-size:14px; cursor:pointer; }
+.bench-tok.on-pitch{ opacity:0.4; }
+.bench-tok.picking .token-chip{ outline:2px solid var(--gold); outline-offset:2px; }
+.bench-tok .bt-x{ display:none; position:absolute; top:-5px; left:-5px; width:15px; height:15px; border-radius:50%; background:#1c1712; color:#a99b7f; border:1px solid var(--panel-line); font-size:10px; line-height:1; align-items:center; justify-content:center; z-index:4; }
+.bench-tok:hover .bt-x{ display:flex; }
+.bench-tok .bt-x:hover{ color:#fff; background:var(--bad); }
+.bench-tok .bt-cond{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono'; font-weight:800; font-size:16px; color:var(--gold); text-shadow:1px 1px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000; pointer-events:none; }
+.bench-tok .bt-vet{ position:absolute; top:-4px; right:-3px; width:14px; height:14px; pointer-events:none; }
+.bench-tok .bt-vet img{ width:100%; height:100%; display:block; filter:drop-shadow(0 1px 1px rgba(0,0,0,.8)); }
+.bench-tok .bt-vet.used{ filter:grayscale(1); opacity:.5; }
+.bench-tok .bt-dagger{ position:absolute; bottom:-4px; right:-4px; width:16px; height:16px; pointer-events:none; filter:drop-shadow(1px 0 0 #000) drop-shadow(-1px 0 0 #000); }
+.bench-tok .bt-dagger .gold-icon{ width:16px; height:16px; background:#ffd24a; }
+.bench-tok .bt-knuck{ position:absolute; bottom:0; right:-2px; width:9px; height:9px; border-radius:50%; background:#9a9a9a; border:1.5px solid #000; pointer-events:none; }
+.bench-tok .bt-cap{ position:absolute; bottom:-4px; left:-3px; width:14px; height:14px; border-radius:50%; background:var(--gold); color:#1c1712; font-size:9px; font-weight:900; display:flex; align-items:center; justify-content:center; border:1px solid #000; pointer-events:none; }
+.bench-tok .bt-wx{ position:absolute; top:-5px; left:-4px; font-size:13px; line-height:1; pointer-events:none; filter:drop-shadow(0 1px 1px #000); }
+.bench-tok .bt-wx .gold-icon{ width:14px; height:14px; }
+.bench-bajas{ margin-top:12px; padding-top:8px; border-top:2px solid var(--gold); }
+.bench-bajas h3{ margin-top:0; }
+/* paneles de jugador seleccionado (uno por equipo) */
+.sel-panel .sel-body{ font-size:12px; min-height:84px; color:#cfc3a8; }
+.sel-panel.a{ border-color:var(--team-a); } .sel-panel.b{ border-color:var(--team-b); }
+.sel-panel.is-selected{ box-shadow:0 0 0 1px var(--gold); }
+.sel-name{ font-weight:700; font-size:14px; color:var(--paper); }
+.sel-name span{ color:#a99b7f; font-weight:400; font-size:11.5px; }
+.sel-pos{ color:#a99b7f; font-size:11.5px; margin:2px 0 4px 0; }
+.sel-stats{ display:grid; grid-template-columns:repeat(5,1fr); gap:3px; text-align:center; margin:6px 0; }
+.sel-stats div{ background:#100e0c; border:1px solid var(--panel-line); border-radius:4px; padding:3px 0; }
+.sel-stats b{ display:block; color:var(--gold); font-size:14px; }
+.sel-stats i{ display:block; font-style:normal; font-size:9px; color:#a99b7f; }
+.sel-skills{ font-size:11.5px; font-style:italic; color:#8a7d64; }
+.sel-flags{ font-size:11.5px; margin-top:4px; }
+.load-panel .team-name-input{ margin-bottom:8px; }
+.load-panel .row{ display:flex; gap:8px; } .load-panel .row button{ flex:1; }

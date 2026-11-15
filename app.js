@@ -1354,12 +1354,79 @@ function leagueMismatchProceed(){
   if(c) applyImportedTeamGuarded(c.team, c.data, 'diff', c.res);
 }
 
+function updateLoadPanels(){
+  ['A','B'].forEach(t=>{
+    const has = players.some(p=>p.team===t);
+    const ctl = document.getElementById('loadCtl'+t), del = document.getElementById('delCtl'+t);
+    if(ctl) ctl.style.display = has ? 'none' : '';
+    if(del) del.style.display = has ? '' : 'none';
+  });
+}
+function selPanelPlayer(team){
+  const byId = id => (id!=null ? players.find(x=>x.id===id) : null);
+  const ids = [selected];
+  if(typeof pendingPush!=='undefined' && pendingPush) ids.push(pendingPush.attackerId, pendingPush.defenderId);
+  if(typeof activeBlock!=='undefined' && activeBlock) ids.push(activeBlock.attackerId, activeBlock.defenderId);
+  if(typeof pendingFollowUp!=='undefined' && pendingFollowUp) ids.push(pendingFollowUp.attackerId, pendingFollowUp.defenderId);
+  if(typeof pendingFoulContext!=='undefined' && pendingFoulContext) ids.push(pendingFoulContext.foulerId, pendingFoulContext.targetId);
+  if(blockTargeting!==null) ids.push(blockTargeting);
+  if(blitzActivePlayer!==null) ids.push(blitzActivePlayer);
+  if(remoteSelected!==null) ids.push(remoteSelected);
+  for(const id of ids){ const p = byId(id); if(p && p.team===team) return p; }
+  return null;
+}
+function selPanelHtml(p){
+  const cond = p.condition==='tumbado' ? '<span style="color:var(--bad)">TUMBADO</span>'
+             : p.condition==='aturdido' ? '<span style="color:var(--bad)">ATURDIDO</span>'
+             : p.condition==='despistado' ? '<span style="color:var(--gold)">DESPISTADO</span>' : '';
+  const flags = [cond,
+    (blitzActivePlayer===p.id) ? '<span style="color:var(--gold)">⚡ BLITZ EN CURSO</span>' : '',
+    p.freePushOverride ? '<span style="color:var(--gold)">🔓 EMPUJE LIBRE</span>' : '',
+    ((p.gfiUsed??0)>0) ? 'A por ellos '+p.gfiUsed+'/'+maxGfiFor(p) : '',
+    (ball.carrierId===p.id) ? ballImgHtml() + ' lleva el balón' : ''].filter(Boolean).join(' · ');
+  const prayLeft = (p.prayerSkills || []).slice();
+  const skillsText = (p.skills && p.skills.length) ? p.skills.map(sk=>{ const k = prayLeft.indexOf(sk); if(k>=0){ prayLeft.splice(k,1); return '<u title="Ganada por Plegaria a Nuffle">' + sk + '</u>'; } return sk; }).join(', ') : 'Sin habilidades';
+  return `<div class="sel-name">${p.name} <span>#${p.num}</span></div>
+    <div class="sel-pos">${p.position || 'Sin posición'}</div>
+    <div class="sel-stats"><div><b>${p.ma ?? '-'}</b><i>MA</i></div><div><b>${p.st ?? '-'}</b><i>ST</i></div><div><b>${p.ag ?? '-'}</b><i>AG</i></div><div><b>${p.pa ?? '-'}</b><i>PA</i></div><div><b>${p.av ?? '-'}</b><i>AV</i></div></div>
+    ${p.onPitch ? '<div class="sel-flags">MA restante ' + (p.remainingMove ?? p.ma) + '</div>' : ''}
+    <div class="sel-skills">${skillsText}</div>
+    ${flags ? '<div class="sel-flags">'+flags+'</div>' : ''}`;
+}
+// Escalado automático: la página se reduce para caber en pantallas más estrechas que el diseño (1560 px)
+const DESIGN_W = 1560;
+function fitScale(){
+  const box = document.getElementById('appScaleBox'), root = document.getElementById('appScale');
+  if(!box || !root) return;
+  const avail = box.clientWidth || (document.documentElement.clientWidth - 36);
+  const k = Math.max(0.4, Math.min(1, avail / DESIGN_W));
+  if(k >= 0.999){ root.style.transform=''; root.style.width=''; box.style.height=''; return; }
+  root.style.width = DESIGN_W + 'px';
+  root.style.transform = 'scale(' + k + ')';
+  box.style.height = Math.ceil(root.offsetHeight * k) + 'px';
+}
+window.addEventListener('resize', ()=>{ try{ fitScale(); }catch(e){} });
+window.addEventListener('load', ()=>{ try{ fitScale(); if(window.ResizeObserver){ new ResizeObserver(()=>{ try{ fitScale(); }catch(e){} }).observe(document.getElementById('appScale')); } }catch(e){} });
+function askConfirm(title, text, okLabel, onOk){
+  const m = document.getElementById('confirmModal');
+  if(!m){ if(confirm(text)) onOk(); return; }
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmText').textContent = text;
+  const ok = document.getElementById('confirmOkBtn'), cancel = document.getElementById('confirmCancelBtn');
+  ok.textContent = okLabel || 'Aceptar';
+  const close = ()=>{ m.classList.remove('show'); };
+  ok.onclick = ()=>{ close(); onOk(); };
+  cancel.onclick = close;
+  m.classList.add('show');
+}
 function clearTeam(team){
   { const rs = document.getElementById('rosterSel' + team); if(rs) rs.value = ''; }
   const count = players.filter(p=>p.team===team).length;
-  if(count===0 && !teamCustomColor[team] && !teamStaff[team] && teamRace[team]==='' ){ alert('Ese equipo ya está vacío.'); return; }
+  if(count===0 && !teamCustomColor[team] && !teamStaff[team] && teamRace[team]==='' ){ askConfirm('Equipo vacío', 'Ese equipo ya está vacío.', 'Entendido', ()=>{}); return; }
   const oldName = teamName(team);
-  if(!confirm(`¿Borrar los ${count} jugadores de ${oldName} y restablecer nombre/colores/raza a los valores por defecto? Esta acción no se puede deshacer.`)) return;
+  askConfirm('Borrar equipo', `¿Borrar los ${count} jugadores de ${oldName} y restablecer nombre/colores/raza a los valores por defecto? Esta acción no se puede deshacer.`, '🗑️ Borrar', ()=>doClearTeam(team, oldName));
+}
+function doClearTeam(team, oldName){
   players = players.filter(p=>p.team!==team);
   if(selected!==null && !players.some(p=>p.id===selected)) selected = null;
   if(ball.carrierId!==null && !players.some(p=>p.id===ball.carrierId)) ball.carrierId = null;
@@ -1467,39 +1534,38 @@ function renderRosters(){
     const retired = ['ko','injured','injuredGrave','dead','expelled'];
     players.filter(p=>p.team===team && !retired.includes(p.condition)).forEach(p=>{
       const div = document.createElement('div');
-      div.className = 'roster-item' + (p.onPitch ? ' on-pitch' : '') + (placing===p.id ? ' picking':'');
-      const posText = p.position || 'Sin posición';
-      const condTag = p.condition==='tumbado' ? `<span class="downed-tag">TUMBADO</span>`
-                     : p.condition==='aturdido' ? `<span class="downed-tag">ATURDIDO</span>`
-                     : p.condition==='despistado' ? `<span class="downed-tag">DESPISTADO</span>` : '';
-      const heatTag = p.indigestOut ? `<span class="ri-weather" title="Indigestión: encerrado en la letrina el resto de la entrada">🤢 LETRINA</span>` : p.resaca ? `<span class="ri-weather" title="Resaca: no puede jugar la primera entrada"><span class="gold-icon" style="--icon:url('icons/calor_asfixiante.png')"></span>RESACA</span>` : p.heatRest ? `<span class="ri-weather" title="Descansa por Calor Asfixiante: no se puede colocar esta entrada"><span class="gold-icon" style="--icon:url('icons/calor_asfixiante.png')"></span>DESCANSA</span>` : '';
-      const frogTag = p.frog ? '<span class="ri-weather" title="Rana hasta el final de la entrada"><span class="gold-icon" style="--icon:url(\'icons/rana.png\'); background:' + tokenColorFor(p) + '"></span>RANA</span>' : '';
-      const prayLeft = (p.prayerSkills || []).slice();
-      const skillsText = (p.skills && p.skills.length) ? p.skills.map(sk=>{ const k = prayLeft.indexOf(sk); if(k>=0){ prayLeft.splice(k,1); return '<u title="Ganada por Plegaria a Nuffle">' + sk + '</u>'; } return sk; }).join(', ') : 'Sin habilidades';
-      const pkS = p.prayerSkills || [];
-      const prayTag = (pkS.some(x=>/apu[ñn]alar|stab/i.test(String(x))) ? '<span class="ri-dagger" title="Puñal: Apuñalar hasta el final del partido"><span class="gold-icon" style="--icon:url(\'icons/daga.png\')"></span></span>' : '') +
-                      (pkS.some(x=>/golpe mort|mighty|nudiller/i.test(String(x))) ? '<span class="ri-knuckles" title="Nudilleras: Golpe mortífero hasta el final del partido"></span>' : '');
-      const vetTag = playerHasSkill(p, 'veterano', 'veteran') ? `<span class="ri-vet${p.veteranoUsedThisMatch ? ' used' : ''}" title="Veterano${p.veteranoUsedThisMatch ? ' (ya usado)' : ''}"><img src="icons/veterano.png" alt="Veterano" onerror="this.outerHTML='<span>⭐</span>'"></span>` : '';
+      div.className = 'bench-tok' + (p.onPitch ? ' on-pitch' : '') + (placing===p.id ? ' picking':'');
+      const extra = (p.condition==='tumbado' ? 'TUMBADO' : p.condition==='aturdido' ? 'ATURDIDO' : p.condition==='despistado' ? 'DESPISTADO' : '') +
+        (p.indigestOut ? ' 🤢 LETRINA: encerrado el resto de la entrada' : p.resaca ? ' RESACA: no puede jugar la primera entrada' : p.heatRest ? ' DESCANSA por Calor Asfixiante' : '') +
+        (p.frog ? ' RANA hasta el final de la entrada' : '');
+      div.title = playerTooltipText(p, extra.trim());
       const posBorder = positionBorderColor(p);
-      const numBorderStyle = posBorder ? ('border-color:'+posBorder+';') : '';
-      div.innerHTML = `
-        <div class="ri-row1">
-          <span class="num" style="background:${tokenColorFor(p)}; color:${textColorFor(p)}; ${numBorderStyle}">${p.num}</span>
-          <span class="pname">${p.name}</span>${isCaptain(p) ? '<span class="cap-mini" title="Capitán">C</span>' : ''}
-          <span class="pos">${posText}</span>
-          ${vetTag}${prayTag}${frogTag}${condTag}${heatTag}
-          <button class="rm-btn" title="Eliminar" onclick="removePlayer(${p.id}, event)">✕</button>
-        </div>
-        <div class="ri-row2 mono">MA ${p.ma ?? '-'} · ST ${p.st ?? '-'} · AG ${p.ag ?? '-'} · PA ${p.pa ?? '-'} · AV ${p.avBoost ? '<span class="av-boost" title="+1 AR por Músculos de hierro">' + p.av + '</span>' : (p.av ?? '-')}</div>
-        <div class="ri-row3">${skillsText}</div>`;
+      const borderStyle = posBorder ? ('border-color:'+posBorder+';') : '';
+      let html = `<div class="token-chip" style="background:${tokenColorFor(p)}; color:${textColorFor(p)}; ${borderStyle}">${p.num}</div>`;
+      if(p.condition==='tumbado' || p.condition==='aturdido' || p.condition==='despistado'){
+        html += `<div class="bt-cond">${p.condition==='tumbado' ? 'T' : p.condition==='aturdido' ? 'A' : 'D'}</div>`;
+      }
+      if(playerHasSkill(p, 'veterano', 'veteran')){
+        html += `<div class="bt-vet${p.veteranoUsedThisMatch ? ' used' : ''}" title="Veterano${p.veteranoUsedThisMatch ? ' (ya usado)' : ''}"><img src="icons/veterano.png" alt="Veterano" onerror="this.outerHTML='<span>⭐</span>'"></div>`;
+      }
+      const pkS = p.prayerSkills || [];
+      if(pkS.some(x=>/apu[ñn]alar|stab/i.test(String(x)))) html += `<div class="bt-dagger" title="Puñal: Apuñalar hasta el final del partido"><span class="gold-icon" style="--icon:url('icons/daga.png')"></span></div>`;
+      if(pkS.some(x=>/golpe mort|mighty|nudiller/i.test(String(x)))) html += `<div class="bt-knuck" title="Nudilleras: Golpe mortífero hasta el final del partido"></div>`;
+      if(isCaptain(p)) html += `<div class="bt-cap" title="Capitán">C</div>`;
+      if(p.indigestOut) html += `<div class="bt-wx" title="Indigestión: encerrado en la letrina el resto de la entrada">🤢</div>`;
+      else if(p.resaca || p.heatRest) html += `<div class="bt-wx" title="${p.resaca ? 'Resaca: no puede jugar la primera entrada' : 'Descansa por Calor Asfixiante: no se puede colocar esta entrada'}"><span class="gold-icon" style="--icon:url('icons/calor_asfixiante.png')"></span></div>`;
+      else if(p.frog) html += `<div class="bt-wx" title="Rana hasta el final de la entrada"><span class="gold-icon" style="--icon:url('icons/rana.png'); background:${tokenColorFor(p)}"></span></div>`;
+      html += `<button class="bt-x" title="Eliminar jugador" onclick="removePlayer(${p.id}, event)">✕</button>`;
+      div.innerHTML = html;
       div.onclick = (e)=>{
-        if(e.target.classList.contains('rm-btn')) return;
+        if(e.target.classList.contains('bt-x')) return;
         if(!p.onPitch){ placeOnPitch(p.id); }
         else if(phase==='live'){ selectPlayerLive(p.id); }
       };
       el.appendChild(div);
     });
   });
+  try{ updateLoadPanels(); }catch(e){ console.error(e); }
   renderReserveZone();
   renderStaffPanels();
   try{ renderAdminInc(); }catch(e){ console.error(e); }
@@ -4295,16 +4361,18 @@ function selectPlayerLive(id){
 }
 
 function renderSelInfo(){
-  const elLeft = document.getElementById('selInfoLeft');
-  const elRight = document.getElementById('selInfoRight');
+  ['A','B'].forEach(t=>{
+    const el = document.getElementById('selBody'+t); if(!el) return;
+    const q = selPanelPlayer(t);
+    el.innerHTML = q ? selPanelHtml(q) : 'Ninguno';
+    const pan = document.getElementById('selPanel'+t); if(pan) pan.classList.toggle('is-selected', !!q && q.id===selected);
+  });
   const blockBtn = document.getElementById('blockBtn');
   const blitzBtn = document.getElementById('blitzBtn');
   const despBtn = document.getElementById('despistadoBtn');
   const freePushBtn = document.getElementById('freePushBtn');
   const jumpUpBtn = document.getElementById('jumpUpBtn');
   if(selected===null){
-    elLeft.innerHTML = 'Ninguno';
-    elRight.innerHTML = '';
     blockBtn.style.display = 'none';
     blitzBtn.style.display = 'none';
     despBtn.style.display = 'none';
@@ -4314,8 +4382,6 @@ function renderSelInfo(){
   }
   const p = players.find(x=>x.id===selected);
   if(!p){
-    elLeft.innerHTML = 'Ninguno';
-    elRight.innerHTML = '';
     blockBtn.style.display = 'none';
     blitzBtn.style.display = 'none';
     despBtn.style.display = 'none';
@@ -4323,20 +4389,6 @@ function renderSelInfo(){
     jumpUpBtn.style.display = 'none';
     return;
   }
-  const condLabel = p.condition==='tumbado' ? ' · <span style="color:var(--bad)">TUMBADO</span>'
-                   : p.condition==='aturdido' ? ' · <span style="color:var(--bad)">ATURDIDO</span>'
-                   : p.condition==='despistado' ? ' · <span style="color:var(--gold)">DESPISTADO</span>' : '';
-  const blitzLabel = (blitzActivePlayer===p.id) ? ' · <span style="color:var(--gold)">⚡ BLITZ EN CURSO</span>' : '';
-  const freePushLabel = p.freePushOverride ? ' · <span style="color:var(--gold)">🔓 EMPUJE LIBRE</span>' : '';
-  const skillsText = (p.skills && p.skills.length) ? p.skills.join(', ') : 'Sin habilidades';
-  elLeft.innerHTML = `
-    <div style="font-weight:700; font-size:14px; margin-bottom:4px;">${p.name} <span style="color:#a99b7f; font-weight:400;">#${p.num} · ${teamName(p.team)}</span></div>
-    <div style="color:#a99b7f; font-size:11.5px; margin-bottom:4px;">${p.position || 'Sin posición'}</div>
-    <div>${(p.gfiUsed??0)>0?'A por ellos '+p.gfiUsed+'/'+maxGfiFor(p):''}${condLabel}${blitzLabel}${freePushLabel}${ball.carrierId===p.id?' · ' + ballImgHtml() + ' lleva el balón':''}</div>`;
-  elRight.innerHTML = `
-    <div style="font-size:13px; margin-bottom:4px;">MA ${p.ma} (restante ${p.remainingMove ?? p.ma}) · ST ${p.st ?? '-'} · AG ${p.ag ?? '-'} · PA ${p.pa ?? '-'} · AV ${p.av ?? '-'}</div>
-    <div style="font-size:11.5px; font-style:italic; color:#8a7d64;">${skillsText}</div>`;
-
   const canAct = phase==='live' && p.team===state.active && !p.activated && p.condition==='standing';
   blockBtn.style.display = (canAct && !p.blockedThisActivation) ? 'block' : 'none';
   blitzBtn.style.display = (canAct && !p.blockedThisActivation && !blitzUsedByTeam[p.team] && blitzActivePlayer!==p.id) ? 'block' : 'none';
@@ -6622,7 +6674,7 @@ function renderPassConfirmMenu(){
   mk('Cancelar', '✖', 64, passTargetCancel, true);
   document.body.appendChild(box);
 }
-(function(){ const _rp = renderPitch; renderPitch = function(){ _rp.apply(this, arguments); try{ renderPassConfirmMenu(); }catch(e){ console.error(e); } }; })();
+(function(){ const _rp = renderPitch; renderPitch = function(){ _rp.apply(this, arguments); try{ renderPassConfirmMenu(); }catch(e){ console.error(e); } try{ renderSelInfo(); }catch(e){ console.error(e); } }; })();
 function handlePassTargetChosen(passer, r, c){
   if(throwSt && throwSt.stage==='target'){ handleThrowTargetChosen(passer, r, c); return; }
   const zone = passRangeZone(r-passer.row, c-passer.col);
@@ -9904,6 +9956,7 @@ function modalActorTeam(id){
       if(preMatch && preMatch.step==='inducements' && ii && (ii.sub==='buyHigh' || ii.sub==='buyLow') && ii.high) return ii.sub==='buyHigh' ? ii.high : other(ii.high);
       return null;
     }
+    case 'confirmModal': return null;
     case 'infoModal': case 'losWarningModal': case 'matchEndModal': case 'resumeModal':
     case 'leagueMismatchModal': case 'insigModal': case 'kickoffEventModal':
       return null;   // neutros: sin color de equipo
@@ -10243,7 +10296,7 @@ try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesBut
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V82'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V83'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

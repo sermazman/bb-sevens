@@ -144,6 +144,22 @@
   .tcc-preview{margin-left:auto;}
   .color-zones{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
   @media (max-width:700px){ .color-zones{grid-template-columns:1fr;} }
+  .color-opt-row{display:flex; gap:16px; flex-wrap:wrap; margin-top:10px;}
+  .tcc-field.opt label{display:flex; align-items:center; gap:5px; cursor:pointer;}
+  .tcc-field.opt label input[type=checkbox]{width:13px; height:13px; margin:0; cursor:pointer;}
+  .tcc-field input[type=color]:disabled{opacity:0.35; cursor:not-allowed;}
+  .icon-strip{
+    display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; padding-top:10px;
+    border-top:1px dashed var(--panel-line); min-height:40px;
+  }
+  .icon-item{display:flex; flex-direction:column; align-items:center; gap:3px; width:84px;}
+  .icon-item canvas, .icon-item .icon-fallback{
+    width:76px; height:76px; background:#100e0c; border:1px solid var(--panel-line); border-radius:6px;
+  }
+  .icon-item canvas{image-rendering:pixelated;}
+  .icon-item .icon-fallback{display:flex; align-items:center; justify-content:center; border-style:dashed;}
+  .icon-cap{font-size:10px; color:#a99b7f; text-align:center; line-height:1.15; max-width:84px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .icon-hint{font-size:11px; color:#a99b7f;}
   .color-zone-title{
     font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--gold);
     margin-bottom:8px;
@@ -197,6 +213,15 @@
     background:#1c1712; color:#d8a94b; border:1px solid #d8a94b;
     font-family:'JetBrains Mono', monospace; font-weight:800; font-size:10px; line-height:13px;
     text-align:center; pointer-events:none;
+  }
+  /* Ficha con icono: el icono (38 px) se reescala a la casilla y el número queda pequeño en el centro. */
+  .formation-token.has-icon{background:none; border:none; box-shadow:none; border-radius:4px;}
+  .fcell .formation-token.has-icon{inset:0;}
+  .formation-token .ficon{width:100%; height:100%; object-fit:contain; image-rendering:pixelated; pointer-events:none;}
+  .formation-token .fnum{
+    position:absolute; left:50%; top:50%; transform:translate(-50%, -50%);
+    font-family:'JetBrains Mono', monospace; font-weight:800; font-size:11px; line-height:1; color:#fff;
+    -webkit-text-stroke:3px #000; paint-order:stroke fill; pointer-events:none;
   }
   .formation-grid{
     display:grid;
@@ -291,6 +316,17 @@
               <div class="token-chip token-preview-sm" id="tokenPreview-primary">7</div>
             </div>
           </div>
+          <div class="color-opt-row">
+            <div class="tcc-field opt" title="Capa 4 de los iconos que la tienen. Sin definir: se usa el color del número.">
+              <label><input type="checkbox" id="detailOn-primary" onchange="onOptColorToggle('primary', 'detail', this.checked)">Detalle</label>
+              <input type="color" id="detailInput-primary" value="#f2f2f2" disabled oninput="onOptColorChange('primary', 'detail', this.value)">
+            </div>
+            <div class="tcc-field opt" title="Veladura de armadura al 25 % sobre el icono. Sin definir: color original del icono.">
+              <label><input type="checkbox" id="armorOn-primary" onchange="onOptColorToggle('primary', 'armor', this.checked)">Armadura</label>
+              <input type="color" id="armorInput-primary" value="#9a9a9a" disabled oninput="onOptColorChange('primary', 'armor', this.value)">
+            </div>
+          </div>
+          <div class="icon-strip" id="iconStrip-primary"></div>
         </div>
         <div class="color-zone">
           <div class="color-zone-title">Secundario</div>
@@ -314,9 +350,20 @@
               <div class="token-chip token-preview-sm" id="tokenPreview-secondary">7</div>
             </div>
           </div>
+          <div class="color-opt-row">
+            <div class="tcc-field opt" title="Capa 4 de los iconos que la tienen. Sin definir: se usa el color del número.">
+              <label><input type="checkbox" id="detailOn-secondary" onchange="onOptColorToggle('secondary', 'detail', this.checked)">Detalle</label>
+              <input type="color" id="detailInput-secondary" value="#f2f2f2" disabled oninput="onOptColorChange('secondary', 'detail', this.value)">
+            </div>
+            <div class="tcc-field opt" title="Veladura de armadura al 25 % sobre el icono. Sin definir: color original del icono.">
+              <label><input type="checkbox" id="armorOn-secondary" onchange="onOptColorToggle('secondary', 'armor', this.checked)">Armadura</label>
+              <input type="color" id="armorInput-secondary" value="#9a9a9a" disabled oninput="onOptColorChange('secondary', 'armor', this.value)">
+            </div>
+          </div>
+          <div class="icon-strip" id="iconStrip-secondary"></div>
         </div>
       </div>
-      <div class="small-note" style="margin-top:8px;">"Auto" calcula blanco o negro según el contraste con el fondo. El color secundario sirve de alternativa si el principal se confunde con el del rival.</div>
+      <div class="small-note" style="margin-top:8px;">"Auto" calcula blanco o negro según el contraste con el fondo. El color secundario sirve de alternativa si el principal se confunde con el del rival. Los iconos se visten con Fondo (capa principal), Detalle y Armadura (ambos opcionales); si una posición aún no tiene icono se muestra la ficha.</div>
     </div>
   </div>
 
@@ -427,7 +474,7 @@
 
 <script>
 function emptyStaff(){ return { fans: 0, assistants: 0, cheerleaders: 0, apothecary: 0 }; }
-let team = { teamName: 'Nuevo Equipo', race: '', color: '#c0392b', textColor: 'auto', colorSecondary: '#ffffff', textColorSecondary: '#000000', rerolls: 0, staff: emptyStaff(), leagueStarted: false, extra: {}, extraStaff: {}, players: [] };
+let team = { teamName: 'Nuevo Equipo', race: '', color: '#c0392b', textColor: 'auto', colorSecondary: '#2a6fb0', textColorSecondary: '#ffffff', colorDetail: '', colorArmor: '', colorDetailSecondary: '', colorArmorSecondary: '', rerolls: 0, staff: emptyStaff(), leagueStarted: false, extra: {}, extraStaff: {}, players: [] };
 let uid = 1;
 
 // Razas que pueden nombrar Capitán (nombres tal cual aparecen en positions.json). "Black Orc" NO entra.
@@ -435,7 +482,7 @@ const CAPTAIN_RACES = ['orcs', 'human'];
 const CAPTAIN_SKILL = 'CAP: PROFESIONAL';
 
 // Claves del JSON que gestiona el creador; el resto (league, etc.) se conserva sin tocar.
-const MANAGED_TOP_KEYS = ['teamName','race','color','textColor','color_secundary','textColor_secundary','leagueStarted','staff','players','formation'];
+const MANAGED_TOP_KEYS = ['teamName','race','color','textColor','color_detalle','color_armadura','color_secundary','textColor_secundary','color_detalle_secundary','color_armadura_secundary','leagueStarted','staff','players','formation'];
 const PLAYER_KNOWN_KEYS = ['num','name','position','ma','st','ag','pa','av','skills'];
 let disablePosLimit = false; // solo de sesión: no se guarda en el JSON del equipo
 let disableBudgetLimit = false; // solo de sesión: no se guarda en el JSON del equipo
@@ -620,7 +667,7 @@ function stripTrailingClave(position, skillsArr){
 function newTeam(){
   const hasData = team.players && team.players.some(p => p.position || p.name);
   if(hasData && !confirm('Esto borra la plantilla actual sin guardar. ¿Continuar?')) return;
-  team = { teamName: 'Nuevo Equipo', race: '', color: '#c0392b', textColor: 'auto', colorSecondary: '#ffffff', textColorSecondary: '#000000', rerolls: 0, staff: emptyStaff(), leagueStarted: false, extra: {}, extraStaff: {}, players: buildEmptySlots() };
+  team = { teamName: 'Nuevo Equipo', race: '', color: '#c0392b', textColor: 'auto', colorSecondary: '#2a6fb0', textColorSecondary: '#ffffff', colorDetail: '', colorArmor: '', colorDetailSecondary: '', colorArmorSecondary: '', rerolls: 0, staff: emptyStaff(), leagueStarted: false, extra: {}, extraStaff: {}, players: buildEmptySlots() };
   document.getElementById('teamNameInput').value = team.teamName;
   populateRaceSelect(Object.keys(POSITIONS_BY_RACE).length ? Object.keys(POSITIONS_BY_RACE).sort() : FALLBACK_RACES);
   syncColorUI();
@@ -634,8 +681,12 @@ function loadTeamData(data){
   team.race = data.race || '';
   team.color = data.color || '#c0392b';
   team.textColor = data.textColor || 'auto';
-  team.colorSecondary = data.color_secundary || '#ffffff';
-  team.textColorSecondary = data.textColor_secundary || '#000000';
+  team.colorSecondary = data.color_secundary || '#2a6fb0';
+  team.textColorSecondary = data.textColor_secundary || '#ffffff';
+  team.colorDetail = cleanHex(data.color_detalle);
+  team.colorArmor = cleanHex(data.color_armadura);
+  team.colorDetailSecondary = cleanHex(data.color_detalle_secundary);
+  team.colorArmorSecondary = cleanHex(data.color_armadura_secundary);
   team.rerolls = (data.staff && data.staff.rerolls && data.staff.rerolls.count) || 0;
   team.staff = emptyStaff();
   Object.keys(STAFF_ITEMS).forEach(k => {
@@ -723,8 +774,8 @@ function autoTextColor(hex){
 }
 
 const COLOR_SLOTS = {
-  primary:   { colorKey: 'color',          textKey: 'textColor',          defBg: '#c0392b' },
-  secondary: { colorKey: 'colorSecondary', textKey: 'textColorSecondary', defBg: '#ffffff' }
+  primary:   { colorKey: 'color',          textKey: 'textColor',          detailKey: 'colorDetail',          armorKey: 'colorArmor',          defBg: '#c0392b' },
+  secondary: { colorKey: 'colorSecondary', textKey: 'textColorSecondary', detailKey: 'colorDetailSecondary', armorKey: 'colorArmorSecondary', defBg: '#2a6fb0' }
 };
 
 function slotColors(slot){
@@ -743,6 +794,8 @@ function renderTokenPreview(){
     chip.style.background = c.bg;
     chip.style.color = c.txt;
   });
+  scheduleIconStrips();
+  scheduleFormationRender();
 }
 
 function syncColorUI(){
@@ -754,6 +807,13 @@ function syncColorUI(){
     document.getElementById('textMode-' + slot).value = isAuto ? 'auto' : 'custom';
     document.getElementById('customField-' + slot).style.display = isAuto ? 'none' : 'flex';
     if(!isAuto) document.getElementById('textColorInput-' + slot).value = t;
+    ['detail', 'armor'].forEach(kind => {
+      const v = team[cfg[kind + 'Key']] || '';
+      document.getElementById(kind + 'On-' + slot).checked = !!v;
+      const inp = document.getElementById(kind + 'Input-' + slot);
+      inp.disabled = !v;
+      if(v) inp.value = v;
+    });
   });
   renderTokenPreview();
 }
@@ -784,6 +844,222 @@ function onTextColorChange(slot, val){
   team[COLOR_SLOTS[slot].textKey] = val;
   renderTokenPreview();
   scheduleJsonRefresh();
+}
+
+function onOptColorToggle(slot, kind, on){
+  const key = COLOR_SLOTS[slot][kind + 'Key'];
+  const inp = document.getElementById(kind + 'Input-' + slot);
+  inp.disabled = !on;
+  team[key] = on ? inp.value : '';
+  renderTokenPreview();
+  scheduleJsonRefresh();
+}
+
+function onOptColorChange(slot, kind, val){
+  team[COLOR_SLOTS[slot][kind + 'Key']] = val;
+  renderTokenPreview();
+  scheduleJsonRefresh();
+}
+
+// Acepta #rrggbb o #rgb; cualquier otra cosa se considera "sin definir".
+function cleanHex(v){
+  if(typeof v !== 'string') return '';
+  const m = v.trim().match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if(!m) return '';
+  let h = m[1].toLowerCase();
+  if(h.length === 3) h = h.split('').map(ch => ch + ch).join('');
+  return '#' + h;
+}
+
+/* ================= Iconos de jugador (capas PNG 38x38) =================
+   Orden de apilado: BASE, 1 (piel), 2 (armadura), 3 (color principal), 4 (detalle, opcional).
+   Ver plan_iconos_jugadores.md. Si falta algún PNG de una posición, se muestra la ficha. */
+const ICONS_BASE_URL = 'player_icons/';
+let ICONS_DATA = null;
+const ICON_IMG_CACHE = {};
+const ICON_COMPOSED = {};
+let iconStripTick = 0;
+let iconStripTimer = null;
+
+async function loadIconsCatalog(){
+  try{
+    const res = await fetch(ICONS_BASE_URL + 'icons.json');
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    ICONS_DATA = await res.json();
+  }catch(e){
+    ICONS_DATA = null;
+    console.info('[icons.json] no disponible; se muestran fichas.', e.message);
+  }
+  scheduleIconStrips();
+  scheduleFormationRender();
+}
+
+function iconNorm(s){ return normText(s).replace(/\s+/g, ' ').trim(); }
+
+function resolveIcon(race, position){
+  if(!ICONS_DATA || !ICONS_DATA.icons) return null;
+  const rk = Object.keys(ICONS_DATA.icons).find(k => iconNorm(k) === iconNorm(race));
+  if(!rk) return null;
+  const table = ICONS_DATA.icons[rk];
+  const pk = Object.keys(table).find(k => iconNorm(k) === iconNorm(position));
+  return pk ? table[pk] : null;
+}
+
+function loadIconImage(url){
+  if(!ICON_IMG_CACHE[url]){
+    ICON_IMG_CACHE[url] = new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+  }
+  return ICON_IMG_CACHE[url];
+}
+
+function hexToRgbArr3(hex){
+  const h = cleanHex(hex);
+  if(!h) return null;
+  return [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)];
+}
+
+// Colores casi negros se aclaran un poco antes de teñir (con multiplicar quedarían negro puro).
+function liftDark(rgb){
+  const lum = (rgb[0]*299 + rgb[1]*587 + rgb[2]*114) / 1000;
+  const k = Math.max(0, 48 - lum);
+  return rgb.map(c => Math.min(255, Math.round(c + k)));
+}
+
+// Capas 3/4: dibujadas en gris; se tiñen normalizando el brillo (lo más claro = color pleno).
+function tintLayer(img, hex){
+  const size = img.width;
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const x = c.getContext('2d'); x.drawImage(img, 0, 0);
+  const d = x.getImageData(0, 0, size, size); const px = d.data;
+  let maxL = 1;
+  for(let i = 0; i < px.length; i += 4){
+    if(px[i+3] > 0){ const l = (px[i]*299 + px[i+1]*587 + px[i+2]*114) / 1000; if(l > maxL) maxL = l; }
+  }
+  const [r, g, b] = liftDark(hexToRgbArr3(hex) || [200, 200, 200]);
+  for(let i = 0; i < px.length; i += 4){
+    if(px[i+3] === 0) continue;
+    const f = Math.min(1, ((px[i]*299 + px[i+1]*587 + px[i+2]*114) / 1000) / maxL);
+    px[i] = r * f; px[i+1] = g * f; px[i+2] = b * f;
+  }
+  x.putImageData(d, 0, 0);
+  return c;
+}
+
+// Pinta la forma de una capa de un solo color (para BASE y para la veladura de armadura).
+function silhouette(img, hex){
+  const c = document.createElement('canvas'); c.width = c.height = img.width;
+  const x = c.getContext('2d'); x.drawImage(img, 0, 0);
+  x.globalCompositeOperation = 'source-in';
+  x.fillStyle = hex; x.fillRect(0, 0, c.width, c.height);
+  return c;
+}
+
+async function composeIcon(iconName, layerCount, opts){
+  const n = Math.max(3, parseInt(layerCount) || 3);
+  const names = ['BASE'].concat(Array.from({length: n}, (_, i) => String(i + 1)));
+  const imgs = await Promise.all(names.map(nm => loadIconImage(ICONS_BASE_URL + iconName + '_' + nm + '.png')));
+  // BASE y capas 1..3 son obligatorias; la 4 es opcional.
+  if(!imgs[0] || !imgs[1] || !imgs[2] || !imgs[3]) return null;
+  const key = [iconName, n, opts.main, opts.detail, opts.armor, opts.posColor].join('|');
+  if(ICON_COMPOSED[key]) return ICON_COMPOSED[key];
+  const size = imgs[0].width;
+  const out = document.createElement('canvas'); out.width = out.height = size;
+  const ctx = out.getContext('2d');
+  const baseOp = (ICONS_DATA && ICONS_DATA.base_opacity) || 0.6;
+  const armorOp = (ICONS_DATA && ICONS_DATA.armor_opacity) || 0.25;
+  ctx.globalAlpha = baseOp; ctx.drawImage(silhouette(imgs[0], opts.posColor), 0, 0); ctx.globalAlpha = 1;
+  ctx.drawImage(imgs[1], 0, 0);
+  ctx.drawImage(imgs[2], 0, 0);
+  if(opts.armor){ ctx.globalAlpha = armorOp; ctx.drawImage(silhouette(imgs[2], opts.armor), 0, 0); ctx.globalAlpha = 1; }
+  ctx.drawImage(tintLayer(imgs[3], opts.main), 0, 0);
+  if(imgs[4]) ctx.drawImage(tintLayer(imgs[4], opts.detail), 0, 0);
+  ICON_COMPOSED[key] = out;
+  return out;
+}
+
+function iconOptsFor(slot, entry){
+  const cfg = COLOR_SLOTS[slot];
+  const c = slotColors(slot);
+  const t = team[cfg.textKey];
+  return {
+    main: c.bg,
+    detail: team[cfg.detailKey] || ((!t || t === 'auto') ? '#ffffff' : t),
+    armor: team[cfg.armorKey] || '',
+    posColor: (entry && getPositionBorderColor(entry.clave)) || c.bg
+  };
+}
+
+function stripPositions(){
+  const seen = new Set(), list = [];
+  team.players.forEach(p => {
+    if(p.position && !seen.has(p.position)){ seen.add(p.position); list.push({ position: p.position, num: p.num }); }
+  });
+  if(!list.length && team.race && POSITIONS_BY_RACE[team.race]){
+    const seenIcons = new Set();
+    POSITIONS_BY_RACE[team.race].forEach(pos => {
+      const ic = resolveIcon(team.race, pos);
+      const k = ic ? ic.icon : pos;
+      if(seenIcons.has(k)) return;
+      seenIcons.add(k);
+      list.push({ position: pos, num: 7 });
+    });
+  }
+  return list;
+}
+
+function scheduleIconStrips(){
+  clearTimeout(iconStripTimer);
+  iconStripTimer = setTimeout(renderIconStrips, 30);
+}
+
+async function renderIconStrips(){
+  const tick = ++iconStripTick;
+  const items = stripPositions();
+  for(const slot of Object.keys(COLOR_SLOTS)){
+    const cfg = COLOR_SLOTS[slot];
+    const host = document.getElementById('iconStrip-' + slot);
+    if(!host) continue;
+    if(!items.length){
+      if(tick === iconStripTick) host.innerHTML = '<span class="icon-hint">Elige una raza para ver los iconos de sus posiciones.</span>';
+      continue;
+    }
+    const c = slotColors(slot);
+    const nodes = await Promise.all(items.map(async it => {
+      const entry = findCatalogEntry(team.race, it.position);
+      const ic = resolveIcon(team.race, it.position);
+      let canvas = null;
+      if(ic){
+        canvas = await composeIcon(ic.icon, ic.layers, iconOptsFor(slot, entry));
+      }
+      const wrap = document.createElement('div');
+      wrap.className = 'icon-item';
+      wrap.title = it.position + (canvas ? '' : ' — sin icono todavía: se usa la ficha');
+      if(canvas){
+        const cv = document.createElement('canvas');
+        cv.width = canvas.width; cv.height = canvas.height;
+        cv.getContext('2d').drawImage(canvas, 0, 0);
+        wrap.appendChild(cv);
+      } else {
+        const fb = document.createElement('div');
+        fb.className = 'icon-fallback';
+        fb.innerHTML = '<div class="token-chip token-preview-sm" style="background:' + c.bg + '; color:' + c.txt + ';">' + it.num + '</div>';
+        wrap.appendChild(fb);
+      }
+      const cap = document.createElement('div');
+      cap.className = 'icon-cap';
+      cap.textContent = it.position;
+      wrap.appendChild(cap);
+      return wrap;
+    }));
+    if(tick !== iconStripTick) return;
+    host.innerHTML = '';
+    nodes.forEach(n => host.appendChild(n));
+  }
 }
 
 function importFile(inputEl){
@@ -941,6 +1217,7 @@ function onPositionChange(_uid, value){
   const entry = findCatalogEntry(team.race, value);
   p.position = value;
   p.veteran = false;
+  if(p.extra) delete p.extra.icon;  // un icono forzado pertenece a la posición anterior
   if(entry){
     p.ma = entry.ma ?? '';
     p.st = entry.st ?? '';
@@ -1229,6 +1506,7 @@ function renderPlayers(){
   }
   updateTreasuryDisplay(tv);
   updateExtraDataNote();
+  scheduleIconStrips();
   renderFormation();
   scheduleJsonRefresh();
 }
@@ -1270,6 +1548,36 @@ function getPositionBorderColor(clave){
   return null;
 }
 
+const FORMATION_ICON_URL = {};     // clave de colores -> dataURL | null (sin arte)
+const FORMATION_ICON_LAST = {};    // icono -> última dataURL válida (evita parpadeo al mover un color)
+const FORMATION_ICON_PENDING = new Set();
+let formationRenderTimer = null;
+
+function scheduleFormationRender(){
+  clearTimeout(formationRenderTimer);
+  formationRenderTimer = setTimeout(renderFormation, 30);
+}
+
+// Devuelve ya la imagen si está compuesta; si no, la compone en segundo plano y refresca la colocación al terminar.
+function formationIconUrl(p){
+  const ic = resolveIcon(team.race, p.position);
+  if(!ic) return null;
+  const entry = findCatalogEntry(team.race, p.position);
+  const o = iconOptsFor('primary', entry);
+  const key = [ic.icon, ic.layers, o.main, o.detail, o.armor, o.posColor].join('|');
+  if(key in FORMATION_ICON_URL) return FORMATION_ICON_URL[key];
+  if(!FORMATION_ICON_PENDING.has(key)){
+    FORMATION_ICON_PENDING.add(key);
+    composeIcon(ic.icon, ic.layers, o).then(cv => {
+      const url = cv ? cv.toDataURL() : null;
+      FORMATION_ICON_URL[key] = url;
+      FORMATION_ICON_PENDING.delete(key);
+      if(url){ FORMATION_ICON_LAST[ic.icon] = url; scheduleFormationRender(); }
+    });
+  }
+  return FORMATION_ICON_LAST[ic.icon] || null;
+}
+
 function formationTokenHtml(p){
   const bg = team.color || '#c0392b';
   const txt = (!team.textColor || team.textColor === 'auto') ? autoTextColor(bg) : team.textColor;
@@ -1279,6 +1587,10 @@ function formationTokenHtml(p){
   const label = p.name ? (p.name + ' (' + p.position + ')') : p.position;
   const star = p.veteran ? `<img class="veteran-star" src="icons/veterano.png" alt="Veterano" title="Veterano">` : '';
   const cap = p.captain ? `<span class="captain-badge" title="Capitán">C</span>` : '';
+  const iconUrl = formationIconUrl(p);
+  if(iconUrl){
+    return `<div class="${cls} has-icon" title="#${p.num} ${label}" onclick="event.stopPropagation(); onFormationTokenClick(${p.num})"><img class="ficon" src="${iconUrl}" alt=""><span class="fnum">${p.num}</span>${star}${cap}</div>`;
+  }
   return `<div class="${cls}" style="background:${bg}; color:${txt}; border-color:${borderColor};" title="#${p.num} ${label}" onclick="event.stopPropagation(); onFormationTokenClick(${p.num})">${p.num}${star}${cap}</div>`;
 }
 
@@ -1427,8 +1739,12 @@ function buildExportData(){
     race: team.race,
     color: team.color || '#c0392b',
     textColor: team.textColor || 'auto',
-    color_secundary: team.colorSecondary || '#ffffff',
-    textColor_secundary: team.textColorSecondary || '#000000',
+    color_detalle: team.colorDetail || undefined,
+    color_armadura: team.colorArmor || undefined,
+    color_secundary: team.colorSecondary || '#2a6fb0',
+    textColor_secundary: team.textColorSecondary || '#ffffff',
+    color_detalle_secundary: team.colorDetailSecondary || undefined,
+    color_armadura_secundary: team.colorArmorSecondary || undefined,
     leagueStarted: !!team.leagueStarted,
     staff: Object.assign({}, staffOut, team.extraStaff),
     players: filled.map(p => Object.assign({
@@ -1616,7 +1932,8 @@ loadLibrary();
 loadSkillCatalog();
 loadPositionsCatalog();
 loadStaffCatalog();
+loadIconsCatalog();
 </script>
-<div class="small-note" style="text-align:center; padding:14px 0 6px 0; opacity:0.55; font-family:'JetBrains Mono', monospace;">Build rosters.html: 25102026-1353</div>
+<div class="small-note" style="text-align:center; padding:14px 0 6px 0; opacity:0.55; font-family:'JetBrains Mono', monospace;">Build rosters.html: 15112026-2127</div>
 </body>
 </html>

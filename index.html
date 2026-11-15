@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-w-version="W_V65">
+<html lang="es" data-w-version="W_V66">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -189,6 +189,7 @@
         </div>
       </div>
       <div id="delCtlA" style="display:none;">
+        <button class="full" id="presetBtnA" onclick="presetPositions('A')" style="margin-bottom:8px;">📋 Posiciones predefinidas</button>
         <button class="danger full" onclick="clearTeam('A')">🗑️ Borrar Equipo</button>
       </div>
       <input type="file" id="fileImportA" accept="application/json" style="display:none" onchange="importTeamFile('A', this)">
@@ -300,6 +301,7 @@
         </div>
       </div>
       <div id="delCtlB" style="display:none;">
+        <button class="full" id="presetBtnB" onclick="presetPositions('B')" style="margin-bottom:8px;">📋 Posiciones predefinidas</button>
         <button class="danger full" onclick="clearTeam('B')">🗑️ Borrar Equipo</button>
       </div>
       <input type="file" id="fileImportB" accept="application/json" style="display:none" onchange="importTeamFile('B', this)">
@@ -552,6 +554,7 @@
     <button class="full" id="blockLuchadorBtn" onclick="useLuchador()" style="display:none; margin-top:6px;">💪 Usar Luchador (repite solo 1 dado de Ambos caen)</button>
     <div class="small-note" id="blockOdioNote" style="display:none; margin-top:8px; color:#ff8a65; font-weight:700;"></div>
     <button class="full" id="blockOdioBtn" onclick="useOdio()" style="display:none; margin-top:6px;">😠 Usar Odio (repite 1 dado de Atacante derribado)</button>
+    <button class="full primary" id="blockReleaseBtn" onclick="blockReleaseChoice()" style="display:none; margin-top:10px;">✅ Pasar la elección al rival (sin repetir)</button>
     <div id="blockOutcomeRow" class="disabled-block" style="margin-top:12px;">
       <button class="full" id="blockFreePushBtn" onclick="toggleFreePushForActiveBlock()" style="margin-bottom:10px;">🔓 Activar todos los empujes (para este placaje)</button>
       <div id="blockChooserBanner" class="chooser-banner">ELIGE: —</div>
@@ -862,6 +865,7 @@
   <div class="rg-box">
     <h2>⚠️ Rival desconectado</h2>
     <p>Esperando a que se vuelva a conectar (abre el mismo enlace y escribe el código de sala). Si no vuelve, guarda la partida para retomarla más tarde.</p>
+    <div id="rgCode" style="font-family:'JetBrains Mono',monospace; font-size:30px; font-weight:800; letter-spacing:6px; color:#ffd24a; margin:6px 0 14px 0;"></div>
     <button class="primary" onclick="rivalGoneSave()">⬇️ Guardar partida</button>
   </div>
 </div>

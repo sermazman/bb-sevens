@@ -133,6 +133,8 @@
   a.backlink:hover{color:var(--gold);}
 
   /* ---- Fila de dos columnas (leyenda de habilidades + color de equipo) ---- */
+  .stack-col{display:flex; flex-direction:column; gap:16px; min-width:0;}
+  .stack-col > .panel{margin:0;}
   .two-col-row{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
   @media (max-width:800px){ .two-col-row{grid-template-columns:1fr;} }
 
@@ -257,7 +259,8 @@
     <a class="backlink" href="index.html">← Volver al tablero</a>
   </header>
 
-  <div class="two-col-row">
+  <div class="two-col-row" style="align-items:start;">
+   <div class="stack-col">
     <div class="panel">
       <h2>📁 Cargar / Guardar</h2>
       <div class="top-actions">
@@ -282,14 +285,13 @@
       </div>
       <div class="small-note" id="libraryStatus" style="margin-top:6px;"></div>
     </div>
-  </div>
 
-  <div class="two-col-row">
     <div class="panel" id="skillLegendPanel">
       <h2>🎨 Categorías de habilidades</h2>
       <div class="cat-legend" id="catLegend"></div>
       <div class="small-note" style="margin-top:6px;">Al añadir una habilidad se elige de esta lista, así todo el mundo usa el mismo texto exacto. La categoría de cada una queda registrada para futuras funciones (filtros, estadísticas, etc.).</div>
     </div>
+   </div>
 
     <div class="panel" id="teamColorPanel">
       <h2>🎨 Color del equipo</h2>
@@ -990,7 +992,7 @@ function iconOptsFor(slot, entry){
     main: c.bg,
     detail: team[cfg.detailKey] || ((!t || t === 'auto') ? '#ffffff' : t),
     armor: team[cfg.armorKey] || '',
-    posColor: (entry && getPositionBorderColor(entry.clave)) || c.bg
+    posColor: (entry && getPositionBorderColor(entry.clave, entry.st)) || c.bg
   };
 }
 
@@ -1539,9 +1541,14 @@ function normText(s){
   return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 }
 
-function getPositionBorderColor(clave){
+function getPositionBorderColor(clave, st){
   if(!clave) return null;
   const norm = normText(clave);
+  // Defensor + Grandullón a la vez: FU >= 5 -> Grandullón (azul); FU <= 4 -> Defensor (verde)
+  if(/defensor|blocker/.test(norm) && /grandullon|big guy/.test(norm)){
+    const n = parseFloat(st);
+    return (!isNaN(n) && n >= 5) ? '#0089E8' : '#43a047';
+  }
   for(const cat of POSITION_BORDER_COLORS){
     if(cat.keys.some(k => norm.includes(normText(k)))) return cat.color;
   }
@@ -1582,7 +1589,7 @@ function formationTokenHtml(p){
   const bg = team.color || '#c0392b';
   const txt = (!team.textColor || team.textColor === 'auto') ? autoTextColor(bg) : team.textColor;
   const catEntry = findCatalogEntry(team.race, p.position);
-  const borderColor = (catEntry && getPositionBorderColor(catEntry.clave)) || bg;
+  const borderColor = (catEntry && getPositionBorderColor(catEntry.clave, catEntry.st)) || bg;
   const cls = 'formation-token' + (selectedFormationNum === p.num ? ' selected' : '');
   const label = p.name ? (p.name + ' (' + p.position + ')') : p.position;
   const star = p.veteran ? `<img class="veteran-star" src="icons/veterano.png" alt="Veterano" title="Veterano">` : '';
@@ -1934,6 +1941,6 @@ loadPositionsCatalog();
 loadStaffCatalog();
 loadIconsCatalog();
 </script>
-<div class="small-note" style="text-align:center; padding:14px 0 6px 0; opacity:0.55; font-family:'JetBrains Mono', monospace;">Build rosters.html: 15112026-2127</div>
+<div class="small-note" style="text-align:center; padding:14px 0 6px 0; opacity:0.55; font-family:'JetBrains Mono', monospace;">Build rosters.html: 16112026-1214</div>
 </body>
 </html>

@@ -1,0 +1,8 @@
+Grises en Photoshop o Photopea. Los pasos son los mismos en ambos:
+
+Deja en una capa solo las zonas del color primario.
+Pásala a gris con Imagen > Ajustes > Tono/Saturación y saturación −100.
+Aclara los grises con Imagen > Ajustes > Niveles: sube el negro de salida (el valor de abajo en “Niveles de salida”) a unos 100–110 y deja el blanco en 255. Así las sombras más oscuras siguen en ~100 y las luces llegan a 255, y no se pierde el volumen.
+Para comprobarlo antes de exportar, pon encima una capa de color sólido (por ejemplo el 
+#00ff2a), modo Multiplicar y recortada a la capa gris (Alt+click entre capas). Es justo lo que hará la app. Si sale apagado, sube más el negro de salida.
+Exporta como PNG con transparencia (en Photopea: Archivo > Exportar como > PNG), sin cambiar el tamaño del lienzo (38 × 38).

@@ -9,6 +9,8 @@ let ballBounceActive = false;
 let pendingCatch = null;
 let pendingBallDrop = null;
 let pendingTurnoverAfterResolve = false;
+let turnoverReason = '';
+function markTurnover(why){ pendingTurnoverAfterResolve = true; turnoverReason = why || ''; }
 let blockChoiceReleased = false;   // el atacante ya ha pasado la elección del dado al defensor
 let pendingDriveStart = null;
 let selected = null;   // token selected during LIVE phase (for movement)
@@ -212,6 +214,8 @@ let teamTextColor = { A: 'auto', B: 'auto' };
 let customColorsEnabled = (()=>{ try{ return localStorage.getItem('bb7_customColors')!=='0'; }catch(e){ return true; } })();   // preferencia LOCAL (no se sincroniza)
 // Color secundario del equipo (viene del JSON: color_secundary / textColor_secundary). Se sincroniza como dato del equipo.
 let teamColor2 = { A: null, B: null };
+// Colores extra para los ICONOS (JSON: color_detalle, color_armadura y sus versiones _secundary). Dato del equipo, sincronizado.
+let teamIconCols = { A: {}, B: {} };
 let teamText2 = { A: 'auto', B: 'auto' };
 // Qué juego de colores ve CADA jugador para cada equipo: preferencia LOCAL (no se sincroniza), guardada en el navegador.
 let colorChoice = { A: 'main', B: 'main' };
@@ -518,7 +522,7 @@ function snapshotState(){
   return {
     players, ball, ballInFlight, phase, state, pendingTD, pendingDodge, pendingGfi, armorForPlayer, nextId,
     mySelected: selected, myDeclaredAction: declaredAction,
-    koQueue, pendingKo, teamRace, teamCustomColor, teamTextColor, teamColor2, teamText2, openingKickoffDone, firstHalfKickingTeam, pitchBackgroundUrl, pitchBackgroundExact, teamStaff, teamRerollsLeft, preMatch, teamVerify, kickoffPendingOOBAfterEvent,
+    koQueue, pendingKo, teamRace, teamCustomColor, teamTextColor, teamColor2, teamText2, teamIconCols, openingKickoffDone, firstHalfKickingTeam, pitchBackgroundUrl, pitchBackgroundExact, teamStaff, teamRerollsLeft, preMatch, teamVerify, kickoffPendingOOBAfterEvent,
     ballBounceActive, pendingCatch, pendingBallDrop, pendingDriveStart, pendingPassRoll,
     pendingKickPlacement, kickoffBounceStep, kickoffKickingTeam, kickoffReceivingTeam, freeCatchTeam, placingBallFree, kickoffTargetRow, kickoffTargetCol,
     blitzUsedByTeam, blitzActivePlayer, blockTargeting, activeBlock, pendingArmorQueue, pendingPush, pendingFollowUp, chainPushStack, secureBallUsedByTeam, pendingSecureBall, secureBallActivePlayer, handoffUsedByTeam, pendingHandoffChoice, pendingAnimosity, pendingHailMaryChoice, pendingProvocarChoice, luchadorUsed, luchadorPickMode, foulUsedByTeam, pendingFoulContext, passUsedByTeam,
@@ -606,7 +610,7 @@ function snapshotState(){
     blockChooserBannerBg: document.getElementById('blockChooserBanner').style.background,
     blockChooserBannerColor: document.getElementById('blockChooserBanner').style.color,
     blockChooserBannerBorder: document.getElementById('blockChooserBanner').style.borderColor,
-    blockDiceRolled, blockChoiceReleased, pendingTurnoverAfterResolve,
+    blockDiceRolled, blockChoiceReleased, pendingTurnoverAfterResolve, turnoverReason,
     followUpModalOpen: document.getElementById('followUpModal').classList.contains('show'),
     followUpText: document.getElementById('followUpText').textContent,
     catchModalOpen: document.getElementById('catchModal').classList.contains('show'),
@@ -696,6 +700,7 @@ function applyRemoteState(payload){
   teamCustomColor = payload.teamCustomColor || { A:null, B:null };
   teamTextColor = payload.teamTextColor || { A:'auto', B:'auto' };
   teamColor2 = payload.teamColor2 || { A:null, B:null };
+  teamIconCols = payload.teamIconCols || { A:{}, B:{} };
   teamText2 = payload.teamText2 || { A:'auto', B:'auto' };
   updateColorChoiceButtons();
   openingKickoffDone = !!payload.openingKickoffDone;
@@ -910,6 +915,7 @@ function applyRemoteState(payload){
   blockDiceRolled = !!payload.blockDiceRolled;
   blockChoiceReleased = !!payload.blockChoiceReleased;
   pendingTurnoverAfterResolve = !!payload.pendingTurnoverAfterResolve;
+  turnoverReason = payload.turnoverReason || '';
   refreshBlockSkillUi();
   renderProvocarModal(); renderHeroicTackleModal(); renderStandFirmModal(); renderCrujirModal(); renderAtento(); renderProteger(); renderThrowLand();
   document.getElementById('blockDiceHint').style.display = blockDiceRolled ? 'block' : 'none';
@@ -1181,6 +1187,7 @@ function applyImportedTeam(team, data, verifyState, res){
   }
   teamColor2[team] = data.color_secundary || null;
   teamText2[team] = data.textColor_secundary || 'auto';
+  teamIconCols[team] = { d: data.color_detalle || null, a: data.color_armadura || null, d2: data.color_detalle_secundary || null, a2: data.color_armadura_secundary || null };
   updateColorChoiceButtons();
   if(data.staff){
     teamStaff[team] = data.staff;
@@ -1204,6 +1211,7 @@ function applyImportedTeam(team, data, verifyState, res){
       ma, remainingMove: ma, gfiUsed:0, condition:'standing', blockedThisActivation:false, freePushOverride:false, dodgeSkillUsedThisTurn:false, catchSkillUsedThisTurn:false, justStoodThisActivation:false,
       st: pd.st, ag: pd.ag, pa: pd.pa, av: pd.av,
       position: pd.position || null,
+      icon: pd.icon || null,
       skills: pd.skills || [],
       row:null, col:null, activated:false, onPitch:false
     });
@@ -1458,7 +1466,7 @@ function doClearTeam(team, oldName){
   teamRace[team] = '';
   teamCustomColor[team] = null;
   teamTextColor[team] = 'auto';
-  teamColor2[team] = null; teamText2[team] = 'auto';
+  teamColor2[team] = null; teamText2[team] = 'auto'; teamIconCols[team] = {};
   updateColorChoiceButtons();
   teamStaff[team] = null;
   teamRerollsLeft[team] = 0;
@@ -1560,7 +1568,8 @@ function renderRosters(){
       div.dataset.playerId = p.id;
       const posBorder = positionBorderColor(p);
       const borderStyle = posBorder ? ('border-color:'+posBorder+';') : '';
-      let html = `<div class="token-chip" style="background:${tokenColorFor(p)}; color:${textColorFor(p)}; ${borderStyle}">${p.num}</div>`;
+      const iconUrlB = playerIconUrl(p);
+      let html = iconUrlB ? `<div class="token-chip has-icon"><img class="tok-icon" src="${iconUrlB}" draggable="false"></div>` : `<div class="token-chip" style="background:${tokenColorFor(p)}; color:${textColorFor(p)}; ${borderStyle}">${p.num}</div>`;
       if(p.condition==='tumbado' || p.condition==='aturdido' || p.condition==='despistado'){
         html += `<div class="bt-cond">${p.condition==='tumbado' ? 'T' : p.condition==='aturdido' ? 'A' : 'D'}</div>`;
       }
@@ -2603,7 +2612,7 @@ function useBanana(team, d){
   renderRosters(); renderPitch(); renderSelInfo();
   if(wasCarrier){
     queueBallDropIfCarrier(p.id, p.row, p.col);
-    pendingTurnoverAfterResolve = true;
+    markTurnover('Piel de plátano: cae ' + p.name + ' con el balón');
     broadcastState();
     closeArmorModal();
   }
@@ -3305,6 +3314,8 @@ function renderPitch(){
         const posBorder = positionBorderColor(occ);
         if(posBorder) t.style.borderColor = posBorder;
         t.textContent = occ.num;
+        { const iu = occ.frog ? null : playerIconUrl(occ);
+          if(iu){ t.classList.add('has-icon'); t.textContent = ''; const im = document.createElement('img'); im.className = 'tok-icon'; im.src = iu; im.draggable = false; t.appendChild(im); } }
         const pitchExtra = 'MA restante ' + (occ.remainingMove ?? occ.ma) + '/' + occ.ma +
           ((occ.gfiUsed ?? 0) > 0 ? ' · A por ellos ' + occ.gfiUsed + '/' + maxGfiFor(occ) : '') +
           (occ.condition==='tumbado' ? ' · TUMBADO' : occ.condition==='aturdido' ? ' · ATURDIDO' : occ.condition==='despistado' ? ' · DESPISTADO' : '');
@@ -5091,7 +5102,7 @@ function resolveBothDownFall(attacker, defender, isBlitz, forcejearUsed){
   if(defenderFalls){ armorQueue.push(defender.id); golpeMortiferoMap[defender.id] = attacker.id; registerCrujir(attacker, defender); }
   if(attackerFalls) armorQueue.push(attacker.id);
   pendingArmorQueue = armorQueue;
-  if(attackerFalls) pendingTurnoverAfterResolve = true;
+  if(attackerFalls) markTurnover('el atacante ' + attacker.name + ' cae en el placaje');
   processNextArmorInQueue();
 }
 
@@ -5172,7 +5183,7 @@ function applyBlockOutcomeConfirmed(kind){
     queueBallDropIfCarrier(attacker.id, attacker.row, attacker.col);
     renderRosters(); renderPitch(); renderSelInfo();
     broadcastState();
-    pendingTurnoverAfterResolve = true;
+    markTurnover('el atacante ' + attacker.name + ' cae (Atacante derribado)');
     openArmorModal(attacker);
     return;
   }
@@ -5748,6 +5759,12 @@ function positionBorderColor(p){
   const posText = (p.position || '').toLowerCase();
   const combined = skillsText + ' ' + posText;
   if(posText.includes('journeyman') || posText.includes('journey')) return null; // sin color, forzado (mirando "position")
+  const hasDef = ['defensor','blocker'].some(k=>combined.includes(k));
+  const hasBig = ['grandullón','grandullon','big guy'].some(k=>combined.includes(k));
+  if(hasDef && hasBig){   // doble clave: FU 5+ => Grandullón (azul); FU 4 o menos => Defensor (verde)
+    const stv = parseInt(String(p.st ?? '').replace(/[^0-9]/g,''), 10);
+    return (stv >= 5) ? '#0089E8' : '#43a047';
+  }
   const match = POSITION_BORDER_COLORS.find(entry => entry.keys.some(k=>combined.includes(k)));
   return match ? match.color : null;
 }
@@ -6147,6 +6164,145 @@ setInterval(()=>{
   }catch(e){}
 }, 500);
 
+// =====================================================================
+// ICONOS DE JUGADOR: capas PNG 38x38 (BASE, 1 piel, 2 armadura, 3 color principal, 4 detalle) teñidas en canvas
+// =====================================================================
+const ICON_DIR = 'player_icons/';
+let iconsIndex = null;                       // player_icons/icons.json
+let iconsLookup = null;
+let useIconsPref = (()=>{ try{ return localStorage.getItem('bb7_useIcons')!=='0'; }catch(e){ return true; } })();   // preferencia LOCAL (Iconos / Fichas)
+const iconImgCache = {};                     // fichero -> { img, done, ok, data }
+const iconComposeCache = {};                 // clave de colores -> dataURL
+let iconRefreshTimer = null;
+function normIconKey(x){ return String(x || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+function buildIconsLookup(){
+  iconsLookup = {};
+  Object.keys(iconsIndex.icons || {}).forEach(race=>{
+    const rk = normIconKey(race); iconsLookup[rk] = iconsLookup[rk] || {};
+    Object.keys(iconsIndex.icons[race]).forEach(typ=>{ iconsLookup[rk][normIconKey(typ)] = iconsIndex.icons[race][typ]; });
+  });
+}
+function loadIconsIndex(){
+  try{
+    fetch(ICON_DIR + 'icons.json', { cache:'no-cache' }).then(r=>r.ok ? r.json() : null).then(j=>{
+      if(j && j.icons){ iconsIndex = j; buildIconsLookup(); scheduleIconRefresh(); }
+    }).catch(()=>{});
+  }catch(e){}
+}
+function scheduleIconRefresh(){
+  clearTimeout(iconRefreshTimer);
+  iconRefreshTimer = setTimeout(()=>{ try{ renderRosters(); renderPitch(); }catch(e){ console.error(e); } }, 60);
+}
+function getIconImg(file){
+  let e = iconImgCache[file];
+  if(e) return e;
+  e = iconImgCache[file] = { img:new Image(), done:false, ok:false, data:null };
+  e.img.onload = ()=>{
+    try{
+      const t = document.createElement('canvas'); t.width = 38; t.height = 38;
+      const g = t.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(e.img, 0, 0, 38, 38);
+      e.data = g.getImageData(0, 0, 38, 38); e.ok = true;
+    }catch(err){ e.ok = false; }
+    e.done = true; scheduleIconRefresh();
+  };
+  e.img.onerror = ()=>{ e.done = true; e.ok = false; };
+  e.img.src = ICON_DIR + file;
+  return e;
+}
+// icono que corresponde a un jugador: p.icon (si lo trae el JSON) > icons.json por raza + posición
+function playerIconInfo(p){
+  if(!useIconsPref || !iconsIndex || !iconsLookup) return null;
+  if(p.icon && iconsIndex.layers && iconsIndex.layers[p.icon]) return { icon:p.icon, layers:iconsIndex.layers[p.icon] };
+  const rk = normIconKey(teamRace[p.team]), pk = normIconKey(p.position);
+  const ent = iconsLookup[rk] && iconsLookup[rk][pk];
+  return ent ? { icon:ent.icon, layers:ent.layers } : null;
+}
+function hexToRgb(hx){
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hx || '').trim());
+  if(!m) return null;
+  const n = parseInt(m[1], 16); return [(n>>16)&255, (n>>8)&255, n&255];
+}
+function liftDark(rgb){      // colores casi negros: se aclaran un poco para que se vea el sombreado
+  const lum = (0.299*rgb[0] + 0.587*rgb[1] + 0.114*rgb[2]) / 255;
+  if(lum >= 0.16) return rgb;
+  return rgb.map(v=>Math.round(v + (255 - v) * 0.2));
+}
+function iconColorsFor(p){
+  const sec = useSecondary(p.team);
+  const ic = (teamIconCols && teamIconCols[p.team]) || {};
+  const prim = hexToRgb(tokenColorFor(p)) || [128,128,128];
+  const det = hexToRgb(sec ? ic.d2 : ic.d) || hexToRgb(textColorFor(p)) || [255,255,255];
+  const arm = hexToRgb(sec ? ic.a2 : ic.a);
+  const base = hexToRgb(positionBorderColor(p));
+  return { prim, det, arm, base };
+}
+function tintLayer(data, color, mode){      // mode 'norm': el gris más claro de la capa pasa a ser el color pleno
+  const out = new ImageData(38, 38), src = data.data, d = out.data;
+  let mx = 1;
+  for(let i=0;i<src.length;i+=4){ if(src[i+3]>0 && src[i]>mx) mx = src[i]; }
+  const col = liftDark(color);
+  for(let i=0;i<src.length;i+=4){
+    if(src[i+3]===0) continue;
+    const k = Math.min(1, src[i] / mx);
+    d[i] = Math.round(col[0]*k); d[i+1] = Math.round(col[1]*k); d[i+2] = Math.round(col[2]*k); d[i+3] = src[i+3];
+  }
+  return out;
+}
+function paintLayer(g, imageData){
+  const t = document.createElement('canvas'); t.width = 38; t.height = 38;
+  t.getContext('2d').putImageData(imageData, 0, 0);
+  g.drawImage(t, 0, 0);
+}
+// Devuelve un dataURL con el icono compuesto, o null si no hay icono / aún está cargando
+function playerIconUrl(p){
+  const info = playerIconInfo(p);
+  if(!info) return null;
+  const files = [];
+  for(let i=1;i<=info.layers;i++) files.push(info.icon + '_' + i + '.png');
+  const L = files.map(getIconImg);
+  const B = getIconImg(info.icon + '_BASE.png');
+  if(L.some(e=>!e.done) || !B.done) return null;
+  if(L.some(e=>!e.ok)) return null;
+  const cols = iconColorsFor(p), flip = (p.team==='B');
+  const key = [info.icon, info.layers, flip ? 1 : 0, cols.prim, cols.det, cols.arm, cols.base].join('|');
+  if(iconComposeCache[key]) return iconComposeCache[key];
+  const baseOp = (iconsIndex && iconsIndex.base_opacity != null) ? iconsIndex.base_opacity : 0.6;
+  const armOp = (iconsIndex && iconsIndex.armor_opacity != null) ? iconsIndex.armor_opacity : 0.25;
+  const cv = document.createElement('canvas'); cv.width = 38; cv.height = 38;
+  const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
+  if(flip){ g.translate(38, 0); g.scale(-1, 1); }
+  if(B.ok && cols.base){                      // BASE: solo su forma, con el color de la posición
+    const o = new ImageData(38, 38), s = B.data.data;
+    for(let i=0;i<s.length;i+=4){ if(s[i+3]===0) continue; o.data[i]=cols.base[0]; o.data[i+1]=cols.base[1]; o.data[i+2]=cols.base[2]; o.data[i+3]=Math.round(s[i+3]*baseOp); }
+    paintLayer(g, o);
+  }
+  L.forEach((e, idx)=>{
+    const n = idx + 1;
+    if(n===1){ paintLayer(g, e.data); }
+    else if(n===2){
+      if(!cols.arm){ paintLayer(g, e.data); }
+      else {
+        const o = new ImageData(38, 38), s = e.data.data;
+        for(let i=0;i<s.length;i+=4){ if(s[i+3]===0) continue; for(let k=0;k<3;k++) o.data[i+k] = Math.round(s[i+k]*(1-armOp) + cols.arm[k]*armOp); o.data[i+3] = s[i+3]; }
+        paintLayer(g, o);
+      }
+    }
+    else if(n===3){ paintLayer(g, tintLayer(e.data, cols.prim)); }
+    else { paintLayer(g, tintLayer(e.data, cols.det)); }
+  });
+  const url = cv.toDataURL('image/png');
+  iconComposeCache[key] = url;
+  return url;
+}
+function setUseIcons(v){
+  useIconsPref = !!v;
+  try{ localStorage.setItem('bb7_useIcons', v ? '1' : '0'); }catch(e){}
+  setSwitch('iconsSw', useIconsPref);
+  renderRosters(); renderPitch();
+}
+try{ loadIconsIndex(); }catch(e){}
+
+
 // ===== LANZAR COMPAÑERO =====
 let throwTeamWheelActive = false;
 let throwSt = null;            // { stage:'pick'|'target'|'check', throwerId, thrownId, candIds, wasDown }
@@ -6258,7 +6414,7 @@ function throwLand(thrown, thrower, r, c, penalty, queue, crashed, wasDown){
       occ.rooted = false;
       queueBallDropIfCarrier(occ.id, r, c);
       queue.push(occ.id);
-      if(occ.team===thrower.team) pendingTurnoverAfterResolve = true;
+      if(occ.team===thrower.team) markTurnover('el lanzado derribó a un compañero al aterrizar');
     }
     const sc = scatterFrom(r, c, 1);
     if(sc.outOfBounds){ thrownLeavesPitch(thrown, thrower, sc.exitR, sc.exitC, sc.fromR, sc.fromC, queue); return; }
@@ -6351,7 +6507,7 @@ function throwFall(thrown, thrower, queue){
   }
   thrown.condition = 'tumbado'; thrown.rooted = false;
   log('💥 ' + thrown.name + ' se Cae' + (ball.carrierId===thrown.id ? ' con el balón: cambio de turno.' : ' (sin cambio de turno, no llevaba el balón).'));
-  if(ball.carrierId===thrown.id){ queueBallDropIfCarrier(thrown.id, thrown.row, thrown.col); pendingTurnoverAfterResolve = true; }
+  if(ball.carrierId===thrown.id){ queueBallDropIfCarrier(thrown.id, thrown.row, thrown.col); markTurnover('el lanzado ' + thrown.name + ' cae con el balón'); }
   queue.push(thrown.id);
   renderPitch(); renderRosters(); renderSelInfo(); broadcastState();
   pendingArmorQueue = queue;
@@ -6361,7 +6517,7 @@ function thrownLeavesPitch(thrown, thrower, exitR, exitC, fromR, fromC, queue){
   log('🏟️ ' + thrown.name + ' sale del campo al ser lanzado' + (ball.carrierId===thrown.id ? ' con el balón: habrá devolución.' : '.') + ' El público puede herirle y hay cambio de turno.');
   if(ball.carrierId===thrown.id) queueBallDropIfCarrier(thrown.id, fromR, fromC, exitR, exitC);
   thrown.onPitch = false; thrown.row = null; thrown.col = null; thrown.rooted = false;
-  pendingTurnoverAfterResolve = true;
+  markTurnover('el lanzado ' + thrown.name + ' sale del campo');
   pendingArmorQueue = queue;
   renderPitch(); renderRosters(); renderSelInfo(); broadcastState();
   openInjuryDirect(thrown);
@@ -6555,7 +6711,7 @@ function resolveFerocityAttack(targetId){
   pendingArmorQueue = [target.id];
   golpeMortiferoMap[target.id] = attacker.id;
   if(wasCarrier){
-    pendingTurnoverAfterResolve = true;
+    markTurnover('el compañero derribado llevaba el balón');
     log('🔄 El compañero derribado llevaba el balón — cambio de turno.');
   }
   processNextArmorInQueue();
@@ -8268,7 +8424,8 @@ function resolveKickoffBounce(r,c){
   kickoffTargetRow = null; kickoffTargetCol = null;
   const occ = occupiedBy(finalR, finalC);
   if(occ && occ.condition==='standing'){
-    openCatchModal(occ, true);
+    log('🏈 El balón cae sobre ' + occ.name + ' tras el rebote final: -1 para atraparlo por venir de rebote.');
+    openCatchModal(occ, false, false, 1, 'balón de rebote');
   } else if(!occ && offerHeroicReception(finalR, finalC, 'kickoff', {})){
     // el flujo continúa cuando el Entrenador decida (attemptHeroicReception / declineHeroicReception)
   } else {
@@ -8665,7 +8822,7 @@ function resolveDodge(success){
     }
     if(heroicId) applyHeroicTackleFall(heroicId, fromR, fromC);
     broadcastState();
-    pendingTurnoverAfterResolve = true;
+    markTurnover('falla la esquiva ' + p.name);
     openArmorModal(p);
   }
 }
@@ -8802,7 +8959,7 @@ function resolveJump(success){
   log('💥 ' + p.name + ' falla al ' + label + (natural1 ? ' (1 natural) y cae en la casilla de origen; su activación termina.' : ' y cae en la casilla de destino.'));
   queueBallDropIfCarrier(p.id, fr, fc);
   broadcastState();
-  pendingTurnoverAfterResolve = true;
+  markTurnover('falla al ' + label + ' ' + p.name);
   openArmorModal(p);
 }
 function openGfiModal(p, toR, toC, chainDodge, blockDefenderId, stabDefenderId, jump, mast){
@@ -8896,7 +9053,7 @@ function resolveGfi(success){
     log('💥 ' + p.name + ' falla "a por ellos" y cae al suelo.');
     queueBallDropIfCarrier(p.id, toR, toC);
     broadcastState();
-    pendingTurnoverAfterResolve = true;
+    markTurnover('falla «a por ellos» ' + p.name);
     openArmorModal(p);
   }
 }
@@ -9237,7 +9394,7 @@ function rollInjury(){
   if(gmForInjury) injBonuses.push('Golpe Mortífero de ' + gmAttacker.name);
   else if(llaveForInjury) injBonuses.push('Llave de Brazo de ' + llaveAttacker.name);
   { const js = !jugarSucioUsedOnArmor ? foulerWithSkill('jugar sucio', 'dirty player') : null; if(js) injBonuses.push('Jugar sucio de ' + js.name); }
-  if(p && playerHasSkill(p, 'descomposicion', 'descomposición', 'decay')) injBonuses.push('Descomposición de ' + p.name);
+  if(p && (sum===10 || sum===11) && playerHasSkill(p, 'descomposicion', 'descomposición', 'decay')) injBonuses.push('Descomposición de ' + p.name);
   if(injBonuses.length){
     const bonusTxt = injBonuses.map(t=>'+1 (' + t + ')').join(' ');
     document.getElementById('injurySum').textContent = 'Suma: ' + sum + ' ' + bonusTxt + ' = ' + (sum + injBonuses.length);
@@ -9575,6 +9732,8 @@ function autoTurnoverThenEndTurn(){
     endCharge();
     return;
   }
+  log('🔁 CAMBIO DE TURNO: ' + teamName(state.active) + ' pierde el turno' + (turnoverReason ? ' — ' + turnoverReason : '') + '.');
+  turnoverReason = '';
   showTurnoverOverlay();
   endTurn();
 }
@@ -10324,7 +10483,7 @@ document.addEventListener('DOMContentLoaded', setupModalEnhancements);
 if(document.readyState==='complete' || document.readyState==='interactive'){ setupModalEnhancements(); }
 
 try{ loadRosterIndex(); }catch(e){}
-try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesButtons(); updateColorChoiceButtons(); setSwitch('colorsSw', customColorsEnabled); }catch(e){}
+try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesButtons(); updateColorChoiceButtons(); setSwitch('colorsSw', customColorsEnabled); setSwitch('iconsSw', useIconsPref); }catch(e){}
 // Dados de 6 caras: los cuadros de dado muestran el icono dadoN.png (el texto se conserva, solo se oculta por CSS vía data-d6)
 (function(){
   const ids = ['kickoffDistDie','dodgeDie','gfiDie','animosityDie','armorDie1','armorDie2','regenDie','injuryDie1','injuryDie2','koDie','traitCheckDie','catchDie','jumpUpDie','interceptDie','passDie','secureBallDie','keDie1','keDie2'];
@@ -10334,7 +10493,7 @@ try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesBut
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V84'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V86'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

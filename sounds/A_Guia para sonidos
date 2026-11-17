@@ -1,0 +1,26 @@
+Formatos y peso
+* MP3 u OGG funcionan en todos los navegadores. WAV también, pero pesa mucho más.
+* Cada sonido debería durar entre 0,3 y 1,5 segundos, en mono, a 22 o 44 kHz y entre 64 y 96 kbps. Así pesa de 5 a 30 KB.
+
+Diez sonidos pesan menos que un solo icono grande. GitHub Pages los sirve sin problema.
+
+Recorta los silencios del principio. Si no, el sonido llega con retraso respecto al dado.
+
+Se pueden recortar y comprimir con Audacity (gratis) o con una línea de ffmpeg. Si quieres, te dejo el comando.
+Cómo encajaría en la app
+Una carpeta sounds/ junto a player_icons/, y una función playSound('dados') que carga los sonidos al arrancar.
+La app ya sabe cuándo ocurren las cosas: tirada de dados, caída, balón recogido, touchdown, cambio de turno, aviso del chat. Cada PC reproduce el sonido al ver el evento en el estado sincronizado, así que suena en ambos PCs sin enviar audio por Firebase.
+Habría que evitar que suene doble en el PC que lanza el dado.
+Los navegadores no dejan sonar nada hasta que el usuario hace un primer clic. En la app siempre hay un clic antes (cargar equipo, colocar), así que no da problemas.
+Meteríamos un interruptor Sonido sí/no y un volumen en el Menú, locales como los demás, porque no todos quieren oírlo.
+Para los avisos cortos, como el del chat, se pueden generar pitidos por código, sin archivo.
+
+*Dónde descargar sonidos gratis
+- Pixabay Sound Effects (pixabay.com/sound-effects): licencia propia, sin atribución, muy fácil de usar.
+- Mixkit (mixkit.co/free-sound-effects): gratis y sin registro. Tiene sonidos de juegos y dados.
+- Freesound (freesound.org): el catálogo más grande, con buscadores como “dice roll”, “dice shake cup” o “body fall”. Pide cuenta gratuita y cada sonido tiene su licencia (CC0, CC-BY…).
+- Kenney (kenney.nl/assets): paquetes de efectos para juegos en CC0, sin atribución.
+- OpenGameArt (opengameart.org): sonidos y música de juegos, con licencias variadas.
+- Zapsplat: gratis con cuenta, pero con atribución si no pagas.
+
+Antes de usar cada sonido, mira su licencia. En un proyecto personal para tu liga no suele haber problema, pero si algún día lo abres al público conviene que sean CC0 o de licencia sin atribución. No he comprobado las condiciones actuales de cada web.

@@ -2,7 +2,7 @@
  "version": 1,
  "size": 38,
  "base_opacity": 0.6,
- "armor_opacity": 0.25,
+ "armor_opacity": 0.40,
  "layers": {
   "AMA_EAGLE": 3,
   "AMA_PYTHON": 3,
@@ -46,10 +46,10 @@
   "DWA_BLITZER": 3,
   "DWA_TROLL": 3,
   "DWA_DEATHROLLER": 3,
-  "ELV_LINEMAN": 3,
-  "ELV_THROWER": 3,
-  "ELV_CATCHER": 3,
-  "ELV_BLITZER": 3,
+  "ELV_LINEMAN": 4,
+  "ELV_THROWER": 4,
+  "ELV_CATCHER": 4,
+  "ELV_BLITZER": 4,
   "GOB_GOBLIN": 3,
   "GOB_BOMBARDIER": 3,
   "GOB_LOONEY": 3,
@@ -389,23 +389,23 @@
   "Elven Union": {
    "Lineman": {
     "icon": "ELV_LINEMAN",
-    "layers": 3
+    "layers": 4
    },
    "Thrower": {
     "icon": "ELV_THROWER",
-    "layers": 3
+    "layers": 4
    },
    "Catcher": {
     "icon": "ELV_CATCHER",
-    "layers": 3
+    "layers": 4
    },
    "Blitzer": {
     "icon": "ELV_BLITZER",
-    "layers": 3
+    "layers": 4
    },
    "Journey Elf": {
     "icon": "ELV_LINEMAN",
-    "layers": 3
+    "layers": 4
    }
   },
   "Goblin": {

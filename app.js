@@ -500,6 +500,7 @@ function hostRoom(){
   listenForPeers();
   initRoles(true);
   listenForState();
+  initChat();
   broadcastState(); // publica el estado actual (por si ya había equipos cargados antes de crear la sala)
 }
 
@@ -513,6 +514,7 @@ function joinRoom(){
   joinPresence();
   listenForPeers();
   initRoles(false);
+  initChat();
   listenForState(); // recibe el estado actual de la sala automáticamente; NO se envía el propio (evita sobrescribir al creador)
 }
 
@@ -3175,7 +3177,7 @@ function renderPitch(){
   if(phase==='live' && (declaredAction==='pass' || (declaredAction==='throwteam' && throwSt && throwSt.stage==='target')) && selected!==null){
     const psp = players.find(x=>x.id===selected);
     if(psp){
-      players.filter(o=>o.onPitch && o.row!=null && o.team!==psp.team && hasPresencia(o)).forEach(o=>{
+      players.filter(o=>o.onPitch && o.row!=null && o.team!==psp.team && o.condition!=='tumbado' && o.condition!=='aturdido' && hasPresencia(o)).forEach(o=>{
         presZone = presZone || {};
         for(let dr=-3; dr<=3; dr++) for(let dc=-3; dc<=3; dc++){
           const rr=o.row+dr, cc=o.col+dc; if(rr<0||rr>=ROWS||cc<0||cc>=COLS) continue;
@@ -3741,6 +3743,9 @@ function getActionMenuOptionsBase(p){
     if(canApunalar(p)){
       opts.push({ icon:'🔪', label:'Levantar/Apuñalar', fn:'actionMenuStandApunalar' });
     }
+    if(canMasticar(p)){
+      opts.push({ icon:'🦷', label:'Levantar/Masticar', fn:'actionMenuStandMasticar' });
+    }
     if(playerHasSkill(p, 'en pie de un salto', 'jump up')){
       opts.push({ icon:'🤸', label:'Salto+Placar', fn:'actionMenuJumpUp' });
     }
@@ -3934,6 +3939,19 @@ function actionMenuStandApunalar(){
   selected = id;
   declaredAction = 'apunalar';
   updateStatus(p.name + ' declara Apuñalar — elegid al rival adyacente (resaltado).');
+  renderPitch(); renderSelInfo();
+  broadcastState();
+}
+
+function actionMenuStandMasticar(){
+  const id = pendingActionMenuPlayer;
+  closeActionMenu();
+  const p = players.find(x=>x.id===id);
+  if(!p) return;
+  if(!standUp()) return;
+  selected = id;
+  declaredAction = 'masticar';
+  updateStatus(p.name + ' se levanta y declara Masticar — elegid al rival En pie al que Marca.');
   renderPitch(); renderSelInfo();
   broadcastState();
 }
@@ -6095,7 +6113,7 @@ function hasPogo(p){ return playerHasSkill(p, 'pogo saltarin', 'pogo stick'); }
 function hasPiernasLargas(p){ return playerHasSkill(p, 'piernas muy largas', 'very long legs'); }
 function presenciaCount(p){
   if(!p || p.row==null) return 0;
-  return players.filter(o=> o.onPitch && o.row!=null && o.team!==p.team && hasPresencia(o) && Math.max(Math.abs(o.row-p.row), Math.abs(o.col-p.col))<=3).length;
+  return players.filter(o=> o.onPitch && o.row!=null && o.team!==p.team && o.condition!=='tumbado' && o.condition!=='aturdido' && hasPresencia(o) && Math.max(Math.abs(o.row-p.row), Math.abs(o.col-p.col))<=3).length;
 }
 function jumpLabel(kind){ return kind==='saltar' ? 'Saltar' : kind==='pogo' ? 'Hacer pogo' : 'Brincar'; }
 function jumpIcon(kind){ return kind==='saltar' ? '🦘' : kind==='pogo' ? '🪀' : '🤸'; }
@@ -6303,6 +6321,118 @@ function setUseIcons(v){
 try{ loadIconsIndex(); }catch(e){}
 
 
+// =====================================================================
+// CHAT DE SALA (Firebase rooms/<código>/chat). No forma parte del estado de la partida.
+// =====================================================================
+let chatRef = null, chatQuery = null, chatJoinedAt = 0, chatLastSend = 0, chatUnread = 0;
+let chatSoundOn = (()=>{ try{ return localStorage.getItem('bb7_chatSound')!=='0'; }catch(e){ return true; } })();   // preferencia LOCAL
+let chatAudio = null;
+const CHAT_TITLE = document.title;
+function chatEnsureAudio(){
+  try{
+    if(!chatAudio){ const AC = window.AudioContext || window.webkitAudioContext; if(AC) chatAudio = new AC(); }
+    if(chatAudio && chatAudio.state==='suspended') chatAudio.resume();
+  }catch(e){}
+}
+document.addEventListener('pointerdown', chatEnsureAudio, { once:false, passive:true });
+function chatBeep(){
+  if(!chatSoundOn) return;
+  try{
+    chatEnsureAudio(); if(!chatAudio) return;
+    const t0 = chatAudio.currentTime;
+    [[880,0],[1175,0.13]].forEach(([f,d])=>{
+      const o = chatAudio.createOscillator(), g = chatAudio.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t0+d); g.gain.exponentialRampToValueAtTime(0.12, t0+d+0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0+d+0.16);
+      o.connect(g); g.connect(chatAudio.destination); o.start(t0+d); o.stop(t0+d+0.18);
+    });
+  }catch(e){}
+}
+function setChatSound(v){
+  chatSoundOn = !!v;
+  try{ localStorage.setItem('bb7_chatSound', v ? '1' : '0'); }catch(e){}
+  setSwitch('chatSndSw', chatSoundOn);
+  if(chatSoundOn) chatBeep();
+}
+function chatSenderLabel(){
+  if(myRole==='A' || myRole==='B') return teamName(myRole);
+  if(myRole==='S') return 'Espectador';
+  return 'Jugador';
+}
+function chatSetEnabled(on){
+  const i = document.getElementById('chatInput'), b = document.getElementById('chatSend');
+  if(i){ i.disabled = !on; i.placeholder = on ? 'Escribe un mensaje…' : 'Entra en una sala para chatear'; }
+  if(b) b.disabled = !on;
+}
+function chatAppend(m, isNew){
+  const log = document.getElementById('chatLog'); if(!log) return;
+  const empty = log.querySelector('.small-note'); if(empty) empty.remove();
+  const mine = m.from===myPeerId;
+  const d = document.createElement('div');
+  d.className = 'chat-msg' + (mine ? ' mine' : '') + (isNew && !mine ? ' fresh' : '');
+  const when = new Date(m.ts || Date.now());
+  const hh = String(when.getHours()).padStart(2,'0') + ':' + String(when.getMinutes()).padStart(2,'0');
+  const who = document.createElement('b'); who.textContent = (m.name || '?') + ' ';
+  const tm = document.createElement('span'); tm.className = 'chat-time'; tm.textContent = hh;
+  const tx = document.createElement('div'); tx.className = 'chat-text'; tx.textContent = m.text || '';
+  const head = document.createElement('div'); head.appendChild(who); head.appendChild(tm);
+  d.appendChild(head); d.appendChild(tx);
+  const nearBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 60;
+  log.appendChild(d);
+  while(log.children.length > 150) log.removeChild(log.firstChild);
+  if(nearBottom || mine) log.scrollTop = log.scrollHeight;
+}
+function chatNotify(){
+  chatBeep();
+  const panel = document.getElementById('chatPanel');
+  if(panel) panel.classList.add('chat-alert');
+  if(document.hidden){ chatUnread++; document.title = '💬 (' + chatUnread + ') ' + CHAT_TITLE; }
+}
+function chatClearAlert(){
+  const panel = document.getElementById('chatPanel'); if(panel) panel.classList.remove('chat-alert');
+  document.querySelectorAll('#chatLog .chat-msg.fresh').forEach(e=>e.classList.remove('fresh'));
+  chatUnread = 0; document.title = CHAT_TITLE;
+}
+function initChat(){
+  try{
+    if(!roomCode) return;
+    if(chatQuery){ try{ chatQuery.off(); }catch(e){} }
+    const log = document.getElementById('chatLog'); if(log) log.innerHTML = '';
+    chatRef = fbDb.ref('rooms/' + roomCode + '/chat');
+    chatJoinedAt = Date.now();
+    chatSetEnabled(true);
+    chatQuery = chatRef.limitToLast(60);
+    chatQuery.on('child_added', snap=>{
+      const m = snap.val(); if(!m || typeof m.text!=='string') return;
+      const isNew = (m.ts || 0) >= chatJoinedAt - 1500;
+      chatAppend(m, isNew);
+      if(isNew && m.from!==myPeerId) chatNotify();
+    }, err=>{ console.error('Chat: error de lectura', err); });
+  }catch(e){ console.error('Chat no disponible', e); }
+}
+function sendChat(){
+  const inp = document.getElementById('chatInput'); if(!inp || !chatRef) return;
+  const text = inp.value.replace(/\s+/g,' ').trim().slice(0, 300);
+  if(!text) return;
+  const now = Date.now();
+  if(now - chatLastSend < 400) return;
+  chatLastSend = now;
+  inp.value = '';
+  chatEnsureAudio();
+  chatRef.push({ from: myPeerId, name: chatSenderLabel(), text, ts: now }).catch(err=>{
+    console.error('Chat: error al enviar', err);
+    chatAppend({ from:'sys', name:'⚠️ Chat', text:'No se pudo enviar el mensaje (revisa las Reglas de Firebase).', ts:Date.now() }, false);
+  });
+}
+(function(){
+  const i = document.getElementById('chatInput'), b = document.getElementById('chatSend'), p = document.getElementById('chatPanel');
+  if(i) i.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendChat(); } });
+  if(b) b.addEventListener('click', sendChat);
+  if(p){ p.addEventListener('mouseenter', chatClearAlert); p.addEventListener('focusin', chatClearAlert); }
+  window.addEventListener('focus', ()=>{ if(chatUnread){ chatUnread = 0; document.title = CHAT_TITLE; } });
+  chatSetEnabled(false);
+})();
+
 // ===== LANZAR COMPAÑERO =====
 let throwTeamWheelActive = false;
 let throwSt = null;            // { stage:'pick'|'target'|'check', throwerId, thrownId, candIds, wasDown }
@@ -6414,7 +6544,6 @@ function throwLand(thrown, thrower, r, c, penalty, queue, crashed, wasDown){
       occ.rooted = false;
       queueBallDropIfCarrier(occ.id, r, c);
       queue.push(occ.id);
-      if(occ.team===thrower.team) markTurnover('el lanzado derribó a un compañero al aterrizar');
     }
     const sc = scatterFrom(r, c, 1);
     if(sc.outOfBounds){ thrownLeavesPitch(thrown, thrower, sc.exitR, sc.exitC, sc.fromR, sc.fromC, queue); return; }
@@ -10483,7 +10612,7 @@ document.addEventListener('DOMContentLoaded', setupModalEnhancements);
 if(document.readyState==='complete' || document.readyState==='interactive'){ setupModalEnhancements(); }
 
 try{ loadRosterIndex(); }catch(e){}
-try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesButtons(); updateColorChoiceButtons(); setSwitch('colorsSw', customColorsEnabled); setSwitch('iconsSw', useIconsPref); }catch(e){}
+try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesButtons(); updateColorChoiceButtons(); setSwitch('colorsSw', customColorsEnabled); setSwitch('iconsSw', useIconsPref); setSwitch('chatSndSw', chatSoundOn); }catch(e){}
 // Dados de 6 caras: los cuadros de dado muestran el icono dadoN.png (el texto se conserva, solo se oculta por CSS vía data-d6)
 (function(){
   const ids = ['kickoffDistDie','dodgeDie','gfiDie','animosityDie','armorDie1','armorDie2','regenDie','injuryDie1','injuryDie2','koDie','traitCheckDie','catchDie','jumpUpDie','interceptDie','passDie','secureBallDie','keDie1','keDie2'];
@@ -10493,7 +10622,7 @@ try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesBut
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V86'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V88'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-w-version="W_V67">
+<html lang="es" data-w-version="W_V68">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -60,6 +60,8 @@
         <button class="sw" id="ccBSw" data-on="SECUNDARIO" data-off="PRINCIPAL" onclick="setColorChoice('B', colorChoice.B==='sec'?'main':'sec')"><span class="sw-txt">PRINCIPAL</span><span class="sw-knob"></span></button></div>
       <div class="sw-row"><span class="sw-label">Iconos de jugador</span>
         <button class="sw on" id="iconsSw" data-on="ICONOS" data-off="FICHAS" onclick="setUseIcons(!useIconsPref)"><span class="sw-txt">ICONOS</span><span class="sw-knob"></span></button></div>
+      <div class="sw-row"><span class="sw-label">Sonido del chat</span>
+        <button class="sw on" id="chatSndSw" data-on="SÍ" data-off="NO" onclick="setChatSound(!chatSoundOn)"><span class="sw-txt">SÍ</span><span class="sw-knob"></span></button></div>
       <div class="sw-row"><span class="sw-label">Colores de equipo</span>
         <button class="sw on" id="colorsSw" data-on="SÍ" data-off="NO" onclick="setCustomColors(!customColorsEnabled)"><span class="sw-txt">SÍ</span><span class="sw-knob"></span></button></div>
 
@@ -317,8 +319,8 @@
     </div>
     <div class="panel" id="chatPanel">
       <h2>Chat</h2>
-      <div class="chat-log" id="chatLog"><div class="small-note">El chat se activa en el siguiente paso.</div></div>
-      <div class="chat-row"><input type="text" id="chatInput" placeholder="Escribe un mensaje…" disabled><button id="chatSend" disabled>Enviar</button></div>
+      <div class="chat-log" id="chatLog"><div class="small-note">Entra en una sala para chatear con tu rival.</div></div>
+      <div class="chat-row"><input type="text" id="chatInput" placeholder="Entra en una sala para chatear" disabled maxlength="300"><button id="chatSend" disabled>Enviar</button></div>
     </div>
   </div>
 

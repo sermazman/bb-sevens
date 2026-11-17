@@ -6,3 +6,12 @@ Aclara los grises con Imagen > Ajustes > Niveles: sube el negro de salida (el va
 Para comprobarlo antes de exportar, pon encima una capa de color sólido (por ejemplo el 
 #00ff2a), modo Multiplicar y recortada a la capa gris (Alt+click entre capas). Es justo lo que hará la app. Si sale apagado, sube más el negro de salida.
 Exporta como PNG con transparencia (en Photopea: Archivo > Exportar como > PNG), sin cambiar el tamaño del lienzo (38 × 38).
+
+
+2. Capas y orden de apilado (de abajo a arriba)
+Capa	Archivo	Qué es	Cómo se pinta
+BASE	ICONO_BASE.png	Base/peana bajo el jugador	Solo se usa su forma: se rellena con el color de la posición (el que hoy es el borde exterior de la ficha: Líneas gris, Receptores amarillo…) al 60 % de opacidad
+1	ICONO_1.png	Piel y zonas que no cambian de color	Tal cual
+2	ICONO_2.png	Armadura	Veladura con el nuevo Color ARMADURA al 25 %. Sin color de armadura → se deja como el original
+3	ICONO_3.png	Color primario del equipo	Dibujada en gris; se tiñe con el color primario
+4	ICONO_4.png	Color secundario (opcional, casos excepcionales)	Dibujada en gris; se tiñe con el color secundario

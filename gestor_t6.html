@@ -528,6 +528,7 @@ function renderRoster(){
       ${STAT_COLS.map(([k])=>`<td class="num">${s[k]||0}</td>`).join('')}
       <td class="num"><strong>${lp.progression.sppTotal}</strong></td>
       <td class="price"><input type="number" min="0" step="5000" value="${lp.price||0}" data-price="${tp.num}" aria-label="Precio de ${esc(tp.name)}"></td>
+      <td class="num"><strong>${fmt((lp.price||0)+impValue(lp))}</strong></td>
       <td><select data-status="${tp.num}" aria-label="Estado de ${esc(tp.name)}">
         <option value="active" ${!out?'selected':''}>Disponible</option>
         <option value="missNextGame" ${out?'selected':''}>Baja próximo partido</option></select></td>
@@ -537,10 +538,10 @@ function renderRoster(){
   $('#p-roster').innerHTML=`
     <div class="tscroll"><table>
       <thead><tr><th>#</th><th class="l">Jugador</th><th>MO</th><th>FU</th><th>AG</th><th>PA</th><th>AR</th><th class="l">Habilidades</th>
-      ${STAT_COLS.map(([,t])=>`<th>${t}</th>`).join('')}<th>SPP</th><th>Precio</th><th>Estado</th><th>Draft</th><th title="Categorías de habilidad que puede ganar">Prim. / Sec.</th></tr></thead>
+      ${STAT_COLS.map(([,t])=>`<th>${t}</th>`).join('')}<th>SPP</th><th title="Precio base del jugador (editable)">Precio base</th><th title="Valor real = precio base + mejoras + pago de draft">Valor</th><th>Estado</th><th>Draft</th><th title="Categorías de habilidad que puede ganar">Prim. / Sec.</th></tr></thead>
       <tbody>${rows}</tbody></table></div>
     <p class="hint">${ACC_LEGEND}</p>
-    <p class="hint">Precio y estado se pueden corregir a mano. Las estadísticas, los SPP (solo orientativos) y las lesiones se actualizan solos al registrar un partido.</p>`;
+    <p class="hint">El precio base y el estado se pueden corregir a mano; el Valor (precio base + mejoras + pago de draft) se calcula solo. Las estadísticas, los SPP (solo orientativos) y las lesiones se actualizan solos al registrar un partido.</p>`;
 }
 
 function renderHistory(){

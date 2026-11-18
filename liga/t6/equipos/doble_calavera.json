@@ -104,7 +104,8 @@
         "Humanoide bala",
         "Escurridizo",
         "Veterano",
-        "Goblin - Linea"
+        "Goblin - Linea",
+        "Dos cabezas"
       ]
     },
     {
@@ -120,8 +121,7 @@
         "Esquivar",
         "Humanoide bala",
         "Escurridizo",
-        "Goblin - Linea",
-        "Dos cabezas"
+        "Goblin - Linea"
       ]
     },
     {
@@ -173,20 +173,6 @@
         "Insifnificante",
         "Canijo",
         "Snotling - Linea"
-      ]
-    },
-    {
-      "num": 9,
-      "name": "RATITO",
-      "position": "Skaven Clanrat",
-      "ma": 7,
-      "st": 3,
-      "ag": "3+",
-      "pa": "4+",
-      "av": "8+",
-      "skills": [
-        "Animosidad (Goblin)",
-        "Skaven - Linea"
       ]
     }
   ],
@@ -322,7 +308,17 @@
         "progression": {
           "sppTotal": 0,
           "sppUnspent": 0,
-          "improvements": []
+          "improvements": [
+            {
+              "matchId": "T6-J01",
+              "order": 1,
+              "category": "primary",
+              "selection": "chosen",
+              "skill": "Dos cabezas",
+              "sppCost": 0,
+              "valueExtra": 10000
+            }
+          ]
         },
         "statistics": {
           "sprints": 0,
@@ -344,17 +340,7 @@
         "progression": {
           "sppTotal": 0,
           "sppUnspent": 0,
-          "improvements": [
-            {
-              "matchId": "T6-J01",
-              "order": 1,
-              "category": "primary",
-              "selection": "chosen",
-              "skill": "Dos cabezas",
-              "sppCost": 0,
-              "valueExtra": 10000
-            }
-          ]
+          "improvements": []
         },
         "statistics": {
           "sprints": 0,
@@ -435,28 +421,6 @@
         },
         "injuries": [],
         "status": "active"
-      },
-      {
-        "num": 9,
-        "price": 50000,
-        "progression": {
-          "sppTotal": 0,
-          "sppUnspent": 0,
-          "improvements": []
-        },
-        "statistics": {
-          "sprints": 0,
-          "passes": 0,
-          "touchdowns": 0,
-          "deflections": 0,
-          "interceptions": 0,
-          "lightInjuries": 0,
-          "seriousInjuries": 0,
-          "deaths": 0,
-          "mvp": 0
-        },
-        "injuries": [],
-        "status": "active"
       }
     ],
     "matches": [
@@ -509,8 +473,8 @@
             "sppEarned": 6
           },
           {
-            "num": 5,
-            "name": "JOHN COBRA",
+            "num": 4,
+            "name": "EL BATU",
             "sprints": 0,
             "passes": 0,
             "touchdowns": 0,
@@ -550,7 +514,7 @@
           }
         ],
         "notes": "",
-        "registeredAt": "2026-11-18T11:27:59.817Z"
+        "registeredAt": "2026-11-18T11:51:37.642Z"
       }
     ],
     "retiredPlayers": [],

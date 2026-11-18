@@ -1804,7 +1804,7 @@ async function makeSheetPdf(d,e,logo){
     const {fill,text='',size=7,bold=false,align='center',color=BK,max=0,segs=null}=o;
     if(fill){ pdf.setFillColor(...fill); pdf.rect(x,y,w,h,'FD'); } else pdf.rect(x,y,w,h,'S');
     if(segs&&segs.length){   /* texto con partes en rojo (habilidades ganadas en la liga) */
-      const words=[]; segs.forEach((sg,si)=>{ words.push({t:sg.t+(si<segs.length-1?',':''),red:sg.red}); });
+      const words=[]; segs.forEach((sg,si)=>{ words.push({t:sg.t+(si<segs.length-1?',':''),red:sg.red,vet:sg.vet,cap:sg.cap}); });
       let sz=size, lines;
       for(;;){
         lines=[[]]; let cur=0; pdf.setFontSize(sz);
@@ -1816,7 +1816,9 @@ async function makeSheetPdf(d,e,logo){
       }
       const lh=sz*0.3528*1.15;
       lines.forEach((ln,li)=>{ let xx=x+0.9; const yy=y+h/2+(li-(lines.length-1)/2)*lh;
-        ln.forEach(wd=>{ pdf.setFont('helvetica',wd.red?'bold':'normal'); pdf.setFontSize(sz); pdf.setTextColor(...(wd.red?[200,0,0]:BK)); pdf.text(wd.t,xx,yy,{baseline:'middle'}); xx+=pdf.getTextWidth(wd.t+' '); }); });
+        ln.forEach(wd=>{ const bold=wd.red||wd.vet||wd.cap; pdf.setFont('helvetica',bold?'bold':'normal'); pdf.setFontSize(sz);
+          if(wd.vet||wd.cap){ const tw=pdf.getTextWidth(wd.t.replace(/,$/,'')), bh=lh*0.92; pdf.setFillColor(...(wd.vet?[242,194,48]:[200,0,0])); pdf.roundedRect(xx-0.5,yy-bh/2,tw+1,bh,0.6,0.6,'F'); }
+          pdf.setTextColor(...(wd.vet?BK:wd.cap?WH:wd.red?[200,0,0]:BK)); pdf.text(wd.t,xx,yy,{baseline:'middle'}); xx+=pdf.getTextWidth(wd.t+' '); }); });
       pdf.setTextColor(...BK); return;
     }
     if(text===''||text===null||text===undefined) return;
@@ -1874,7 +1876,7 @@ async function makeSheetPdf(d,e,logo){
     const gained=new Set(imps.filter(i=>i.skill).map(i=>sheetNorm(i.skill)));
     ((lp&&lp.injuries)||[]).forEach(inj=>{ if(inj.hatred) gained.add(sheetNorm(`Odio (${inj.hatred})`)); });
     const acc=skillAccess(d.race,p.position), accLines=acc?`${acc.prim.split('').join(' ')||'-'} / ${acc.sec.split('').join(' ')||'-'}`:'-';
-    const segs=rest.map(t=>({t,red:gained.has(sheetNorm(t))}));
+    const segs=rest.map(t=>{ const n=sheetNorm(t); return {t,red:gained.has(n),vet:n==='veterano',cap:/^cap(itan)?profesional$/.test(n)}; });
     const stc=(lp&&lp.statistics)||{}, sv=k=>stc[k]?String(stc[k]):'';   /* estadísticas acumuladas de la liga */
     const vals=[String(p.num),null,p.position,p.ma,p.st,p.ag,p.pa,p.av,rest.join(', '),key,out?'SÍ':'',sv('sprints'),sv('passes'),sv('touchdowns'),sv('deflections'),sv('interceptions'),sv('lightInjuries'),sv('seriousInjuries'),sv('deaths'),sv('mvp'),
       String(prog.sppTotal||0),fmt(price),skillsUp?`${skillsUp+1}+`:'',accLines];
@@ -1883,7 +1885,7 @@ async function makeSheetPdf(d,e,logo){
       if(i===0){ o.fill=DK; o.color=WH; o.bold=true; }
       if(i===1){ o.text=p.name; o.align='left'; o.bold=true; o.size=7.5; }
       if(i===2||i===8||i===9){ o.align='left'; o.size=6.5; }
-      if(i===8&&segs.some(s=>s.red)) o.segs=segs;
+      if(i===8&&segs.some(s=>s.red||s.vet||s.cap)) o.segs=segs;
       if(i===9){ o.bold=true; }
       if(i===20){ o.bold=true; o.size=8; }
       if(i===21){ o.align='center'; o.size=7; }

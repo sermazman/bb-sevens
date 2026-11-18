@@ -126,6 +126,9 @@ fieldset.side{border-left:6px solid var(--tc,var(--accent))}
 .tag .x{background:none;border:0;cursor:pointer;color:var(--muted);font-size:16px;line-height:1;padding:0 6px}
 td.impcell{min-width:210px;white-space:normal}
 .newsk{color:var(--warn);font-weight:600}
+.sk-vet{background:#f2c230;color:#111;font-weight:700;padding:1px 6px;border-radius:4px;white-space:nowrap}
+.sk-cap{color:#ff5a4f;font-weight:700}
+.sk-key{display:block;margin-top:3px;font-size:.86em;color:var(--muted,#8c97a6);letter-spacing:.02em}
 .banner.bad{background:#2a1212;border-color:var(--bad);color:var(--bad)}
 .banner ul{margin:6px 0 0;padding-left:18px}
 #impDlg .grid{margin-top:10px}
@@ -464,7 +467,7 @@ function renderRetired(){
   const flt=(id,l,n)=>`<button type="button" class="btn small ${f===id?'primary':''}" data-dfilter="${id}">${l} (${n})</button>`;
   const body=rows.map(({p,t,col,ink,dr,when,killer,kp})=>{const a=p.attributes||{},s=p.statistics||{},pr=p.progression||{improvements:[]};
     const gained=new Set((pr.improvements||[]).filter(i=>i.skill).map(i=>normTxt(i.skill)));
-    const sk=(p.skills||[]).map(k=>gained.has(normTxt(k))?`<span class="newsk">${esc(k)}</span>`:esc(k)).join(', ');
+    const sk=skillsHTML(p,gained);
     return`<tr><td class="l"><span class="tchip" style="background:${col};color:${ink}">${esc(t.name)}</span></td><td class="num">${esc(p.num)}</td>
       <td class="l"><strong>${esc(p.name)}</strong><br><span class="race">${esc(p.position)}</span></td>
       <td><span class="pill ${dr?'draft':'out'}">${dr?'Drafteado':'Muerto'}</span>${dr&&p.draftValue?`<br><span class="race">Draft ${esc(p.draftValue)}</span>`:''}${!dr&&killer?`<br><span class="race">por ${esc(killer)}${kp.name?` · #${esc(kp.num)} ${esc(kp.name)}`:''}</span>`:''}</td><td class="l">${esc(when)}</td>
@@ -654,11 +657,21 @@ function renderTeam(){
   $('#mainTabs').innerHTML=MAIN_TABS.map(([id,l])=>`<button class="tab" role="tab" data-main="${id}" aria-selected="false">${l}</button>`).join('');
   ({roster:tRoster,history:tHistory,team:tEcon,dead:tDead})[ui.teamTab](d);
 }
+const isKey=k=>/\s-\s/.test(k||'');
+function skillsHTML(p,gained){
+  const one=k=>{ const n=normTxt(k);
+    if(gained.has(n)) return `<span class="newsk">${esc(k)}</span>`;
+    if(n==='veterano') return `<span class="sk-vet">${esc(k)}</span>`;
+    if(/^cap(itan)?\s*[:\-]?\s*profesional/.test(n)) return `<span class="sk-cap">${esc(k)}</span>`;
+    return esc(k); };
+  const all=p.skills||[], sk=all.filter(k=>!isKey(k)).map(one).join(', '), key=all.filter(isKey).map(esc).join(', ');
+  return (sk?`<div>${sk}</div>`:'')+(key?`<span class="sk-key">${key}</span>`:'');
+}
 function tRoster(d){
   const lp=n=>d.league.players.find(p=>p.num===n)||{statistics:{},progression:{sppTotal:0,sppUnspent:0,improvements:[]}};
   const rows=d.players.map(p=>{const l=lp(p.num),s=l.statistics||{},out=l.status==='missNextGame';
     const gained=new Set((l.progression.improvements||[]).filter(i=>i.skill).map(i=>normTxt(i.skill)));
-    const sk=(p.skills||[]).map(k=>gained.has(normTxt(k))?`<span class="newsk">${esc(k)}</span>`:esc(k)).join(', ');
+    const sk=skillsHTML(p,gained);
     return`<tr class="${out?'out':''}"><td class="num">${esc(p.num)}</td><td class="l"><strong>${esc(p.name)}</strong><br><span class="race">${esc(p.position)}</span></td>
     ${['ma','st','ag','pa','av'].map(k=>`<td class="num">${esc(p[k])}</td>`).join('')}<td class="skills">${sk}</td>
     ${STAT_COLS.map(([k])=>`<td class="num">${s[k]||0}</td>`).join('')}<td class="num"><strong>${l.progression.sppTotal||0}</strong></td>

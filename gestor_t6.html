@@ -1395,7 +1395,13 @@ async function mvInstagram(sel){
     const side=async s=>{ const d=s.t.doc, lg=d.league.logo&&/^[\w.-]+\.png$/i.test(d.league.logo)?d.league.logo:null;
       return {name:s.t.name,race:d.race||'',color:d.color,m:s.m,logo:lg?await igLoadImg(s.t.path.replace(/[^/]+$/,'')+lg,ghFolder(ghSettings())+'/'+lg):null}; };
     const [h,a,ll]=await Promise.all([side(e.home),side(e.away),igLoadImg('logoBB7.png','logoBB7.png')]);
-    const imgs=await buildMatchImages({season:e.home.t.doc.league.season,id:e.id,roundLabel:roundLabel(e.round),home:h,away:a,leagueLogo:ll,statLabel:STAT_IMP_LABEL});
+    /* draft: el jugador drafteado ya no está en el roster (retiredPlayers); el que paga la cláusula sigue en players */
+    const drafts=[]; [['home',e.home],['away',e.away]].forEach(([sd,s])=>{ const l=s.t.doc.league;
+      (s.m.playerEvents||[]).forEach(ev=>{ if(!ev.draft) return;
+        const rp=(l.retiredPlayers||[]).find(r=>r.num===ev.num&&r.retiredAtMatch===e.id), lp=rp||(l.players||[]).find(p=>p.num===ev.num);
+        const skills=((lp&&lp.progression&&lp.progression.improvements)||[]).filter(i=>i.skill).map(i=>i.skill);
+        drafts.push({team:sd,num:ev.num,name:ev.name||(rp&&rp.name)||('#'+ev.num),kind:ev.draft==='drafted'?'drafted':'paid',skills,draftValue:ev.draftValue,paid:ev.valuePaid||0}); }); });
+    const imgs=await buildMatchImages({drafts,season:e.home.t.doc.league.season,id:e.id,roundLabel:roundLabel(e.round),home:h,away:a,leagueLogo:ll,statLabel:STAT_IMP_LABEL});
     igShow(e.id,imgs,`${e.id}_${slug(h.name)}-${slug(a.name)}`);
   }catch(err){ toast('No se pudieron crear las imágenes: '+err.message); }
 }
@@ -1501,6 +1507,7 @@ async function buildMatchImages(o){
     });
     return out.sort((a,b)=>b.pr-a.pr||b.spp-a.spp);
   };
+  const DR=(o.drafts||[]).slice(0,4), DRN=(o.drafts||[]).length, DRH=DR.length?58+DR.length*74+(DRN>DR.length?26:0):0;
   const TOP=330, BOT=1160, AV=BOT-TOP, CW=460;
   const L=rowsOf(H_), R=rowsOf(A_);
   /* medida de una fila: el nombre se achica un par de puntos y, si aún no cabe, pasa a 2 (o 3) líneas; las etiquetas también saltan de línea */
@@ -1530,13 +1537,17 @@ async function buildMatchImages(o){
     ls.forEach(l=>{ const need=l.h+12; let pg=acc[0]+need<=AV?0:acc[1]+need<=AV?1:-1; if(acc[0]+need>AV&&pg===0) pg=1; if(pg<0||(pg===1&&acc[1]+need>AV)){ dropped++; return; } pgs[pg].push(l); acc[pg]+=need; });
     return {pgs,acc,dropped}; }
   const PL=paginate(lay(L)), PR=paginate(lay(R));
-  const pages=(PL.pgs[1].length||PR.pgs[1].length)?2:1;
+  let pages=(PL.pgs[1].length||PR.pgs[1].length)?2:1;
+  /* el bloque DRAFT va en la última página si cabe; si no, en una página propia */
+  const lastMax=Math.max(PL.acc[pages-1],PR.acc[pages-1]);
+  const blockPage=!DR.length?-1:(lastMax+DRH<=AV?pages-1:pages);
+  if(blockPage===pages) pages++;
   const imgs=[c1];
   for(let p=0;p<pages;p++){
-    const tot=Math.max(PL.acc[p],PR.acc[p],1), k=Math.min(1.3,Math.max(1,AV/tot));
-    const c=mk(), g=c.getContext('2d'); background(g); header(g,pages>1?`Protagonistas ${p+1}/${pages}`:'Protagonistas');
-    [[H_,PL,60],[A_,PR,560]].forEach(([t,P,x0])=>{
-      const w=CW, slice=P.pgs[p];
+    const tot=Math.max(PL.acc[p]||0,PR.acc[p]||0,1), k=Math.min(1.3,Math.max(1,(AV-(p===blockPage?DRH:0))/tot)), onlyDraft=(p===blockPage&&p>=pages-1&&!(PL.pgs[p]||[]).length&&!(PR.pgs[p]||[]).length&&p>0);
+    const c=mk(), g=c.getContext('2d'); background(g); header(g,onlyDraft?'Draft':(pages>1?`Protagonistas ${p+1}/${pages}`:'Protagonistas'));
+    if(!onlyDraft) [[H_,PL,60],[A_,PR,560]].forEach(([t,P,x0])=>{
+      const w=CW, slice=P.pgs[p]||[];
       g.fillStyle=hex(t.col,.9); g.beginPath(); g.roundRect(x0,205,w,92,14); g.fill();
       logo(g,t,x0+52,251,64); g.textAlign='left'; g.fillStyle='#fff'; fit(g,t.name.toUpperCase(),`400 #px ${FT}`,w-190,44,24); g.fillText(t.name.toUpperCase(),x0+100,262);
       g.textAlign='right'; g.font=`400 62px ${FT}`; g.fillText(String(sc(t)),x0+w-22,270);
@@ -1560,6 +1571,21 @@ async function buildMatchImages(o){
       });
       if(p===pages-1 && P.dropped){ g.textAlign='left'; g.fillStyle=MUT; g.font=`400 24px ${FU}`; g.fillText(`+${P.dropped} más en el acta del partido`,x0+4,BOT+10); }
     });
+    if(p===blockPage){
+      const y0=BOT-DRH+16;
+      g.textAlign='left'; g.fillStyle=MUT; g.font=`500 26px ${FU}`; g.letterSpacing='5px'; g.fillText('DRAFT',60,y0+24); g.letterSpacing='0px';
+      g.strokeStyle=LINE; g.lineWidth=2; g.beginPath(); g.moveTo(170,y0+14); g.lineTo(W-60,y0+14); g.stroke();
+      DR.forEach((d,i)=>{ const y=y0+44+i*74, t=d.team==='home'?H_:A_, drafted=d.kind==='drafted';
+        g.fillStyle=PANEL; g.beginPath(); g.roundRect(60,y,W-120,64,12); g.fill(); g.fillStyle=t.col; g.fillRect(60,y+8,6,48);
+        logo(g,t,102,y+32,44);
+        g.textAlign='left'; g.fillStyle=TXT; g.font=`500 28px ${FU}`; const nm=ell(g,`#${d.num} ${d.name}`,330); g.fillText(nm,138,y+30);
+        g.fillStyle=MUT; g.font=`400 22px ${FU}`; g.fillText(ell(g,t.name.toUpperCase(),330),138,y+54);
+        let x=490; const chip=(txt,c)=>{ g.font=`500 22px ${FU}`; const w=g.measureText(txt).width+22; if(x+w>W-70) return; g.fillStyle=hex(c,.22); g.beginPath(); g.roundRect(x,y+15,w,34,17); g.fill(); g.strokeStyle=c; g.lineWidth=1.5; g.stroke(); g.fillStyle=c; g.fillText(txt,x+11,y+39); x+=w+8; };
+        (d.skills||[]).forEach(k=>chip(k,'#3fb97b'));
+        g.textAlign='right'; g.font=`500 24px ${FU}`; g.fillStyle=drafted?'#e5534b':'#e3b341';
+        g.fillText(drafted?('DRAFTEADO'+(d.draftValue?' · '+d.draftValue:'')):('SE QUEDA · PAGÓ '+fmtN(d.paid)+' mo'),W-80,y+39); });
+      if(DRN>DR.length){ g.textAlign='left'; g.fillStyle=MUT; g.font=`400 22px ${FU}`; g.fillText(`+${DRN-DR.length} más en el acta del partido`,60,BOT+10); }
+    }
     if(p===pages-1){ /* fans y ganancias */
       [[H_,60],[A_,560]].forEach(([t,x0])=>{
         g.textAlign='left'; g.fillStyle=MUT; g.font=`500 24px ${FU}`; g.letterSpacing='3px';

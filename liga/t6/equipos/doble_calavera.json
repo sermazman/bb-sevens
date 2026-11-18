@@ -94,7 +94,7 @@
       "num": 4,
       "name": "EL BATU",
       "position": "Goblin",
-      "ma": 5,
+      "ma": 6,
       "st": 2,
       "ag": "3+",
       "pa": "4+",
@@ -103,7 +103,6 @@
         "Esquivar",
         "Humanoide bala",
         "Escurridizo",
-        "Veterano",
         "Goblin - Linea",
         "Dos cabezas"
       ]
@@ -128,7 +127,7 @@
       "num": 6,
       "name": "PREDATOR",
       "position": "Goblin",
-      "ma": 6,
+      "ma": 5,
       "st": 2,
       "ag": "3+",
       "pa": "4+",
@@ -137,6 +136,7 @@
         "Esquivar",
         "Humanoide bala",
         "Escurridizo",
+        "Veterano",
         "Goblin - Linea"
       ]
     },

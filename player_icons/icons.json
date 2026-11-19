@@ -121,10 +121,10 @@
   "OWA_TREEMAN": 3,
   "ORC_LINEMAN": 4,
   "ORC_GOBLIN": 3,
-  "ORC_THROWER": 3,
+  "ORC_THROWER": 4,
   "ORC_BLITZER": 4,
   "ORC_BIG": 3,
-  "ORC_TROLL": 3,
+  "ORC_TROLL": 4,
   "SHA_SKELETON": 3,
   "SHA_ZOMBIE": 3,
   "SHA_GHOUL": 3,
@@ -769,7 +769,7 @@
   "Orcs": {
    "Lineman": {
     "icon": "ORC_LINEMAN",
-    "layers": 3
+    "layers": 4
    },
    "Goblin": {
     "icon": "ORC_GOBLIN",
@@ -777,11 +777,11 @@
    },
    "Thrower": {
     "icon": "ORC_THROWER",
-    "layers": 3
+    "layers": 4
    },
    "Blitzer": {
     "icon": "ORC_BLITZER",
-    "layers": 3
+    "layers": 4
    },
    "Big Un Blocker": {
     "icon": "ORC_BIG",
@@ -789,7 +789,7 @@
    },
    "Troll": {
     "icon": "ORC_TROLL",
-    "layers": 3
+    "layers": 4
    },
    "Journey Orc": {
     "icon": "ORC_LINEMAN",

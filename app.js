@@ -1110,24 +1110,58 @@ function importTeamData(team, data){
   });
 }
 // ---- Equipos definidos (rosters/index.json) ----
+function rosterEntriesToItems(raw){
+  let list = Array.isArray(raw) ? raw : (raw && (raw.rosters || raw.teams || raw.files)) || [];
+  if(!Array.isArray(list)) list = [];
+  const items = [];
+  list.forEach(e=>{
+    let value = typeof e==='string' ? e : (e && (e.value || e.path || e.file || e.url));
+    if(!value) return;
+    if(!/^(https?:|\/|rosters\/)/.test(value)) value = 'rosters/' + value;
+    const base = value.split('/').pop().replace(/\.json$/i,'').replace(/[_-]+/g,' ');
+    const label = (e && typeof e==='object' && (e.label || e.name || e.team)) || base;
+    items.push({ value, label });
+  });
+  return items;
+}
+// Título del separador: lo que va detrás de "index" en el nombre del archivo (indexT6.json → T6)
+function rosterLeagueTitle(file){
+  let t = String(file).split('/').pop().replace(/\.json$/i,'').replace(/^index[_\-\s]*/i,'').replace(/[_-]+/g,' ').trim();
+  return t || 'LIGA';
+}
+function rosterSeparatorText(title){
+  const head = '── ' + title + ' ';
+  return head + '─'.repeat(Math.max(4, 34 - head.length));
+}
+// Equipos definidos: rosters/index.json (base) + las ligas listadas en rosters/ligas.json (cada una con su indexXXX.json)
 function loadRosterIndex(){
-  fetch('rosters/index.json').then(res=>{ if(!res.ok) throw new Error('HTTP ' + res.status); return res.json(); }).then(raw=>{
-    let list = Array.isArray(raw) ? raw : (raw && (raw.rosters || raw.teams || raw.files)) || [];
-    if(!Array.isArray(list)) list = [];
-    const items = [];
-    list.forEach(e=>{
-      let value = typeof e==='string' ? e : (e && (e.value || e.path || e.file || e.url));
-      if(!value) return;
-      if(!/^(https?:|\/|rosters\/)/.test(value)) value = 'rosters/' + value;
-      const base = value.split('/').pop().replace(/\.json$/i,'').replace(/[_-]+/g,' ');
-      const label = (e && typeof e==='object' && (e.label || e.name || e.team)) || base;
-      items.push({ value, label });
-    });
+  const getJson = url => fetch(url).then(res=>{ if(!res.ok) throw new Error('HTTP ' + res.status); return res.json(); });
+  const base = getJson('rosters/index.json').then(rosterEntriesToItems).catch(err=>{ console.warn('[BB7] rosters/index.json no disponible:', err.message); return []; });
+  const leagues = getJson('rosters/ligas.json').then(async raw=>{
+    const files = Array.isArray(raw) ? raw : (raw && (raw.ligas || raw.leagues || raw.files)) || [];
+    const out = [];
+    for(const f of files){
+      if(typeof f!=='string' || !f) continue;
+      const url = /^(https?:|\/|rosters\/)/.test(f) ? f : 'rosters/' + f;
+      try{
+        const items = rosterEntriesToItems(await getJson(url));
+        if(items.length){ out.push({ sep: rosterSeparatorText(rosterLeagueTitle(f)) }); items.forEach(it=>out.push(it)); }
+      }catch(err){ console.warn('[BB7] ' + url + ' no disponible:', err.message); }
+    }
+    return out;
+  }).catch(()=>[]);
+  Promise.all([base, leagues]).then(([b, l])=>{
+    const all = b.concat(l);
     ['A','B'].forEach(t=>{
       const sel = document.getElementById('rosterSel' + t); if(!sel) return;
-      items.forEach(it=>{ const o = document.createElement('option'); o.value = it.value; o.textContent = it.label; sel.appendChild(o); });
+      all.forEach(it=>{
+        const o = document.createElement('option');
+        if(it.sep){ o.textContent = it.sep; o.disabled = true; o.className = 'roster-sep'; }
+        else { o.value = it.value; o.textContent = it.label; }
+        sel.appendChild(o);
+      });
     });
-  }).catch(err=>{ console.warn('[BB7] rosters/index.json no disponible:', err.message); });
+  });
 }
 function selectRoster(team, path){
   if(!path) return;
@@ -10734,7 +10768,7 @@ try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesBut
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V90'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V91'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

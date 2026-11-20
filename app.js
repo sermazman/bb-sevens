@@ -5196,7 +5196,7 @@ function applyBlockOutcomeConfirmed(kind){
   if(!attacker || !defender){ broadcastState(); return; }
 
   attacker.blockedThisActivation = true;
-  if(!isBlitz) carreraArm(attacker);
+  carreraArm(attacker);   // vale para Placaje suelto y para el Placaje dentro de un Blitz
 
   if(kind==='attackerDown'){
     if(checkEquilibrioFirme(attacker)){
@@ -6463,7 +6463,6 @@ function isCarreraCell(r,c){
   if(r<0||r>=ROWS||c<0||c>=COLS) return false;
   if(Math.max(Math.abs(r-p.row), Math.abs(c-p.col))!==1) return false;
   if(occupiedBy(r,c)) return false;
-  if(ball.carrierId==null && ball.row===r && ball.col===c) return false;      // no se puede recoger el balón con este movimiento
   return !players.some(o=>o.onPitch && o.team!==p.team && o.condition==='standing' && Math.max(Math.abs(o.row-r), Math.abs(o.col-c))===1);   // queda Desmarcado
 }
 function carreraCandidates(){
@@ -6502,6 +6501,10 @@ function carreraPick(r,c){
   renderRosters(); renderPitch(); renderSelInfo();
   checkTouchdown(p);
   broadcastState();
+  if(ball.carrierId===null && ball.row===r && ball.col===c && p.condition==='standing'){
+    log('🏃 GOLPE A LA CARRERA: ' + p.name + ' pisa el balón suelto — intenta recogerlo.');
+    openCatchModal(p, false, true);
+  }
 }
 function carreraSkip(){
   if(!carreraSt) return;
@@ -9286,7 +9289,7 @@ function openArmorModal(p){
   document.getElementById('garrasWarning').style.display = (garrasAttacker0 && playerHasSkill(garrasAttacker0, 'garras', 'claws') && !playerHasSkill(p, 'piel férrea', 'piel ferrea', 'iron hard skin')) ? 'block' : 'none';
   { const fc = pendingFoulContext && pendingFoulContext.targetId===p.id ? pendingFoulContext : null;
     const fl = fc ? players.find(x=>x.id===fc.foulerId) : null;
-    const ag = !!(fc && fl && playerHasSkill(fl, 'agresor discreto', 'sneaky git') && fc.offAssists===0 && fc.defAssists===0 && !fc.agresorUsed);
+    const ag = !!(fc && fl && playerHasSkill(fl, 'agresor discreto') && fc.offAssists===0 && fc.defAssists===0 && !fc.agresorUsed);
     document.getElementById('agresorWarning').style.display = ag ? 'block' : 'none';
     if(ag) document.getElementById('agresorWarning').textContent = '🕵️ AGRESOR DISCRETO: ' + fl.name + ' no tiene apoyos ofensivos ni defensivos — puede repetir UNA tirada de Armadura fallida.';
     const abtn = document.getElementById('armorAgresorBtn'); if(abtn) abtn.style.display = ag ? 'block' : 'none'; }
@@ -9471,7 +9474,7 @@ function armorResult(broken){
     }
     if(p && pendingFoulContext && pendingFoulContext.targetId===p.id && pendingFoulContext.doubleDetected){
       const fl = players.find(x=>x.id===pendingFoulContext.foulerId);
-      if(fl && playerHasSkill(fl, 'furtivo', 'sneaky git')){
+      if(fl && playerHasSkill(fl, 'furtivo')){
         pendingFoulContext.doubleDetected = false;
         log('🥷 FURTIVO: ' + fl.name + ' saca doble natural pero la Armadura de ' + p.name + ' no se rompe — NO es Expulsado.');
       }
@@ -10731,7 +10734,7 @@ try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesBut
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V89'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V90'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

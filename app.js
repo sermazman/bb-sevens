@@ -535,7 +535,7 @@ function snapshotState(){
     infoModalTitle: document.getElementById('infoModalTitle').textContent,
     infoModalText: document.getElementById('infoModalText').textContent,
     forcejearText: document.getElementById('forcejearText').textContent,
-    pendingForcejearChoice, pendingStandFirm, pendingJump, passTargetMark, pendingCrujir, atentoSt, protegerSt, throwSt, pendingThrowLand, throwUsedByTeam,
+    pendingForcejearChoice, pendingStandFirm, pendingJump, carreraSt, passTargetMark, pendingCrujir, atentoSt, protegerSt, throwSt, pendingThrowLand, throwUsedByTeam,
     matchEndText: document.getElementById('matchEndText').textContent,
     pendingActionMenuPlayer,
     dejadaWheelActive,
@@ -759,6 +759,7 @@ function applyRemoteState(payload){
   pendingProvocarChoice = payload.pendingProvocarChoice || null;
   pendingStandFirm = payload.pendingStandFirm || null;
   pendingJump = payload.pendingJump || null;
+  carreraSt = payload.carreraSt || null;
   passTargetMark = payload.passTargetMark || null;
   pendingCrujir = payload.pendingCrujir || null;
   atentoSt = payload.atentoSt || null;
@@ -3156,6 +3157,7 @@ function isInOpponentTackleZone(r,c,team){
 }
 
 function renderPitch(){
+  try{ syncCarreraPanel(); }catch(e){}
   if(!Array.isArray(players)){ console.error('[BB7] renderPitch: players inválido, reparado.'); players=[]; }
   if(!ball || typeof ball!=='object'){ console.error('[BB7] renderPitch: ball inválido, reparado.'); ball={carrierId:null,row:null,col:null}; }
   const pitch = document.getElementById('pitch');
@@ -3254,6 +3256,8 @@ function renderPitch(){
         if(isValidKickoffBounceCell(r,c)){ highlightable = true; highlightBounce = true; }
       } else if(ballBounceActive){
         if(isValidBounceCell(r,c)){ highlightable = true; highlightBounce = true; }
+      } else if(carreraSt && carreraSt.stage==='move'){
+        if(isCarreraCell(r,c)){ highlightable = true; highlightGfi = false; highlightPush = true; }
       } else if(pendingJump){
         if(isJumpDestCell(r,c)){ highlightable = true; highlightGfi = false; highlightPush = true; }
       } else if(pendingPush){
@@ -4075,7 +4079,7 @@ function unstickState(){
   pendingFerocityAttack = null;
   pendingAnimosity = null;
   pendingHailMaryChoice = null;
-  pendingProvocarChoice = null; pendingStandFirm = null; pendingJump = null; jumpWheel = null; passTargetMark = null; pendingCrujir = null; atentoSt = null; protegerSt = null; throwSt = null; pendingThrowLand = null; crujirQueue = []; removePassConfirmMenu(); luchadorUsed = false; luchadorPickMode = false; blockProNote = '';
+  pendingProvocarChoice = null; pendingStandFirm = null; pendingJump = null; carreraSt = null; jumpWheel = null; passTargetMark = null; pendingCrujir = null; atentoSt = null; protegerSt = null; throwSt = null; pendingThrowLand = null; crujirQueue = []; removePassConfirmMenu(); luchadorUsed = false; luchadorPickMode = false; blockProNote = '';
   pendingHeroicTackle = null;
   renderProvocarModal(); renderHeroicTackleModal(); renderStandFirmModal(); renderCrujirModal(); renderAtento(); renderProteger(); renderThrowLand();
   pendingBlitzStabChoice = null;
@@ -4138,6 +4142,7 @@ function endActivation(id){
 }
 
 function cellClicked(r,c){
+  if(carreraSt && carreraSt.stage==='move'){ carreraPick(r,c); return; }
   if(protegerSt){ protegerPick(r,c); return; }
   if(pendingJump){ handleJumpDest(r,c); return; }
   if(wizardSt && (wizardSt.mode==='pickCell' || wizardSt.mode==='pickPlayer')){ wizardPickAt(r,c); return; }
@@ -5137,9 +5142,14 @@ function resolveForcejearChoice(useIt){
 
 let pendingVeteranoBlockChoice = null; // { kind } — resultado de bloqueo en espera de decisión de Veterano
 
+function hasImparable(p){ return !!p && playerHasSkill(p, 'imparable', 'juggernaut'); }
 function applyBlockOutcome(kind){
   if(!activeBlock) return;
   if(!blockDiceRolled){ alert('Tirad primero los dados de placaje.'); return; }
+  if(kind==='bothDown' && activeBlock.isBlitz){
+    const atkImp = players.find(x=>x.id===activeBlock.attackerId);
+    if(hasImparable(atkImp)){ log('🛡️ IMPARABLE: ' + atkImp.name + ' trata «Ambos derribados» como un Empujón.'); kind = 'push'; }
+  }
   const attackerCheck = players.find(x=>x.id===activeBlock.attackerId);
   if((kind==='attackerDown' || kind==='bothDown') && attackerCheck && playerHasSkill(attackerCheck, 'veterano', 'veteran') && !attackerCheck.veteranoUsedThisMatch){
     pendingVeteranoBlockChoice = { kind };
@@ -5186,6 +5196,7 @@ function applyBlockOutcomeConfirmed(kind){
   if(!attacker || !defender){ broadcastState(); return; }
 
   attacker.blockedThisActivation = true;
+  if(!isBlitz) carreraArm(attacker);
 
   if(kind==='attackerDown'){
     if(checkEquilibrioFirme(attacker)){
@@ -5259,7 +5270,9 @@ function applyBlockOutcomeConfirmed(kind){
     return;
   }
 
-  if(playerHasSkill(defender, 'mantenerse firme', 'stand firm')){
+  if(isBlitz && hasImparable(attacker) && playerHasSkill(defender, 'mantenerse firme', 'stand firm')){
+    log('🛡️ IMPARABLE: ' + defender.name + ' no puede usar Mantenerse firme contra ' + attacker.name + '.');
+  } else if(playerHasSkill(defender, 'mantenerse firme', 'stand firm')){
     pendingStandFirm = { stage:'initial', defenderId: defender.id, attackerId: attacker.id, kind, isBlitz: !!isBlitz };
     renderStandFirmModal();
     broadcastState();
@@ -5979,6 +5992,7 @@ function startRefereeArgument(fouler){
 let pendingApunalarContext = null; // { attackerId, targetId }
 
 function startApunalarOn(attacker, target){
+  carreraArm(attacker);
   attacker.activated = true;
   selected = null;
   declaredAction = null;
@@ -6432,6 +6446,77 @@ function sendChat(){
   window.addEventListener('focus', ()=>{ if(chatUnread){ chatUnread = 0; document.title = CHAT_TITLE; } });
   chatSetEnabled(false);
 })();
+
+// ===== GOLPE A LA CARRERA: tras un Placaje (acción) o un Apuñalar, si sigue En pie, 1 casilla gratis ignorando zonas de defensa y quedando Desmarcado =====
+let carreraSt = null;   // { playerId, stage:'wait'|'move', quiet }
+function hasGolpeCarrera(p){ return !!p && playerHasSkill(p, 'golpe a la carrera', 'pegar y correr', 'hit and run') && !playerHasSkill(p, 'furia', 'frenzy'); }
+function carreraArm(p){ if(hasGolpeCarrera(p)) carreraSt = { playerId:p.id, stage:'wait', quiet:0 }; }
+function isCarreraActor(team){ return !roomCode || !lockActive() || softOverride || myRole===team; }
+function carreraQuiet(){
+  return !anyModalOpen() && !pendingPush && !ballBounceActive && !(pendingArmorQueue && pendingArmorQueue.length) && !pendingFollowUp &&
+    !pendingTurnoverAfterResolve && !pendingDodge && !pendingStandFirm && !pendingApunalarContext && !kickoffBounceStep && !pendingThrowLand && !wizardSt;
+}
+function isCarreraCell(r,c){
+  if(!carreraSt) return false;
+  const p = players.find(x=>x.id===carreraSt.playerId);
+  if(!p || p.row==null) return false;
+  if(r<0||r>=ROWS||c<0||c>=COLS) return false;
+  if(Math.max(Math.abs(r-p.row), Math.abs(c-p.col))!==1) return false;
+  if(occupiedBy(r,c)) return false;
+  if(ball.carrierId==null && ball.row===r && ball.col===c) return false;      // no se puede recoger el balón con este movimiento
+  return !players.some(o=>o.onPitch && o.team!==p.team && o.condition==='standing' && Math.max(Math.abs(o.row-r), Math.abs(o.col-c))===1);   // queda Desmarcado
+}
+function carreraCandidates(){
+  const out = [];
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(isCarreraCell(r,c)) out.push([r,c]);
+  return out;
+}
+function carreraTick(){
+  if(!carreraSt) return;
+  const p = players.find(x=>x.id===carreraSt.playerId);
+  if(!p || !p.onPitch || p.condition!=='standing' || state.active!==p.team || phase!=='live'){
+    if(isCarreraActor(p ? p.team : state.active)){ carreraSt = null; syncCarreraPanel(); broadcastState(); }
+    return;
+  }
+  if(carreraSt.stage!=='wait' || !isCarreraActor(p.team)) return;
+  if(!carreraQuiet()){ carreraSt.quiet = 0; return; }
+  carreraSt.quiet = (carreraSt.quiet || 0) + 1;
+  if(carreraSt.quiet < 2) return;
+  if(!carreraCandidates().length){
+    log('🏃 GOLPE A LA CARRERA: ' + p.name + ' no tiene ninguna casilla libre a la que mover que lo deje Desmarcado.');
+    carreraSt = null; syncCarreraPanel(); broadcastState(); return;
+  }
+  carreraSt.stage = 'move';
+  log('🏃 GOLPE A LA CARRERA: ' + p.name + ' puede mover 1 casilla gratis (ignora zonas de defensa; debe quedar Desmarcado).');
+  updateStatus('Golpe a la carrera: elegid una casilla resaltada para ' + p.name + ' o pulsad «No mover».');
+  renderPitch(); broadcastState();
+}
+function carreraPick(r,c){
+  if(!carreraSt || carreraSt.stage!=='move') return;
+  const p = players.find(x=>x.id===carreraSt.playerId);
+  if(!p || !isCarreraCell(r,c)){ updateStatus('Golpe a la carrera: esa casilla no vale (libre, adyacente y sin rivales En pie a su lado).'); return; }
+  p.row = r; p.col = c;
+  if(ball.carrierId===p.id){ ball.row = r; ball.col = c; }
+  carreraSt = null;
+  log('🏃 GOLPE A LA CARRERA: ' + p.name + ' se mueve 1 casilla gratis.');
+  renderRosters(); renderPitch(); renderSelInfo();
+  checkTouchdown(p);
+  broadcastState();
+}
+function carreraSkip(){
+  if(!carreraSt) return;
+  const p = players.find(x=>x.id===carreraSt.playerId);
+  carreraSt = null;
+  log('🏃 GOLPE A LA CARRERA: ' + (p ? p.name : 'el jugador') + ' no usa el movimiento gratuito.');
+  renderPitch(); broadcastState();
+}
+function syncCarreraPanel(){
+  const el = document.getElementById('carreraPanel'); if(!el) return;
+  const on = !!(carreraSt && carreraSt.stage==='move');
+  el.style.display = on ? 'block' : 'none';
+  if(on){ const p = players.find(x=>x.id===carreraSt.playerId); const t = document.getElementById('carreraText'); if(t) t.textContent = (p ? p.name : 'El jugador') + ' puede mover 1 casilla gratis (resaltadas). Debe quedar sin rivales En pie a su lado.'; }
+}
+setInterval(()=>{ try{ carreraTick(); }catch(e){ console.error(e); } }, 350);
 
 // ===== LANZAR COMPAÑERO =====
 let throwTeamWheelActive = false;
@@ -9198,7 +9283,7 @@ function openArmorModal(p){
   document.getElementById('armorText').textContent = `Tirando armadura a ${p.name} con AV ${p.av ?? '(sin dato)'}.`;
   const garrasAttackerId0 = golpeMortiferoMap[p.id];
   const garrasAttacker0 = garrasAttackerId0 ? players.find(x=>x.id===garrasAttackerId0) : null;
-  document.getElementById('garrasWarning').style.display = (garrasAttacker0 && playerHasSkill(garrasAttacker0, 'garras', 'claws')) ? 'block' : 'none';
+  document.getElementById('garrasWarning').style.display = (garrasAttacker0 && playerHasSkill(garrasAttacker0, 'garras', 'claws') && !playerHasSkill(p, 'piel férrea', 'piel ferrea', 'iron hard skin')) ? 'block' : 'none';
   { const fc = pendingFoulContext && pendingFoulContext.targetId===p.id ? pendingFoulContext : null;
     const fl = fc ? players.find(x=>x.id===fc.foulerId) : null;
     const ag = !!(fc && fl && playerHasSkill(fl, 'agresor discreto', 'sneaky git') && fc.offAssists===0 && fc.defAssists===0 && !fc.agresorUsed);
@@ -9272,7 +9357,8 @@ function rollArmor(){
     return;
   }
 
-  if(p && armorBonusMap[p.id]){
+  const pielF = !!(p && playerHasSkill(p, 'piel férrea', 'piel ferrea', 'iron hard skin'));
+  if(p && armorBonusMap[p.id] && !pielF){
     const bm = armorBonusMap[p.id];
     document.getElementById('armorSum').textContent = 'Suma: ' + sum + ' +' + bm.mod + ' (Bola de fuego) = ' + (sum + bm.mod);
     log('🎲 Armadura (' + p.name + '): ' + d1 + ' + ' + d2 + ' = ' + sum + ' +' + bm.mod + ' (Bola de fuego) = ' + (sum + bm.mod));
@@ -9285,7 +9371,8 @@ function rollArmor(){
     pendingFoulContext.doubleDetected = true;
     log('⚠️ Doble natural (' + d1 + '-' + d1 + ') en la tirada de Armadura de la Falta — el que ha cometido la falta será Expulsado al terminar esta acción.');
   }
-  if(isFoulRoll && pendingFoulContext.modifier!==0){
+  if(pielF) log('🧱 PIEL FÉRREA: ' + p.name + ' — los rivales no pueden aplicar modificadores a su tirada de Armadura ni usar Garras.');
+  if(isFoulRoll && pendingFoulContext.modifier!==0 && !pielF){
     const mSign = pendingFoulContext.modifier>0 ? '+' : '';
     document.getElementById('armorSum').textContent = 'Suma: ' + sum + ' ' + mSign + pendingFoulContext.modifier + ' (apoyos de Falta) = ' + (sum+pendingFoulContext.modifier);
     log('🎲 Armadura (Falta a ' + (p?p.name:'?') + '): ' + d1 + ' + ' + d2 + ' = ' + sum + ' ' + mSign + pendingFoulContext.modifier + ' = ' + (sum+pendingFoulContext.modifier));
@@ -9296,7 +9383,7 @@ function rollArmor(){
 
   jugarSucioUsedOnArmor = false;
   { const js = foulerWithSkill('jugar sucio', 'dirty player');
-    if(p && js){
+    if(p && js && !pielF){
       const effective = sum + (pendingFoulContext.modifier || 0);
       const target = parseAvTarget(p.av);
       if(effective < target && effective + 1 >= target){
@@ -9311,7 +9398,7 @@ function rollArmor(){
   const garrasAttackerId = p ? golpeMortiferoMap[p.id] : null;
   const garrasAttacker = garrasAttackerId ? players.find(x=>x.id===garrasAttackerId) : null;
   golpeMortiferoUsedOnArmor = false;
-  if(p && garrasAttacker && playerHasSkill(garrasAttacker, 'garras', 'claws') && sum>=8){
+  if(p && garrasAttacker && playerHasSkill(garrasAttacker, 'garras', 'claws') && sum>=8 && !pielF){
     log('🩸 Garras de ' + garrasAttacker.name + ': resultado natural ' + sum + ' (8+) — la Armadura se rompe siempre, sea cual sea su AV.');
     armorResult(true);
     return;
@@ -9319,7 +9406,7 @@ function rollArmor(){
 
   const gmAttackerId = p ? golpeMortiferoMap[p.id] : null;
   const gmAttacker = gmAttackerId ? players.find(x=>x.id===gmAttackerId) : null;
-  if(p && gmAttacker && playerHasSkill(gmAttacker, 'golpe mortífero', 'golpe mortifero', 'mighty blow')){
+  if(p && gmAttacker && !pielF && playerHasSkill(gmAttacker, 'golpe mortífero', 'golpe mortifero', 'mighty blow')){
     const target = parseAvTarget(p.av);
     const naturallyBroken = sum >= target;
     const breaksWithBonus = (sum+1) >= target;
@@ -9335,7 +9422,7 @@ function rollArmor(){
   const llaveAttackerId = p ? llaveDeBrazoMap[p.id] : null;
   const llaveAttacker = llaveAttackerId ? players.find(x=>x.id===llaveAttackerId) : null;
   llaveDeBrazoUsedOnArmor = false;
-  if(p && llaveAttacker && playerHasSkill(llaveAttacker, 'llave de brazo', 'arm bar')){
+  if(p && llaveAttacker && !pielF && playerHasSkill(llaveAttacker, 'llave de brazo', 'arm bar')){
     const target = parseAvTarget(p.av);
     const naturallyBroken = sum >= target;
     const breaksWithBonus = (sum+1) >= target;
@@ -9867,6 +9954,27 @@ function autoTurnoverThenEndTurn(){
   endTurn();
 }
 
+function hasLevantarCompanero(p){ return playerHasSkill(p, 'levantar compañero', 'levantar companero', 'pick-me-up', 'pick me up'); }
+// Al final de cada turno del equipo rival: 1D6 por cada tumbado (boca arriba) a ≤3 casillas de un compañero En pie con el rasgo → 5+ se levanta.
+function levantarCompaneroTrigger(finishing){
+  const owner = finishing==='A' ? 'B' : 'A';
+  const noSource = new Set();
+  let changed = false;
+  players.filter(t=>t.team===owner && t.onPitch && t.row!=null && t.condition==='tumbado').forEach(t=>{
+    const src = players.find(o=>o.team===owner && o.id!==t.id && o.onPitch && o.row!=null && o.condition==='standing' && hasLevantarCompanero(o) && !noSource.has(o.id) &&
+      Math.max(Math.abs(o.row-t.row), Math.abs(o.col-t.col))<=3);
+    if(!src) return;
+    const d = rollDieN(6);
+    const ok = d>=5;
+    log('🤝 LEVANTAR COMPAÑERO (' + src.name + '): ' + t.name + ' tira 1D6 = ' + d + (ok ? ' → ¡SE LEVANTA!' : ' → sigue Tumbado.'));
+    if(ok){
+      t.condition = 'standing'; t.rooted = false; changed = true;
+      if(hasLevantarCompanero(t)) noSource.add(t.id);   // si se levanta por este rasgo, no puede usarlo en este mismo turno
+    }
+  });
+  if(changed){ renderRosters(); renderPitch(); renderSelInfo(); }
+}
+
 function endTurn(){
   if(atentoSt && atentoSt.stage==='move'){ atentoEndMove(true); return; }
   if(kickoffEvt && kickoffEvt.phase==='charge'){ endCharge(); return; }
@@ -9901,6 +10009,7 @@ function endTurn(){
     broadcastState();
     return;
   }
+  levantarCompaneroTrigger(finishing);
   const other = finishing==='A' ? 'B':'A';
   if(wizardGapNeeded()){ wizardSt = { mode:'gap', next:other, team:'' }; renderWizard(); broadcastState(); return; }
   beginTurn(other);
@@ -10622,7 +10731,7 @@ try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesBut
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V88'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V89'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

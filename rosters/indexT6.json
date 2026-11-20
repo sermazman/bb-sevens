@@ -1,8 +1,8 @@
 [
-  "/liga/T6/equipos/cometuetanos.json",
-  "/liga/T6/equipos/doble_calavera.json",
-  "/liga/T6/equipos/euskeras_orc_team.json",
-  "/liga/T6/equipos/magritta_conquerors.json",
-  "/liga/T6/equipos/marienburg_ravens.json",
-  "/liga/T6/equipos/muertos_de_risa.json"
+  "../liga/T6/equipos/cometuetanos.json",
+  "../liga/T6/equipos/doble_calavera.json",
+  "../liga/T6/equipos/euskeras_orc_team.json",
+  "../liga/T6/equipos/magritta_conquerors.json",
+  "../liga/T6/equipos/marienburg_ravens.json",
+  "../liga/T6/equipos/muertos_de_risa.json"
 ]

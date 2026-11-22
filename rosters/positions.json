@@ -2101,6 +2101,155 @@
   "primSec": "GT / AF"
  },
  {
+  "race": "Night Goblins",
+  "type": "Night Goblin Lineman",
+  "ma": 6,
+  "st": 2,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Esquivar",
+   "Escurridizo",
+   "Perseguir",
+   "Provocar",
+   "Humanoide bala"
+  ],
+  "prize": 45000,
+  "qty": 16,
+  "bigGuy": false,
+  "clave": "Goblin - Linea",
+  "primSec": "AT / GPF"
+ },
+ {
+  "race": "Night Goblins",
+  "type": "Squig Herder",
+  "ma": 6,
+  "st": 2,
+  "ag": 3,
+  "pa": 5,
+  "av": 8,
+  "skills": [
+   "Esquivar",
+   "Presencia perturbadora",
+   "Zafarse",
+   "Squig restraint",
+   "Escurridizo"
+  ],
+  "prize": 55000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": "Goblin - Especial",
+  "primSec": "AT / GPF"
+ },
+ {
+  "race": "Night Goblins",
+  "type": "Squig Hopper",
+  "ma": 7,
+  "st": 3,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Esquivar",
+   "Boca monstruosa",
+   "En pie de un salto",
+   "Pogo saltarín",
+   "Squig rage"
+  ],
+  "prize": 80000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": "Goblin - Especial - Squig",
+  "primSec": "AT / GPF"
+ },
+ {
+  "race": "Night Goblins",
+  "type": "Squig Wrangler",
+  "ma": 3,
+  "st": 7,
+  "ag": 3,
+  "pa": 0,
+  "av": 8,
+  "skills": [
+   "Bola y cadena",
+   "El balón ni verlo",
+   "Squig rage",
+   "Escurridizo"
+  ],
+  "prize": 70000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": "Goblin - Especial - Squig",
+  "primSec": "TF / AG"
+ },
+ {
+  "race": "Night Goblins",
+  "type": "Cave Squig",
+  "ma": 6,
+  "st": 4,
+  "ag": 3,
+  "pa": 0,
+  "av": 9,
+  "skills": [
+   "Furia",
+   "En pie de un salto",
+   "Boca monstruosa",
+   "El balón ni verlo",
+   "Pogo saltarín",
+   "Squig rage"
+  ],
+  "prize": 85000,
+  "qty": 2,
+  "bigGuy": false,
+  "clave": "Especial - Squig",
+  "primSec": "/ ATGF"
+ },
+ {
+  "race": "Night Goblins",
+  "type": "Trained Troll",
+  "ma": 4,
+  "st": 5,
+  "ag": 5,
+  "pa": 5,
+  "av": 10,
+  "skills": [
+   "Siempre hambriento",
+   "Golpe mortífero",
+   "Proyectil de vómito",
+   "Realmente estúpido",
+   "Regeneración",
+   "Lanzar compañero"
+  ],
+  "prize": 115000,
+  "qty": 1,
+  "bigGuy": true,
+  "clave": "Grandullon - Troll",
+  "primSec": "F / AGP"
+ },
+ {
+  "race": "Night Goblins",
+  "type": "Journey Night Goblin Lineman",
+  "ma": 6,
+  "st": 2,
+  "ag": 3,
+  "pa": 4,
+  "av": 8,
+  "skills": [
+   "Solitario (5+)",
+   "Esquivar",
+   "Escurridizo",
+   "Perseguir",
+   "Provocar",
+   "Humanoide bala"
+  ],
+  "prize": 45000,
+  "qty": 11,
+  "bigGuy": false,
+  "clave": "Goblin - Linea",
+  "primSec": "AT / GPF"
+ },
+ {
   "race": "Norse",
   "type": "Raider Lineman",
   "ma": 6,

@@ -663,7 +663,7 @@ button.full{width:100%; margin-top:6px;}
 .conn-dot.on{background:var(--good);}
 
 /* --- Versión del archivo (para el badge de verificación en el pie) --- */
-:root{ --css-version: "S_V78"; }
+:root{ --css-version: "S_V79"; }
 
 /* ---- Iconos dorados (se tiñen con el color del marcador mediante máscara) ---- */
 .gold-icon{display:inline-block; width:18px; height:18px; vertical-align:middle; background:var(--gold);
@@ -961,7 +961,7 @@ button.full{width:100%; margin-top:6px;}
 .pp-zone{ position:absolute; inset:0; pointer-events:none; z-index:1; background:repeating-linear-gradient(45deg, rgba(230,60,50,0.30) 0 4px, transparent 4px 9px); }
 
 
-/* ===== Maquetación v3 (W_V65 / S_V78) ===== */
+/* ===== Maquetación v3 (W_V65 / S_V79) ===== */
 #appScaleBox{ width:100%; }
 #appScale{ transform-origin:top left; }
 header.top-v3{ display:grid; grid-template-columns:315px minmax(0,1fr) 315px; align-items:start; gap:16px; }
@@ -1017,14 +1017,14 @@ header.top-v3 .header-right{ white-space:normal; text-align:center; align-self:c
 .load-panel .team-name-input{ margin-bottom:8px; }
 .load-panel .row{ display:flex; gap:8px; } .load-panel .row button{ flex:1; }
 
-/* ===== Iconos de jugador (W_V67 / S_V78) ===== */
+/* ===== Iconos de jugador (W_V67 / S_V79) ===== */
 .token.has-icon{ inset:0; border-radius:0; background:none !important; border:none !important; box-shadow:none; }
 .token.has-icon .tok-icon, .token-chip.has-icon .tok-icon{ width:100%; height:100%; display:block; image-rendering:pixelated; pointer-events:none; filter:drop-shadow(0 1px 1px rgba(0,0,0,.55)); }
 .token-chip.has-icon{ background:none !important; border:none !important; box-shadow:none; }
 .token.has-icon.selected{ outline-offset:-1px; }
 .token.has-icon .token-mark{ text-shadow:1px 1px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000; }
 
-/* ===== Chat (W_V68 / S_V78) ===== */
+/* ===== Chat (W_V68 / S_V79) ===== */
 .chat-msg{ margin:0 0 6px; padding:3px 6px; border-left:3px solid #4a4238; border-radius:3px; background:rgba(255,255,255,.03); }
 .chat-msg.mine{ border-left-color:#3b7dd8; }
 .chat-msg b{ color:var(--gold); }
@@ -1034,5 +1034,9 @@ header.top-v3 .header-right{ white-space:normal; text-align:center; align-self:c
 @keyframes chatPulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(216,169,75,0); } 50%{ box-shadow:0 0 12px 3px rgba(216,169,75,.85); } }
 #chatPanel.chat-alert{ border-color:var(--gold); animation:chatPulse 1s ease-in-out infinite; }
 
-/* separador de ligas en el desplegable de equipos (S_V78) */
+/* separador de ligas en el desplegable de equipos (S_V79) */
 .roster-select option.roster-sep{ color:#d8a94b; font-weight:700; background:#1e1b16; }
+
+/* ---- Tentáculos: zona de defensa rayada en rojo (S_V79) ---- */
+.cell.tz-cell.tz-ten::after{ content:""; position:absolute; inset:0; pointer-events:none;
+  background:repeating-linear-gradient(-45deg, rgba(230,40,40,var(--tz-r,0.38)) 0 4px, transparent 4px 8px); }

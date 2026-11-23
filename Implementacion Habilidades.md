@@ -195,3 +195,33 @@ INFECTADO
 Una vez por partido, cuando este jugador cause una Lesión a un jugador rival debido a una acción de Placaje, y en la tirada de Lesiones dicho jugador rival sufra un resultado de Muerto que no sea salvado por un Apotecario, puedes añadir de inmediato un nuevo jugador Línea de tu Lista de equipo a tu zona de Reservas. Esto puede hacer que tu equipo tenga más de 11 jugadores por el resto del partido. Durante la secuencia posterior al partido, este nuevo jugador puede ser fichado de forma permanente como si fuera un Sustituto. Este rasgo no puede utilizarse contra jugadores Grandullones, ni que tengan los rasgos Descomposición, Escurridizo o Regeneración
 
 
+BOLA CON CADENA
+Cuando este Jugador es activado, la única acción que puede declarar es la acción especial de Bola con cadena. 
+No hay límite al número de jugadores que pueden declarar esta acción especial cada turno.
+Cuando un jugador realice una acción especial de Bola con cadena, coloca la plantilla de devolución sobre él, encarada hacia cualquier zona de anotación o línea de banda(debemos elegirlo por modal). 
+А continuación, tira 1D6 y mueve al Jugador una casilla en la dirección indicada (1-2 sería diagonal izquierda, 3-4 de frente y 5-6 diagonal derecha). Al mover así, el jugador no tiene que hacer chequeos de Agilidad para esquivar al salir de una Zona de defensa: los supera automáticamente.
+Los jugadores rivales no pueden usar las habilidades Perseguir ni Tentáculos contra un jugador que realiza una acción de Bola con cadena.
+
+Si este movimiento lleva al jugador fuera del campo, puede ser Herido por el público.
+
+Si este movimiento lleva al jugador a una casilla ocupada por un jugador En pie (de cualquier equipo), realiza automáticamente una acción de Placaje contra dicho jugador;
+esa acción ignora la habilidad Apariencia asquerosa. Si es un compañero, el Entrenador de este jugador elige qué resultado aplicar tras tirar los dados de Placaje.
+Si este movimiento lleva al jugador a una casilla ocupada por un jugador Tumbado bocа arriba o Aturdido, dicho jugador es Empujado y se hace una tirada de Armadura contra él.
+Si este movimiento lleva al jugador a una casilla que contiene el balón, éste rebota de inmediato. Esto no causa un cambio de turno.
+Un jugador que realice una acción especial de Bola con cadena puede moverse hasta tantas casillas como su MV. 
+Puede forzar la marcha de forma normal, pero si saca un 1, primero entrará en la casilla a la que se estaba moviendo, luego se resolverán todos los placajes, empujones y rebotes de balón que procedan, y entonces el jugador se Caerá en dicha casilla.
+Si este jugador se Cae, es Derribado o es colocado Tumbado boca arriba, haz de inmediato una tirada de Heridas contra él, tratando resultados de Aturdido como si fueran
+Inconsciente.
+Un jugador con este rasgo no puede tener las siguientes habilidades: Apartar, Atento al balón, Equilibrio firme, Furia, Golpe a la carrera, Perseguir, Piquete de ojos, Placaje heroico, Placaje múltiple ni Saltar.
+
+BOMBARDERO
+Cuando este jugador es activado, puede declarar una acción especial de Lanzar una bomba. 
+Solo un jugador puede declarar esta acción especial por turno.
+Cuando un jugador realiza esta acción especial, lanza una bomba explosiva del mismo modo que haría una acción de Pase, siguiendo todas las reglas normales al respecto. Aunque esto no sea realmente una acción de Pase, todas las habilidades y rasgos que se aplicarían al realizar una acción de Pase se aplican también a esta acción especial, a excepción de la habilidad Atento al balón. 
+Un Jugador que declara una acción especial de Lanzar una bomba no puede realizar una acción de Movimiento antes de lanzar la bomba.
+Si en cualquier momento una bomba cae al suelo, explota de inmediato en esa casilla. 
+Si se obtiene un balón perdido al lanzar una bomba, o esta cae cuando un Jugador Intenta atraparla, no rebota sino que explota en la casilla de ese Jugador. Cuando una bomba explota, cualquier jugador en la casilla en la que explota es impactado por la explosión. 
+Además, tira 1D6 por cada jugador adyacente a la casilla en la que explota la bomba. Con 4+, ese jugador es impactado por la explosión.
+Todo jugador En pie impactado por la explosión es Derribado. Además, haz una tirada de Armadura contra cualquier jugador Tumbado boca arriba o Aturdido impactado por la
+explosión.
+Si un jugador atrapa o intercepta con éxito una bomba lanzada, debe volver a lanzarla de inmediato, siguiendo las mismas reglas ya descritas para realizar esta acción especial.

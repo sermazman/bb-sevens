@@ -169,8 +169,29 @@ Este jugador puede ser lanzado por un compañero que tenga la habilidad LANZAR C
 FURTIVO
 Este jugador no es expulsado al realizar una accion de falta si saca un doble natural en la tirada de Armadura, siempre y cuando la armadura del jugador atacado no se rompa. Si dicha armadura se rompa (pasa o iguala el valor de armadura), entonces este jugador puede ser Expulsado de forma normal.
 
-PASAR Y SEGUIR
-Si este jugador hace un pase que sea Rapido o una entrega de balón, si no se produce un cambio de turno, su activación no termina tras resolver el Pase rapido o la entrega. En su lugar, este jugador puede continuar su movimiento usando el movimiento que aun le quede, e incluso Forzando la marcha.
+TENTACULOS
+Cuando un jugador rival intente esquivar, brincar o saltar desde una casilla en la zona de defensa de este jugador, este jugador puede usar esta habilidad (nosotros hacemos que se use siempre automaticamente) Marcaremos al jugador con Tencaculos su zona de defensa rayada en rojo como se ha realizado en otras habilidades. En tal caso, tira 1D6, sumando al resultado el atributo Fuerza de este jugador y restando el atributo Fuerza del jugador rival. 
+Si el resultado es 6 o más, o si sacas un 6 natural, el jugador rival no puede abandonar la casilla y su activación termina.
+En cambio, si el resultado es de 5 o menos, o si sacas un 1 natural, esta habilidad no tiene efecto.
+Si un jugador intenta salir de una casilla en la Zona de defensa de varios jugadores rivales que tengan esta habilidad, solo uno de ellos podrá utilizarla.
 
+PERSEGUIR
+Este jugador puede utilizar esta habilidad cuando un jugador rival trate de esquivar para salir de una casilla en su zona de defensa (tendra que salir modal a quien corresponda para que lo haga efecitvo o no). Cuando la utiliza, tira 1D6. Con 1-3 no ocurre nada. Con 4+, este jugador es colocado de inmediato en la casilla que ha dejado desocupada el jugador rival. Este jugador puede usar esta habilidad un número máximo de veces por turno igual a su MV. Si un jugador intenta salir de una casilla en la Zona de defensa de varios jugadores con esta habilidad, solo uno de ellos podrá utilizarla (por lo que en el modal primero tendremos que poner si la usa o no y luego elegir al jugador).
+
+PATADA DE DESPEJE
+Este jugador puede declarar una acción especial de Patada de despeje (saldra en su ruleta) ; solo un jugador puede declarar una acción especial de Patada de despeje por turno (por lo que si la hace, luego no saldra en las ruletas del resto en ese turno). Cuando un Jugador declara esta acción especial, puede realizar antes una acción de Movimiento, pero no podrá seguir moviéndose tras resolver la Patada de despeje.
+Si, tras su acción de Movimiento, este jugador es el portador del balón, puede darle una Patada de despeje. Coloca la plantilla de devolución sobre él, encarada hacia cualquier zona de anotación o línea de banda. Tira 1D6 para determinar la dirección en la que se chuta el balón, y luego otro 1D6 para determinar cuántas casillas se desplaza en esa dirección. (1D6 se usa como si se despeja desde fuera del campo el balón, lo unico que hay que sacar modal para que elija el jugador a que de los 4 lados se orienta la patada de despeje)
+Si este jugador tiene la habilidad de Patada, puede repetir una o dos de estas tiradas, pero debe decidir si repetir o no la dirección antes de tirar por la distancia desplazada.
+Si el balón aterriza en una casilla ocupada por un Jugador, dicho jugador debe intentar atraparlo. De lo contrario, el balón rebota una vez.
+Al realizar una acción especial de Patada de despeje, no se produce un cambio de turno si el balón acaba en el suelo. En cambio, sí que se produce un cambio de turno si el balón acaba en posesión de un jugador rival o si cae en el público.
+
+PASAR Y SEGUIR
+Si este jugador realiza una acción de Pase que sea un Pase rápīdo, o una acción de Entregar el balón, y no se produce un cambio de turno, su activación no terminará tras resolver el pase o la entrega de balón. En su lugar, este jugador puede continuar su acción de Movimiento usando el movimiento que aún le quede (incluso forzar la marcha si cree conveniente)
+
+PASE PRECIPITADO
+Cuando un jugador rival intente realizar una acción de Placaje contra este jugador, o una acción especial que tome como blanco a este jugador directamente, este jugador puede usar esta habilidad (sale modal al equipo que tenga el jugador con esta habilidad para que decida si usarlo). Si la quiere usar, puede realizar un Pase rápido Justo antes de que se resuelva la acción que lo toma como blanco (sea un jugador de su equipo o una casilla desocupada). Dicho Pase rápido no puede causar un cambio de turno, pero aparte de eso sigue todas las reglas normales de pases. Una vez resuelto el pase, la acción que tomaba como blanco a este jugador sigue adelante.
+
+INFECTADO
+Una vez por partido, cuando este jugador cause una Lesión a un jugador rival debido a una acción de Placaje, y en la tirada de Lesiones dicho jugador rival sufra un resultado de Muerto que no sea salvado por un Apotecario, puedes añadir de inmediato un nuevo jugador Línea de tu Lista de equipo a tu zona de Reservas. Esto puede hacer que tu equipo tenga más de 11 jugadores por el resto del partido. Durante la secuencia posterior al partido, este nuevo jugador puede ser fichado de forma permanente como si fuera un Sustituto. Este rasgo no puede utilizarse contra jugadores Grandullones, ni que tengan los rasgos Descomposición, Escurridizo o Regeneración
 
 

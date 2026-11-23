@@ -309,8 +309,9 @@ function tackleZoneCountMap(sel){
       if(!dr && !dc) continue;
       const r=o.row+dr, c=o.col+dc;
       if(r<0||r>=ROWS||c<0||c>=COLS) continue;
-      const e = map[r+'_'+c] || (map[r+'_'+c] = { flat:0, tail:0, asq:0 });
+      const e = map[r+'_'+c] || (map[r+'_'+c] = { flat:0, tail:0, asq:0, ten:0 });
       if(tail) e.tail++; else e.flat++;
+      if(hasTentaculos(o)) e.ten++;
       if(hasAsquerosa(o)) e.asq++;
     }
   });
@@ -360,6 +361,7 @@ function setTeamTextColor(team, mode){
 }
 let blitzUsedByTeam = { A: false, B: false };
 let handoffUsedByTeam = { A: false, B: false };
+let despejeUsedByTeam = { A: false, B: false };   // Patada de despeje: 1 jugador por equipo y turno
 let foulUsedByTeam = { A: false, B: false };
 let passUsedByTeam = { A: false, B: false };
 let throwUsedByTeam = { A: false, B: false };
@@ -535,7 +537,7 @@ function snapshotState(){
     infoModalTitle: document.getElementById('infoModalTitle').textContent,
     infoModalText: document.getElementById('infoModalText').textContent,
     forcejearText: document.getElementById('forcejearText').textContent,
-    pendingForcejearChoice, pendingStandFirm, pendingJump, carreraSt, passTargetMark, pendingCrujir, atentoSt, protegerSt, throwSt, pendingThrowLand, throwUsedByTeam,
+    pendingForcejearChoice, pendingStandFirm, pendingJump, carreraSt, pendingDecision, chaseSt, precipSt, despejeUsedByTeam, passTargetMark, pendingCrujir, atentoSt, protegerSt, throwSt, pendingThrowLand, throwUsedByTeam,
     matchEndText: document.getElementById('matchEndText').textContent,
     pendingActionMenuPlayer,
     dejadaWheelActive,
@@ -760,6 +762,11 @@ function applyRemoteState(payload){
   pendingStandFirm = payload.pendingStandFirm || null;
   pendingJump = payload.pendingJump || null;
   carreraSt = payload.carreraSt || null;
+  pendingDecision = payload.pendingDecision || null;
+  chaseSt = payload.chaseSt || null;
+  precipSt = payload.precipSt || null;
+  despejeUsedByTeam = payload.despejeUsedByTeam || { A:false, B:false };
+  try{ renderDecisionModal(); }catch(e){}
   passTargetMark = payload.passTargetMark || null;
   pendingCrujir = payload.pendingCrujir || null;
   atentoSt = payload.atentoSt || null;
@@ -1060,7 +1067,7 @@ function anyModalOpen(){
          document.getElementById('interceptModal').classList.contains('show') ||
          document.getElementById('heroicReceptionPanel').style.display==='block' ||
          pendingActionMenuPlayer !== null ||
-         pendingAnimosity !== null || pendingHailMaryChoice !== null || pendingProvocarChoice !== null || pendingStandFirm !== null || pendingCrujir !== null || (atentoSt && atentoSt.stage==='ask') || protegerSt || pendingThrowLand || pendingHeroicTackle !== null ||
+         pendingAnimosity !== null || pendingHailMaryChoice !== null || pendingProvocarChoice !== null || pendingStandFirm !== null || pendingCrujir !== null || (atentoSt && atentoSt.stage==='ask') || protegerSt || pendingThrowLand || pendingHeroicTackle !== null || pendingDecision !== null ||
          document.getElementById('traitCheckModal').classList.contains('show') ||
          document.getElementById('turnoverOverlay').classList.contains('show');
 }
@@ -3248,6 +3255,10 @@ function renderPitch(){
             cell.classList.add('tz-asq');
             cell.style.setProperty('--tz-s', (1 - Math.pow(1-0.34, Math.min(e.asq,4))).toFixed(3));
           }
+          if(e.ten){
+            cell.classList.add('tz-ten');
+            cell.style.setProperty('--tz-r', (1 - Math.pow(1-0.38, Math.min(e.ten,4))).toFixed(3));
+          }
           if(e.tail){
             cell.classList.add('tz-tail');
             cell.style.setProperty('--tz-t', (1 - Math.pow(1-0.30, Math.min(e.tail,4))).toFixed(3));
@@ -3590,6 +3601,14 @@ function handleTokenRightClick(id){
     broadcastState();
     return;
   }
+  if(selected===id && ball.carrierId===id && p.despejeDeclared && !p.despejeDone && declaredAction==='move'){
+    despejeWheelActive = true;
+    pendingActionMenuPlayer = id;
+    renderActionMenu();
+    renderSelInfo();
+    broadcastState();
+    return;
+  }
   if(selected===id && ball.carrierId===id && declaredAction==='pass'){
     passThrowWheelActive = true;
     pendingActionMenuPlayer = id;
@@ -3622,6 +3641,7 @@ function handleTokenRightClick(id){
 
 let pendingActionMenuPlayer = null;
 let dejadaWheelActive = false;
+let despejeWheelActive = false;
 
 // La lista de opciones se calcula al vuelo en getActionMenuOptionsFor() según el estado del jugador/partida.
 // Añadir una opción nueva es añadir una línea de push() ahí — el racimo se reparte solo.
@@ -3762,6 +3782,9 @@ function getActionMenuOptionsBase(p){
   if(dejadaWheelActive && ball.carrierId===p.id && playerHasSkill(p, 'dejada')){
     return [{ icon:'📍', label:'Dejada', fn:'actionMenuDejada' }];
   }
+  if(despejeWheelActive && ball.carrierId===p.id && p.despejeDeclared){
+    return [{ icon:'🦶', label:'Patada de despeje', fn:'actionMenuDespejeKick' }];
+  }
   if(passThrowWheelActive && ball.carrierId===p.id){
     return [{ icon:'🎯', label:'Lanzar Pase', fn:'actionMenuThrowPass' }];
   }
@@ -3795,6 +3818,7 @@ function getActionMenuOptionsBase(p){
     opts.push({ icon:'🏃', label:'Movimiento', fn:'actionMenuMove' });
     if(!blitzUsedByTeam[p.team]) opts.push({ icon:'⚡', label:'Blitz', fn:'actionMenuBlitz' });
   }
+  if(!p.rooted && hasPatadaDespeje(p) && !despejeUsedByTeam[p.team]) opts.push({ icon:'🦶', label:'Patada de despeje', fn:'actionMenuDespeje' });
   opts.push({ icon:'⚔️', label:'Placar', fn:'actionMenuBlock' });
   if(canApunalar(p)){
     opts.push({ icon:'🔪', label:'Apuñalar', fn:'actionMenuApunalar' });
@@ -3860,6 +3884,7 @@ function closeActionMenu(){
   pendingActionMenuPlayer = null;
   jumpWheel = null;
   dejadaWheelActive = false;
+  despejeWheelActive = false;
   passThrowWheelActive = false;
   throwTeamWheelActive = false;
   broadcastState();
@@ -4113,7 +4138,7 @@ function unstickState(){
   pendingFerocityAttack = null;
   pendingAnimosity = null;
   pendingHailMaryChoice = null;
-  pendingProvocarChoice = null; pendingStandFirm = null; pendingJump = null; carreraSt = null; jumpWheel = null; passTargetMark = null; pendingCrujir = null; atentoSt = null; protegerSt = null; throwSt = null; pendingThrowLand = null; crujirQueue = []; removePassConfirmMenu(); luchadorUsed = false; luchadorPickMode = false; blockProNote = '';
+  pendingProvocarChoice = null; pendingStandFirm = null; pendingJump = null; carreraSt = null; pendingDecision = null; chaseSt = null; precipUnstick(); jumpWheel = null; passTargetMark = null; pendingCrujir = null; atentoSt = null; protegerSt = null; throwSt = null; pendingThrowLand = null; crujirQueue = []; removePassConfirmMenu(); luchadorUsed = false; luchadorPickMode = false; blockProNote = '';
   pendingHeroicTackle = null;
   renderProvocarModal(); renderHeroicTackleModal(); renderStandFirmModal(); renderCrujirModal(); renderAtento(); renderProteger(); renderThrowLand();
   pendingBlitzStabChoice = null;
@@ -4773,6 +4798,7 @@ function computeBlockDiceInfo(attacker, defender, isBlitz){
 }
 
 function proceedToBlockDice(attacker, defender, isBlitzHit){
+  if(precipOffer(attacker, defender, isBlitzHit)) return;
   activeBlock = { attackerId: attacker.id, defenderId: defender.id, isBlitz: !!isBlitzHit };
   blockDiceRolled = false; blockChoiceReleased = false;
   odioUsed = false; odioPickMode = false; blockRrUsed = false;
@@ -6210,6 +6236,7 @@ function renderProteger(){
 // ===== PASAR Y SEGUIR =====
 let pasarSeguirSt = null;   // { id, active, idle }
 function armPasarSeguir(p){
+  if(precipSt) return;
   if(p && playerHasSkill(p, 'pasar y seguir', 'pass and run')){ pasarSeguirSt = { id:p.id, active:state.active, idle:0 }; }
 }
 setInterval(()=>{
@@ -6554,6 +6581,302 @@ function syncCarreraPanel(){
   if(on){ const p = players.find(x=>x.id===carreraSt.playerId); const t = document.getElementById('carreraText'); if(t) t.textContent = (p ? p.name : 'El jugador') + ' puede mover 1 casilla gratis (resaltadas). Debe quedar sin rivales En pie a su lado.'; }
 }
 setInterval(()=>{ try{ carreraTick(); }catch(e){ console.error(e); } }, 350);
+
+// =====================================================================
+// DECISIÓN GENÉRICA (modal sincronizado para Perseguir, Patada de despeje…)
+// =====================================================================
+let pendingDecision = null;    // { id, team, title, text, options:[{key,label,primary}], cancelKey, data }
+let chaseSt = null;            // Perseguir en cola: { riderId, vacR, vacC, team, ids, quiet }
+function openDecision(d){ pendingDecision = d; renderDecisionModal(); broadcastState(); }
+function renderDecisionModal(){
+  const m = document.getElementById('decisionModal'); if(!m) return;
+  if(!pendingDecision){ m.classList.remove('show'); return; }
+  document.getElementById('decisionTitle').textContent = pendingDecision.title || '';
+  document.getElementById('decisionText').textContent = pendingDecision.text || '';
+  const box = document.getElementById('decisionBtns'); box.innerHTML = '';
+  (pendingDecision.options || []).forEach(o=>{
+    const b = document.createElement('button');
+    if(o.primary) b.className = 'primary';
+    b.textContent = o.label;
+    b.onclick = ()=> decisionChoose(o.key);
+    box.appendChild(b);
+  });
+  m.classList.add('show');
+}
+function decisionChoose(key){
+  const d = pendingDecision; if(!d) return;
+  pendingDecision = null;
+  renderDecisionModal();
+  try{ handleDecision(d, key); }catch(e){ console.error(e); }
+  broadcastState();
+}
+function handleDecision(d, key){
+  switch(d.id){
+    case 'chaseAsk':   return chaseAnswer(d, key);
+    case 'precipAsk':  return precipAnswer(d, key);
+    case 'chasePick':  return key ? chaseRoll(d.data, key) : null;
+    case 'despejeDir': return key ? despejeStart(d.data.pid, key) : null;
+    case 'despejeRerollDir': return despejeAfterDirChoice(d.data, key==='yes');
+    case 'despejeRerollDist': return despejeAfterDistChoice(d.data, key==='yes');
+  }
+}
+
+// =====================================================================
+// TENTÁCULOS: al esquivar/brincar/saltar desde una casilla marcada por un rival con la habilidad (automático)
+// =====================================================================
+function hasTentaculos(p){ return !!p && playerHasSkill(p, 'tentáculos', 'tentaculos', 'tentacles'); }
+// Devuelve true si el jugador queda atrapado (no puede abandonar la casilla; su activación termina).
+function tentaculosBlocks(p){
+  const holders = opponentTackleZonePlayers(p.row, p.col, p.team).filter(hasTentaculos);
+  if(!holders.length) return false;
+  holders.sort((a,b)=>(parseInt(b.st,10)||0)-(parseInt(a.st,10)||0));     // solo uno puede usarla: el más fuerte
+  const h = holders[0];
+  const r = rollDieN(6);
+  const hs = parseInt(h.st,10) || 0, ps = parseInt(p.st,10) || 0;
+  const total = r + hs - ps;
+  const ok = (r===6) || (r!==1 && total>=6);
+  log('🐙 TENTÁCULOS: ' + h.name + ' (FU ' + hs + ') contra ' + p.name + ' (FU ' + ps + '): 1D6 = ' + r + ' → ' + total + (ok ? ' (6+) — ¡' + p.name + ' queda atrapado: no puede abandonar la casilla y su activación termina!' : ' (5 o menos) — sin efecto.'));
+  if(!ok) return false;
+  p.activated = true; selected = null;
+  renderRosters(); renderPitch(); renderSelInfo();
+  broadcastState();
+  return true;
+}
+
+// =====================================================================
+// PERSEGUIR: tras esquivar un rival fuera de la zona de defensa de este jugador, puede ocupar la casilla vacía (1D6, 4+)
+// =====================================================================
+function hasPerseguir(p){ return !!p && playerHasSkill(p, 'perseguir', 'shadowing'); }
+function chaseCandidates(riderTeam, r, c){
+  return opponentTackleZonePlayers(r, c, riderTeam).filter(o=>hasPerseguir(o) && (o.chaseUses || 0) < (parseInt(o.ma,10) || 0));
+}
+function queueChase(rider, fromR, fromC){
+  if(fromR==null) return;
+  const cands = chaseCandidates(rider.team, fromR, fromC);
+  if(!cands.length) return;
+  chaseSt = { riderId: rider.id, vacR: fromR, vacC: fromC, team: cands[0].team, ids: cands.map(o=>o.id), quiet: 0 };
+}
+function chaseTick(){
+  if(!chaseSt) return;
+  if(!isCarreraActor(chaseSt.team)) return;
+  if(!carreraQuiet() || pendingDecision || (carreraSt && carreraSt.stage==='move')){ chaseSt.quiet = 0; return; }
+  chaseSt.quiet = (chaseSt.quiet || 0) + 1;
+  if(chaseSt.quiet < 2) return;
+  const cs = chaseSt; chaseSt = null;
+  const rider = players.find(x=>x.id===cs.riderId);
+  const cands = cs.ids.map(id=>players.find(x=>x.id===id)).filter(o=>o && o.onPitch && o.condition==='standing' && hasPerseguir(o) && (o.chaseUses||0) < (parseInt(o.ma,10)||0));
+  if(!rider || !cands.length || occupiedBy(cs.vacR, cs.vacC)){ broadcastState(); return; }
+  openDecision({ id:'chaseAsk', team: cs.team, title:'🕵️ PERSEGUIR',
+    text: rider.name + ' ha dejado la casilla que marcaba ' + cands.map(o=>o.name).join(', ') + '. ¿Se usa PERSEGUIR? (1D6: con 4+ ocupa la casilla vacía.)',
+    options:[{ key:'yes', label:'Sí, usar Perseguir', primary:true }, { key:'no', label:'No' }], cancelKey:'no',
+    data:{ riderId: rider.id, vacR: cs.vacR, vacC: cs.vacC, ids: cands.map(o=>o.id), team: cs.team } });
+}
+function chaseAnswer(d, key){
+  if(key!=='yes'){ log('🕵️ Nadie usa Perseguir.'); return; }
+  if(d.data.ids.length===1){ chaseRoll(d.data, d.data.ids[0]); return; }
+  openDecision({ id:'chasePick', team:d.team, title:'🕵️ PERSEGUIR — ¿quién?', text:'Solo uno de ellos puede usar Perseguir. Elige jugador.',
+    options: d.data.ids.map(id=>{ const o = players.find(x=>x.id===id); return { key:id, label:'#' + o.num + ' ' + o.name + ' (usos ' + (o.chaseUses||0) + '/' + o.ma + ')' }; }).concat([{ key:null, label:'Cancelar' }]),
+    cancelKey:null, data:d.data });
+}
+function chaseRoll(data, chaserId){
+  const o = players.find(x=>x.id===chaserId); if(!o) return;
+  o.chaseUses = (o.chaseUses||0) + 1;
+  const r = rollDieN(6);
+  if(r<4){ log('🕵️ PERSEGUIR: ' + o.name + ' tira 1D6 = ' + r + ' → no ocurre nada (usos ' + o.chaseUses + '/' + o.ma + ').'); return; }
+  if(occupiedBy(data.vacR, data.vacC)){ log('🕵️ PERSEGUIR: ' + o.name + ' saca ' + r + ' pero la casilla ya no está libre.'); return; }
+  o.row = data.vacR; o.col = data.vacC;
+  if(ball.carrierId===o.id){ ball.row = o.row; ball.col = o.col; }
+  log('🕵️ PERSEGUIR: ' + o.name + ' tira 1D6 = ' + r + ' → ¡ocupa de inmediato la casilla que ha dejado vacía su rival! (usos ' + o.chaseUses + '/' + o.ma + ')');
+  renderRosters(); renderPitch(); renderSelInfo();
+}
+setInterval(()=>{ try{ chaseTick(); }catch(e){ console.error(e); } }, 350);
+
+// =====================================================================
+// PATADA DE DESPEJE: acción especial; opcionalmente se mueve antes; si lleva el balón, lo despeja
+// =====================================================================
+function hasPatadaSkill(p){ return !!p && (p.skills||[]).some(k=>{ const t=String(k).toLowerCase().trim(); return (t==='patada' || t==='kick'); }); }
+function hasPatadaDespeje(p){ return !!p && playerHasSkill(p, 'patada de despeje', 'punt'); }
+function despejeDirInfo(key){ return { L:{dr:0,dc:-1,t:'zona de anotación izquierda'}, R:{dr:0,dc:1,t:'zona de anotación derecha'}, U:{dr:-1,dc:0,t:'banda superior'}, D:{dr:1,dc:0,t:'banda inferior'} }[key]; }
+function actionMenuDespeje(){
+  const id = pendingActionMenuPlayer;
+  closeActionMenu();
+  const p = players.find(x=>x.id===id);
+  if(!p) return;
+  selected = id;
+  despejeUsedByTeam[p.team] = true;
+  p.despejeDeclared = true;
+  log('🦶 ' + teamName(p.team) + ' declara su Patada de despeje de este turno (' + p.name + '). Puede mover antes; si lleva el balón, clic derecho sobre él para despejar.');
+  runTraitCheckThen(p, 'move');
+}
+function actionMenuDespejeKick(){
+  const id = pendingActionMenuPlayer;
+  closeActionMenu();
+  const p = players.find(x=>x.id===id);
+  if(!p || ball.carrierId!==p.id) return;
+  openDecision({ id:'despejeDir', team:p.team, title:'🦶 PATADA DE DESPEJE',
+    text:'¿Hacia qué lado se orienta la patada de ' + p.name + '?',
+    options:[{ key:'L', label:'⬅ Zona de anotación izquierda' }, { key:'R', label:'➡ Zona de anotación derecha' }, { key:'U', label:'⬆ Banda superior' }, { key:'D', label:'⬇ Banda inferior' }, { key:null, label:'Cancelar' }],
+    cancelKey:null, data:{ pid:p.id } });
+}
+function despejeOffsets(info){
+  return info.dr!==0 ? [{dr:info.dr,dc:-1},{dr:info.dr,dc:0},{dr:info.dr,dc:1}] : [{dr:-1,dc:info.dc},{dr:0,dc:info.dc},{dr:1,dc:info.dc}];
+}
+function despejeStart(pid, key){
+  const p = players.find(x=>x.id===pid); if(!p) return;
+  const info = despejeDirInfo(key); if(!info) return;
+  const data = { pid, key };
+  data.dirRoll = rollDieN(6);
+  log('🦶 PATADA DE DESPEJE: ' + p.name + ' orienta la patada hacia la ' + info.t + '. Dirección 1D6 = ' + data.dirRoll + ' (' + ((Math.floor((data.dirRoll-1)/2))+1) + '/3).');
+  if(hasPatadaSkill(p)){
+    openDecision({ id:'despejeRerollDir', team:p.team, title:'🦶 PATADA — repetir dirección', text:'Dirección: ' + data.dirRoll + '. ¿Repites la tirada de dirección con la habilidad Patada? (debe decidirse antes de tirar la distancia)',
+      options:[{ key:'yes', label:'Repetir dirección' }, { key:'no', label:'Mantener', primary:true }], cancelKey:'no', data });
+    return;
+  }
+  despejeAfterDirChoice(data, false);
+}
+function despejeAfterDirChoice(data, reroll){
+  const p = players.find(x=>x.id===data.pid); if(!p) return;
+  if(reroll){ data.dirRoll = rollDieN(6); log('🦶 Patada: repite la dirección → 1D6 = ' + data.dirRoll + ' (' + ((Math.floor((data.dirRoll-1)/2))+1) + '/3).'); }
+  data.distRoll = rollDieN(6);
+  log('🦶 Distancia 1D6 = ' + data.distRoll + '.');
+  if(hasPatadaSkill(p)){
+    openDecision({ id:'despejeRerollDist', team:p.team, title:'🦶 PATADA — repetir distancia', text:'Distancia: ' + data.distRoll + ' casillas. ¿Repites la tirada de distancia con la habilidad Patada?',
+      options:[{ key:'yes', label:'Repetir distancia' }, { key:'no', label:'Mantener', primary:true }], cancelKey:'no', data });
+    return;
+  }
+  despejeLand(data);
+}
+function despejeAfterDistChoice(data, reroll){
+  if(reroll){ data.distRoll = rollDieN(6); log('🦶 Patada: repite la distancia → 1D6 = ' + data.distRoll + '.'); }
+  despejeLand(data);
+}
+function despejeLand(data){
+  const p = players.find(x=>x.id===data.pid); if(!p) return;
+  const info = despejeDirInfo(data.key);
+  const offs = despejeOffsets(info);
+  const off = offs[Math.floor((data.dirRoll-1)/2)];
+  const dist = data.distRoll;
+  const fromR = p.row, fromC = p.col;
+  const landR = fromR + off.dr*dist, landC = fromC + off.dc*dist;
+  ball.carrierId = null; ball.row = fromR; ball.col = fromC;
+  p.activated = true; p.despejeDone = true; selected = null; despejeWheelActive = false;
+  pendingPassOriginalTeam = p.team;
+  pendingPassTurnoverMode = 'ifRival';      // sin cambio de turno si el balón acaba en el suelo o en manos propias
+  log('🦶 La patada de despeje de ' + p.name + ' envía el balón ' + dist + ' casilla(s) hacia ' + (off.dr||off.dc ? '' : '') + 'la dirección elegida.');
+  renderRosters(); renderPitch(); renderSelInfo(); broadcastState();
+  if(landR<0 || landR>=ROWS || landC<0 || landC>=COLS){
+    log('👥 ¡El balón cae en el público! Cambio de turno.');
+    pendingPassTurnoverMode = 'always';
+    const clampR = Math.max(0, Math.min(ROWS-1, landR)), clampC = Math.max(0, Math.min(COLS-1, landC));
+    resolveThrowIn(landR, landC, clampR, clampC, 0);
+    return;
+  }
+  ball.row = landR; ball.col = landC;
+  renderPitch(); broadcastState();
+  const occ = occupiedBy(landR, landC);
+  if(occ && occ.condition==='standing'){
+    log('🏈 El balón aterriza sobre ' + occ.name + ': debe intentar atraparlo.');
+    openCatchModal(occ, false, false, 0, null, false, null, 0, 'pass');
+  } else {
+    log('🏈 El balón aterriza en ' + (occ ? 'la casilla de ' + occ.name + ' (en el suelo)' : 'una casilla vacía') + ' y rebota una vez.');
+    startBallBounce();
+  }
+}
+
+// =====================================================================
+// INFECTADO: una vez por partido, al matar con un Placaje (sin Apotecario) → nuevo Línea en Reservas
+// =====================================================================
+function infectadoTry(victim){
+  if(!victim) return;
+  const atk = players.find(x=>x.id===golpeMortiferoMap[victim.id]);
+  if(!atk || atk.team===victim.team || atk.infectadoUsed || !playerHasSkill(atk, 'infectado', 'infected')) return;
+  if(pendingFoulContext && pendingFoulContext.targetId===victim.id) return;
+  if(pendingApunalarContext && pendingApunalarContext.targetId===victim.id) return;
+  if(isBigGuy(victim) || playerHasSkill(victim, 'descomposición', 'descomposicion', 'decay') || playerHasSkill(victim, 'escurridizo', 'slippery') || playerHasSkill(victim, 'regeneración', 'regeneracion', 'regenerate')){
+    log('🦠 INFECTADO: ' + atk.name + ' no puede infectar a ' + victim.name + ' (Grandullón, Descomposición, Escurridizo o Regeneración).');
+    return;
+  }
+  const txt = x=>([x.position].concat(x.skills||[])).join(' ').toLowerCase();
+  const tpl = players.find(x=>x.team===atk.team && /l[ií]nea/.test(txt(x)) && x.condition!=='dead');
+  if(!tpl){ log('🦠 INFECTADO: ' + atk.name + ' no encuentra ningún jugador Línea en su lista de equipo.'); return; }
+  const maxNum = players.filter(x=>x.team===atk.team).reduce((m,x)=>Math.max(m, parseInt(x.num,10)||0), 0);
+  const np = JSON.parse(JSON.stringify(tpl));
+  Object.assign(np, { id: nextId++, num: maxNum + 1, name: 'Infectado ' + (maxNum + 1), condition:'standing', onPitch:false, row:null, col:null,
+    activated:false, remainingMove: np.ma, gfiUsed:0, blockedThisActivation:false, justStoodThisActivation:false, chaseUses:0, despejeDeclared:false, despejeDone:false, infectadoUsed:false, infectadoNew:true });
+  players.push(np);
+  atk.infectadoUsed = true;
+  log('🦠 INFECTADO: ' + atk.name + ' mata a ' + victim.name + ' — ¡un nuevo Línea (' + np.name + ') se une a las Reservas de ' + teamName(atk.team) + '! (Puede ser fichado como Sustituto tras el partido.)');
+  renderRosters();
+}
+
+// =====================================================================
+// PASE PRECIPITADO: al ser placado el portador del balón, su equipo puede hacer antes un Pase rápido (sin cambio de turno)
+// =====================================================================
+let precipSt = null;   // { attackerId, defenderId, isBlitz, prevActive, prevSelected, defActivated, stage:'select'|'pass', quiet }
+let precipSkipOnce = false;
+function hasPasePrecipitado(p){ return !!p && playerHasSkill(p, 'pase precipitado', 'snap pass'); }
+function precipOffer(attacker, defender, isBlitz){
+  if(precipSkipOnce){ precipSkipOnce = false; return false; }
+  if(precipSt || !defender || ball.carrierId!==defender.id || defender.condition!=='standing' || !hasPasePrecipitado(defender)) return false;
+  openDecision({ id:'precipAsk', team: defender.team, title:'⚡ PASE PRECIPITADO',
+    text: attacker.name + ' va a placar a ' + defender.name + ', que lleva el balón. ¿Hace un Pase rápido antes de que se resuelva el Placaje? (No puede provocar cambio de turno.)',
+    options:[{ key:'yes', label:'Sí, Pase precipitado', primary:true }, { key:'no', label:'No' }], cancelKey:'no',
+    data:{ attackerId: attacker.id, defenderId: defender.id, isBlitz: !!isBlitz } });
+  return true;
+}
+function precipResumeBlock(att, def, isBlitz){
+  precipSkipOnce = true;
+  proceedToBlockDice(att, def, isBlitz);
+  precipSkipOnce = false;
+}
+function precipAnswer(d, key){
+  const att = players.find(x=>x.id===d.data.attackerId), def = players.find(x=>x.id===d.data.defenderId);
+  if(!att || !def) return;
+  if(key!=='yes'){ precipResumeBlock(att, def, d.data.isBlitz); return; }
+  precipSt = { attackerId: att.id, defenderId: def.id, isBlitz: d.data.isBlitz, prevActive: state.active, prevSelected: selected, prevDeclared: declaredAction,
+    defActivated: !!def.activated, stage:'select', quiet:0 };
+  state.active = def.team;
+  selected = def.id;
+  pendingPassTargetSelection = { passerId: def.id };
+  log('⚡ PASE PRECIPITADO: ' + def.name + ' va a hacer un Pase rápido antes del Placaje. Elegid la casilla objetivo (zona de Pase rápido).');
+  updateStatus(def.name + ' — Pase precipitado: elegid la casilla objetivo dentro de la zona de Pase rápido.');
+  renderPitch(); renderRosters(); renderSelInfo();
+}
+function precipFinish(note){
+  const st = precipSt; if(!st) return;
+  precipSt = null;
+  state.active = st.prevActive;
+  const att = players.find(x=>x.id===st.attackerId), def = players.find(x=>x.id===st.defenderId);
+  if(def) def.activated = st.defActivated;
+  pendingPassTargetSelection = null; passTargetMark = null; declaredAction = st.prevDeclared; selected = st.prevSelected;
+  pendingPassTurnoverMode = null; pendingPassOriginalTeam = null; turnoverReason = '';
+  if(note) log(note);
+  renderPitch(); renderRosters(); renderSelInfo();
+  if(att && def && att.onPitch && def.onPitch && att.condition==='standing' && def.condition==='standing'){
+    log('⚡ El Placaje continúa.');
+    precipResumeBlock(att, def, st.isBlitz);
+  } else {
+    log('⚡ El Placaje ya no puede realizarse (alguno de los dos no está en pie o en el campo).');
+  }
+  broadcastState();
+}
+function precipUnstick(){
+  if(!precipSt) return;
+  state.active = precipSt.prevActive; precipSt = null;
+}
+setInterval(()=>{
+  try{
+    if(!precipSt) return;
+    if(!isCarreraActor(state.active)) return;
+    if(precipSt.stage==='select'){
+      if(pendingPassRoll){ precipSt.stage = 'pass'; precipSt.quiet = 0; broadcastState(); }
+      return;
+    }
+    if(!carreraQuiet() || pendingDecision || pendingPassRoll || pendingPassTargetSelection || passTargetMark || ballInFlight || pendingInterceptionChoice || pendingInterceptionRoll || atentoSt || protegerSt){ precipSt.quiet = 0; return; }
+    if(++precipSt.quiet < 3) return;
+    precipFinish();
+  }catch(e){ console.error(e); }
+}, 350);
 
 // ===== LANZAR COMPAÑERO =====
 let throwTeamWheelActive = false;
@@ -7052,6 +7375,7 @@ const PASS_ZONE_PENALTIES = [0, 1, 2, 3];
 // ===== Pase: marcar casilla destino con mira.png + ruleta Confirmar/Cancelar =====
 let passTargetMark = null; // { passerId, r, c }
 function passTargetReachable(passer, r, c){
+  if(precipSt) return passRangeZone(r-passer.row, c-passer.col)===0;
   const zone = passRangeZone(r-passer.row, c-passer.col);
   if(throwSt && throwSt.stage==='target') return zone===0 || zone===1;
   if(zone!==-1) return true;
@@ -7114,6 +7438,7 @@ function renderPassConfirmMenu(){
 }
 (function(){ const _rp = renderPitch; renderPitch = function(){ _rp.apply(this, arguments); try{ renderPassConfirmMenu(); }catch(e){ console.error(e); } try{ renderSelInfo(); }catch(e){ console.error(e); } }; })();
 function handlePassTargetChosen(passer, r, c){
+  if(precipSt){ declarePassTarget(passer, r, c, 0, false); return; }
   if(throwSt && throwSt.stage==='target'){ handleThrowTargetChosen(passer, r, c); return; }
   const zone = passRangeZone(r-passer.row, c-passer.col);
   const hasHailMary = playerHasSkill(passer, 'pase a lo loco', 'hail mary pass') && weatherKind()!=='ventisca';
@@ -7460,6 +7785,12 @@ function finalizePassTurnoverIfNeeded(){
     pendingPassTurnoverMode = null;
     pendingPassOriginalTeam = null;
     autoTurnoverThenEndTurn();
+  } else if(pendingPassTurnoverMode==='ifRival'){
+    const team = pendingPassOriginalTeam;
+    pendingPassTurnoverMode = null;
+    pendingPassOriginalTeam = null;
+    const carrier = ball.carrierId!==null ? players.find(x=>x.id===ball.carrierId) : null;
+    if(carrier && carrier.team!==team) autoTurnoverThenEndTurn();
   } else if(pendingPassTurnoverMode==='ifNotTeam'){
     const team = pendingPassOriginalTeam;
     pendingPassTurnoverMode = null;
@@ -8951,6 +9282,7 @@ function applyHeroicTackleFall(heroId, vacR, vacC){
 }
 
 function openDodgeModal(p, toR, toC, fromGfi){
+  if(tentaculosBlocks(p)) return;
   const hasEscurridizo = playerHasSkill(p, 'escurridizo', 'diving tackle immune', 'slippery');
   const hasCanijo = playerHasSkill(p, 'canijo', 'puny');
   const tz = hasEscurridizo ? 0 : countDodgeTackleZones(toR, toC, p.team);
@@ -9052,6 +9384,7 @@ function resolveDodge(success){
   document.getElementById('dodgeModal').classList.remove('show');
   pendingDodge = null;
   if(!p){ broadcastState(); return; }
+  queueChase(p, fromR, fromC);
 
   if(success){
     completeStep(p, toR, toC, fromGfi ? 'none' : 'normal');
@@ -9154,6 +9487,7 @@ function handleJumpDest(r,c){
   else openJumpCheck(p, jump);
 }
 function openJumpCheck(p, jump){
+  if(tentaculosBlocks(p)) return;
   const mO = countOpponentTackleZones(p.row, p.col, p.team);
   const mD = countOpponentTackleZones(jump.destR, jump.destC, p.team);
   let pen = Math.max(mO, mD);
@@ -9574,6 +9908,7 @@ function regenApplyFailure(p){
   pendingRegenInjuryKind = null;
   document.getElementById('regenRow').style.display = 'none';
   applyInjuryOutcome(p, kind);
+  if(kind==='dead') infectadoTry(p);
   crowdPushMode = false;
   renderRosters(); renderPitch(); renderSelInfo();
   closeArmorModal();
@@ -9700,6 +10035,7 @@ function chooseInjury(kind){
     return;
   }
   applyInjuryOutcome(p, kind);
+  if(kind==='dead') infectadoTry(p);
   crowdPushMode = false;
   renderRosters(); renderPitch(); renderSelInfo();
   closeArmorModal();
@@ -9877,6 +10213,8 @@ function beginTurn(team){
   blitzUsedByTeam[team] = false;
   secureBallUsedByTeam[team] = false;
   handoffUsedByTeam[team] = false;
+  despejeUsedByTeam[team] = false;
+  players.forEach(x=>{ x.chaseUses = 0; x.despejeDeclared = false; });
   foulUsedByTeam[team] = false;
   passUsedByTeam[team] = false;
   throwUsedByTeam[team] = false;
@@ -9979,6 +10317,7 @@ function hideTurnoverOverlay(){
 }
 
 function autoTurnoverThenEndTurn(){
+  if(precipSt){ log('🏈 PASE PRECIPITADO: el pase no puede provocar cambio de turno.'); turnoverReason = ''; return; }
   if(atentoSt && atentoSt.stage==='move'){ log('👀 ATENTO AL BALÓN: el jugador cae — su movimiento termina de inmediato (sin cambio de turno).'); atentoEndMove(true); return; }
   if(kickoffEvt && kickoffEvt.phase==='charge'){
     log('🛑 Un jugador se ha Caído o ha sido Derribado: la Carga termina.');
@@ -10393,6 +10732,9 @@ function cancelActiveModal(modalId){
     case 'heroicTackleModal':
       heroicTackleChoose(null);
       break;
+    case 'decisionModal':
+      decisionChoose(pendingDecision ? pendingDecision.cancelKey : null);
+      break;
     case 'insigModal':
       insignificanteCancel();
       break;
@@ -10436,6 +10778,7 @@ function modalActorTeam(id){
     case 'atentoModal': return atentoSt && atentoSt.cur!=null ? pteam(atentoSt.cur) : act;
     case 'standFirmModal': return pendingStandFirm ? (pendingStandFirm.stage==='chain' ? pteam(pendingStandFirm.chain.occupantId) : pteam(pendingStandFirm.defenderId)) : other(act);
     case 'heroicTackleModal': return other(act);
+    case 'decisionModal': return pendingDecision ? pendingDecision.team : act;
     case 'jumpUpModal': return pendingJumpUpCheck!=null ? pteam(pendingJumpUpCheck) : act;
     case 'forcejearModal': {
       if(!pendingForcejearChoice) return act;
@@ -10768,7 +11111,7 @@ try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesBut
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V91'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V93'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

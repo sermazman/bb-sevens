@@ -95,6 +95,12 @@
   "NEC_WRAITH": 3,
   "NEC_GOLEM": 3,
   "NEC_WEREWOLF": 3,
+  "NGB_LINEMAN": 3,
+  "NGB_HERDER": 3,
+  "NGB_HOPPER": 3,
+  "NGB_WRANGLER": 3,
+  "NGB_CAVESQUIG": 3,
+  "NGB_TROLL": 3,
   "NOR_RAIDER": 3,
   "NOR_BEER": 3,
   "NOR_BERSERKER": 3,
@@ -643,6 +649,36 @@
    },
    "Journey Zombie": {
     "icon": "NEC_ZOMBIE",
+    "layers": 3
+   }
+  },
+  "Night Goblins": {
+   "Night Goblin Lineman": {
+    "icon": "NGB_LINEMAN",
+    "layers": 3
+   },
+   "Squig Herder": {
+    "icon": "NGB_HERDER",
+    "layers": 3
+   },
+   "Squig Hopper": {
+    "icon": "NGB_HOPPER",
+    "layers": 3
+   },
+   "Squig Wrangler": {
+    "icon": "NGB_WRANGLER",
+    "layers": 3
+   },
+   "Cave Squig": {
+    "icon": "NGB_CAVESQUIG",
+    "layers": 3
+   },
+   "Trained Troll": {
+    "icon": "NGB_TROLL",
+    "layers": 3
+   },
+   "Journey Night Goblin Lineman": {
+    "icon": "NGB_LINEMAN",
     "layers": 3
    }
   },

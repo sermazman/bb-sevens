@@ -1290,6 +1290,7 @@ function renderMatchList(){
   const es=mvMatchEntries();
   app.innerHTML=`<div class="teamhead"><span class="mvtitle">Partidos registrados</span><button class="btn" id="mvListBack" type="button">← Volver</button></div>
     <p class="hint">Solo se puede editar o deshacer el último partido de cada uno de los dos equipos. Si alguno tiene otro partido después, aparece bloqueado hasta que se deshagan los posteriores (del más nuevo al más viejo).</p>
+    ${mvRoundsWithMatches().length?`<div class="card"><h3>Imágenes de la jornada</h3><p class="hint">Clasificación tras esa jornada y resumen de lo mejor de la jornada (Hall of Fame de la jornada y drafteados).</p><div class="actions"><select id="mvRoundSel">${mvRoundsWithMatches().map(r=>`<option value="${r}">${esc(roundLabel(r))}</option>`).join('')}</select><button class="btn primary" type="button" id="mvRoundImgs">Imágenes de la jornada</button></div></div>`:''}
     ${es.length?es.map(e=>{ const m=e.home.m, nj=m.result.outcome==='unplayed', hn=e.home.t.name, an=e.away?e.away.t.name:m.opponent.teamName;
       const res=nj?'NJ':(m.homeAway==='home'?`${m.result.teamScore} - ${m.result.opponentScore}`:`${m.result.opponentScore} - ${m.result.teamScore}`);
       return `<div class="card"><h3>${esc(e.id)} · ${esc(roundLabel(e.round))} · ${esc(hn)} <span class="res">${res}</span> ${esc(an)}</h3>
@@ -1384,6 +1385,56 @@ async function igLoadImg(path,fallbackUrl){
   const url=URL.createObjectURL(new Blob([blob],{type:blob.type||'image/png'}));
   return await new Promise(ok=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=()=>ok(null); i.src=url; });
 }
+
+/* ---------- imágenes de la jornada: clasificación + resumen ---------- */
+function mvRoundsWithMatches(){
+  const s=new Set(); mv.teams.filter(t=>t.doc.league.season===mv.season).forEach(t=>t.doc.league.matches.forEach(m=>{ const r=m.round||0; if(r>=1&&r<=ROUND_MAX) s.add(r); }));
+  return [...s].sort((a,b)=>a-b);
+}
+function mvRoundStandings(n){
+  const rows=mv.teams.filter(t=>t.doc.league.season===mv.season).map(t=>{
+    const ms=t.doc.league.matches.filter(m=>(m.round||0)>=1&&m.round<=Math.min(n,ROUND_MAX)), st=m=>m.statistics||{}, sum=f=>ms.reduce((a,m)=>a+(f(m)||0),0);
+    const pl=ms.filter(m=>m.result.outcome!=='unplayed'), x={played:ms.length,nj:ms.length-pl.length,won:ms.filter(m=>m.result.outcome==='win').length,drawn:ms.filter(m=>m.result.outcome==='draw').length,lost:ms.filter(m=>m.result.outcome==='loss').length};
+    x.pct=x.played?(x.won+0.5*x.drawn)/x.played:0;
+    x.tdd=sum(m=>m.result.teamScore)-sum(m=>m.result.opponentScore);
+    x.calav=sum(m=>st(m).skullsFor)+sum(m=>st(m).onesFor);
+    x.tie=x.calav*0.5+pl.filter(m=>m.result.teamScore-m.result.opponentScore>=3).length+pl.filter(m=>m.result.opponentScore===0).length+pl.filter(m=>(st(m).lightInjuriesFor||0)+(st(m).seriousInjuriesFor||0)+(st(m).deathsFor||0)>=3).length;
+    x.spp=sum(m=>(m.playerEvents||[]).reduce((a,e)=>a+(e.sppEarned||0),0));
+    return {t,x};
+  }).sort((a,b)=>b.x.pct-a.x.pct||(a.x.nj>0)-(b.x.nj>0)||b.x.tie-a.x.tie||b.x.calav-a.x.calav||b.x.tdd-a.x.tdd||b.x.spp-a.x.spp||a.t.name.localeCompare(b.t.name,'es'));
+  return rows;
+}
+const MV_ROUND_TABLES=[['sppEarned','Puntos de estrellato'],['touchdowns','Anotaciones'],['passes','Pases completados'],['mvp','MVP del partido'],['lightInjuries','Heridos leves'],['seriousInjuries','Heridos graves'],['deaths','Muertos']];
+function mvRoundSummary(n){
+  const acc=new Map(), drafts=[];
+  mv.teams.filter(t=>t.doc.league.season===mv.season).forEach(t=>{ const l=t.doc.league;
+    l.matches.filter(m=>m.round===n&&m.result.outcome!=='unplayed').forEach(m=>(m.playerEvents||[]).forEach(ev=>{
+      const k=t.file+'|'+ev.num; if(!acc.has(k)) acc.set(k,{name:ev.name||('#'+ev.num),team:t.name,v:{}});
+      const o=acc.get(k); if(ev.name) o.name=ev.name;
+      MV_ROUND_TABLES.forEach(([f])=>{ o.v[f]=(o.v[f]||0)+(ev[f]||0); });
+      if(ev.draft){ const rp=(l.retiredPlayers||[]).find(r=>r.num===ev.num&&r.retiredAtMatch===m.id), lp=rp||(l.players||[]).find(p=>p.num===ev.num);
+        const sk=((lp&&lp.progression&&lp.progression.improvements)||[]).filter(i=>i.skill).map(i=>i.skill).join(', ');
+        const d1=ev.draft==='drafted'?`Drafteado${ev.draftValue?' ('+ev.draftValue+')':''}`:`Paga la cláusula${ev.valuePaid?' ('+fmt(ev.valuePaid)+')':''}`;
+        drafts.push({name:o.name,sub:t.name,detail:d1+(sk?' → '+sk:'')}); } })); });
+  const tables=MV_ROUND_TABLES.map(([f,title])=>{
+    const r=[...acc.values()].filter(o=>(o.v[f]||0)>0).sort((a,b)=>b.v[f]-a.v[f]||a.name.localeCompare(b.name,'es'));
+    let last=null,pos=0; return {title,rows:r.map((o,i)=>{ if(o.v[f]!==last){pos=i+1;last=o.v[f]} return {pos,name:o.name,sub:o.team,val:o.v[f]}; })};
+  });
+  return {tables,drafts};
+}
+async function mvRoundImages(n){
+  if(!n){ toast('Elige una jornada.'); return; }
+  toast('Preparando imágenes…');
+  try{
+    try{ await mvLoadTeams(); }catch(err){}
+    const st=mvRoundStandings(n), sum=mvRoundSummary(n);
+    const standings=await Promise.all(st.map(async r=>{ const d=r.t.doc, lg=d.league.logo&&/^[\w.-]+\.png$/i.test(d.league.logo)?d.league.logo:null;
+      return {name:r.t.name,race:d.race||'',color:d.color,w:r.x.won,d:r.x.drawn,l:r.x.lost,pct:r.x.pct,nj:r.x.nj>0,logo:lg?await igLoadImg(r.t.path.replace(/[^/]+$/,'')+lg,ghFolder(ghSettings())+'/'+lg):null}; }));
+    const ll=await igLoadImg('logoBB7.png','logoBB7.png');
+    const imgs=await buildRoundImages({season:mv.season,roundLabel:roundLabel(n),leagueLogo:ll,standings,tables:sum.tables,drafts:sum.drafts});
+    igShow(roundId(mv.season,n),imgs,`T${mv.season}_J${pad2(n)}_jornada`,['clasificacion','resumen','resumen2','resumen3','resumen4','resumen5']);
+  }catch(err){ toast('No se pudieron crear las imágenes: '+err.message); }
+}
 async function mvInstagram(sel){
   /* sel = {key} (lista de partidos) o {id,home,away} (recién registrado): un mismo id (T6-J01) lo comparten varios partidos */
   const find=()=>mvMatchEntries().find(x=>sel.key?x.key===sel.key:(x.id===sel.id&&x.away&&x.home.t.name===sel.home&&x.away.t.name===sel.away));
@@ -1405,8 +1456,8 @@ async function mvInstagram(sel){
     igShow(e.id,imgs,`${e.id}_${slug(h.name)}-${slug(a.name)}`);
   }catch(err){ toast('No se pudieron crear las imágenes: '+err.message); }
 }
-function igShow(id,imgs,fname){
-  const urls=imgs.map(c=>c.toDataURL('image/png')), nm=['resultado','protagonistas','protagonistas2'];
+function igShow(id,imgs,fname,names){
+  const urls=imgs.map(c=>c.toDataURL('image/png')), nm=names||['resultado','protagonistas','protagonistas2'];
   const old=document.getElementById('igModal'); if(old) old.remove();
   const d=document.createElement('div'); d.id='igModal';
   d.style.cssText='position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.85);overflow:auto;padding:16px';
@@ -1419,6 +1470,97 @@ function igShow(id,imgs,fname){
   d.addEventListener('click',ev=>{ if(ev.target.id==='igClose'||ev.target===d) d.remove();
     const b=ev.target.closest('[data-igdl]'); if(b) dl(+b.dataset.igdl);
     if(ev.target.id==='igAll') urls.forEach((u,i)=>setTimeout(()=>dl(i),i*400)); });
+}
+
+/* Imágenes de la jornada para Instagram (4:5 = 1080×1350), en azul (el rojo es de los partidos).
+   buildRoundImages({season,roundLabel,leagueLogo,standings:[{name,race,color,logo,w,d,l,pct,nj}],tables:[{title,rows:[{pos,name,sub,val}]}],drafts:[{name,sub,detail}]}) → Promise<canvas[]> */
+async function buildRoundImages(o){
+  const W=1080,H=1350, FT="'Anton',Impact,sans-serif", FU="'Oswald',system-ui,sans-serif";
+  try{ await Promise.all([document.fonts.load('400 60px Anton'),document.fonts.load('400 30px Oswald'),document.fonts.load('500 30px Oswald')]); }catch(e){}
+  const BG='#0d1014', PANEL='#151a21', LINE='#2a323e', TXT='#e9ecf0', MUT='#8c97a6', ACC='#2f7fd0', ACCL='#6fb1ee';
+  const okc=c=>/^#[0-9a-f]{6}$/i.test(c||'')?c:'#555a66';
+  const hex=(c,a)=>{ const n=parseInt(c.slice(1),16); return `rgba(${n>>16},${(n>>8)&255},${n&255},${a})`; };
+  const mk=()=>{ const c=document.createElement('canvas'); c.width=W; c.height=H; return c; };
+  function fit(g,txt,font,max,start,min){ let s=start; do{ g.font=font.replace('#',s); if(g.measureText(txt).width<=max||s<=min) break; s-=2; }while(s>min); return s; }
+  function ell(g,txt,max){ if(g.measureText(txt).width<=max) return txt; let t=txt; while(t.length>1&&g.measureText(t+'…').width>max) t=t.slice(0,-1); return t+'…'; }
+  function base(title,sub){
+    const c=mk(), g=c.getContext('2d');
+    g.fillStyle=BG; g.fillRect(0,0,W,H);
+    const gr=g.createLinearGradient(0,0,W,H); gr.addColorStop(0,hex(ACC,.20)); gr.addColorStop(.6,'rgba(13,16,20,0)'); g.fillStyle=gr; g.fillRect(0,0,W,H);
+    g.fillStyle=ACC; g.fillRect(0,0,W,12); g.fillRect(0,H-12,W,12);
+    g.textAlign='center'; g.textBaseline='alphabetic'; g.fillStyle=MUT; g.font=`500 28px ${FU}`; g.letterSpacing='6px'; g.fillText('LIGA BLOOD BOWL SEVENS · TEMPORADA '+o.season,W/2,60); g.letterSpacing='0px';
+    if(o.leagueLogo){ const L=o.leagueLogo, b=104; g.drawImage(L,34,30,b,b*L.height/L.width); }
+    g.fillStyle=TXT; fit(g,title.toUpperCase(),`400 #px ${FT}`,820,84,44); g.fillText(title.toUpperCase(),W/2,160);
+    g.fillStyle=MUT; g.font=`500 30px ${FU}`; g.letterSpacing='5px'; g.fillText(sub.toUpperCase(),W/2,208); g.letterSpacing='0px';
+    return [c,g];
+  }
+  const imgs=[];
+  /* ---------- 1: clasificación ---------- */
+  { const [c,g]=base('Clasificación','Tras la '+(o.roundLabel||'jornada').toLowerCase());
+    const S=o.standings||[], n=Math.max(S.length,1), x0=70,x1=1010, top=262, availEnd=1210;
+    const rh=Math.min(92,Math.floor((availEnd-top-26)/n)), bh=rh-8, k=bh/84;
+    const cols=[[690,'V'],[770,'D'],[850,'E'],[975,'%']];
+    g.font=`500 26px ${FU}`; g.fillStyle=MUT; g.letterSpacing='3px'; g.textAlign='center'; cols.forEach(([x,t])=>g.fillText(t,x,top)); g.letterSpacing='0px';
+    const pct=p=>p>=1?'1.00':p.toFixed(3).replace(/^0/,'');
+    let any=false;
+    S.forEach((t,i)=>{ const col=okc(t.color), y=top+22+i*rh, cy=y+bh/2;
+      g.fillStyle=i<4?PANEL:'rgba(21,26,33,.55)'; g.fillRect(x0,y,x1-x0,bh); g.fillStyle=col; g.fillRect(x0,y,10,bh);
+      g.textAlign='center'; g.textBaseline='middle'; g.fillStyle=i<4?TXT:MUT; g.font=`400 ${Math.round(44*k)}px ${FT}`; g.fillText(i+1,x0+54,cy+2);
+      const r=Math.round(26*k);
+      if(t.logo){ const L=t.logo, s=Math.min(r*2.2/L.width,r*2.2/L.height); g.drawImage(L,x0+135-L.width*s/2,cy-L.height*s/2,L.width*s,L.height*s); }
+      else { g.fillStyle=col; g.beginPath(); g.arc(x0+135,cy,r,0,7); g.fill(); g.fillStyle='#fff'; g.font=`400 ${Math.round(22*k)}px ${FT}`; g.fillText((t.name||'?').trim().slice(0,2).toUpperCase(),x0+135,cy+2); }
+      g.textAlign='left'; g.textBaseline='alphabetic'; g.fillStyle=TXT;
+      const nm=(t.name||'').toUpperCase()+(t.nj?' *':''); if(t.nj) any=true;
+      fit(g,nm,`400 #px ${FT}`,455,Math.round(38*k),22); g.fillText(nm,x0+182,y+bh*0.55);
+      g.fillStyle=MUT; g.font=`500 ${Math.round(22*k)}px ${FU}`; g.letterSpacing='2px'; g.fillText(ell(g,(t.race||'').toUpperCase(),420),x0+183,y+bh*0.55+Math.round(24*k)); g.letterSpacing='0px';
+      g.textAlign='center'; g.textBaseline='middle'; g.font=`400 ${Math.round(44*k)}px ${FT}`; g.fillStyle=TXT;
+      [t.w,t.l,t.d].forEach((v,j)=>g.fillText(v,cols[j][0],cy+2)); g.fillStyle=ACCL; g.fillText(pct(t.pct),975,cy+2); g.textBaseline='alphabetic'; });
+    if(n>4){ const yl=top+22+4*rh-4; g.strokeStyle=ACC; g.lineWidth=3; g.setLineDash([12,8]); g.beginPath(); g.moveTo(x0,yl); g.lineTo(x1,yl); g.stroke(); g.setLineDash([]); }
+    g.textAlign='center'; g.strokeStyle=LINE; g.lineWidth=2; g.beginPath(); g.moveTo(x0,1236); g.lineTo(x1,1236); g.stroke();
+    g.fillStyle=ACCL; g.font=`500 25px ${FU}`; g.letterSpacing='2px'; g.fillText('CLASIFICAN PARA PLAYOFFS LOS 4 PRIMEROS PUESTOS EN FASE REGULAR',W/2,1272); g.letterSpacing='0px';
+    g.fillStyle=MUT; g.font=`500 22px ${FU}`; g.fillText('V victorias · D derrotas · E empates · % = (V + E×0,5) / PJ'+(any?' · * algún partido no jugado':''),W/2,1305);
+    imgs.push(c); }
+  /* ---------- 2..: resumen de la jornada ---------- */
+  const T=(o.tables||[]).filter(t=>t.rows&&t.rows.length).map(t=>({title:t.title,rows:t.rows,two:true}));
+  if(o.drafts&&o.drafts.length) T.push({title:'Drafteados',rows:o.drafts.map(d=>({pos:'',name:d.name,sub:d.sub,val:'',detail:d.detail})),full:true});
+  const TOP=250, BOT=1296, GAP=22, HEAD=78, CW=470, XS=[60,550];
+  const rowH=(t,full)=>full?(t.rows.some(r=>r.detail)?102:58):68;
+  const pages=[]; const newPage=()=>{ const p={items:[],y:[TOP,TOP]}; pages.push(p); return p; };
+  let pg=newPage();
+  const place=(t,full)=>{
+    let rows=t.rows.slice(), first=true;
+    while(rows.length){
+      const rh=rowH(t,full), minH=HEAD+14+rh*Math.min(2,rows.length);
+      let col;
+      if(full){ const y=Math.max(pg.y[0],pg.y[1]); col=-1; if(y+minH>BOT){ pg=newPage(); continue; } }
+      else { col=pg.y[0]<=pg.y[1]?0:1; const whole=HEAD+14+rh*rows.length; if(pg.y[col]+whole>BOT){ const o2=1-col; if(pg.y[o2]+whole<=BOT) col=o2; } if(pg.y[col]+minH>BOT){ const o2=1-col; if(pg.y[o2]+minH<=BOT) col=o2; else { pg=newPage(); continue; } } }
+      const y=full?Math.max(pg.y[0],pg.y[1]):pg.y[col], fitN=Math.max(1,Math.floor((BOT-y-HEAD-14)/rh)), take=rows.slice(0,fitN); rows=rows.slice(take.length);
+      const h=HEAD+rh*take.length+14;
+      pg.items.push({title:t.title+(first?'':' (cont.)'),rows:take,full,col,y,h,rh});
+      if(full){ pg.y[0]=pg.y[1]=y+h+GAP; } else pg.y[col]=y+h+GAP; first=false;
+    } };
+  T.forEach(t=>place(t,!!t.full));
+  const real=pages.filter(p=>p.items.length);
+  if(!real.length){ const [c,g]=base('Resumen '+(o.roundLabel||'jornada'),'Sin datos destacados'); imgs.push(c); }
+  real.forEach((p,pi)=>{
+    const [c,g]=base('Resumen '+(o.roundLabel||'jornada'),'Lo mejor de la jornada'+(real.length>1?` · ${pi+1}/${real.length}`:''));
+    p.items.forEach(it=>{ const x=it.full?60:XS[it.col], w=it.full?960:CW;
+      g.fillStyle=PANEL; g.fillRect(x,it.y,w,it.h); g.fillStyle=ACC; g.fillRect(x,it.y,w,6);
+      g.textAlign='left'; g.textBaseline='alphabetic'; g.fillStyle=TXT; g.font=`400 36px ${FT}`; g.letterSpacing='2px'; g.fillText(ell(g,it.title.toUpperCase(),w-44),x+22,it.y+52); g.letterSpacing='0px';
+      it.rows.forEach((r,i)=>{ const yy=it.y+HEAD+i*it.rh;
+        g.strokeStyle=LINE; g.lineWidth=2; g.beginPath(); g.moveTo(x+22,yy); g.lineTo(x+w-22,yy); g.stroke();
+        const mid=yy+it.rh/2; g.textAlign='left';
+        g.fillStyle=MUT; g.font=`400 30px ${FT}`; if(r.pos!=='') g.fillText(r.pos,x+22,mid+11);
+        const nx=x+(r.pos===''?22:72), vw=r.val===''||r.val==null?0:70;
+        g.fillStyle=TXT; g.font=`500 28px ${FU}`;
+        if(it.full){ const two=!!r.detail;
+          if(two){ g.fillText(ell(g,r.name,w-44-(nx-x-22)),nx,yy+36); g.fillStyle=MUT; g.font=`500 22px ${FU}`; g.fillText(ell(g,r.sub||'',w-44-(nx-x-22)),nx,yy+62); g.fillStyle=ACCL; g.font=`500 24px ${FU}`; g.fillText(ell(g,r.detail,w-44-(nx-x-22)),nx,yy+90); }
+          else { g.fillText(ell(g,r.name+(r.sub?' · '+r.sub:''),w-44-vw-(nx-x-22)),nx,mid+10); } }
+        else { g.fillText(ell(g,r.name,w-44-vw-(nx-x-22)),nx,yy+31); g.fillStyle=MUT; g.font=`500 21px ${FU}`; g.letterSpacing='1px'; g.fillText(ell(g,(r.sub||'').toUpperCase(),w-44-vw-(nx-x-22)),nx,yy+56); g.letterSpacing='0px'; }
+        if(vw){ g.textAlign='right'; g.fillStyle=TXT; g.font=`400 38px ${FT}`; g.fillText(String(r.val),x+w-22,mid+13); g.textAlign='left'; } });
+    });
+    imgs.push(c); });
+  return imgs;
 }
 
 /* Imágenes del resumen de partido para Instagram (publicación normal, vertical 4:5 = 1080×1350).
@@ -1637,6 +1779,7 @@ function mvClick(e){
   if(t.closest('#mvList')){ renderMatchList(); return true; }
   if(t.closest('#mvIg')){ mvInstagram({id:mv.last.id,home:mv.last.home,away:mv.last.away}); return true; }
   { const b=t.closest('[data-mig]'); if(b){ mvInstagram({key:b.dataset.mig}); return true; } }
+  if(t.closest('#mvRoundImgs')){ mvRoundImages(+($('#mvRoundSel')||{}).value); return true; }
   if(t.closest('#mvListBack')){ mv.editing=null; renderMatchView(); return true; }
   { const b=t.closest('[data-medit]'); if(b){ mvStartEdit(b.dataset.medit,'edit'); return true; } }
   { const b=t.closest('[data-mundo]'); if(b){ mvStartEdit(b.dataset.mundo,'undo'); return true; } }

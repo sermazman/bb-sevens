@@ -3304,6 +3304,9 @@ function renderPitch(){
         if(isValidKickoffBounceCell(r,c)){ highlightable = true; highlightBounce = true; }
       } else if(ballBounceActive){
         if(isValidBounceCell(r,c)){ highlightable = true; highlightBounce = true; }
+      } else if(chainSt && chainSt.stage==='pick'){
+        const ca = chainArrowAt(r,c);
+        if(ca){ highlightable = true; highlightGfi = false; highlightPush = true; cell.setAttribute('data-chain', ca); }
       } else if(carreraSt && carreraSt.stage==='move'){
         if(isCarreraCell(r,c)){ highlightable = true; highlightGfi = false; highlightPush = true; }
       } else if(pendingJump){
@@ -3585,6 +3588,7 @@ function handlePitchRightClick(e){
 }
 
 function handleTokenRightClick(id){
+  if(chainSt && chainSt.stage==='pick') return;
   if(phase!=='live' || anyModalOpen()) return;
   { const sp = selected!==null ? players.find(x=>x.id===selected) : null;
     const tg = players.find(x=>x.id===id);
@@ -4206,6 +4210,7 @@ function endActivation(id){
 }
 
 function cellClicked(r,c){
+  if(chainSt && chainSt.stage==='pick'){ chainPick(r,c); return; }
   if(carreraSt && carreraSt.stage==='move'){ carreraPick(r,c); return; }
   if(protegerSt){ protegerPick(r,c); return; }
   if(pendingJump){ handleJumpDest(r,c); return; }
@@ -4325,6 +4330,7 @@ function completeStep(p, r, c, consume){
 }
 
 function tokenClicked(id){
+  if(chainSt && chainSt.stage==='pick'){ const q = players.find(x=>x.id===id); if(q && q.onPitch) chainPick(q.row, q.col); return; }
   if(throwSt && throwSt.stage==='pick'){
     if(throwSt.candIds.includes(id)){ throwBegin(id); } else { updateStatus('Lanzar compañero: elegid a uno de los compañeros con Humanoide bala resaltados.'); }
     return;
@@ -6902,19 +6908,73 @@ function actionMenuChain(){
   runTraitCheckThen(p, 'chain');
 }
 function chainDeclare(p){
-  openDecision({ id:'chainSide', team:p.team, title:'⛓️ BOLA CON CADENA',
-    text:'¿Hacia qué lado se encara la plantilla de devolución de ' + p.name + '?',
-    options:[{ key:'L', label:'⬅ Zona de anotación izquierda' }, { key:'R', label:'➡ Zona de anotación derecha' }, { key:'U', label:'⬆ Banda superior' }, { key:'D', label:'⬇ Banda inferior' }, { key:null, label:'Cancelar (termina la activación)' }],
-    cancelKey:null, data:{ pid:p.id } });
-}
-function chainSideChosen(data, key){
-  const p = players.find(x=>x.id===data.pid); if(!p) return;
-  if(!key){ endActivation(p.id); return; }
-  chainSt = { pid:p.id, team:p.team, key, used:0, gfi:0, stage:'busy', quiet:0, turn:state.active, fallAfter:false, armorTarget:null, push:false };
+  chainSt = { pid:p.id, team:p.team, key:null, used:0, gfi:0, stage:'pick', quiet:0, turn:state.active, fallAfter:false, armorTarget:null, push:false };
   p.activated = true; selected = null; declaredAction = null;
-  log('⛓️ ' + p.name + ' se encara hacia la ' + chainFacing(key).t + '.');
-  renderPitch(); renderRosters(); renderSelInfo();
+  chainAskPick();
+}
+function chainAskPick(){
+  const st = chainSt; if(!st) return;
+  const p = players.find(x=>x.id===st.pid); if(!p) return;
+  st.stage = 'pick';
+  const ma = parseInt(p.ma,10) || 0;
+  updateStatus('⛓️ ' + p.name + ' (' + st.used + '/' + ma + (st.gfi ? ' +GFI ' + st.gfi + '/2' : '') + '): elige una flecha para orientar la plantilla' + (st.used>=ma ? ' (forzará la marcha)' : '') + ' o pulsa FIN MOVIMIENTO.');
+  renderPitch(); renderRosters(); renderSelInfo(); broadcastState();
+}
+function chainPickDirs(p){
+  return { U:{dr:-1,dc:0,ic:'⬆'}, D:{dr:1,dc:0,ic:'⬇'}, L:{dr:0,dc:-1,ic:'⬅'}, R:{dr:0,dc:1,ic:'➡'} };
+}
+function chainFinCell(p){
+  const cand = [[-1,1],[1,1],[-1,-1],[1,-1]];
+  for(const [dr,dc] of cand){ const r=p.row+dr, c=p.col+dc; if(r>=0&&r<ROWS&&c>=0&&c<COLS) return [r,c]; }
+  return null;
+}
+function chainArrowAt(r,c){
+  if(!chainSt || chainSt.stage!=='pick') return null;
+  const p = players.find(x=>x.id===chainSt.pid); if(!p || !p.onPitch) return null;
+  const d = chainPickDirs(p);
+  for(const k of Object.keys(d)){ if(p.row+d[k].dr===r && p.col+d[k].dc===c) return d[k].ic; }
+  const f = chainFinCell(p);
+  if(f && f[0]===r && f[1]===c) return '⏹ FIN';
+  return null;
+}
+function chainPick(r,c){
+  const st = chainSt; if(!st || st.stage!=='pick') return;
+  if(!isCarreraActor(st.team)) return;
+  const p = players.find(x=>x.id===st.pid); if(!p) return;
+  const d = chainPickDirs(p);
+  for(const k of Object.keys(d)){ if(p.row+d[k].dr===r && p.col+d[k].dc===c){ chainPickKey(k); return; } }
+  const f = chainFinCell(p);
+  if(f && f[0]===r && f[1]===c){ chainPickKey('FIN'); return; }
+  updateStatus('⛓️ Bola con cadena: pulsa una de las flechas junto al jugador o FIN MOVIMIENTO.');
+}
+function chainPickKey(key){
+  const st = chainSt; if(!st || st.stage!=='pick') return;
+  if(!isCarreraActor(st.team)) return;
+  if(key==='FIN'){ chainEnd(); return; }
+  st.key = key; st.stage = 'busy'; st.quiet = 0;
+  syncChainPanel();
   chainStep();
+}
+function syncChainPanel(){
+  let el = document.getElementById('chainPanel');
+  const st = chainSt;
+  const p = st && st.stage==='pick' ? players.find(x=>x.id===st.pid) : null;
+  const offDirs = [];
+  if(p && p.onPitch){
+    const d = chainPickDirs(p);
+    Object.keys(d).forEach(k=>{ const r=p.row+d[k].dr, c=p.col+d[k].dc; if(r<0||r>=ROWS||c<0||c>=COLS) offDirs.push(k); });
+  }
+  if(!p || !offDirs.length){ if(el) el.remove(); return; }
+  const sig = offDirs.join('');
+  if(el && el.dataset.sig===sig) return;
+  if(el) el.remove();
+  el = document.createElement('div'); el.id = 'chainPanel'; el.dataset.sig = sig;
+  el.style.cssText = 'position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:60;background:#222c;border:2px solid #e8b400;border-radius:10px;padding:8px 12px;color:#fff;display:flex;gap:8px;align-items:center;flex-wrap:wrap;';
+  const t = document.createElement('span'); t.textContent = '⛓️ Hacia fuera del campo:'; el.appendChild(t);
+  const d = chainPickDirs(p);
+  offDirs.forEach(k=>{ const b = document.createElement('button'); b.textContent = d[k].ic; b.onclick = ()=>chainPickKey(k); el.appendChild(b); });
+  const fb = document.createElement('button'); fb.textContent = '⏹ FIN MOVIMIENTO'; fb.onclick = ()=>chainPickKey('FIN'); el.appendChild(fb);
+  document.body.appendChild(el);
 }
 function chainStep(){
   const st = chainSt; if(!st) return;
@@ -7008,6 +7068,7 @@ function openChainInjury(p){
   document.getElementById('armorModal').classList.add('show');
   broadcastState();
 }
+setInterval(()=>{ try{ syncChainPanel(); }catch(e){} }, 400);
 setInterval(()=>{
   try{
     const st = chainSt; if(!st || !isCarreraActor(st.team)) return;
@@ -7038,11 +7099,7 @@ setInterval(()=>{
     }
     const ma = parseInt(p.ma,10) || 0;
     if(st.used>=ma && st.gfi>=2){ chainEnd(); return; }
-    st.stage = 'ask';
-    const gfiNext = st.used>=ma;
-    openDecision({ id:'chainNext', team:st.team, title:'⛓️ BOLA CON CADENA',
-      text: p.name + ' ha recorrido ' + st.used + ' casilla(s) (MV ' + ma + (st.gfi ? ', forzar la marcha ' + st.gfi + '/2' : '') + '). ' + (gfiNext ? '¿Fuerza la marcha para seguir?' : '¿Sigue moviéndose?'),
-      options:[{ key:'go', label: gfiNext ? 'Forzar la marcha (2+)' : 'Seguir (siguiente casilla)', primary:true }, { key:'stop', label:'Terminar' }], cancelKey:'stop', data:{} });
+    chainAskPick();
   }catch(e){ console.error(e); }
 }, 350);
 
@@ -11423,7 +11480,7 @@ try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesBut
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V94'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V95'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

@@ -537,7 +537,7 @@ function snapshotState(){
     infoModalTitle: document.getElementById('infoModalTitle').textContent,
     infoModalText: document.getElementById('infoModalText').textContent,
     forcejearText: document.getElementById('forcejearText').textContent,
-    pendingForcejearChoice, pendingStandFirm, pendingJump, carreraSt, pendingDecision, chaseSt, precipSt, despejeUsedByTeam, passTargetMark, pendingCrujir, atentoSt, protegerSt, throwSt, pendingThrowLand, throwUsedByTeam,
+    pendingForcejearChoice, pendingStandFirm, pendingJump, carreraSt, pendingDecision, chaseSt, precipSt, chainSt, bombSt, bombUsedByTeam, despejeUsedByTeam, passTargetMark, pendingCrujir, atentoSt, protegerSt, throwSt, pendingThrowLand, throwUsedByTeam,
     matchEndText: document.getElementById('matchEndText').textContent,
     pendingActionMenuPlayer,
     dejadaWheelActive,
@@ -765,6 +765,9 @@ function applyRemoteState(payload){
   pendingDecision = payload.pendingDecision || null;
   chaseSt = payload.chaseSt || null;
   precipSt = payload.precipSt || null;
+  chainSt = payload.chainSt || null;
+  bombSt = payload.bombSt || null;
+  bombUsedByTeam = payload.bombUsedByTeam || { A:false, B:false };
   despejeUsedByTeam = payload.despejeUsedByTeam || { A:false, B:false };
   try{ renderDecisionModal(); }catch(e){}
   passTargetMark = payload.passTargetMark || null;
@@ -3813,6 +3816,7 @@ function getActionMenuOptionsBase(p){
     return opts;
   }
   // "Ruleta" base (jugador en pie o despistado)
+  if(hasChain(p)) return [{ icon:'⛓️', label:'Bola con cadena', fn:'actionMenuChain' }, { icon:'⏹', label:'Fin', fn:'actionMenuEndActivation', danger:true }];
   const opts = [];
   if(!p.rooted){
     opts.push({ icon:'🏃', label:'Movimiento', fn:'actionMenuMove' });
@@ -3841,6 +3845,7 @@ function getActionMenuOptionsBase(p){
   if(canFoul(p)){
     opts.push({ icon:'🥊', label:'Falta', fn:'actionMenuFoul' });
   }
+  if(hasBombardero(p) && !bombUsedByTeam[p.team] && !bombSt) opts.push({ icon:'💣', label:'Lanzar bomba', fn:'actionMenuBomb' });
   opts.push({ icon:'⏹', label:'Fin', fn:'actionMenuEndActivation', danger:true });
   return opts;
 }
@@ -4138,7 +4143,7 @@ function unstickState(){
   pendingFerocityAttack = null;
   pendingAnimosity = null;
   pendingHailMaryChoice = null;
-  pendingProvocarChoice = null; pendingStandFirm = null; pendingJump = null; carreraSt = null; pendingDecision = null; chaseSt = null; precipUnstick(); jumpWheel = null; passTargetMark = null; pendingCrujir = null; atentoSt = null; protegerSt = null; throwSt = null; pendingThrowLand = null; crujirQueue = []; removePassConfirmMenu(); luchadorUsed = false; luchadorPickMode = false; blockProNote = '';
+  pendingProvocarChoice = null; pendingStandFirm = null; pendingJump = null; carreraSt = null; pendingDecision = null; chaseSt = null; precipUnstick(); bombUnstick(); chainSt = null; jumpWheel = null; passTargetMark = null; pendingCrujir = null; atentoSt = null; protegerSt = null; throwSt = null; pendingThrowLand = null; crujirQueue = []; removePassConfirmMenu(); luchadorUsed = false; luchadorPickMode = false; blockProNote = '';
   pendingHeroicTackle = null;
   renderProvocarModal(); renderHeroicTackleModal(); renderStandFirmModal(); renderCrujirModal(); renderAtento(); renderProteger(); renderThrowLand();
   pendingBlitzStabChoice = null;
@@ -4793,6 +4798,7 @@ function computeBlockDiceInfo(attacker, defender, isBlitz){
   if(stAtk === stDef){ diceCount = 1; chooser = null; }
   else if(stAtk > stDef){ diceCount = (stAtk > stDef*2) ? 3 : 2; chooser = 'attacker'; }
   else { diceCount = (stDef > stAtk*2) ? 3 : 2; chooser = 'defender'; }
+  if(attacker.team===defender.team && chooser!==null) chooser = 'attacker';   // Bola con cadena contra un compañero: elige el entrenador del atacante
   const cuernosApplied = isBlitz && playerHasSkill(attacker, 'cuernos', 'horns');
   return { baseAtk, baseDef, offAssisters, defAssisters, offAssists, defAssists, stAtk, stDef, diceCount, chooser, cuernosApplied, agallasNote, cheerOff };
 }
@@ -6236,7 +6242,7 @@ function renderProteger(){
 // ===== PASAR Y SEGUIR =====
 let pasarSeguirSt = null;   // { id, active, idle }
 function armPasarSeguir(p){
-  if(precipSt) return;
+  if(precipSt || bombSt) return;
   if(p && playerHasSkill(p, 'pasar y seguir', 'pass and run')){ pasarSeguirSt = { id:p.id, active:state.active, idle:0 }; }
 }
 setInterval(()=>{
@@ -6613,6 +6619,8 @@ function decisionChoose(key){
 function handleDecision(d, key){
   switch(d.id){
     case 'chaseAsk':   return chaseAnswer(d, key);
+    case 'chainSide':  return chainSideChosen(d.data, key);
+    case 'chainNext':  return chainNextChosen(key);
     case 'precipAsk':  return precipAnswer(d, key);
     case 'chasePick':  return key ? chaseRoll(d.data, key) : null;
     case 'despejeDir': return key ? despejeStart(d.data.pid, key) : null;
@@ -6878,6 +6886,287 @@ setInterval(()=>{
   }catch(e){ console.error(e); }
 }, 350);
 
+// =====================================================================
+// BOLA CON CADENA
+// =====================================================================
+let chainSt = null;   // { pid, team, key, used, gfi, stage:'busy'|'ask', quiet, turn, fallAfter, armorTarget, push }
+function hasChain(p){ return !!p && playerHasSkill(p, 'bola con cadena', 'bola y cadena', 'ball and chain'); }
+function chainFacing(key){ return { L:{dr:0,dc:-1,t:'zona de anotación izquierda'}, R:{dr:0,dc:1,t:'zona de anotación derecha'}, U:{dr:-1,dc:0,t:'banda superior'}, D:{dr:1,dc:0,t:'banda inferior'} }[key]; }
+function actionMenuChain(){
+  const id = pendingActionMenuPlayer;
+  closeActionMenu();
+  const p = players.find(x=>x.id===id);
+  if(!p) return;
+  selected = id;
+  log('⛓️ ' + teamName(p.team) + ' declara BOLA CON CADENA con ' + p.name + '.');
+  runTraitCheckThen(p, 'chain');
+}
+function chainDeclare(p){
+  openDecision({ id:'chainSide', team:p.team, title:'⛓️ BOLA CON CADENA',
+    text:'¿Hacia qué lado se encara la plantilla de devolución de ' + p.name + '?',
+    options:[{ key:'L', label:'⬅ Zona de anotación izquierda' }, { key:'R', label:'➡ Zona de anotación derecha' }, { key:'U', label:'⬆ Banda superior' }, { key:'D', label:'⬇ Banda inferior' }, { key:null, label:'Cancelar (termina la activación)' }],
+    cancelKey:null, data:{ pid:p.id } });
+}
+function chainSideChosen(data, key){
+  const p = players.find(x=>x.id===data.pid); if(!p) return;
+  if(!key){ endActivation(p.id); return; }
+  chainSt = { pid:p.id, team:p.team, key, used:0, gfi:0, stage:'busy', quiet:0, turn:state.active, fallAfter:false, armorTarget:null, push:false };
+  p.activated = true; selected = null; declaredAction = null;
+  log('⛓️ ' + p.name + ' se encara hacia la ' + chainFacing(key).t + '.');
+  renderPitch(); renderRosters(); renderSelInfo();
+  chainStep();
+}
+function chainStep(){
+  const st = chainSt; if(!st) return;
+  const p = players.find(x=>x.id===st.pid);
+  if(!p || !p.onPitch || p.condition!=='standing'){ chainEnd(); return; }
+  const ma = parseInt(p.ma,10) || 0;
+  if(st.used >= ma){
+    if(st.gfi >= 2){ chainEnd(); return; }
+    st.gfi++;
+    const need = weatherKind()==='ventisca' ? 3 : 2;
+    const d = rollDieN(6);
+    const fail = (d===1 || d<need);
+    log('⛓️ Forzar la marcha (' + st.gfi + '/2) de ' + p.name + ': 1D6 = ' + d + ' (necesita ' + need + '+) → ' + (fail ? 'FALLA: entrará en la casilla y luego se caerá.' : 'superado.'));
+    if(fail) st.fallAfter = true;
+  }
+  st.used++;
+  const f = chainFacing(st.key);
+  const r = rollDieN(6);
+  const lf = { dr: f.dc ? 0 : 0, dc: 0 };
+  const left = { dr:-f.dc, dc:f.dr };   // vector a la izquierda de la orientación
+  let vr, vc, lab;
+  if(r<=2){ vr = f.dr + left.dr; vc = f.dc + left.dc; lab = 'diagonal izquierda'; }
+  else if(r<=4){ vr = f.dr; vc = f.dc; lab = 'de frente'; }
+  else { vr = f.dr - left.dr; vc = f.dc - left.dc; lab = 'diagonal derecha'; }
+  log('⛓️ ' + p.name + ' (casilla ' + st.used + '): 1D6 = ' + r + ' → ' + lab + '.');
+  st.stage = 'busy'; st.quiet = 0;
+  chainEnter(p, p.row + vr, p.col + vc);
+}
+function chainEnter(p, tr, tc){
+  const st = chainSt;
+  if(tr<0 || tr>=ROWS || tc<0 || tc>=COLS){
+    log('🏟️ ' + p.name + ' sale del campo arrastrado por la bola: el público puede herirle.');
+    if(ball.carrierId===p.id) queueBallDropIfCarrier(p.id, p.row, p.col, tr, tc);
+    p.onPitch = false; p.row = null; p.col = null; p.rooted = false;
+    markTurnover(p.name + ' sale del campo');
+    renderPitch(); renderRosters(); renderSelInfo(); broadcastState();
+    openInjuryDirect(p);
+    return;
+  }
+  const occ = occupiedBy(tr, tc);
+  if(occ && occ.id!==p.id){
+    if(occ.condition==='standing' || occ.condition==='despistado'){
+      log('⛓️ ' + p.name + ' choca contra ' + occ.name + (occ.team===p.team ? ' (compañero: el entrenador elige el resultado)' : '') + ': Placaje automático (ignora Apariencia asquerosa).');
+      renderPitch(); broadcastState();
+      proceedToBlockDice(p, occ, false);
+    } else {
+      log('⛓️ ' + p.name + ' pasa sobre ' + occ.name + ' (en el suelo): es Empujado y se tira Armadura contra él.');
+      st.armorTarget = occ.id; st.push = true;
+      armorBonusMap[occ.id] = { mod:0, keep:true, label:'Bola con cadena' };
+      renderPitch(); broadcastState();
+      startPushSelection(p, occ, 'push', false);
+    }
+    return;
+  }
+  p.row = tr; p.col = tc;
+  if(ball.carrierId===p.id){ ball.row = tr; ball.col = tc; }
+  renderPitch(); renderRosters(); renderSelInfo(); broadcastState();
+  if(ball.carrierId===null && ball.row===tr && ball.col===tc){
+    log('🏈 ' + p.name + ' entra en la casilla del balón: rebota de inmediato (sin cambio de turno).');
+    startBallBounce();
+  }
+}
+function chainEnd(){
+  const st = chainSt; chainSt = null;
+  const p = st ? players.find(x=>x.id===st.pid) : null;
+  if(p && p.onPitch){ endActivation(p.id); log('⛓️ ' + p.name + ' termina su Bola con cadena.'); }
+  broadcastState();
+}
+function chainNextChosen(key){
+  if(!chainSt) return;
+  if(key==='go'){ chainSt.stage = 'busy'; chainSt.quiet = 0; chainStep(); }
+  else chainEnd();
+}
+function openChainInjury(p){
+  armorForPlayer = p.id;
+  crowdPushMode = false;
+  log('⛓️ ' + p.name + ' (Bola con cadena) cae: tirada de Heridas inmediata (sin Armadura); Aturdido cuenta como Inconsciente.');
+  document.getElementById('armorText').textContent = p.name + ' (Bola con cadena) cae — tirada de heridas directa (sin armadura). Aturdido se trata como Inconsciente.';
+  document.getElementById('armorRollBtn').style.display = 'none';
+  document.getElementById('armorDie1').textContent='–';
+  document.getElementById('armorDie2').textContent='–';
+  document.getElementById('armorSum').textContent='(sin tirada de armadura)';
+  document.getElementById('armorPassRow').style.display='none';
+  document.getElementById('regenRow').style.display='none';
+  document.getElementById('injuryBlock').style.display='block';
+  document.getElementById('cabezaDuraWarning').style.display = playerHasSkill(p, 'cabeza dura', 'thick skull') ? 'block' : 'none';
+  document.getElementById('escurridizoWarning').style.display = playerHasSkill(p, 'escurridizo', 'diving tackle immune', 'slippery') ? 'block' : 'none';
+  document.getElementById('injuryDie1').textContent='–';
+  document.getElementById('injuryDie2').textContent='–';
+  document.getElementById('injurySum').textContent='Suma: –';
+  document.getElementById('armorModal').classList.add('show');
+  broadcastState();
+}
+setInterval(()=>{
+  try{
+    const st = chainSt; if(!st || !isCarreraActor(st.team)) return;
+    if(state.active!==st.turn){ chainSt = null; broadcastState(); return; }
+    const p = players.find(x=>x.id===st.pid);
+    if(!p || !p.onPitch){ chainSt = null; broadcastState(); return; }
+    if(st.stage!=='busy') return;
+    if(st.push && pendingFollowUp && document.getElementById('followUpModal').classList.contains('show')){ st.quiet = 0; resolveFollowUp(true); return; }
+    const ov = document.getElementById('turnoverOverlay');
+    if(!carreraQuiet() || activeBlock || pendingDecision || (ov && ov.classList.contains('show')) || pendingBallDrop){ st.quiet = 0; return; }
+    if(++st.quiet < 2) return;
+    st.quiet = 0;
+    if(st.armorTarget){
+      const t = players.find(x=>x.id===st.armorTarget);
+      st.armorTarget = null; st.push = false;
+      if(t && t.onPitch){ log('🛡️ Armadura contra ' + t.name + ' (Bola con cadena).'); openArmorModal(t); return; }
+    }
+    if(p.condition!=='standing'){ chainEnd(); return; }
+    if(st.fallAfter){
+      st.fallAfter = false;
+      p.condition = 'tumbado'; p.rooted = false;
+      log('💥 ' + p.name + ' se Cae en la casilla tras forzar la marcha.');
+      queueBallDropIfCarrier(p.id, p.row, p.col);
+      markTurnover(p.name + ' se cae al forzar la marcha');
+      renderPitch(); renderRosters(); renderSelInfo(); broadcastState();
+      openArmorModal(p);
+      return;
+    }
+    const ma = parseInt(p.ma,10) || 0;
+    if(st.used>=ma && st.gfi>=2){ chainEnd(); return; }
+    st.stage = 'ask';
+    const gfiNext = st.used>=ma;
+    openDecision({ id:'chainNext', team:st.team, title:'⛓️ BOLA CON CADENA',
+      text: p.name + ' ha recorrido ' + st.used + ' casilla(s) (MV ' + ma + (st.gfi ? ', forzar la marcha ' + st.gfi + '/2' : '') + '). ' + (gfiNext ? '¿Fuerza la marcha para seguir?' : '¿Sigue moviéndose?'),
+      options:[{ key:'go', label: gfiNext ? 'Forzar la marcha (2+)' : 'Seguir (siguiente casilla)', primary:true }, { key:'stop', label:'Terminar' }], cancelKey:'stop', data:{} });
+  }catch(e){ console.error(e); }
+}, 350);
+
+// =====================================================================
+// BOMBARDERO: lanzar una bomba (flujo de Pase; la "bomba" ocupa el lugar del balón mientras vuela)
+// =====================================================================
+let bombSt = null;   // { throwerId, team, curTeam, prevActive, real:{carrierId,row,col}, acts:{}, turnover, stage:'select'|'flight', quiet }
+let bombUsedByTeam = { A:false, B:false };
+function hasBombardero(p){ return !!p && playerHasSkill(p, 'bombardero', 'bombardier'); }
+function actionMenuBomb(){
+  const id = pendingActionMenuPlayer;
+  closeActionMenu();
+  const p = players.find(x=>x.id===id);
+  if(!p) return;
+  selected = id;
+  bombUsedByTeam[p.team] = true;
+  log('💣 ' + teamName(p.team) + ' declara Lanzar una bomba con ' + p.name + '.');
+  runTraitCheckThen(p, 'bomb');
+}
+function bombBegin(p){
+  bombSt = { throwerId:p.id, team:p.team, curTeam:p.team, prevActive:state.active, real:{ carrierId:ball.carrierId, row:ball.row, col:ball.col }, acts:{}, turnover:false, stage:'select', quiet:0 };
+  ball.carrierId = p.id; ball.row = p.row; ball.col = p.col; ballInFlight = false;
+  pendingPassTurnoverMode = null; pendingPassOriginalTeam = null;
+  pendingPassTargetSelection = { passerId:p.id };
+  declaredAction = null;
+  updateStatus(p.name + ': elegid la casilla objetivo de la bomba.');
+  renderPitch(); renderRosters(); renderSelInfo(); broadcastState();
+}
+function bombRestoreContext(){
+  const st = bombSt; if(!st) return;
+  state.active = st.prevActive;
+  Object.keys(st.acts).forEach(id=>{ const q = players.find(x=>x.id==id); if(q && q.id!==st.throwerId) q.activated = st.acts[id]; });
+  ball.carrierId = st.real.carrierId; ball.row = st.real.row; ball.col = st.real.col;
+  ballInFlight = false;
+  pendingPassTargetSelection = null; passTargetMark = null; pendingPassTurnoverMode = null; pendingPassOriginalTeam = null;
+  selected = null; declaredAction = null;
+}
+function bombUnstick(){ if(!bombSt) return; bombRestoreContext(); bombSt = null; }
+function bombPassOutcome(passer, outcome, targetR, targetC, hailMary){
+  const st = bombSt;
+  if(outcome==='safepass'){
+    log('🛡️ ' + passer.name + ' evita el Balón Perdido con Pase Seguro: la bomba no explota y se descarta.');
+    bombRestoreContext(); bombSt = null; renderPitch(); renderRosters(); renderSelInfo(); broadcastState();
+    return;
+  }
+  ball.carrierId = null; ballInFlight = true; pendingPassOriginalTeam = passer.team; pendingPassTurnoverMode = null;
+  if(outcome==='perdido'){
+    log('💣 ¡BALÓN PERDIDO! La bomba cae y explota en la casilla de ' + passer.name + '.');
+    st.turnover = (st.curTeam===st.team);
+    ballInFlight = false; ball.row = passer.row; ball.col = passer.col;
+    renderPitch(); broadcastState();
+    return;
+  }
+  if(outcome==='impreciso'){
+    log('💣 Pase impreciso — la bomba se desvía 3 veces desde la casilla objetivo.');
+    const sc = scatterFrom(targetR, targetC, 3);
+    if(sc.outOfBounds){
+      log('💣 La bomba sale del campo al desviarse: explota en la última casilla del terreno.');
+      ballInFlight = false; ball.row = sc.fromR; ball.col = sc.fromC; renderPitch(); broadcastState();
+      return;
+    }
+    finishPassLandingWithIntercept(passer, sc.r, sc.c, outcome, hailMary);
+    return;
+  }
+  log('💣 ¡Lanzamiento preciso! La bomba aterriza en la casilla objetivo.');
+  finishPassLandingWithIntercept(passer, targetR, targetC, outcome, hailMary);
+}
+function bombRethrow(c){
+  const st = bombSt;
+  if(st.acts[c.id]===undefined) st.acts[c.id] = !!c.activated;
+  state.active = c.team; st.curTeam = c.team; st.stage = 'select'; st.quiet = 0;
+  selected = c.id; ballInFlight = false;
+  pendingPassTargetSelection = { passerId:c.id };
+  log('💣 ' + c.name + ' atrapa la bomba y debe volver a lanzarla de inmediato. Elegid la casilla objetivo.');
+  updateStatus(c.name + ': ¡debe relanzar la bomba! Elegid la casilla objetivo.');
+  renderPitch(); renderRosters(); renderSelInfo(); broadcastState();
+}
+function bombExplode(r, c){
+  const st = bombSt;
+  r = Math.max(0, Math.min(ROWS-1, r)); c = Math.max(0, Math.min(COLS-1, c));
+  const thrower = players.find(x=>x.id===st.throwerId);
+  if(thrower) thrower.activated = true;
+  bombRestoreContext();
+  bombSt = null;
+  log('💥 ¡LA BOMBA EXPLOTA en la casilla (fila ' + (r+1) + ', col ' + (c+1) + ')!');
+  const hits = []; let ownDown = false;
+  players.filter(p=>p.onPitch && p.row!==null).forEach(p=>{
+    const dist = Math.max(Math.abs(p.row-r), Math.abs(p.col-c));
+    if(dist>1) return;
+    let hit = false;
+    if(dist===0){ hit = true; log('💥 ' + p.name + ' está en la casilla: impactado.'); }
+    else { const d = rollDieN(6); hit = d>=4; log('💥 ' + p.name + ' (adyacente) 1D6 = ' + d + (hit ? ': ¡impactado!' : ': se libra.')); }
+    if(!hit) return;
+    const wasDown = p.condition==='tumbado' || p.condition==='aturdido';
+    if(!wasDown){ queueBallDropIfCarrier(p.id, p.row, p.col); p.condition = 'tumbado'; p.rooted = false; if(p.team===st.team) ownDown = true; }
+    armorBonusMap[p.id] = { mod:0, keep:wasDown, label:'Bomba' };
+    hits.push(p.id);
+  });
+  if(!hits.length) log('💥 La explosión no alcanza a nadie.');
+  const turn = st.turnover || ownDown;
+  renderRosters(); renderPitch(); renderSelInfo();
+  if(hits.length){
+    if(turn) markTurnover(st.turnover ? 'balón perdido con la bomba' : 'un jugador propio es derribado por la bomba');
+    pendingArmorQueue = hits.slice(1);
+    broadcastState();
+    openArmorModal(players.find(x=>x.id===hits[0]));
+  } else {
+    broadcastState();
+    if(turn) autoTurnoverThenEndTurn();
+  }
+}
+setInterval(()=>{
+  try{
+    const st = bombSt; if(!st || !isCarreraActor(state.active)) return;
+    if(st.stage==='select'){ if(pendingPassRoll){ st.stage = 'flight'; st.quiet = 0; broadcastState(); } return; }
+    if(!carreraQuiet() || pendingDecision || pendingPassRoll || pendingPassTargetSelection || passTargetMark || ballInFlight || pendingInterceptionChoice || pendingInterceptionRoll || atentoSt || protegerSt){ st.quiet = 0; return; }
+    if(++st.quiet < 3) return;
+    st.quiet = 0;
+    const c = ball.carrierId!==null ? players.find(x=>x.id===ball.carrierId) : null;
+    if(c && c.onPitch){ bombRethrow(c); return; }
+    bombExplode(ball.row, ball.col);
+  }catch(e){ console.error(e); }
+}, 350);
+
 // ===== LANZAR COMPAÑERO =====
 let throwTeamWheelActive = false;
 let throwSt = null;            // { stage:'pick'|'target'|'check', throwerId, thrownId, candIds, wasDown }
@@ -7101,6 +7390,7 @@ function thrownLeavesPitch(thrown, thrower, exitR, exitC, fromR, fromC, queue){
 let atentoSt = null;   // { mode:'pass'|'kick', queue:[ids], cur:id|null, stage:'ask'|'move', ctx, saved }
 function atentoEligible(p, team){ return !!p && p.onPitch && p.team===team && p.condition==='standing' && playerHasSkill(p, 'atento al balon', 'eyes on the ball'); }
 function startAtentoForPass(passer, tr, tc, zone, hm){
+  if(bombSt) return false;
   const other = passer.team==='A' ? 'B' : 'A';
   const q = players.filter(p=>atentoEligible(p, other)).map(p=>p.id);
   if(!q.length) return false;
@@ -7325,6 +7615,10 @@ function proceedDeclaredAction(p, actionLabel){
     renderPitch(); renderRosters(); renderSelInfo();
     updateStatus(p.name + ' declara Pase — mueve y luego click derecho para lanzar.');
     broadcastState();
+  } else if(actionLabel==='chain'){
+    chainDeclare(p);
+  } else if(actionLabel==='bomb'){
+    bombBegin(p);
   } else if(actionLabel==='foul'){
     declaredAction = 'foul';
     renderPitch(); renderRosters(); renderSelInfo();
@@ -7806,6 +8100,7 @@ function resolvePassOutcome(passer, outcome){
   if(pendingPassRoll && pendingPassRoll.throwTeam){ const _pr = pendingPassRoll; pendingPassRoll = null; resolveThrowOutcome(passer, outcome, _pr); return; }
   const { targetR, targetC, hailMary } = pendingPassRoll;
   pendingPassRoll = null;
+  if(bombSt){ bombPassOutcome(passer, outcome, targetR, targetC, hailMary); return; }
   if(outcome==='safepass'){
     log('🛡️ ' + passer.name + ' evita el Balón Perdido con Pase Seguro — mantiene la posesión y su activación termina. Sin cambio de turno.');
     renderRosters(); renderPitch(); renderSelInfo();
@@ -8032,6 +8327,12 @@ function resolvePassFinalLanding(r, c, mustBounceOnceIfEmpty, isDirectLanding){
     openCatchModal(occ, false, false, mustBounceOnceIfEmpty ? 0 : 1, mustBounceOnceIfEmpty ? '' : 'pase', true, 'atrapar el pase', rhBonus, 'pass');
     return;
   }
+  if(bombSt && !(occ && occ.condition==='standing')){
+    ballInFlight = false; ball.carrierId = null; ball.row = r; ball.col = c;
+    log('💣 La bomba cae al suelo en la casilla (fila ' + (r+1) + ', col ' + (c+1) + ').');
+    renderPitch(); broadcastState();
+    return;
+  }
   if(!occ && isDirectLanding){
     if(offerHeroicReception(r, c, 'pass', { mustBounceOnceIfEmpty })) return;
   }
@@ -8146,6 +8447,7 @@ function continueFinishPushSequenceAfterSteal(info){
 }
 
 function checkTouchdown(p){
+  if(bombSt) return;
   if(ball.carrierId!==p.id) return;
   const opponentEndzoneCol = p.team==='A' ? (COLS-1) : 0;
   if(p.col===opponentEndzoneCol){
@@ -8341,6 +8643,12 @@ function resolveCatch(success){
     checkTouchdown(p);
     if(!pendingTD) checkDriveStartAfterBounce();
   } else if(p){
+    if(bombSt){
+      ball.carrierId = null; ball.row = p.row; ball.col = p.col; ballInFlight = false;
+      log('💣 ' + p.name + ' no consigue atrapar la bomba: ¡explota en su casilla!');
+      broadcastState();
+      return;
+    }
     log('🏈 ' + p.name + ' ' + failVerb + ' — el balón rebota.' + (wasVoluntary ? ' Cambio de turno.' : ''));
     broadcastState();
     startBallBounce();
@@ -9651,6 +9959,7 @@ function openArmorModal(p){
     log('🏈 ' + p.name + ' cae sobre la casilla del balón: el balón rebotará.');
   }
   crowdPushMode = false;
+  if(hasChain(p) && !(pendingFoulContext && pendingFoulContext.targetId===p.id) && !(pendingApunalarContext && pendingApunalarContext.targetId===p.id)){ openChainInjury(p); return; }
   document.getElementById('armorText').textContent = `Tirando armadura a ${p.name} con AV ${p.av ?? '(sin dato)'}.`;
   const garrasAttackerId0 = golpeMortiferoMap[p.id];
   const garrasAttacker0 = garrasAttackerId0 ? players.find(x=>x.id===garrasAttackerId0) : null;
@@ -9731,8 +10040,8 @@ function rollArmor(){
   const pielF = !!(p && playerHasSkill(p, 'piel férrea', 'piel ferrea', 'iron hard skin'));
   if(p && armorBonusMap[p.id] && !pielF){
     const bm = armorBonusMap[p.id];
-    document.getElementById('armorSum').textContent = 'Suma: ' + sum + ' +' + bm.mod + ' (Bola de fuego) = ' + (sum + bm.mod);
-    log('🎲 Armadura (' + p.name + '): ' + d1 + ' + ' + d2 + ' = ' + sum + ' +' + bm.mod + ' (Bola de fuego) = ' + (sum + bm.mod));
+    document.getElementById('armorSum').textContent = 'Suma: ' + sum + ' +' + bm.mod + ' (' + (bm.label || 'Bola de fuego') + ') = ' + (sum + bm.mod);
+    log('🎲 Armadura (' + p.name + '): ' + d1 + ' + ' + d2 + ' = ' + sum + ' +' + bm.mod + ' (' + (bm.label || 'Bola de fuego') + ') = ' + (sum + bm.mod));
     document.getElementById('armorPassRow').style.display = 'block';
     broadcastState();
     return;
@@ -9996,6 +10305,7 @@ function rollInjury(){
 
 function applyInjuryOutcome(p, kind){
   if(!p) return;
+  if(kind==='aturdido' && hasChain(p)){ log('⛓️ ' + p.name + ' (Bola con cadena): el resultado Aturdido se trata como Inconsciente.'); kind = 'ko'; }
   if(kind==='aturdido'){
     if(crowdPushMode){
       p.condition='standing';
@@ -10214,6 +10524,7 @@ function beginTurn(team){
   secureBallUsedByTeam[team] = false;
   handoffUsedByTeam[team] = false;
   despejeUsedByTeam[team] = false;
+  bombUsedByTeam[team] = false;
   players.forEach(x=>{ x.chaseUses = 0; x.despejeDeclared = false; });
   foulUsedByTeam[team] = false;
   passUsedByTeam[team] = false;
@@ -10317,6 +10628,7 @@ function hideTurnoverOverlay(){
 }
 
 function autoTurnoverThenEndTurn(){
+  if(bombSt){ turnoverReason = ''; return; }   // la bomba gestiona su propio cambio de turno al explotar
   if(precipSt){ log('🏈 PASE PRECIPITADO: el pase no puede provocar cambio de turno.'); turnoverReason = ''; return; }
   if(atentoSt && atentoSt.stage==='move'){ log('👀 ATENTO AL BALÓN: el jugador cae — su movimiento termina de inmediato (sin cambio de turno).'); atentoEndMove(true); return; }
   if(kickoffEvt && kickoffEvt.phase==='charge'){
@@ -11111,7 +11423,7 @@ try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesBut
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V93'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V94'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

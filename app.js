@@ -319,6 +319,7 @@ function tackleZoneCountMap(sel){
 }
 // COLA PRENSIL: rival en pie que marca la casilla de origen de una esquiva → −1 adicional (solo uno aplica).
 function hasAsquerosa(p){ return playerHasSkill(p, 'apariencia asquerosa', 'foul appearance'); }
+function hasVomito(p){ return playerHasSkill(p, 'proyectil de vómito', 'proyectil de vomito', 'projectile vomit'); }
 function hasBocaMonstruosa(p){ return playerHasSkill(p, 'boca monstruosa', 'monstrous mouth'); }
 function hasColaPrensil(p){ return playerHasSkill(p, 'cola prensil', 'prehensile tail'); }
 function prehensileTailersAt(p){
@@ -365,6 +366,7 @@ let despejeUsedByTeam = { A: false, B: false };   // Patada de despeje: 1 jugado
 let foulUsedByTeam = { A: false, B: false };
 let passUsedByTeam = { A: false, B: false };
 let throwUsedByTeam = { A: false, B: false };
+let kickUsedByTeam = { A: false, B: false };   // Chutar compañero: 1 jugador por equipo y turno (independiente de Lanzar compañero)
 let passThrowWheelActive = false;
 let pendingPassTargetSelection = null; // { passerId }
 let pendingPassRoll = null; // { passerId, targetR, targetC, zone, totalPenalty }
@@ -537,7 +539,7 @@ function snapshotState(){
     infoModalTitle: document.getElementById('infoModalTitle').textContent,
     infoModalText: document.getElementById('infoModalText').textContent,
     forcejearText: document.getElementById('forcejearText').textContent,
-    pendingForcejearChoice, pendingStandFirm, pendingJump, carreraSt, pendingDecision, chaseSt, precipSt, chainSt, bombSt, bombUsedByTeam, despejeUsedByTeam, passTargetMark, pendingCrujir, atentoSt, protegerSt, throwSt, pendingThrowLand, throwUsedByTeam,
+    pendingForcejearChoice, pendingStandFirm, pendingJump, carreraSt, pendingDecision, chaseSt, precipSt, chainSt, kickUsedByTeam, bombSt, bombUsedByTeam, despejeUsedByTeam, passTargetMark, pendingCrujir, atentoSt, protegerSt, throwSt, pendingThrowLand, throwUsedByTeam,
     matchEndText: document.getElementById('matchEndText').textContent,
     pendingActionMenuPlayer,
     dejadaWheelActive,
@@ -754,6 +756,7 @@ function applyRemoteState(payload){
   foulUsedByTeam = payload.foulUsedByTeam || { A:false, B:false };
   passUsedByTeam = payload.passUsedByTeam || { A:false, B:false };
   throwUsedByTeam = payload.throwUsedByTeam || { A:false, B:false };
+  kickUsedByTeam = payload.kickUsedByTeam || { A:false, B:false };
   pendingFoulContext = payload.pendingFoulContext || null;
   pendingHandoffChoice = payload.pendingHandoffChoice || null;
   pendingAnimosity = payload.pendingAnimosity || null;
@@ -1455,6 +1458,11 @@ function selPanelHtml(p){
   const flags = [cond,
     (blitzActivePlayer===p.id) ? '<span style="color:var(--gold)">⚡ BLITZ EN CURSO</span>' : '',
     p.freePushOverride ? '<span style="color:var(--gold)">🔓 EMPUJE LIBRE</span>' : '',
+    isMasticado(p) ? '<span style="color:#ff7aa8">🦷 MASTICADO</span>' : '',
+    p.rooted ? '<span style="color:#7ecb6f">🌳 ECHANDO RAÍCES</span>' : '',
+    p.eyeGouged ? '<span style="color:#c9a7ff">👁️ PIQUETE DE OJOS</span>' : '',
+    p.frog ? '<span style="color:#7ecb6f">🐸 RANA</span>' : '',
+    (p.condition==='tumbado' && p.team===state.active && !p.activated && phase==='live') ? '<span style="color:var(--gold)">puede levantarse</span>' : '',
     ((p.gfiUsed??0)>0) ? 'A por ellos '+p.gfiUsed+'/'+maxGfiFor(p) : '',
     (ball.carrierId===p.id) ? ballImgHtml() + ' lleva el balón' : ''].filter(Boolean).join(' · ');
   const prayLeft = (p.prayerSkills || []).slice();
@@ -3306,7 +3314,7 @@ function renderPitch(){
         if(isValidBounceCell(r,c)){ highlightable = true; highlightBounce = true; }
       } else if(chainSt && chainSt.stage==='pick'){
         const ca = chainArrowAt(r,c);
-        if(ca){ highlightable = true; highlightGfi = false; highlightPush = true; cell.setAttribute('data-chain', ca); }
+        if(ca){ cell.setAttribute('data-chain', ca); cell.classList.add('chain-opt'); const cpl = players.find(x=>x.id===chainSt.pid); if(cpl && chainSt.used >= (parseInt(cpl.ma,10)||0) && ca!=='⏹ FIN') cell.classList.add('chain-gfi'); }
       } else if(carreraSt && carreraSt.stage==='move'){
         if(isCarreraCell(r,c)){ highlightable = true; highlightGfi = false; highlightPush = true; }
       } else if(pendingJump){
@@ -3357,13 +3365,14 @@ function renderPitch(){
         const targetClass = isValidBlockTarget(occ.id) ? ' block-target' : '';
         const handoffClass = isValidHandoffTarget(occ.id) ? ' handoff-target' : '';
         const foulClass = isValidFoulTarget(occ.id) ? ' foul-target' : '';
-        const apunalarClass = isValidApunalarTarget(occ.id) ? ' apunalar-target' : '';
+        const apunalarClass = (isValidApunalarTarget(occ.id) || isValidVomitTarget(occ.id)) ? ' apunalar-target' : '';
         const ferocityClass = isValidFerocityTarget(occ.id) ? ' ferocity-target' : '';
         const interceptClass = isValidInterceptTarget(occ.id) ? ' intercept-target' : '';
         const heroicReceptionClass = isValidHeroicReceptionTarget(occ.id) ? ' heroic-reception-target' : '';
         const freeCatchClass = ((freeCatchTeam===occ.team && occ.onPitch && occ.condition==='standing') || isKickoffBoardCandidate(occ)) ? ' free-catch-target' : '';
         const showActivated = occ.activated && phase==='live' && occ.team===state.active;
-        t.className = 'token' + ((occ.id===selected || (kickoffEvt && kickoffEvt.phase==='board' && kickoffEvt.sel===occ.id))?' selected':'') + (showActivated?' activated':'') + condClass + targetClass + handoffClass + foulClass + apunalarClass + ferocityClass + interceptClass + heroicReceptionClass + freeCatchClass;
+        const canStandClass = ((occ.condition==='tumbado' || occ.condition==='aturdido') && !occ.activated && phase==='live' && occ.team===state.active) ? ' can-stand' : '';
+        t.className = 'token' + ((occ.id===selected || (kickoffEvt && kickoffEvt.phase==='board' && kickoffEvt.sel===occ.id))?' selected':'') + (showActivated?' activated':'') + condClass + canStandClass + targetClass + handoffClass + foulClass + apunalarClass + ferocityClass + interceptClass + heroicReceptionClass + freeCatchClass;
         t.dataset.playerId = occ.id;
         t.style.background = tokenColorFor(occ);
         t.style.color = textColorFor(occ);
@@ -3796,7 +3805,7 @@ function getActionMenuOptionsBase(p){
     return [{ icon:'🎯', label:'Lanzar Pase', fn:'actionMenuThrowPass' }];
   }
   if(throwTeamWheelActive && declaredAction==='throwteam' && selected===p.id){
-    return [{ icon:'🤾', label:'Lanzar compañero', fn:'actionMenuThrowGo' }];
+    return [{ icon:(p.kickDeclared ? '🦵' : '🤾'), label:(p.kickDeclared ? 'Chutar compañero' : 'Lanzar compañero'), fn:'actionMenuThrowGo' }];
   }
   if(p.condition==='tumbado'){
     // "Ruleta de Tumbados" — levantarse ya cuenta como activación, así que cada opción pasa por su propio chequeo de rasgo.
@@ -3831,6 +3840,9 @@ function getActionMenuOptionsBase(p){
   if(canApunalar(p)){
     opts.push({ icon:'🔪', label:'Apuñalar', fn:'actionMenuApunalar' });
   }
+  if(canVomit(p)){
+    opts.push({ icon:'🤮', label:'Proyectil de vómito', fn:'actionMenuVomit' });
+  }
   if(canMasticar(p)){
     opts.push({ icon:'🦷', label:'Masticar', fn:'actionMenuMasticar' });
   }
@@ -3842,6 +3854,9 @@ function getActionMenuOptionsBase(p){
   }
   if(!p.rooted && canPass(p)){
     opts.push({ icon:'🎯', label:'Pase', fn:'actionMenuPass' });
+  }
+  if(!p.rooted && hasChutarCompanero(p) && !kickUsedByTeam[p.team] && moveMode(p)!==null){
+    opts.push({ icon:'🦵', label:'Chutar compañero', fn:'actionMenuKickTeam' });
   }
   if(!p.rooted && canThrowTeam(p)){
     opts.push({ icon:'🤾', label:'Lanzar compañero', fn:'actionMenuThrowTeam' });
@@ -4374,7 +4389,9 @@ function tokenClicked(id){
   }
   if(blitzActivePlayer!==null && isValidBlockTarget(id)){
     const blitzAttacker = players.find(x=>x.id===blitzActivePlayer);
-    if(blitzAttacker && hasBocaMonstruosa(blitzAttacker)){
+    if(blitzAttacker && hasVomito(blitzAttacker)){
+      openBlitzVomitChoice(blitzAttacker, id);
+    } else if(blitzAttacker && hasBocaMonstruosa(blitzAttacker)){
       openBlitzMastChoice(id);
     } else if(blitzAttacker && playerHasSkill(blitzAttacker, 'apuñalar', 'stab')){
       openBlitzStabChoice(id);
@@ -4388,6 +4405,10 @@ function tokenClicked(id){
     const target = players.find(x=>x.id===id);
     if(!asqueroso(attacker, target)) return;
     startApunalarOn(attacker, target);
+    return;
+  }
+  if(isValidVomitTarget(id)){
+    startVomitOn(players.find(x=>x.id===selected), players.find(x=>x.id===id));
     return;
   }
   if(isValidMasticarTarget(id)){
@@ -5676,6 +5697,11 @@ function resolvePush(r,c){
       resolveFollowUp(true);
       return;
     }
+    if(chainSt && chainSt.pid===attacker.id){
+      log('⛓️ Bola con cadena: ' + attacker.name + ' avanza automáticamente a la casilla que deja libre ' + originalPlayer.name + '.');
+      resolveFollowUp(true);
+      return;
+    }
     const followTextP = `¿${attacker.name} avanza a la casilla que deja libre ${originalPlayer.name}?`;
     if(tryProvocar(attacker, originalPlayer, original.fromR, original.fromC, followTextP)) return;
     document.getElementById('followUpText').textContent = followTextP;
@@ -6105,6 +6131,58 @@ function isMasticado(p){
 function canMasticar(p){
   return hasBocaMonstruosa(p) && players.some(p2 => p2.onPitch && p2.team!==p.team && p2.condition==='standing' &&
     Math.max(Math.abs(p2.row-p.row), Math.abs(p2.col-p.col))===1);
+}
+function canVomit(p){
+  return hasVomito(p) && players.some(p2 => p2.onPitch && p2.team!==p.team && p2.condition==='standing' &&
+    Math.max(Math.abs(p2.row-p.row), Math.abs(p2.col-p.col))===1);
+}
+function isValidVomitTarget(targetId){
+  if(declaredAction!=='vomito' || selected===null) return false;
+  const a = players.find(x=>x.id===selected), t = players.find(x=>x.id===targetId);
+  if(!a || !t) return false;
+  return t.onPitch && t.team!==a.team && t.condition==='standing' && Math.max(Math.abs(t.row-a.row), Math.abs(t.col-a.col))===1;
+}
+function actionMenuVomit(){
+  const id = pendingActionMenuPlayer;
+  closeActionMenu();
+  const p = players.find(x=>x.id===id);
+  if(!p) return;
+  selected = id; declaredAction = 'vomito';
+  updateStatus(p.name + ' declara Proyectil de vómito — elegid al rival En pie adyacente.');
+  renderPitch(); renderSelInfo(); broadcastState();
+}
+function startVomitOn(attacker, target){
+  carreraArm(attacker);
+  attacker.activated = true; selected = null; declaredAction = null; blitzActivePlayer = null; blockTargeting = null;
+  if(!asqueroso(attacker, target)) return;
+  const d = rollDieN(6);
+  const self = d<2;
+  const victim = self ? attacker : target;
+  log('🤮 PROYECTIL DE VÓMITO: ' + attacker.name + ' tira 1D6 = ' + d + (self ? ' → ¡se cubre con su propia bilis ácida!' : ' → vomita sobre ' + target.name + '.') + ' Tirada de Armadura sin modificadores.');
+  pendingApunalarContext = { attackerId: attacker.id, targetId: victim.id };
+  renderRosters(); renderPitch(); renderSelInfo(); broadcastState();
+  openArmorModal(victim);
+}
+function executeVomitHit(attacker, defender, isBlitz){
+  if(isBlitz && (attacker.remainingMove ?? attacker.ma) >= 1){ attacker.remainingMove -= 1; renderRosters(); renderSelInfo(); broadcastState(); }
+  else if(isBlitz){ log('🤮 ' + attacker.name + ' no tiene MA para el Placaje del Blitz: lo sustituye por el vómito igualmente (necesita forzar la marcha).'); }
+  startVomitOn(attacker, defender);
+}
+function openBlitzVomitChoice(attacker, defenderId){
+  const opts = [{ key:'placaje', label:'⚔️ Placaje' }, { key:'vomito', label:'🤮 Proyectil de vómito', primary:true }];
+  if(playerHasSkill(attacker, 'apuñalar', 'stab')) opts.push({ key:'apunalar', label:'🔪 Apuñalar' });
+  if(hasBocaMonstruosa(attacker)) opts.push({ key:'masticar', label:'🦷 Masticar' });
+  opts.push({ key:'cancel', label:'Cancelar' });
+  openDecision({ id:'vomitBlitz', team:attacker.team, title:'PENETRACIÓN', text:attacker.name + ' puede sustituir el Placaje del Blitz. (Si usa Proyectil de vómito su activación termina.)', options:opts, cancelKey:'cancel', data:{ attackerId:attacker.id, targetId:defenderId } });
+}
+function vomitBlitzChosen(data, key){
+  const at = players.find(x=>x.id===data.attackerId), df = players.find(x=>x.id===data.targetId);
+  if(!at || !df || key==='cancel' || !key) return;
+  if(key==='placaje'){ chooseBlockTarget(df.id); return; }
+  blitzActivePlayer = null;
+  if(key==='apunalar'){ executeApunalarHit(at, df, true); return; }
+  if(key==='masticar'){ if(!asqueroso(at, df)) return; executeMasticarHit(at, df, true); return; }
+  executeVomitHit(at, df, true);
 }
 function isValidMasticarTarget(targetId){
   if(declaredAction!=='masticar' || selected===null) return false;
@@ -6625,6 +6703,9 @@ function decisionChoose(key){
 function handleDecision(d, key){
   switch(d.id){
     case 'chaseAsk':   return chaseAnswer(d, key);
+    case 'planeoAsk':  return planeoAnswer(d, key);
+    case 'planeoSide': return planeoSide(d.data, key);
+    case 'vomitBlitz': return vomitBlitzChosen(d.data, key);
     case 'chainSide':  return chainSideChosen(d.data, key);
     case 'chainNext':  return chainNextChosen(key);
     case 'precipAsk':  return precipAnswer(d, key);
@@ -6661,12 +6742,12 @@ function tentaculosBlocks(p){
 // PERSEGUIR: tras esquivar un rival fuera de la zona de defensa de este jugador, puede ocupar la casilla vacía (1D6, 4+)
 // =====================================================================
 function hasPerseguir(p){ return !!p && playerHasSkill(p, 'perseguir', 'shadowing'); }
-function chaseCandidates(riderTeam, r, c){
-  return opponentTackleZonePlayers(r, c, riderTeam).filter(o=>hasPerseguir(o) && (o.chaseUses || 0) < (parseInt(o.ma,10) || 0));
+function chaseCandidates(riderTeam, r, c, toR, toC){
+  return opponentTackleZonePlayers(r, c, riderTeam).filter(o=>hasPerseguir(o) && !(toR!=null && Math.max(Math.abs(o.row-toR), Math.abs(o.col-toC))<=1) && (o.chaseUses || 0) < (parseInt(o.ma,10) || 0));
 }
-function queueChase(rider, fromR, fromC){
+function queueChase(rider, fromR, fromC, toR, toC){
   if(fromR==null) return;
-  const cands = chaseCandidates(rider.team, fromR, fromC);
+  const cands = chaseCandidates(rider.team, fromR, fromC, toR, toC);
   if(!cands.length) return;
   chaseSt = { riderId: rider.id, vacR: fromR, vacC: fromC, team: cands[0].team, ids: cands.map(o=>o.id), quiet: 0 };
 }
@@ -7048,11 +7129,11 @@ function chainNextChosen(key){
   if(key==='go'){ chainSt.stage = 'busy'; chainSt.quiet = 0; chainStep(); }
   else chainEnd();
 }
-function openChainInjury(p){
+function openChainInjury(p, customText){
   armorForPlayer = p.id;
   crowdPushMode = false;
   log('⛓️ ' + p.name + ' (Bola con cadena) cae: tirada de Heridas inmediata (sin Armadura); Aturdido cuenta como Inconsciente.');
-  document.getElementById('armorText').textContent = p.name + ' (Bola con cadena) cae — tirada de heridas directa (sin armadura). Aturdido se trata como Inconsciente.';
+  document.getElementById('armorText').textContent = customText || (p.name + ' (Bola con cadena) cae — tirada de heridas directa (sin armadura). Aturdido se trata como Inconsciente.');
   document.getElementById('armorRollBtn').style.display = 'none';
   document.getElementById('armorDie1').textContent='–';
   document.getElementById('armorDie2').textContent='–';
@@ -7076,7 +7157,7 @@ setInterval(()=>{
     const p = players.find(x=>x.id===st.pid);
     if(!p || !p.onPitch){ chainSt = null; broadcastState(); return; }
     if(st.stage!=='busy') return;
-    if(st.push && pendingFollowUp && document.getElementById('followUpModal').classList.contains('show')){ st.quiet = 0; resolveFollowUp(true); return; }
+    if(pendingFollowUp && pendingFollowUp.attackerId===st.pid && document.getElementById('followUpModal').classList.contains('show')){ st.quiet = 0; resolveFollowUp(true); return; }
     const ov = document.getElementById('turnoverOverlay');
     if(!carreraQuiet() || activeBlock || pendingDecision || (ov && ov.classList.contains('show')) || pendingBallDrop){ st.quiet = 0; return; }
     if(++st.quiet < 2) return;
@@ -7229,6 +7310,23 @@ let throwTeamWheelActive = false;
 let throwSt = null;            // { stage:'pick'|'target'|'check', throwerId, thrownId, candIds, wasDown }
 let pendingThrowLand = null;   // { thrownId, r, c, target, penalty, markers, queue, rerolled, lastDie, autoFail }
 function hasLanzarCompanero(p){ return playerHasSkill(p, 'lanzar compañero', 'lanzar companero', 'throw team-mate', 'throw team mate'); }
+function hasChutarCompanero(p){ return playerHasSkill(p, 'chutar compañero', 'chutar companero', 'kick team-mate', 'kick team mate'); }
+function hasOjoHalcon(p){ return playerHasSkill(p, 'ojo de halcón', 'ojo de halcon', 'hawk eye', 'eagle eye'); }
+function actionMenuKickTeam(){
+  const id = pendingActionMenuPlayer;
+  closeActionMenu();
+  const p = players.find(x=>x.id===id);
+  if(!p) return;
+  selected = id;
+  kickUsedByTeam[p.team] = true;
+  p.kickDeclared = true;
+  log('🦵 ' + teamName(p.team) + ' declara su Chutar compañero de este turno (' + p.name + ').');
+  runTraitCheckThen(p, 'throwteam');
+}
+function hasVueloLetal(p){ return playerHasSkill(p, 'vuelo letal', 'deadly flight'); }
+function hasPlanear(p){ return playerHasSkill(p, 'planear', 'glide'); }
+function gmApplies(att, victim){ return !!att && (playerHasSkill(att, 'golpe mortífero', 'golpe mortifero', 'mighty blow') || (!!victim && att.vueloLetalFor===victim.id)); }
+function gmLabel(att){ return (att && playerHasSkill(att, 'golpe mortífero', 'golpe mortifero', 'mighty blow')) ? 'Golpe Mortífero' : 'Vuelo letal'; }
 function hasHumanoideBala(p){ return playerHasSkill(p, 'humanoide bala', 'right stuff'); }
 function throwCandidates(thrower){
   return players.filter(o=> o.onPitch && o.row!=null && o.id!==thrower.id && o.team===thrower.team && hasHumanoideBala(o) &&
@@ -7258,8 +7356,8 @@ function actionMenuThrowGo(){
   if(!p) return;
   const cands = throwCandidates(p);
   if(!cands.length){ updateStatus(p.name + ' no tiene al lado a ningún compañero con Humanoide bala (en pie o Tumbado boca arriba).'); return; }
-  if(cands.length===1){ throwSt = { stage:'pick', throwerId:p.id, thrownId:null, candIds:[cands[0].id] }; throwBegin(cands[0].id); return; }
-  throwSt = { stage:'pick', throwerId:p.id, thrownId:null, candIds:cands.map(o=>o.id) };
+  if(cands.length===1){ throwSt = { stage:'pick', throwerId:p.id, thrownId:null, candIds:[cands[0].id], kick:!!p.kickDeclared }; throwBegin(cands[0].id); return; }
+  throwSt = { stage:'pick', throwerId:p.id, thrownId:null, candIds:cands.map(o=>o.id), kick:!!p.kickDeclared };
   updateStatus('Lanzar compañero: haced click en el compañero que va a ser lanzado.');
   renderPitch(); broadcastState();
 }
@@ -7285,7 +7383,7 @@ function handleThrowTargetChosen(thrower, r, c){
   pendingPassRoll = { passerId: thrower.id, targetR:r, targetC:c, zone, totalPenalty, hailMary:false, throwTeam:true };
   const thrown = players.find(x=>x.id===throwSt.thrownId);
   const target = parseAgTarget(thrower.ag);
-  document.getElementById('passText').textContent = 'LANZAR COMPAÑERO (' + (zone===0 ? 'Lanzamiento rápido' : 'Lanzamiento corto') + ') de ' + thrower.name + ' → ' + (thrown ? thrown.name : '?') +
+  document.getElementById('passText').textContent = (throwSt && throwSt.kick ? 'CHUTAR COMPAÑERO (' : 'LANZAR COMPAÑERO (') + (zone===0 ? 'Lanzamiento rápido' : 'Lanzamiento corto') + ') de ' + thrower.name + ' → ' + (thrown ? thrown.name : '?') +
     ' — necesita ' + target + '+ (AG' + (thrower.ag ?? '?') + ', modificador ' + (totalPenalty>0 ? '-' + totalPenalty : totalPenalty<0 ? '+' + (-totalPenalty) : '0') + ')' +
     ((zone===1 || markers>0 || presPen>0 || brazo>0) ? ' = ' + (zone===1 ? '-1 por Lanzamiento corto' : '0 por el rango') + (markers>0 ? ', -' + markers + ' por marcaje' : '') + (presPen>0 ? ', -' + presPen + ' por Presencia perturbadora' : '') + (brazo>0 ? ', +1 por Brazo fuerte' : '') : '') + '. Tirad 1D6.';
   document.getElementById('passDie').textContent = '–';
@@ -7307,19 +7405,82 @@ function resolveThrowOutcome(thrower, outcome, pr){
   thrown.rooted = false;
   const wasDown = thrown.condition!=='standing';
   let sc, penalty = 0;
-  if(outcome==='preciso'){
+  const kick = !!(st && st.kick);
+  thrower.kickDeclared = false;
+  if(outcome==='preciso' && hasOjoHalcon(thrower)){
+    log('🦅 OJO DE HALCÓN: lanzamiento soberbio — ' + thrown.name + ' no se escora y aterriza en la casilla objetivo.');
+    sc = { r: pr.targetR, c: pr.targetC, outOfBounds:false };
+  } else if(outcome==='preciso'){
     log('🤾 LANZAMIENTO SOBERBIO: ' + thrown.name + ' se escora (3) desde la casilla objetivo antes de aterrizar.');
     sc = scatterFrom(pr.targetR, pr.targetC, 3);
   } else if(outcome==='impreciso'){
     log('🤾 LANZAMIENTO MEDIOCRE: ' + thrown.name + ' se escora (3) desde la casilla objetivo y le será más difícil aterrizar (-1).');
     penalty = 1; sc = scatterFrom(pr.targetR, pr.targetC, 3);
+  } else if(kick){
+    log('🦵 ¡PIFIA al chutar! ' + thrown.name + ' recibe de inmediato una tirada de Heridas (Aturdido cuenta como Inconsciente).');
+    thrown.condition = 'tumbado'; thrown.rooted = false; thrown.kickInjury = true;
+    if(ball.carrierId===thrown.id){ queueBallDropIfCarrier(thrown.id, thrown.row, thrown.col); markTurnover('el chutado ' + thrown.name + ' cae con el balón'); }
+    renderPitch(); renderRosters(); renderSelInfo(); broadcastState();
+    openChainInjury(thrown, thrown.name + ' — Chutar compañero: PIFIA. Tirada de heridas directa (sin armadura). Aturdido se trata como Inconsciente.');
+    return;
   } else {
     log('🤾 ¡PIFIA! ' + thrown.name + ' es soltado, rebota desde la casilla del lanzador y debe intentar aterrizar (-1).');
     penalty = 1; sc = scatterFrom(thrower.row, thrower.col, 1);
   }
-  const queue = [];
+  const noScatter = (outcome==='preciso' && hasOjoHalcon(thrower));
+  const data = { thrownId: thrown.id, throwerId: thrower.id, penalty, wasDown, sc, origR: (outcome==='perdido' ? thrower.row : pr.targetR), origC: (outcome==='perdido' ? thrower.col : pr.targetC) };
+  if(!noScatter && hasPlanear(thrown)){
+    openDecision({ id:'planeoAsk', team:thrown.team, title:'🪂 PLANEAR',
+      text: thrown.name + ' puede elegir NO escorarse y planear (plantilla + 1D6 dirección + 1D6 casillas), y entonces podrá repetir el chequeo de Agilidad al aterrizar. ¿Planea?',
+      options:[{ key:'yes', label:'Sí, planear', primary:true }, { key:'no', label:'No, se escora como siempre' }], cancelKey:'no', data });
+    return;
+  }
+  throwFinish(data);
+}
+function throwFinish(data){
+  const thrown = players.find(x=>x.id===data.thrownId), thrower = players.find(x=>x.id===data.throwerId);
+  if(!thrown || !thrower){ broadcastState(); return; }
+  const sc = data.sc, queue = [];
   if(sc.outOfBounds){ thrownLeavesPitch(thrown, thrower, sc.exitR, sc.exitC, sc.fromR, sc.fromC, queue); return; }
-  throwLand(thrown, thrower, sc.r, sc.c, penalty, queue, false, wasDown);
+  throwLand(thrown, thrower, sc.r, sc.c, data.penalty, queue, false, data.wasDown);
+}
+function planeoAnswer(d, key){
+  if(key!=='yes'){ throwFinish(d.data); return; }
+  const thrown = players.find(x=>x.id===d.data.thrownId);
+  openDecision({ id:'planeoSide', team:d.team, title:'🪂 PLANEAR — orientación',
+    text:'¿Hacia qué lado se encara la plantilla sobre ' + (thrown ? thrown.name : 'el lanzado') + '?',
+    options:[{ key:'L', label:'⬅ Zona de anotación izquierda' }, { key:'R', label:'➡ Zona de anotación derecha' }, { key:'U', label:'⬆ Banda superior' }, { key:'D', label:'⬇ Banda inferior' }, { key:null, label:'Cancelar (se escora)' }],
+    cancelKey:null, data:d.data });
+}
+function planeoSide(data, key){
+  if(!key){ throwFinish(data); return; }
+  const thrown = players.find(x=>x.id===data.thrownId), thrower = players.find(x=>x.id===data.throwerId);
+  if(!thrown || !thrower){ broadcastState(); return; }
+  const info = despejeDirInfo(key);
+  const offs = despejeOffsets(info);
+  const dirRoll = rollDieN(6), dist = rollDieN(6);
+  const off = offs[Math.floor((dirRoll-1)/2)];
+  log('🪂 PLANEAR: ' + thrown.name + ' no se escora y planea hacia la ' + info.t + ': dirección 1D6 = ' + dirRoll + ', distancia 1D6 = ' + dist + ' casilla(s).');
+  thrown.glideActive = true;
+  let cr = data.origR, cc = data.origC, lastR = cr, lastC = cc;
+  for(let i=0;i<dist;i++){
+    const nr = cr + off.dr, nc = cc + off.dc;
+    if(nr<0 || nr>=ROWS || nc<0 || nc>=COLS){
+      data.sc = { outOfBounds:true, exitR:nr, exitC:nc, fromR:lastR, fromC:lastC };
+      throwFinish(data); return;
+    }
+    cr = nr; cc = nc; lastR = cr; lastC = cc;
+  }
+  data.sc = { r:cr, c:cc, outOfBounds:false };
+  throwFinish(data);
+}
+function throwLandGlideReroll(){
+  if(!pendingThrowLand || !pendingThrowLand.glide || pendingThrowLand.glideUsed) return;
+  const p = pendingThrowLand;
+  p.glideUsed = true; p.lastDie = null; p.lastDieOk = null;
+  const t = players.find(x=>x.id===p.thrownId);
+  log('🪂 PLANEAR: ' + (t ? t.name : 'el lanzado') + ' repite el chequeo de Agilidad para aterrizar.');
+  renderThrowLand(); broadcastState();
 }
 function throwOccupant(thrown, r, c){
   return players.find(x=>x.onPitch && x.id!==thrown.id && x.row===r && x.col===c) || null;
@@ -7335,6 +7496,10 @@ function throwLand(thrown, thrower, r, c, penalty, queue, crashed, wasDown){
       occ.rooted = false;
       queueBallDropIfCarrier(occ.id, r, c);
       queue.push(occ.id);
+      if(hasVueloLetal(thrown) && occ.team!==thrown.team){
+        thrown.vueloLetalFor = occ.id; golpeMortiferoMap[occ.id] = thrown.id;
+        log('✈️ VUELO LETAL: ' + thrown.name + ' puede aplicar +1 a la Armadura o a las Heridas de ' + occ.name + ' (se aplica automáticamente donde cambie el resultado).');
+      }
     }
     const sc = scatterFrom(r, c, 1);
     if(sc.outOfBounds){ thrownLeavesPitch(thrown, thrower, sc.exitR, sc.exitC, sc.fromR, sc.fromC, queue); return; }
@@ -7352,7 +7517,7 @@ function throwLand(thrown, thrower, r, c, penalty, queue, crashed, wasDown){
   const markers = countOpponentTackleZones(r, c, thrown.team);
   const autoFail = !!wasDown || thrown.condition!=='standing';
   const target = Math.max(2, parseAgTarget(thrown.ag) + penalty + markers);
-  pendingThrowLand = { thrownId: thrown.id, throwerId: thrower.id, r, c, target, penalty, markers, queue, rerolled:false, lastDie:null, autoFail };
+  pendingThrowLand = { thrownId: thrown.id, throwerId: thrower.id, r, c, target, penalty, markers, queue, rerolled:false, lastDie:null, autoFail, glide: !!thrown.glideActive, glideUsed:false };
   renderThrowLand(); broadcastState();
   if(autoFail){
     log('🤾 ' + thrown.name + ' estaba ' + (thrown.condition==='aturdido' ? 'Aturdido' : thrown.condition==='despistado' ? 'Despistado' : 'Tumbado boca arriba') + ' al ser lanzado: falla automáticamente el chequeo de Agilidad al aterrizar.');
@@ -7377,6 +7542,9 @@ function renderThrowLand(){
   const canRr = !p.autoFail && p.lastDie!==null && !ok && !p.rerolled && t2 && (teamRerollsLeft[t2.team]||0) > 0;
   if(canRr){
     const b = document.createElement('button'); b.textContent = '🔄 Usar Reroll de equipo (quedan ' + teamRerollsLeft[t2.team] + ')'; b.onclick = throwLandReroll; row.appendChild(b);
+  }
+  if(p.glide && !p.glideUsed && !p.autoFail && p.lastDie!==null && !ok){
+    const gb = document.createElement('button'); gb.textContent = '🪂 Repetir chequeo (Planear)'; gb.onclick = throwLandGlideReroll; row.appendChild(gb);
   }
   if(p.autoFail || (p.lastDie!==null)){
     const b = document.createElement('button'); b.className = 'primary'; b.textContent = ok ? 'Continuar' : 'Aceptar'; b.onclick = throwLandAccept; row.appendChild(b);
@@ -7404,6 +7572,7 @@ function throwLandReroll(){
 function throwLandAccept(){
   if(!pendingThrowLand) return;
   const p = pendingThrowLand; pendingThrowLand = null;
+  { const gt = players.find(x=>x.id===p.thrownId); if(gt) gt.glideActive = false; }
   const t = players.find(x=>x.id===p.thrownId), th = players.find(x=>x.id===p.throwerId);
   renderThrowLand();
   if(!t){ broadcastState(); return; }
@@ -9749,7 +9918,7 @@ function resolveDodge(success){
   document.getElementById('dodgeModal').classList.remove('show');
   pendingDodge = null;
   if(!p){ broadcastState(); return; }
-  queueChase(p, fromR, fromC);
+  queueChase(p, fromR, fromC, toR, toC);
 
   if(success){
     completeStep(p, toR, toC, fromGfi ? 'none' : 'normal');
@@ -9937,6 +10106,7 @@ function openGfiModal(p, toR, toC, chainDodge, blockDefenderId, stabDefenderId, 
   document.getElementById('gfiActionRow').innerHTML = '';
   document.getElementById('gfiModal').classList.add('show');
   broadcastState();
+  rollGfiDie();   // tirada automática (queda en el Historial; el modal solo ofrece rerolls / continuar)
 }
 
 function rollGfiDie(){
@@ -10143,14 +10313,14 @@ function rollArmor(){
 
   const gmAttackerId = p ? golpeMortiferoMap[p.id] : null;
   const gmAttacker = gmAttackerId ? players.find(x=>x.id===gmAttackerId) : null;
-  if(p && gmAttacker && !pielF && playerHasSkill(gmAttacker, 'golpe mortífero', 'golpe mortifero', 'mighty blow')){
+  if(p && gmAttacker && !pielF && gmApplies(gmAttacker, p)){
     const target = parseAvTarget(p.av);
     const naturallyBroken = sum >= target;
     const breaksWithBonus = (sum+1) >= target;
     if(!naturallyBroken && breaksWithBonus){
       golpeMortiferoUsedOnArmor = true;
-      document.getElementById('armorSum').textContent = 'Suma: ' + sum + ' +1 (Golpe Mortífero de ' + gmAttacker.name + ') = ' + (sum+1);
-      log('💀 Golpe Mortífero de ' + gmAttacker.name + ' aplicado en Armadura: ' + sum + '+1 = ' + (sum+1) + ' — ROTA.');
+      document.getElementById('armorSum').textContent = 'Suma: ' + sum + ' +1 (' + gmLabel(gmAttacker) + ' de ' + gmAttacker.name + ') = ' + (sum+1);
+      log('💀 ' + gmLabel(gmAttacker) + ' de ' + gmAttacker.name + ' aplicado en Armadura: ' + sum + '+1 = ' + (sum+1) + ' — ROTA.');
       armorResult(true);
       return;
     }
@@ -10338,14 +10508,14 @@ function rollInjury(){
   }
   const gmAttackerId = p ? golpeMortiferoMap[p.id] : null;
   const gmAttacker = gmAttackerId ? players.find(x=>x.id===gmAttackerId) : null;
-  const gmForInjury = p && !golpeMortiferoUsedOnArmor && gmAttacker && playerHasSkill(gmAttacker, 'golpe mortífero', 'golpe mortifero', 'mighty blow');
+  const gmForInjury = p && !golpeMortiferoUsedOnArmor && gmAttacker && gmApplies(gmAttacker, p);
   const llaveAttackerId = p ? llaveDeBrazoMap[p.id] : null;
   const llaveAttacker = llaveAttackerId ? players.find(x=>x.id===llaveAttackerId) : null;
   const llaveForInjury = p && !gmForInjury && !llaveDeBrazoUsedOnArmor && llaveAttacker && playerHasSkill(llaveAttacker, 'llave de brazo', 'arm bar');
   document.getElementById('injuryDie1').textContent=d1;
   document.getElementById('injuryDie2').textContent=d2;
   const injBonuses = [];
-  if(gmForInjury) injBonuses.push('Golpe Mortífero de ' + gmAttacker.name);
+  if(gmForInjury) injBonuses.push('' + gmLabel(gmAttacker) + ' de ' + gmAttacker.name);
   else if(llaveForInjury) injBonuses.push('Llave de Brazo de ' + llaveAttacker.name);
   { const js = !jugarSucioUsedOnArmor ? foulerWithSkill('jugar sucio', 'dirty player') : null; if(js) injBonuses.push('Jugar sucio de ' + js.name); }
   if(p && (sum===10 || sum===11) && playerHasSkill(p, 'descomposicion', 'descomposición', 'decay')) injBonuses.push('Descomposición de ' + p.name);
@@ -10362,7 +10532,8 @@ function rollInjury(){
 
 function applyInjuryOutcome(p, kind){
   if(!p) return;
-  if(kind==='aturdido' && hasChain(p)){ log('⛓️ ' + p.name + ' (Bola con cadena): el resultado Aturdido se trata como Inconsciente.'); kind = 'ko'; }
+  if(kind==='aturdido' && (hasChain(p) || p.kickInjury)){ log('⚠️ ' + p.name + ': el resultado Aturdido se trata como Inconsciente.'); kind = 'ko'; }
+  p.kickInjury = false;
   if(kind==='aturdido'){
     if(crowdPushMode){
       p.condition='standing';
@@ -10428,7 +10599,7 @@ function closeArmorModal(){
   document.getElementById('regenRow').style.display = 'none';
   armorForPlayer = null;
   golpeMortiferoUsedOnArmor = false;
-  if(resolvedPlayerId!==null) delete golpeMortiferoMap[resolvedPlayerId];
+  if(resolvedPlayerId!==null){ delete golpeMortiferoMap[resolvedPlayerId]; players.forEach(x=>{ if(x.vueloLetalFor===resolvedPlayerId) x.vueloLetalFor = null; }); }
   llaveDeBrazoUsedOnArmor = false;
   if(resolvedPlayerId!==null) delete llaveDeBrazoMap[resolvedPlayerId];
   if(resolvedPlayerId!==null) delete armorBonusMap[resolvedPlayerId];
@@ -10586,6 +10757,8 @@ function beginTurn(team){
   foulUsedByTeam[team] = false;
   passUsedByTeam[team] = false;
   throwUsedByTeam[team] = false;
+  kickUsedByTeam[team] = false;
+  players.forEach(x=>{ x.kickDeclared = false; });
   secureBallActivePlayer = null;
   players.filter(p=>p.team===team).forEach(p=>{
     p.activated = false;
@@ -11480,7 +11653,7 @@ try{ applyBoardView(); setSwitch('wfSw', weatherFieldAuto); updateTackleZonesBut
     ids.forEach(id=>{ const el = document.getElementById(id); if(el){ upd(el); mo.observe(el, { childList:true, characterData:true, subtree:true }); } });
   }catch(e){}
 })();
-window.APP_JS_VERSION = 'A_V95'; // ← sube este número cada vez que edites app.js
+window.APP_JS_VERSION = 'A_V97'; // ← sube este número cada vez que edites app.js
 
 (function showVersionBadge(){
   const wVersion = document.documentElement.dataset.wVersion || 'W_?';

@@ -225,3 +225,13 @@ Además, tira 1D6 por cada jugador adyacente a la casilla en la que explota la b
 Todo jugador En pie impactado por la explosión es Derribado. Además, haz una tirada de Armadura contra cualquier jugador Tumbado boca arriba o Aturdido impactado por la
 explosión.
 Si un jugador atrapa o intercepta con éxito una bomba lanzada, debe volver a lanzarla de inmediato, siguiendo las mismas reglas ya descritas para realizar esta acción especial.
+
+CHUTAR COMPAÑERO
+Cuando este jugador es activado, puede declarar una acción especial de Chutar compañero. Solo un jugador puede declarar esta acción especial por turno.
+La acción especial de Chutar compañero funciona exactamente igual que la acción de Lanzar compañero, con las siguientes excepciones:
+Realizar esta acción especial no cuenta como la acción de Lanzar compañero del equipo para ese turno, por lo que un mismo equipo puede realizar ambas acciones durante el mismo turno, si así lo quiere su Entrenador.
+Si se obtiene un resultado de pifia al resolver esta acción especial, haz de inmediato una tirada de Heridas contra el jugador chutado, tratando un resultado de Aturdido como un resultado de Inconsciente. Si el jugador chutado era el portador del balón, este rebotará desde la casilla que ocupaba.
+Todas las habilidades y rasgos aplicables a la acción de Lanzar compañero lo son también a la acción especial de Chutar compañero. Al realizar esta acción, un jugador gana Puntos de Estrellato del mismo modo que con las acciones de Lanzar compañero.
+
+OJO DE HALCON
+Cuando este jugador realiza una acción de Lanzar compañero, si el resultado es un lanzamiento soberbio, el jugador lanzado no se escora antes de aterrizar, sino que aterriza en la casilla objetivo. Un jugador que no tenga el rasgo Lanzar compañero no puede tener esta habilidad.

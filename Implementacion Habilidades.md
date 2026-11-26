@@ -194,7 +194,7 @@ Cuando un jugador rival intente realizar una acción de Placaje contra este juga
 INFECTADO
 Una vez por partido, cuando este jugador cause una Lesión a un jugador rival debido a una acción de Placaje, y en la tirada de Lesiones dicho jugador rival sufra un resultado de Muerto que no sea salvado por un Apotecario, puedes añadir de inmediato un nuevo jugador Línea de tu Lista de equipo a tu zona de Reservas. Esto puede hacer que tu equipo tenga más de 11 jugadores por el resto del partido. Durante la secuencia posterior al partido, este nuevo jugador puede ser fichado de forma permanente como si fuera un Sustituto. Este rasgo no puede utilizarse contra jugadores Grandullones, ni que tengan los rasgos Descomposición, Escurridizo o Regeneración
 
-
+************************************************* PROBANDO DESDE 26-11-2026
 BOLA CON CADENA
 Cuando este Jugador es activado, la única acción que puede declarar es la acción especial de Bola con cadena. 
 No hay límite al número de jugadores que pueden declarar esta acción especial cada turno.
@@ -235,3 +235,20 @@ Todas las habilidades y rasgos aplicables a la acción de Lanzar compañero lo s
 
 OJO DE HALCON
 Cuando este jugador realiza una acción de Lanzar compañero, si el resultado es un lanzamiento soberbio, el jugador lanzado no se escora antes de aterrizar, sino que aterriza en la casilla objetivo. Un jugador que no tenga el rasgo Lanzar compañero no puede tener esta habilidad.
+
+VUELO LETAL
+Cuando este jugador es lanzado como parte de una acción de Lanzar compañero y aterriza en una casilla ocupada por un jugador rival, incluyendo que vaya a parar a ella debido a un rebote, y el Jugador rival es Derribado, puede aplicar un modificador de +1 o bien a la tirada de Armadura o bien a la tirada de Heridas. Se puede decidir aplicar este modificador después de hacer la tirada en cuestión. Si un Jugador rival sufre una Lesión como resultado de ser Derribado por un jugador lanzado que tenga esta habilidad, se considerará que el jugador lanzado es quien ha causado esa Lesión y recibirá Puntos de Estrellato de manera acorde.
+Un jugador que no tenga el rasgo Humanoide bala no puede tener esta habilidad.
+
+PROYECTIL VOMITO
+Cuando este Jugador es activado, puede declarar una acción especial de Proyectil de vómito; no hay limite al número de jugadores que pueden declarar esta acción especial
+cada turno. Cuando este jugador realiza una acción especial de Proyectil de vómito, elige a un Jugador rival En pie y adyacente a él, y tira 1D6:
+con 2+, este jugador vomita sobre el blanco: 
+haz una tirada de Armadura contra dicho Jugador rival. Esa tirada de Armadura no puede modificarse de ningún modo. Si la armadura se rompe, haz una tirada de Heridas contra el jugador. De lo contrario, no ocurre nada. 
+Con un 1, este jugador se cubre con su propia bilis ácida: haz una tirada de Armadura contra este jugador. Esa tirada de Armadura no puede modificarse de ningún modo. Si la armadura se rompe, haz una tirada de Heridas contra este jugador. De lo contrario, no ocurre nada.
+Este jugador puede usar la acción especial de Proyectil de vómito para reemplazar la acción de Placaje que forma parte de una acción de Penetración, pero su activación finalizará igualmente una vez resuelta la acción especial de Proyectil de vómito.
+
+PLANEAR
+Si este jugador es lanzado mediante la acción de Lanzar compañero, puede elegir no escorarse como es habitual antes de aterrizar.
+En tal caso, coloca la plantilla de devolución sobre este jugador, encarada hacia cualquier zona de anotación o línea de banda. Tira 1D6 para determinar en qué dirección se moverá, y luego un segundo 1D6 para determinar cuántas casillas planeará en esa dirección.
+Además, si este jugador decide no escorarse como es habitual, puede repetir el chequeo de Agilidad para intentar aterrizar.
